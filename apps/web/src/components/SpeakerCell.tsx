@@ -8,8 +8,7 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { LiteButton, LiteCheckbox } from "@/components/LiteControls";
 // `import type`: triage.ts is server-only (it pulls in corpus.ts), see ContributionTable.
 import type { NpcSummary } from "@/lib/contributions/triage";
 import { flavorOptionsFor, type FlavorScope } from "@/lib/contributions/speaker";
@@ -170,14 +169,13 @@ export default function SpeakerCell({
           <span>{speaker(npc)}</span>
           <ProvenanceBadge provenance={npc.provenance} />
           {npc.doubtful ? <DoubtBadge /> : null}
-          <Button
-            size="sm"
+          <LiteButton
             variant="ghost"
             className="h-5 px-1.5 py-0 text-xs"
             onClick={() => setEditing(true)}
           >
             Edit
-          </Button>
+          </LiteButton>
         </div>
         {speakerNote(npc) ? <p className="text-muted-foreground mt-0.5">{speakerNote(npc)}</p> : null}
       </div>
@@ -285,14 +283,13 @@ export default function SpeakerCell({
           <ProvenanceBadge provenance={npc.provenance} />
         ) : null}
         {known ? (
-          <Button
-            size="sm"
+          <LiteButton
             variant="ghost"
             className="h-7 px-2 text-xs"
             onClick={() => setEditing(true)}
           >
             Edit
-          </Button>
+          </LiteButton>
         ) : null}
         {/* Unticked by default and resent on every save: the flag is part of the answer, so a
             save made without it is one the moderator now stands by. */}
@@ -300,11 +297,10 @@ export default function SpeakerCell({
           className="text-muted-foreground flex items-center gap-1"
           title="Save as a best answer, to be checked later -- lines still voice from it"
         >
-          <Checkbox checked={doubtful} onCheckedChange={(next) => setDoubtful(next === true)} />
+          <LiteCheckbox checked={doubtful} onChange={(event) => setDoubtful(event.target.checked)} />
           doubt
         </label>
-        <Button
-          size="sm"
+        <LiteButton
           variant="outline"
           className="h-7 px-2 text-xs"
           // A kind-less row with no kind picked yet has nothing valid to POST -- the route
@@ -326,7 +322,7 @@ export default function SpeakerCell({
           }}
         >
           Save
-        </Button>
+        </LiteButton>
       </div>
       {speakerNote(npc) ? <p className="text-muted-foreground">{speakerNote(npc)}</p> : null}
     </div>

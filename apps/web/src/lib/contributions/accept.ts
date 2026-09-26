@@ -30,7 +30,14 @@ import { normaliseText } from "@books-tools/lib/text.mjs";
 import { recordActivity } from "@/lib/activity/store";
 import { db } from "@/lib/db";
 import { observedFrom } from "@/lib/npc/resolve";
-import { getResolution, getResolutionsById, type NpcKind } from "@/lib/npc/store";
+import {
+  getResolution,
+  getResolutions,
+  getResolutionsById,
+  resolutionKey,
+  type NpcKind,
+  type NpcResolution,
+} from "@/lib/npc/store";
 import { BASE_LANG, isLang, type Lang } from "@/lib/lang";
 import type { CorpusLine } from "@/lib/corpus";
 import { corpus } from "@/lib/quests/catalogue";
@@ -74,18 +81,46 @@ type Prepared =
   | { kind: "speaker"; lineId: string; variant: number; speaker: Speaker }
   | { kind: "line"; identity: LineIdentity; text: string; speaker: Speaker };
 
+/**
+ * The npc_resolution rows for many contributions' NPCs, read up front in two queries -- what
+ * linesInExplorer hands resolvedSpeaker so a page of rows is not a round trip per row.
+ */
+type Resolutions = {
+  byKey: Map<string, NpcResolution>;
+  byId: Map<number, NpcResolution[]>;
+};
+
+async function resolutionsFor(contributions: readonly Contribution[]): Promise<Resolutions> {
+  const keys: { npcKind: NpcKind; npcId: number }[] = [];
+  const ids: number[] = [];
+  for (const contribution of contributions) {
+    const observed = observedFrom(observationMeta(contribution));
+    if (observed.npcId === null) continue;
+    if (observed.npcKind) keys.push({ npcKind: observed.npcKind, npcId: observed.npcId });
+    else ids.push(observed.npcId);
+  }
+  const [byKey, byId] = await Promise.all([getResolutions(keys), getResolutionsById([...new Set(ids)])]);
+  return { byKey, byId };
+}
+
 /** Who speaks a quests contribution, from npc_resolution -- the same lookup triage.ts's page renders from. */
 async function resolvedSpeaker(
   meta: Record<string, string>,
+  resolutions?: Resolutions,
 ): Promise<Speaker | "conflict" | null> {
   const observed = observedFrom(meta);
   if (observed.npcId === null) return null;
 
   let resolution;
   if (observed.npcKind) {
-    resolution = await getResolution(observed.npcKind, observed.npcId);
+    resolution = resolutions
+      ? resolutions.byKey.get(resolutionKey(observed.npcKind, observed.npcId))
+      : await getResolution(observed.npcKind, observed.npcId);
   } else {
-    const lookup = idOnlyResolution((await getResolutionsById([observed.npcId])).get(observed.npcId));
+    const rows = resolutions
+      ? resolutions.byId.get(observed.npcId)
+      : (await getResolutionsById([observed.npcId])).get(observed.npcId);
+    const lookup = idOnlyResolution(rows);
     if (lookup.conflict.length) return "conflict";
     resolution = lookup.resolution;
   }
@@ -100,6 +135,58 @@ async function resolvedSpeaker(
     gender: resolution.gender,
     flavor: resolution.flavor,
   };
+}
+
+/**
+ * The catalogue, indexed for the questions prepareLine and acceptTranslation ask of it -- a
+ * linear scan per row was most of what a page of accepted rows, or a batch accept, cost.
+ *
+ * `byPrefix` holds each line under its own id and under every shorter `:`-joined prefix of it,
+ * which is exactly answersQuestMoment: `q:1:accept` finds `q:1:accept` and `q:1:accept:m`.
+ * `gossipByText` is the by-text match below, keyed on race, gender and normalised text. Both
+ * keep the catalogue's order, so a first match is the same line a scan would have found.
+ *
+ * Kept per catalogue array, which is replaced whenever the tables move (catalogue.ts).
+ */
+type CorpusIndex = {
+  byPrefix: Map<string, CorpusLine[]>;
+  gossipByText: Map<string, CorpusLine[]>;
+  /** A line's place in the catalogue, for "whichever comes first". */
+  position: Map<CorpusLine, number>;
+};
+
+const corpusIndexes = new WeakMap<readonly CorpusLine[], CorpusIndex>();
+
+function pushTo<K>(map: Map<K, CorpusLine[]>, key: K, line: CorpusLine): void {
+  const group = map.get(key);
+  if (group) group.push(line);
+  else map.set(key, [line]);
+}
+
+function gossipTextKey(race: string, gender: string, text: string): string {
+  return `${race}|${gender}|${text}`;
+}
+
+function indexOf(lines: readonly CorpusLine[]): CorpusIndex {
+  let index = corpusIndexes.get(lines);
+  if (index) return index;
+  index = { byPrefix: new Map(), gossipByText: new Map(), position: new Map() };
+  for (const [position, line] of lines.entries()) {
+    index.position.set(line, position);
+    const parts = line.lineId.split(":");
+    for (let end = parts.length; end >= 2; end--) pushTo(index.byPrefix, parts.slice(0, end).join(":"), line);
+    if (parts.length < 2) pushTo(index.byPrefix, line.lineId, line);
+    if (line.source === "gossip") {
+      pushTo(index.gossipByText, gossipTextKey(line.race, line.gender, normaliseText(line.originalText)), line);
+    }
+  }
+  corpusIndexes.set(lines, index);
+  return index;
+}
+
+/** The lines answering a quest moment, in catalogue order: answersQuestMoment, from the index. */
+function answering(lines: readonly CorpusLine[], momentId: string): CorpusLine[] {
+  return (indexOf(lines).byPrefix.get(momentId) ?? []).filter((line) => answersQuestMoment(line.lineId, momentId));
 }
 
 /**
@@ -118,8 +205,9 @@ async function resolvedSpeaker(
 async function prepareLine(
   contribution: Contribution,
   corpusLines?: readonly CorpusLine[],
+  resolutions?: Resolutions,
 ): Promise<{ ok: true; prepared: Prepared } | ResolveRefusal> {
-  const speaker = await resolvedSpeaker(observationMeta(contribution));
+  const speaker = await resolvedSpeaker(observationMeta(contribution), resolutions);
   if (speaker === "conflict") {
     return {
       ok: false,
@@ -164,23 +252,25 @@ async function prepareLine(
   const lines = corpusLines ?? (await corpus()).lines;
 
   if (!isGossip) {
-    const exists = lines.some((l) => answersQuestMoment(l.lineId, identity.lineId));
+    const exists = answering(lines, identity.lineId).length > 0;
     return { ok: true, prepared: exists ? { kind: "exists" } : { kind: "line", identity, text: contribution.text, speaker } };
   }
 
   // By id, or by text: 1,644 of the corpus's gossip lines carry trailing whitespace in
   // `originalText` that normaliseText (already applied to contribution.text at intake,
   // submission.ts) strips, so a verbatim duplicate of one of them hashes differently.
+  // Whichever of the two comes first in the catalogue, as a scan for either would find.
   const text = contribution.text;
-  const match = lines.find(
-    (l) =>
-      l.source === "gossip" &&
-      (l.lineId === identity.lineId ||
-        (l.race === speaker.race && l.gender === speaker.gender && normaliseText(l.originalText) === text)),
+  const index = indexOf(lines);
+  const byId = (index.byPrefix.get(identity.lineId) ?? []).find(
+    (l) => l.source === "gossip" && l.lineId === identity.lineId,
   );
+  const byText = index.gossipByText.get(gossipTextKey(speaker.race, speaker.gender, text))?.[0];
+  const match =
+    byId && byText ? (index.position.get(byId)! <= index.position.get(byText)! ? byId : byText) : (byId ?? byText);
   if (!match) return { ok: true, prepared: { kind: "line", identity, text, speaker } };
 
-  const speaks = lines.some(
+  const speaks = (index.byPrefix.get(match.lineId) ?? []).some(
     (l) => l.lineId === match.lineId && l.npcType === speaker.npcType && l.npcId === speaker.npcId,
   );
   if (speaks) return { ok: true, prepared: { kind: "exists" } };
@@ -205,10 +295,32 @@ export async function contributedSpeakerExists(contributionId: number, client?: 
  * "Set the speaker first".
  */
 export async function lineIsInExplorer(contribution: Contribution): Promise<boolean> {
-  if (contribution.source !== "quests" || contribution.status !== "accepted") return false;
-  if (await contributedSpeakerExists(contribution.id)) return true;
-  const result = await prepareLine(contribution);
-  return result.ok && result.prepared.kind === "exists";
+  return (await linesInExplorer([contribution])).has(contribution.id);
+}
+
+/**
+ * lineIsInExplorer for many contributions at once, answered as the ids whose line is there:
+ * one query for the speaker rows already written, two for the NPCs, and the catalogue read
+ * once -- what the moderator page asks of every accepted row it shows.
+ */
+export async function linesInExplorer(contributions: readonly Contribution[]): Promise<Set<number>> {
+  const candidates = contributions.filter((c) => c.source === "quests" && c.status === "accepted");
+  if (candidates.length === 0) return new Set();
+
+  const { rows } = await db().query<{ contributionId: number }>(
+    `select distinct "contributionId" from "quest_line_speaker" where "contributionId" = any($1::int[])`,
+    [candidates.map((c) => c.id)],
+  );
+  const found = new Set(rows.map((row) => row.contributionId));
+
+  const rest = candidates.filter((c) => !found.has(c.id));
+  if (rest.length === 0) return found;
+  const [resolutions, lines] = await Promise.all([resolutionsFor(rest), corpus().then((c) => c.lines)]);
+  for (const contribution of rest) {
+    const result = await prepareLine(contribution, lines, resolutions);
+    if (result.ok && result.prepared.kind === "exists") found.add(contribution.id);
+  }
+  return found;
 }
 
 async function insertSpeaker(
@@ -322,9 +434,7 @@ async function acceptTranslation(
     return { ok: false, reason: "malformed", message: `unknown quest event "${event}"` };
   }
 
-  const english = (corpusLines ?? (await corpus()).lines).filter((line) =>
-    answersQuestMoment(line.lineId, identity.lineId),
-  );
+  const english = answering(corpusLines ?? (await corpus()).lines, identity.lineId);
   if (english.length === 0) {
     return {
       ok: false,

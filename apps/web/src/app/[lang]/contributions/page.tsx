@@ -11,8 +11,15 @@ import { pageById } from "@/lib/books/catalogue";
 import { clientOf, isClientFamily } from "@/lib/contributions/client";
 import { corpusLookup } from "@/lib/contributions/existing";
 import { isStatus, type ContributionStatus } from "@/lib/contributions/contributions";
-import { lineIsInExplorer } from "@/lib/contributions/accept";
-import { isSpeakerSentinel, matchesSpeaker, type ClientFilter, type SpeakerFilter } from "@/lib/contributions/query";
+import { linesInExplorer } from "@/lib/contributions/accept";
+import {
+  isSpeakerSentinel,
+  matchesSpeaker,
+  pageOf,
+  PAGE_SIZE,
+  type ClientFilter,
+  type SpeakerFilter,
+} from "@/lib/contributions/query";
 import { listContributions, observationMeta, type Contribution } from "@/lib/contributions/store";
 import {
   npcSummaryFrom,
@@ -158,7 +165,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ status?: string; provenance?: string; client?: string }>;
+  searchParams: Promise<{ status?: string; provenance?: string; client?: string; page?: string }>;
 }) {
   const lang = await pageLang(params);
   const session = await auth.api.getSession({ headers: await headers() });
@@ -169,7 +176,7 @@ export default async function Page({
   const viewer = await viewerOf(session);
   if (!session || !can(viewer, "edit", lang)) notFound();
 
-  const { status: rawStatus, provenance: rawProvenance, client: rawClient } = await searchParams;
+  const { status: rawStatus, provenance: rawProvenance, client: rawClient, page: rawPage } = await searchParams;
   const status: ContributionStatus | "all" = isStatus(rawStatus)
     ? rawStatus
     : rawStatus === "all"
@@ -196,42 +203,45 @@ export default async function Page({
   const client: ClientFilter = isClientFamily(rawClient) ? rawClient : "all";
 
   const contributions = await listContributions(status, lang);
-  const existing = await existingTextFor(contributions);
+  // Every row's NPC, not just this page's: the Speaker filter reads it, and it is one query
+  // for the lot (npcFor's own docstring).
   const npcs = await npcFor(contributions);
 
-  const linedIds = new Set(
-    (
-      await Promise.all(
-        contributions.map(async (row) => ((await lineIsInExplorer(row)) ? row.id : null)),
-      )
-    ).filter((id): id is number => id !== null),
-  );
+  // matchesSpeaker handles a plain provenance and both sentinels; a row with no npc at all
+  // survives a narrowed view only as MISSING, and only when it is a quests row.
+  const matching = contributions
+    .filter((row) => matchesSpeaker(npcs[row.id]?.provenance, provenance, row.source))
+    .filter((row) => client === "all" || clientOf(row.build).family === client);
+
+  // A page of rows, not the whole queue: every row rendered is a row the browser has to build
+  // and React has to diff, and a queue of hundreds made both the load and every click slow.
+  // Only this page's rows are looked up further -- existing text and whether their line is in
+  // the explorer are the per-row reads here.
+  const pages = Math.max(1, Math.ceil(matching.length / PAGE_SIZE));
+  const page = Math.min(pageOf(rawPage), pages);
+  const shown = matching.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const [existing, linedIds] = await Promise.all([existingTextFor(shown), linesInExplorer(shown)]);
 
   // ContributionTable is a client component: whatever shape crosses in `initial` lands in the
   // RSC flight payload and is readable in devtools, so the full row -- name, email, raw, the
   // ip listContributions doesn't even select -- never leaves this server function. `body` is
   // the one identifying-adjacent field that does cross, deliberately: see finding 4/the
   // table's own docstring for why a player's complaint belongs where triage can read it.
-  const rows: ContributionRow[] = contributions
-    .map((row) => ({
-      id: row.id,
-      source: row.source,
-      key: row.key,
-      locale: row.locale,
-      client: clientOf(row.build),
-      count: row.count,
-      text: row.text,
-      status: row.status,
-      createdAt: row.createdAt,
-      body: row.body,
-      npc: npcs[row.id] ?? null,
-      quest: questFor(row),
-      hasLine: linedIds.has(row.id),
-    }))
-    // matchesSpeaker handles a plain provenance and both sentinels; a row with no npc at all
-    // survives a narrowed view only as MISSING, and only when it is a quests row.
-    .filter((row) => matchesSpeaker(row.npc?.provenance, provenance, row.source))
-    .filter((row) => client === "all" || row.client.family === client);
+  const rows: ContributionRow[] = shown.map((row) => ({
+    id: row.id,
+    source: row.source,
+    key: row.key,
+    locale: row.locale,
+    client: clientOf(row.build),
+    count: row.count,
+    text: row.text,
+    status: row.status,
+    createdAt: row.createdAt,
+    body: row.body,
+    npc: npcs[row.id] ?? null,
+    quest: questFor(row),
+    hasLine: linedIds.has(row.id),
+  }));
 
   const facetValues = await facets();
 
@@ -248,6 +258,11 @@ export default async function Page({
 
       <ContributionTable
         initial={rows}
+        // Every row the filters match, on any page, as just its id and status: what "Accept all"
+        // acts on.
+        matching={matching.map((row) => ({ id: row.id, status: row.status }))}
+        page={page}
+        pages={pages}
         status={status}
         provenance={provenance}
         client={client}
