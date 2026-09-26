@@ -17,7 +17,7 @@ import type { NpcSummary } from "@/lib/contributions/triage";
 import { localeHref } from "@/lib/lang";
 import { isProvenance, PROVENANCES, type NpcKind, type Provenance } from "@/lib/npc/npc";
 import type { NpcResolution } from "@/lib/npc/store";
-import { wowheadForeverUrl } from "@/lib/wowhead";
+import { wowheadEntityUrl, wowheadForeverUrl } from "@/lib/wowhead";
 
 function key(npcKind: NpcKind | null, npcId: number): string {
   return `${npcKind}:${npcId}`;
@@ -155,15 +155,25 @@ export default function NpcEditor({
                     {npc.npcKind === "gameobject" ? (
                       <span className="text-muted-foreground"> · object</span>
                     ) : null}{" "}
+                    {/* Both branches: a vanilla NPC is on each, a post-vanilla one only on
+                        /forever/ -- see wowhead.ts. */}
                     <a
-                      // Always the Anniversary branch: every NPC here was named by a contribution,
-                      // and a contribution comes from that client -- see wowhead.ts.
+                      href={wowheadEntityUrl(npc.npcKind ?? "creature", npc.npcId)}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Wowhead Classic"
+                      className="text-muted-foreground hover:underline"
+                    >
+                      wc↗
+                    </a>{" "}
+                    <a
                       href={wowheadForeverUrl(npc.npcKind ?? "creature", npc.npcId)}
                       target="_blank"
                       rel="noreferrer"
+                      title="Wowhead Anniversary"
                       className="text-muted-foreground hover:underline"
                     >
-                      wh↗
+                      wf↗
                     </a>
                   </td>
                   <td className="pr-3 text-xs">{npc.npcName ?? <span className="text-muted-foreground">unnamed</span>}</td>
