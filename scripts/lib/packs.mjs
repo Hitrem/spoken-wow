@@ -28,14 +28,18 @@ export const PUBLISHERS_DIR = join(ROOT, "publishers");
 
 export const SECTIONS = ["quests", "zones", "books"];
 
-// tts_cli/factions.py PACK_SUFFIXES, for the four that ship. `all` is the meta addon, which is
-// not a pack: its page carries no section.
+// tts_cli/factions.py PACK_SUFFIXES, for the four that ship. English's `all` is the meta addon,
+// which is not a pack: its page carries no section.
 const QUESTS_PACKS = { alliance: "Alliance", horde: "Horde", shared: "Shared", gossip: "Gossip" };
+// A language may instead ship its quests as one pack holding every line: one folder is one answer
+// to "which do I install", and a GitHub release takes a file up to 2 GB. CurseForge does not take
+// one that size, so a language that goes there later is split into the four.
+const LANGUAGE_QUESTS_PACKS = { ...QUESTS_PACKS, all: "All" };
 
 function englishFolder(section, pack) {
   if (section === "zones") return "SpokenZonesAudio";
   if (section === "books") return "SpokenBooksAudio";
-  return "SpokenQuestsAudio" + QUESTS_PACKS[pack];
+  return "SpokenQuestsAudio" + LANGUAGE_QUESTS_PACKS[pack];
 }
 
 function englishRelease(section, pack) {
@@ -62,13 +66,14 @@ function toPack(page, meta) {
   if (!SECTIONS.includes(section)) fail(`section '${section}' is not one of ${SECTIONS.join(", ")}`);
   if (!CODES.includes(lang)) fail(`lang '${lang}' is not one of ${CODES.join(", ")}`);
 
+  const english = lang === BASE_LOCALE;
   const pack = meta.pack ?? null;
-  if (section === "quests" && !(pack in QUESTS_PACKS)) {
-    fail(`a quests pack needs pack: one of ${Object.keys(QUESTS_PACKS).join(", ")}`);
+  const allowed = english ? QUESTS_PACKS : LANGUAGE_QUESTS_PACKS;
+  if (section === "quests" && !(pack in allowed)) {
+    fail(`a ${lang} quests pack needs pack: one of ${Object.keys(allowed).join(", ")}`);
   }
   if (section !== "quests" && pack !== null) fail(`only a quests pack has a pack key`);
 
-  const english = lang === BASE_LOCALE;
   const version = meta.version ?? null;
   if (!english && !/^\d+\.\d+\.\d+$/.test(version ?? "")) {
     fail(`a ${lang} pack needs version: x.y.z (English's comes from its .toc)`);
@@ -78,12 +83,13 @@ function toPack(page, meta) {
   const release = englishRelease(section, pack) + (english ? "" : `-${lang}`);
   if (meta.release !== release) fail(`release should be ${release}, not ${meta.release}`);
 
-  for (const key of ["curseforge", "slug", "name"]) if (!meta[key]) fail(`missing '${key}'`);
+  // No `curseforge` until the project exists: a pack can go out on GitHub before it has one.
+  for (const key of ["slug", "name"]) if (!meta[key]) fail(`missing '${key}'`);
 
   const folder = englishFolder(section, pack) + (english ? "" : `_${lang}`);
   return {
     page, section, lang, pack, version,
-    curseforge: meta.curseforge, wago: meta.wago ?? null, release,
+    curseforge: meta.curseforge ?? null, wago: meta.wago ?? null, release,
     slug: meta.slug, name: meta.name, folder,
     zip: english ? null : `${folder}-${version}.zip`,
     tag: english ? null : `${release}/v${version}`,
