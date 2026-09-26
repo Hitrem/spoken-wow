@@ -144,10 +144,16 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
   // The appearances the addon rolled, filtered to the body the player saw. One voice left is
   // the game's own answer, as exact as the corpus: display-voices.json reads it from the same
   // NPCSounds data tts_cli/flavors.py reads for the corpus.
-  const fromDisplays = observed.displayIds.length
+  //
+  // Creatures only: a gameobject id is its own id space, and SetCreature would have described
+  // whichever creature shares the number. And confirmed only with a body the server knows: the
+  // envelope is unauthenticated, and appearances alone would let a hand-edited one plant a
+  // confirmed voice that no player report can ever outrank.
+  const fromDisplays = npcKind === "creature" && observed.displayIds.length
     ? await voiceFromDisplays(observed.displayIds, observed.modelFileId)
     : null;
-  if (fromDisplays?.exact) {
+  const body = raceForModel(observed.modelFileId);
+  if (fromDisplays?.exact && body) {
     return upsertResolution({
       npcKind,
       npcId,
@@ -165,9 +171,12 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
     });
   }
 
-  // Several voices on one body still settle the race and gender, and narrow the flavor to the
-  // ones this NPC can actually speak with.
-  const fromModel = fromDisplays ?? raceForModel(observed.modelFileId);
+  // Several voices on one body, or one voice with no body to vouch for it, still settle the
+  // race and gender, and narrow the flavor to the ones this NPC can actually speak with.
+  const narrowed = fromDisplays?.exact
+    ? { ...fromDisplays.voice, flavors: fromDisplays.voice.flavor ? [fromDisplays.voice.flavor] : [] }
+    : fromDisplays;
+  const fromModel = narrowed ?? body;
   // A flavor nobody has confirmed, derived the way tts_cli/flavors.py's fallback_flavors
   // derives its own: "standard" where the race-gender has it, otherwise its busiest flavor,
   // from the corpus rather than a constant. A constant would leave four race-genders
@@ -179,7 +188,7 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
   const fallback = fromModel ? await defaultFlavorFor(fromModel.race, fromModel.gender) : null;
   // The default wins when the appearances offer it, so a narrowed row and a model-only row
   // agree wherever they can.
-  const offered = fromDisplays?.flavors ?? [];
+  const offered = narrowed?.flavors ?? [];
   const flavor = offered.length && !offered.includes(fallback ?? "") ? offered[0] : fallback;
   return upsertResolution({
     npcKind,

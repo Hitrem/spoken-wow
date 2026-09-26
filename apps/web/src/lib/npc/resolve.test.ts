@@ -250,4 +250,28 @@ describe("resolveNpc", () => {
     await resolveNpc(observed);
     expect(voiceFromDisplays).not.toHaveBeenCalled();
   });
+  // The envelope is unauthenticated: appearances alone must not be able to plant a confirmed
+  // voice. Without a model the server knows, they narrow a guess and nothing more.
+  it("does not confirm a voice from appearances without a model it knows", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
+    });
+    vi.mocked(defaultFlavorFor).mockResolvedValue("standard");
+    const row = await resolveNpc({ ...observed, modelFileId: null, displayIds: [9392] });
+    expect(row).toMatchObject({
+      race: "tauren", gender: "female", flavor: "official", provenance: "client", confirmed: false,
+    });
+  });
+
+  // Gameobject ids are their own id space; SetCreature would describe whichever creature shares
+  // the number, so a gameobject's appearances mean nothing even if an envelope carries them.
+  it("never looks appearances up for a gameobject", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockClear();
+    await resolveNpc({ ...observed, npcKind: "gameobject", displayIds: [9392] });
+    expect(voiceFromDisplays).not.toHaveBeenCalled();
+  });
 });
