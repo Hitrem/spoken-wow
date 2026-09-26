@@ -29,6 +29,7 @@ export type SpeakerAnswer = Partial<{
 // line, with what it means on hover.
 const PROVENANCE_PILLS: Record<Provenance, { short: string; title: string }> = {
   corpus: { short: "C", title: "Corpus: the game's own data for this NPC" },
+  display: { short: "D", title: "Display: the game's voice set for the appearance the client saw" },
   client: { short: "G", title: "Guess: from the model the client reported" },
   moderator: { short: "M", title: "Moderator: set by hand" },
   none: { short: "?", title: "No race: nothing known about this NPC" },
@@ -93,8 +94,8 @@ function speakerNote(npc: NpcSummary): string | null {
 /**
  * Who voices an NPC, in three states keyed on `confirmed`, not `provenance` alone, for the
  * reason speakerNote already draws that distinction: `confirmed` is the column resolveNpc and
- * the override route agree means "trust this" (migration 0031 only ever sets it for "corpus" or
- * "moderator"), so a settled answer renders plainly.
+ * the override route agree means "trust this" (migrations 0031 and 0055 only ever set it for
+ * "corpus", "display" or "moderator"), so a settled answer renders plainly.
  *
  *   - confirmed: plain text; a moderator's own answer adds an Edit that reopens the form.
  *   - unconfirmed, race and gender known ("client"): race-gender as text, a flavor select
@@ -154,8 +155,10 @@ export default function SpeakerCell({
   }
 
   if (npc.confirmed && !editing) {
-    // A moderator's own settled answer (the only other `confirmed` provenance -- migration
-    // 0031). Shown plainly like the corpus, but with a small edit control that reopens the form
+    // A moderator's own settled answer, or a `display` one (the other `confirmed` provenances --
+    // migrations 0031 and 0055). A display answer can still be wrong when the addon's rolls
+    // missed the appearance the player saw, so it keeps this Edit rather than the corpus's
+    // read-only view. Shown plainly like the corpus, but with a small edit control that reopens the form
     // below, preselected with the current values via the same useState initialisers above. The
     // store already lets a moderator write over a moderator row -- upsertResolution's `where`
     // compares ranks with `<=`, so an equal rank still updates (store.test.ts's "lets a

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { voiceForDisplay } from "./display-voices";
+import { modelForDisplay, voiceForDisplay, voiceFromDisplays } from "./display-voices";
 
 // Appearance ids from the 1.60.1 client, as its creature cache reported them for real NPCs.
 describe("voiceForDisplay", () => {
@@ -29,5 +29,47 @@ describe("voiceForDisplay", () => {
 
   it("answers nothing, with a reason, for an appearance it has no record of", async () => {
     expect(await voiceForDisplay(999_999_999)).toMatchObject({ voice: null, reason: expect.stringMatching(/no model/) });
+  });
+});
+
+// Bluffwatcher (3084): two male appearances and two female, as twelve SetCreature rolls in the
+// 1.60.1 client reported them. 122055 and 121961 are the model files the addon reports for
+// tauren male and female.
+describe("voiceFromDisplays", () => {
+  it("keeps the appearances drawn with the body the player saw", async () => {
+    expect(await voiceFromDisplays([2141, 8572, 9391, 9392], 122055)).toEqual({
+      exact: true,
+      voice: { race: "tauren", gender: "male", flavor: "warrior" },
+    });
+    expect(await voiceFromDisplays([2141, 8572, 9391, 9392], 121961)).toEqual({
+      exact: true,
+      voice: { race: "tauren", gender: "female", flavor: "official" },
+    });
+  });
+
+  it("knows nothing when two bodies remain and no model says which", async () => {
+    expect(await voiceFromDisplays([2141, 9392], null)).toBe(null);
+  });
+
+  // Hamish Bergwort's four appearances are all the same dwarf female body, with three voices.
+  it("narrows to the voices on offer when one body has several", async () => {
+    expect(await voiceFromDisplays([36630, 140654, 144322, 146689], modelForDisplay(36630))).toEqual({
+      exact: false,
+      race: "dwarf",
+      gender: "female",
+      flavors: ["guard", "maternal", "young"],
+    });
+  });
+
+  it("compares bodies by the appearance's model, not by whose voice it borrows", async () => {
+    // Elatrell Featherlight: a blood elf body greeting in the Skybourne male voice.
+    expect(await voiceFromDisplays([136967], modelForDisplay(136967))).toMatchObject({
+      exact: true,
+      voice: { race: "skybourneelf", gender: "male", flavor: "3776" },
+    });
+  });
+
+  it("knows nothing about appearances it has no record of", async () => {
+    expect(await voiceFromDisplays([999_999_999], 122055)).toBe(null);
   });
 });

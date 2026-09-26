@@ -79,7 +79,8 @@ export type IdOnlyLookup = {
   conflict: NpcResolution[];
 };
 
-const RANK: Record<Provenance, number> = { moderator: 3, corpus: 2, client: 1, none: 0 };
+// store.ts's provenanceRank, for the same reason: the better-founded answer shows first.
+const RANK: Record<Provenance, number> = { moderator: 4, corpus: 3, display: 2, client: 1, none: 0 };
 
 /**
  * Who a kind-less contribution's NPC is, from every npc_resolution row sharing its id.

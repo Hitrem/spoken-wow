@@ -26,9 +26,10 @@ function key(npcKind: NpcKind | null, npcId: number): string {
   return `${npcKind}:${npcId}`;
 }
 
-// ContributionTable's own words for the same four, so a speaker reads the same on both tabs.
+// ContributionTable's own words for the same five, so a speaker reads the same on both tabs.
 const PROVENANCE_LABELS: Record<Provenance, string> = {
   corpus: "Corpus",
+  display: "Game data",
   client: "Guessed",
   moderator: "Moderated",
   none: "Unknown",

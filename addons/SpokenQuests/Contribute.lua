@@ -281,6 +281,70 @@ local function CachedModelFileID()
     return modelCache[guid] or nil
 end
 
+-- Which appearances the NPC on screen can wear. No API names the one a unit is drawn with --
+-- GetDisplayInfo on a model built with SetUnit answers 0 -- but SetCreature(npcId) builds the
+-- creature from the client's cache and rolls one of its appearances (at most four) by spawn
+-- probability, fresh on every call, and GetDisplayInfo answers in the same tick. Five rolls
+-- missed one of a Bluffwatcher's four. A missed appearance matters: the site confirms a voice
+-- when only one is left, so an appearance with a 10% chance and a voice of its own must turn
+-- up -- twelve rolls miss it 28% of the time, thirty-two 3%, and a roll costs next to nothing.
+-- The model file id above tells the site which body the player is actually looking at.
+--
+-- One frame, made once, with no parent and never shown: an unshown model draws nothing, and
+-- this client has hung its GPU on model rendering before.
+local DISPLAY_ROLLS = 32
+-- nil until first asked for; false once this client turned out not to have what it takes
+-- (the 1.12-3.3.5 clients have no GetDisplayInfo), so it is never asked again.
+local displayRoller
+-- npcId -> the appearance ids as the envelope carries them. Only ever set to a real answer: a
+-- creature the client has not cached yet answers 0 to every roll, and the next capture, after
+-- the client has asked its server, can still find them.
+local displayCache = {}
+
+local function DisplayRoller()
+    if displayRoller == nil then
+        displayRoller = false
+        local ok, frame = false, nil
+        if CreateFrame then
+            ok, frame = pcall(CreateFrame, "DressUpModel")
+        end
+        if ok and frame and frame.SetCreature and frame.GetDisplayInfo then
+            displayRoller = frame
+        end
+    end
+    return displayRoller or nil
+end
+
+local function CachedDisplays()
+    local npcID = NPCID()
+    if not npcID then
+        return nil
+    end
+    if displayCache[npcID] then
+        return displayCache[npcID]
+    end
+    local roller = DisplayRoller()
+    if not roller then
+        return nil
+    end
+    local seen, ids = {}, {}
+    for _ = 1, DISPLAY_ROLLS do
+        pcall(roller.SetCreature, roller, npcID)
+        local ok, id = pcall(roller.GetDisplayInfo, roller)
+        if ok and type(id) == "number" and id > 0 and not seen[id] then
+            seen[id] = true
+            ids[#ids + 1] = id
+        end
+    end
+    if roller.ClearModel then pcall(roller.ClearModel, roller) end
+    if #ids == 0 then
+        return nil
+    end
+    table.sort(ids)
+    displayCache[npcID] = table.concat(ids, ",")
+    return displayCache[npcID]
+end
+
 --- What the client can see about who is speaking. The site decides what it means.
 local function Observations(fields)
     local function add(key, value)
@@ -288,8 +352,14 @@ local function Observations(fields)
             fields[#fields + 1] = { key, value }
         end
     end
-    add("kind", NPCKind())
+    local kind = NPCKind()
+    add("kind", kind)
     add("model", CachedModelFileID())
+    -- Creatures only: a gameobject id is a different id space, and SetCreature would roll the
+    -- creature that happens to share its number.
+    if kind == "creature" then
+        add("displays", CachedDisplays())
+    end
     add("sex", UnitSex and UnitSex("npc") or nil)
     add("creature", UnitCreatureType and UnitCreatureType("npc") or nil)
 end
