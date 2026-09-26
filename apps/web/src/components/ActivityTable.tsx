@@ -201,6 +201,10 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
       return { what: "removed a user", quote: null };
     case "user.impersonated":
       return { what: `signed in as ${row.subjectName ?? "a removed user"}`, quote: null };
+    // A kind this page does not know: one a newer release wrote before a rollback to this
+    // one. Shown by its name rather than breaking the page.
+    default:
+      return { what: String(row.kind), quote: null };
   }
 }
 

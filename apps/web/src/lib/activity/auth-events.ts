@@ -19,6 +19,10 @@
  *
  * Every language's (lang null), and shown only to global admins: see `global` in store.ts.
  * Out of any transaction, so a failed write is logged and swallowed, as store.ts documents.
+ *
+ * NEVER THROWS. An after hook that throws turns the endpoint's answer into an error, and the
+ * change it describes has already been saved: the admin would be told a role change failed
+ * that did not.
  */
 import "server-only";
 
@@ -71,18 +75,22 @@ export const recordAuthEvent = createAuthMiddleware(async (ctx) => {
   const event = EVENTS[ctx.path];
   if (!event) return;
   const returned = ctx.context.returned;
-  if (returned === undefined || isAPIError(returned) || returned instanceof Error) return;
+  if (!returned || isAPIError(returned) || returned instanceof Error) return;
 
-  const body = (ctx.body ?? {}) as Body;
-  const impersonatedBy = (returned as { session?: { impersonatedBy?: unknown } }).session?.impersonatedBy;
-  const actorId =
-    ctx.path === "/admin/impersonate-user"
-      ? typeof impersonatedBy === "string" ? impersonatedBy : null
-      : (ctx.context.session?.user.id ?? null);
-  if (typeof body.userId !== "string" || !body.userId || !actorId) return;
+  try {
+    const body = (ctx.body ?? {}) as Body;
+    const impersonatedBy = (returned as { session?: { impersonatedBy?: unknown } }).session?.impersonatedBy;
+    const actorId =
+      ctx.path === "/admin/impersonate-user"
+        ? typeof impersonatedBy === "string" ? impersonatedBy : null
+        : (ctx.context.session?.user.id ?? null);
+    if (typeof body.userId !== "string" || !body.userId || !actorId) return;
 
-  const subject = body.userId;
-  await recordActivities(
-    event(body).map((one) => ({ ...one, lang: null, actorId, subject }) as ActivityEvent),
-  );
+    const subject = body.userId;
+    await recordActivities(
+      event(body).map((one) => ({ ...one, lang: null, actorId, subject }) as ActivityEvent),
+    );
+  } catch (error) {
+    console.error(`activity: could not record ${ctx.path}`, error);
+  }
 });
