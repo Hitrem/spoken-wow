@@ -23,6 +23,14 @@ THE TRANSLATION IS CLEANED THE WAY THE ENGLISH IS, WITH TWO EXCEPTIONS:
     skipReason written here, which is this module's invalid-chars rule, is stricter than
     the site's: the site re-decides it from the text and does not read this one.
 
+VARIANTS ARE AN ENGLISH MATTER. 103 line ids carry two English variants, because the dump
+keeps a quest_template row per content patch; the addon's title lookup needs both English
+titles on a vanilla client. A translation has one text per quest (locales_quest has no
+patch) and every variant of a line shares one file, so a language keeps one row per line
+id, variant 0, whichever English variant the dump row was anchored to. Writing one per
+variant duplicated every translation, and where both variants have the same English it
+wrote only one of them, leaving variant 0 untranslated and its file impossible to voice.
+
 PRECEDENCE is import-corpus's: unchanged text is skipped, changed text is promoted unless
 somebody edited the line here, in which case the dump's version is recorded but not made
 live. Names follow the same rule in entity_name. Nothing is stored for a column the dump
@@ -151,14 +159,21 @@ def import_locale(conn, lang: str, lines: list, names: dict) -> Counter:
         )
         highest = {(r[0], r[1]): r[2] for r in cur.fetchall()}
 
-        retire, insert = [], []
+        retire, insert, written = [], [], set()
         for line in lines:
             anchor = english.get((line["lineId"], line["originalText"]))
             if anchor is None:
                 counts["lines without an English line"] += 1
                 continue
-            variant, source, quest_id, file_name, player_gender = anchor
-            key = (line["lineId"], variant)
+            # One translation per line id, as variant 0, whichever English variant it was
+            # read beside. See VARIANTS in the module docstring.
+            if line["lineId"] in written:
+                counts["lines on another variant"] += 1
+                continue
+            written.add(line["lineId"])
+            _, source, quest_id, file_name, player_gender = anchor
+            key = (line["lineId"], 0)
+            variant = 0
             action = decide(live.get(key), (line["text"], line["localeText"]))
             counts[f"lines {action}"] += 1
             if action == "skip":
