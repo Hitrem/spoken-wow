@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Scissors, Trash2 } from "lucide-react";
+import { Download, Loader2, Scissors, Trash2 } from "lucide-react";
 
 import { useLang } from "@/components/LangProvider";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,22 @@ export type ReferenceView = Pick<
 type Props = {
   voice: string;
   samples: Sample[];
+  /** Whether voice/npc-lines has barks for this voice in this language. */
+  hasGameClips: boolean;
+  /** The clips after an import, for the page to hold. */
+  onSamples: (samples: Sample[]) => void;
   initial: ReferenceView | null;
   onChange: (reference: ReferenceView | null) => void;
 };
 
-export default function FishReference({ voice, samples, initial, onChange }: Props) {
+export default function FishReference({
+  voice,
+  samples,
+  hasGameClips,
+  onSamples,
+  initial,
+  onChange,
+}: Props) {
   const lang = useLang();
   const [reference, setReference] = useState(initial);
   const [chosen, setChosen] = useState(initial?.sample ?? "");
@@ -51,7 +62,7 @@ export default function FishReference({ voice, samples, initial, onChange }: Pro
   );
   const [duration, setDuration] = useState<number | null>(null);
   const [transcript, setTranscript] = useState(initial?.transcript ?? "");
-  const [busy, setBusy] = useState<"cut" | "transcript" | "delete" | null>(null);
+  const [busy, setBusy] = useState<"import" | "cut" | "transcript" | "delete" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // The chosen clip's length, from its metadata, so a window past its end is refused here
@@ -107,6 +118,30 @@ export default function FishReference({ voice, samples, initial, onChange }: Pro
     }
   }
 
+  /**
+   * Seed the clips from the game's barks, the same import the ElevenLabs tab offers, so a
+   * reference can be cut without a detour there. Only ever from empty: replacing clips is
+   * that tab's, where they are listed.
+   */
+  async function importGameClips() {
+    setBusy("import");
+    setError(null);
+    try {
+      const response = await fetch(withLang(lang, `/api/voices/${voice}/samples/import`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ replace: false }),
+      });
+      const body = (await response.json()) as { samples?: Sample[]; error?: string };
+      if (!response.ok) throw new Error(body.error ?? `import failed (${response.status})`);
+      onSamples(body.samples ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <section className="border-t px-9 py-3 text-sm">
       <h3 className="mb-1 font-medium">fish.audio reference</h3>
@@ -123,7 +158,29 @@ export default function FishReference({ voice, samples, initial, onChange }: Pro
       )}
 
       {samples.length === 0 ? (
-        <p className="text-muted-foreground text-xs">Add a clip above to cut a reference from.</p>
+        hasGameClips ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy !== null}
+              title={`Import the game's own ${voice} barks, merged into one take`}
+              onClick={importGameClips}
+            >
+              {busy === "import" ? <Loader2 className="animate-spin" /> : <Download />}
+              Import game clips
+            </Button>
+            <span className="text-muted-foreground text-xs">
+              No clips yet; import the game&apos;s barks to cut a reference from.
+            </span>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-xs">
+            No clips yet, and no game barks for this voice. Upload some on the ElevenLabs tab to
+            cut a reference from.
+          </p>
+        )
       ) : (
         <div className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1">
