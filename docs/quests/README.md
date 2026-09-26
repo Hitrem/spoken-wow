@@ -904,12 +904,19 @@ every player to take an update, and the legacy-client players install their zips
 `DwarfFemaleMaternalNPCGreetings`. In game, no API exposes a creature's `NPCSoundID` or which
 appearance a unit is drawn with: `GetDisplayInfo()` on a model built with `SetUnit` answers 0.
 `SetCreature(npcId)` does answer, but it rolls one of the creature's appearances (at most
-four) by spawn probability, fresh on every call. So the addon rolls a dozen times on one
-hidden frame and sends every appearance it saw as `displays=`. `voiceFromDisplays` keeps the
-ones drawn with the body the client reported and maps them through `display-voices.json`. One
-voice left is written as `display`, confirmed. Several voices on one body, as with a dwarf
-woman who can be maternal, young or guard, leave the row `client`, with the flavor chosen
-among those voices.
+four) by spawn probability, fresh on every call. So the addon rolls 32 times on one hidden
+frame and sends every appearance it saw as `displays=`. `voiceFromDisplays` keeps the ones
+drawn with the body the client reported and maps them through `display-voices.json`. One voice
+left, for a creature whose model the site knows, is written as `display`, confirmed. Several
+voices on one body, as with a dwarf woman who can be maternal, young or guard, leave the row
+`client`, with the flavor chosen among those voices; so do appearances with no known model to
+vouch for them, since the envelope is unauthenticated.
+
+Two things a `display` row can still get wrong, both left to a moderator's Edit. Rolls can
+miss a rare appearance: one with a 10% chance is missed about 3% of the time, and if it has a
+voice of its own the row confirms the other one, which a later `client` report cannot outrank.
+And an NPC drawn with two bodies, like a Bluffwatcher, takes the voice of whichever body the
+latest report saw.
 
 An envelope carrying no `kind` resolves to nothing rather than being assumed a creature.
 `ReportButton:TargetForGUID` accepts any GUID `Enums.GUID:CanHaveID` allows, which includes

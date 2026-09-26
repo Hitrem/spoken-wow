@@ -477,7 +477,7 @@ Expect("asking whether there is a gap with nothing on screen never touches the m
     (stub.SetUnitCount and stub.SetUnitCount() or 0), idleSetUnitBefore)
 
 ---------------------------------------------------------------- which appearances it can wear
--- SetCreature rolls one of a creature's appearances per call, so a dozen rolls tell the site
+-- SetCreature rolls one of a creature's appearances per call, so a few dozen rolls tell the site
 -- which appearances exist; the model above says which body the player is looking at.
 SpokenEnv.Addon.db.profile.Contribute.HideButtons = false
 stub.HidePanels()
@@ -494,7 +494,7 @@ stub.ShowPanel("QuestFrameDetailPanel")
 local rollsBefore = stub.SetCreatureCount()
 local early = VoiceOver.Contribute:Capture()
 Expect("a creature not cached yet sends no appearances", early:match("\ndisplays=") == nil, true)
-Expect("...after a dozen rolls", stub.SetCreatureCount() - rollsBefore, 12)
+Expect("...after thirty-two rolls", stub.SetCreatureCount() - rollsBefore, 32)
 
 world.displaysUncached = false
 local rolled = VoiceOver.Contribute:Capture()

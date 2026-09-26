@@ -284,13 +284,15 @@ end
 -- Which appearances the NPC on screen can wear. No API names the one a unit is drawn with --
 -- GetDisplayInfo on a model built with SetUnit answers 0 -- but SetCreature(npcId) builds the
 -- creature from the client's cache and rolls one of its appearances (at most four) by spawn
--- probability, fresh on every call, and GetDisplayInfo answers in the same tick. Twelve rolls
--- found all four of a Bluffwatcher's where five had missed one. The model file id above tells
--- the site which body the player is actually looking at.
+-- probability, fresh on every call, and GetDisplayInfo answers in the same tick. Five rolls
+-- missed one of a Bluffwatcher's four. A missed appearance matters: the site confirms a voice
+-- when only one is left, so an appearance with a 10% chance and a voice of its own must turn
+-- up -- twelve rolls miss it 28% of the time, thirty-two 3%, and a roll costs next to nothing.
+-- The model file id above tells the site which body the player is actually looking at.
 --
 -- One frame, made once, with no parent and never shown: an unshown model draws nothing, and
 -- this client has hung its GPU on model rendering before.
-local DISPLAY_ROLLS = 12
+local DISPLAY_ROLLS = 32
 -- nil until first asked for; false once this client turned out not to have what it takes
 -- (the 1.12-3.3.5 clients have no GetDisplayInfo), so it is never asked again.
 local displayRoller

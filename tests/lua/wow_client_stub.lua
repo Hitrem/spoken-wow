@@ -21,8 +21,8 @@ local world = {
     -- why an early-click read racing the load was never once exercised before this existed.
     modelStillLoading = false,
     -- npcId -> the appearance ids SetCreature can roll for it. Each call takes the next one in
-    -- turn, so a dozen rolls see every appearance the way a dozen random ones almost always
-    -- would, and a test stays deterministic.
+    -- turn, so the addon's rolls see every appearance the way that many random ones almost
+    -- always would, and a test stays deterministic.
     creatureDisplays = {},
     -- True for a creature the client has not cached yet: GetDisplayInfo reads 0.
     displaysUncached = false,
