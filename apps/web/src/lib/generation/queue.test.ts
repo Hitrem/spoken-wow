@@ -13,7 +13,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 
 import { closeDb, db } from "@/lib/db";
 
-import { activeLanes, cancelPending, dismissThrough, claimNext, createBatch, enqueue, failJob, finishJob, laneKey, retryJob, snapshot, type QueueEntry } from "./queue";
+import { activeLanes, cancelPending, dismissThrough, claimNext, createBatch, enqueue, failJob, finishJob, laneKey, pauseQueue, resumeQueue, retryJob, snapshot, type QueueEntry } from "./queue";
 import type { Source } from "@/lib/sections";
 
 /** A file prefix no other run collides with, so tests share one database safely. */
@@ -54,6 +54,8 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  // Pauses are global, so the tests pause only koKR, which no other test file queues in.
+  await db().query(`delete from "regeneration_pause" where "lang" = 'koKR'`);
   // Cascades to the jobs, so nothing this file wrote outlives it.
   if (batches.length) {
     await db().query(`delete from "regeneration_batch" where "id" = any($1::uuid[])`, [batches]);
@@ -311,6 +313,79 @@ describe("claimNext within a lane", () => {
     const again = await claimNext(undefined, aliceLane);
     expect(again!.id).toBe(first!.id);
     expect(again!.attempts).toBe(2);
+  });
+});
+
+describe("pausing", () => {
+  it("claims nothing in a paused language until it is resumed", async () => {
+    const batch = await createBatch("test batch", null, "quests", "koKR");
+    batches.push(batch);
+    await enqueue(batch, [line(1)], "quests", "koKR");
+
+    await pauseQueue(["koKR"], null);
+    expect(await claimJobOfThisRun()).toBeNull();
+
+    await resumeQueue(["koKR"], null);
+    expect(await claimJobOfThisRun()).not.toBeNull();
+  });
+
+  it("does not reclaim an expired lease in a paused language", async () => {
+    // A reclaim is a fresh attempt, and a fresh attempt is new spending.
+    const batch = await createBatch("test batch", null, "quests", "koKR");
+    batches.push(batch);
+    await enqueue(batch, [line(1)], "quests", "koKR");
+    await claimNext(-1000); // a lease that expired a second ago
+
+    await pauseQueue(["koKR"], null);
+    expect(await claimJobOfThisRun()).toBeNull();
+  });
+
+  it("leaves other languages running", async () => {
+    const batch = await newBatch();
+    await enqueue(batch, [line(1)], "quests");
+
+    await pauseQueue(["koKR"], null);
+    expect(await claimJobOfThisRun()).not.toBeNull();
+  });
+
+  it("gives a paused queue's place to the next one", async () => {
+    const [alice, bob] = [await newUser(), await newUser()];
+    const paused = await createBatch("test batch", alice, "quests", "koKR");
+    batches.push(paused);
+    await enqueue(paused, [line(1)], "quests", "koKR");
+    await enqueue(await newBatch("quests", bob), [line(2)], "quests");
+
+    await pauseQueue(["koKR"], null);
+    expect((await activeLanes(1)).map((lane) => lane.owner)).toEqual([bob]);
+
+    await resumeQueue(["koKR"], null);
+    expect((await activeLanes(1)).map((lane) => lane.owner)).toEqual([alice]);
+  });
+
+  it("answers with the languages it changed, so a second press changes nothing", async () => {
+    expect(await pauseQueue(["koKR"], null)).toEqual(["koKR"]);
+    expect(await pauseQueue(["koKR"], null)).toEqual([]);
+    expect(await resumeQueue(["koKR"], null)).toEqual(["koKR"]);
+    expect(await resumeQueue(["koKR"], null)).toEqual([]);
+  });
+
+  it("shows the pause, and the paused queue as paused rather than waiting", async () => {
+    const alice = await newUser();
+    const batch = await createBatch("test batch", alice, "quests", "koKR");
+    batches.push(batch);
+    await enqueue(batch, [line(1)], "quests", "koKR");
+
+    await pauseQueue(["koKR"], alice);
+    const seen = await snapshot(null, { maxActive: 1 });
+
+    expect(seen.paused).toContainEqual(
+      expect.objectContaining({ lang: "koKR", by: `Owner ${alice}` }),
+    );
+    expect(seen.queues.find((queue) => queue.owner === alice)).toMatchObject({
+      status: "paused",
+      pending: 1,
+      ahead: 0,
+    });
   });
 });
 

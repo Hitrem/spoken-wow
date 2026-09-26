@@ -28,6 +28,8 @@ export type ActivityDetail = {
   "take.acked": Record<string, never>;
   "batch.queued": { batchId: string; label?: string | null; count: number };
   "batch.stopped": { batchId?: string; label?: string | null; reason?: string | null; cancelled?: number };
+  "queue.paused": Record<string, never>;
+  "queue.resumed": Record<string, never>;
 
   // Text and pronunciation.
   "text.edited": {
@@ -91,6 +93,7 @@ export function isCategory(value: unknown): value is Category {
 const CATEGORY_OF: Record<string, Category> = {
   take: "audio",
   batch: "audio",
+  queue: "audio",
   text: "text",
   name: "text",
   lexicon: "text",
