@@ -89,6 +89,7 @@ const STATUS_CHIP_OPTIONS: ChipOption[] = STATUS_OPTIONS.map((option) => ({
 
 const PROVENANCE_LABELS: Record<Provenance, string> = {
   corpus: "Corpus",
+  display: "Game data",
   client: "Guessed",
   moderator: "Moderated",
   none: "Unknown",
@@ -239,7 +240,7 @@ export default function ContributionTable({
           gender: option.gender,
           flavor: option.flavor,
           provenance: option.provenance,
-          confirmed: option.provenance === "corpus" || option.provenance === "moderator",
+          confirmed: option.provenance === "corpus" || option.provenance === "display" || option.provenance === "moderator",
           doubtful: option.doubtful,
           flavorOptions: flavorOptionsFor(option.race, option.gender, flavorScopes),
           conflict: [],

@@ -13,7 +13,7 @@
  * normal outcome resolve.ts's own docstring describes for a corpus miss -- and it must stay
  * ranked "moderator" so a lower-ranked client guess can never silently overwrite a human's
  * considered "nothing here". Neither invariant in migration 0031 objects: the "none is empty"
- * check only constrains provenance "none", and the "confirmed implies corpus or moderator"
+ * check only constrains provenance "none", and the "confirmed implies corpus, display or moderator"
  * check is satisfied by "moderator" whether or not the row is confirmed.
  */
 import { recordActivity } from "@/lib/activity/store";

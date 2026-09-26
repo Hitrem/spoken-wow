@@ -180,9 +180,9 @@ export default async function Page({
   // Confirmed/Unconfirmed pills: gone, replaced by the NEEDS_DECISION sentinel folded into this
   // same param. `confirmed` itself really is a strict function of provenance -- resolveNpc and
   // the override route are the only two places that ever write it, and both only ever pair
-  // confirmed:true with "corpus"/"moderator" and confirmed:false with "client"/"none" (migration
-  // 0031's npc_resolution_confirmed_provenance_check enforces the corpus/moderator half at the
-  // schema level) -- but that derivation answers a different question than the one the old
+  // confirmed:true with "corpus"/"display"/"moderator" and confirmed:false with "client"/"none"
+  // (npc_resolution_confirmed_provenance_check, migrations 0031 and 0055, enforces the confirmed
+  // half at the schema level) -- but that derivation answers a different question than the one the old
   // "Unconfirmed" pill asked. "Unconfirmed" was the union `provenance in ('client', 'none')`,
   // the view this whole queue exists to serve (finding the NPCs nobody has settled yet), and no
   // single provenance value can express a union of two -- so it was never a renamed duplicate of

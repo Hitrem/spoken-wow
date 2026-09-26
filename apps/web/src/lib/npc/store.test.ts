@@ -163,6 +163,30 @@ describe("upsertResolution provenance precedence", () => {
     expect(result.npcName).toBe("Boarton the Elder");
     expect((await getResolution("creature", npcId))?.npcName).toBe("Boarton the Elder");
   });
+
+  // `display` is the game's own voice set for the appearance a player saw: exact, like the
+  // corpus, but the corpus is the older authority for the NPCs it carries, so it stays above.
+  it("lets a display answer replace a client guess", async () => {
+    await upsertResolution(resolution({ flavor: "standard", provenance: "client" }));
+    const result = await upsertResolution(
+      resolution({ flavor: "warrior", provenance: "display", confirmed: true }),
+    );
+    expect(result).toMatchObject({ flavor: "warrior", provenance: "display", confirmed: true });
+  });
+
+  it("does not let a client guess from an older addon overwrite a display answer", async () => {
+    await upsertResolution(resolution({ flavor: "warrior", provenance: "display", confirmed: true }));
+    const result = await upsertResolution(resolution({ flavor: "standard", provenance: "client" }));
+    expect(result).toMatchObject({ flavor: "warrior", provenance: "display" });
+  });
+
+  it("does not let a display answer overwrite the corpus", async () => {
+    await upsertResolution(resolution({ flavor: "grim", provenance: "corpus", confirmed: true }));
+    const result = await upsertResolution(
+      resolution({ flavor: "warrior", provenance: "display", confirmed: true }),
+    );
+    expect(result).toMatchObject({ flavor: "grim", provenance: "corpus" });
+  });
 });
 
 // Derived from PROVENANCES rather than listing the values by hand: a fifth provenance added to
