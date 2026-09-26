@@ -162,7 +162,7 @@ export async function loadDirtyContext(
  * Say that these takes are fine as they stand. Idempotent; a second clear moves the date.
  *
  * Several files are one click, logged as one "marks.cleared" row with every file's row
- * grouped under it for the page to fold (migration 0053). The marks and their log rows are
+ * grouped under it for the page to fold (migration 0055). The marks and their log rows are
  * one transaction: a click's row lost while its files' rows landed would hide those files
  * from the log for good, so a failed log write fails the clear rather than being swallowed.
  */
