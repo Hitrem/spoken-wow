@@ -35,13 +35,22 @@ type Action = "upload" | "import" | "merge" | "delete" | "clone";
 type Props = {
   voice: string;
   samples: Sample[];
+  /** Whether voice/npc-lines has barks for this voice in this language. */
+  hasGameClips: boolean;
   /** Whether a voice of this name already exists in the ElevenLabs account. */
   exists: boolean;
   onChange: (samples: Sample[]) => void;
   onCloned: () => void;
 };
 
-export default function VoiceSamples({ voice, samples, exists, onChange, onCloned }: Props) {
+export default function VoiceSamples({
+  voice,
+  samples,
+  hasGameClips,
+  exists,
+  onChange,
+  onCloned,
+}: Props) {
   const lang = useLang();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<Action | null>(null);
@@ -153,12 +162,6 @@ export default function VoiceSamples({ voice, samples, exists, onChange, onClone
   const pauseSeconds = Number(pause);
   const pauseValid =
     Number.isFinite(pauseSeconds) && pauseSeconds >= 0 && pauseSeconds <= MAX_PAUSE;
-  // Only a flavored voice has game clips to seed from: narrator-male is a pseudo-race for
-  // gameobjects and bloodelf-female a later expansion's model, and the game recorded NPC
-  // voice sets for neither. Read off the name rather than fetched, since that is exactly how
-  // the server locates the directory.
-  const hasGameClips = voice.split("-").length === 3;
-
   return (
     <div className="bg-muted/30 border-t px-4 py-3">
       {samples.length === 0 ? (

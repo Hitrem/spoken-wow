@@ -77,6 +77,8 @@ type Props = {
   setPresent: Dispatch<SetStateAction<Set<string> | null>>;
   samples: Record<string, Sample[]>;
   setSamples: Dispatch<SetStateAction<Record<string, Sample[]>>>;
+  /** Slots with game barks to import in this language. */
+  gameClips: string[];
   /** This language's fish.audio references, by voice. */
   references: Record<string, ReferenceView>;
   setReferences: Dispatch<SetStateAction<Record<string, ReferenceView>>>;
@@ -97,6 +99,7 @@ export default function VoiceSlotList({
   setPresent,
   samples,
   setSamples,
+  gameClips,
   references,
   setReferences,
   raceTags,
@@ -119,8 +122,7 @@ export default function VoiceSlotList({
   } | null>(null);
   const [confirmingSweep, setConfirmingSweep] = useState(false);
 
-  // Only flavored voices have game clips - see hasGameClips in VoiceSamples.
-  const seedable = slots.filter((slot) => slot.name.split("-").length === 3);
+  const seedable = slots.filter((slot) => gameClips.includes(slot.name));
 
   // Voices that do not exist in the account yet. Empty while the account could not be read,
   // because "missing" would then mean "unknown" and the button would offer to rebuild
@@ -234,7 +236,7 @@ export default function VoiceSlotList({
           {confirmingSweep && (
             <>
               <span className="text-xs text-amber-400">
-                This replaces the clips and the ElevenLabs voice for all {seedable.length} flavored{" "}
+                This replaces the clips and the ElevenLabs voice for all {seedable.length}{" "}
                 {langName(lang)} voices ({cloneName(seedable[0]?.name ?? "dwarf-male-grim", lang)}
                 {" "}and the rest). Existing {langName(lang)} voices are deleted and re-created, so
                 they will not sound the same afterwards.
@@ -395,6 +397,7 @@ export default function VoiceSlotList({
                         <VoiceSamples
                           voice={slot.name}
                           samples={clips}
+                          hasGameClips={gameClips.includes(slot.name)}
                           exists={present?.has(slot.name) ?? false}
                           onChange={(next) =>
                             setSamples((current) => ({ ...current, [slot.name]: next }))
@@ -408,6 +411,10 @@ export default function VoiceSlotList({
                         <FishReference
                           voice={slot.name}
                           samples={clips}
+                          hasGameClips={gameClips.includes(slot.name)}
+                          onSamples={(next) =>
+                            setSamples((current) => ({ ...current, [slot.name]: next }))
+                          }
                           initial={references[slot.name] ?? null}
                           onChange={(next) =>
                             setReferences((current) => {

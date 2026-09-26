@@ -13,6 +13,7 @@ import { viewerOf } from "@/lib/grants/store";
 import { canManageVoices, canViewVoices } from "@/lib/permissions";
 import { currentSession } from "@/lib/session";
 import { FISH_MODELS } from "@/lib/voices/fish";
+import { npcLineClips } from "@/lib/voices/npcLines";
 import { listReferences } from "@/lib/voices/references";
 import { listSamples, type Sample } from "@/lib/voices/samples";
 import { slots } from "@/lib/voices/slots";
@@ -70,6 +71,17 @@ export default async function Page({
     ),
   );
 
+  // The slots the game's barks can seed, read off voice/npc-lines rather than guessed from the
+  // name: a bare slot like bloodelf-female has barks and bloodelf-male has none, and another
+  // language's set is only there once it has been fetched and pushed.
+  const gameClips = (
+    await Promise.all(
+      all.map(async (slot) =>
+        (await npcLineClips(cloneName(slot.name, lang))).length > 0 ? slot.name : null,
+      ),
+    )
+  ).filter((name) => name !== null);
+
   const { tab } = await searchParams;
 
   return (
@@ -96,6 +108,7 @@ export default async function Page({
         }))}
         slots={all}
         initialSamples={samples}
+        gameClips={gameClips}
         initialReferences={Object.fromEntries(references)}
         raceTags={settings.config.raceTags}
         existing={readable ? [...account.voiceIds.keys()] : null}
