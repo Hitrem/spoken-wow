@@ -240,6 +240,7 @@ export default function ContributionTable({
           flavor: option.flavor,
           provenance: option.provenance,
           confirmed: option.provenance === "corpus" || option.provenance === "moderator",
+          doubtful: option.doubtful,
           flavorOptions: flavorOptionsFor(option.race, option.gender, flavorScopes),
           conflict: [],
         },

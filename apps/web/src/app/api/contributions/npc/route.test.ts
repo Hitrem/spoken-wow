@@ -74,6 +74,21 @@ describe("POST /api/contributions/npc", () => {
     expect(logged).toEqual([{ lang: "enUS", detail: expect.objectContaining({ flavor: "grim" }) }]);
   });
 
+  it("saves a doubtful answer as confirmed, and a later save without the flag clears it", async () => {
+    // The flag marks an answer for a second look; it must not hold the NPC's lines back, so the
+    // row is confirmed like any other moderator answer.
+    await POST(post({ npcKind: "creature", npcId, race: "dwarf", gender: "female", flavor: "guard", doubtful: true }));
+    expect(await getResolution("creature", npcId)).toMatchObject({
+      flavor: "guard",
+      provenance: "moderator",
+      confirmed: true,
+      doubtful: true,
+    });
+
+    await POST(post({ npcKind: "creature", npcId, flavor: "guard" }));
+    expect(await getResolution("creature", npcId)).toMatchObject({ flavor: "guard", doubtful: false });
+  });
+
   it("refuses a kind it does not know", async () => {
     expect((await POST(post({ npcKind: "item", npcId, race: "tauren" }))).status).toBe(400);
   });
@@ -115,6 +130,7 @@ describe("POST /api/contributions/npc", () => {
       flavor: "standard",
       provenance: "client",
       confirmed: false,
+      doubtful: false,
       modelFileId: 12345,
       sex: 0,
       creatureType: "Humanoid",
@@ -131,6 +147,7 @@ describe("POST /api/contributions/npc", () => {
       race: "tauren",
       provenance: "moderator",
       confirmed: true,
+      doubtful: false,
       modelFileId: 12345,
       sex: 0,
       creatureType: "Humanoid",
@@ -158,6 +175,7 @@ describe("POST /api/contributions/npc", () => {
       flavor: "warrior",
       provenance: "client",
       confirmed: false,
+      doubtful: false,
       modelFileId: 122055,
       sex: 2,
       creatureType: "Humanoid",
@@ -176,6 +194,7 @@ describe("POST /api/contributions/npc", () => {
       flavor: "grim",
       provenance: "moderator",
       confirmed: true,
+      doubtful: false,
     });
   });
 
@@ -191,6 +210,7 @@ describe("POST /api/contributions/npc", () => {
       flavor: "warrior",
       provenance: "client",
       confirmed: false,
+      doubtful: false,
       modelFileId: 122055,
       sex: 2,
       creatureType: "Humanoid",
@@ -225,6 +245,7 @@ describe("POST /api/contributions/npc", () => {
       flavor: null,
       provenance: "moderator",
       confirmed: true,
+      doubtful: false,
     });
   });
 });

@@ -26,6 +26,8 @@ export type NpcResolution = {
   flavor: string | null;
   provenance: Provenance;
   confirmed: boolean;
+  /** A moderator's answer flagged for a later look (migration 0054). Still confirmed. */
+  doubtful: boolean;
   modelFileId: number | null;
   sex: number | null;
   creatureType: string | null;
@@ -36,7 +38,7 @@ export type NpcResolution = {
 };
 
 const COLUMNS = `"npcKind", "npcId", "npcName", "race", "gender", "flavor", "provenance",
-                 "confirmed", "modelFileId", "sex", "creatureType", "build", "note",
+                 "confirmed", "doubtful", "modelFileId", "sex", "creatureType", "build", "note",
                  "resolvedBy", "updatedAt"::text`;
 
 export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcResolution | null> {
@@ -86,8 +88,8 @@ export async function upsertResolution(
   const { rows } = await db().query<NpcResolution>(
     `insert into "npc_resolution"
        ("npcKind", "npcId", "npcName", "race", "gender", "flavor", "provenance", "confirmed",
-        "modelFileId", "sex", "creatureType", "build", "note", "resolvedBy")
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        "doubtful", "modelFileId", "sex", "creatureType", "build", "note", "resolvedBy")
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      on conflict ("npcKind", "npcId") do update
        set "npcName" = excluded."npcName",
            "race" = excluded."race",
@@ -95,6 +97,7 @@ export async function upsertResolution(
            "flavor" = excluded."flavor",
            "provenance" = excluded."provenance",
            "confirmed" = excluded."confirmed",
+           "doubtful" = excluded."doubtful",
            "modelFileId" = excluded."modelFileId",
            "sex" = excluded."sex",
            "creatureType" = excluded."creatureType",
@@ -107,7 +110,7 @@ export async function upsertResolution(
      returning ${COLUMNS}`,
     [
       input.npcKind, input.npcId, input.npcName, input.race, input.gender, input.flavor,
-      input.provenance, input.confirmed, input.modelFileId, input.sex, input.creatureType,
+      input.provenance, input.confirmed, input.doubtful, input.modelFileId, input.sex, input.creatureType,
       input.build, input.note, input.resolvedBy,
     ],
   );

@@ -41,6 +41,7 @@ function resolution(overrides: Partial<Parameters<typeof npcSummaryFrom>[1] & ob
     flavor: "standard",
     provenance: "corpus" as const,
     confirmed: true,
+    doubtful: false,
     modelFileId: null,
     sex: null,
     creatureType: null,
@@ -67,6 +68,7 @@ describe("npcSummaryFrom", () => {
       flavor: null,
       provenance: "none",
       confirmed: false,
+      doubtful: false,
       flavorOptions: [],
       conflict: [],
     });
@@ -77,8 +79,8 @@ describe("npcSummaryFrom", () => {
     expect(
       (await npcSummaryFrom({ npcKind: null, npcId: 288, npcName: "Jitters" }, undefined, [other, resolution()])).conflict,
     ).toEqual([
-      { npcKind: "gameobject", race: "tauren", gender: "male", flavor: "standard", provenance: "moderator" },
-      { npcKind: "creature", race: "human", gender: "male", flavor: "standard", provenance: "corpus" },
+      { npcKind: "gameobject", race: "tauren", gender: "male", flavor: "standard", provenance: "moderator", doubtful: false },
+      { npcKind: "creature", race: "human", gender: "male", flavor: "standard", provenance: "corpus", doubtful: false },
     ]);
   });
 

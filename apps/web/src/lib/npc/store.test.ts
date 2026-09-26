@@ -36,6 +36,7 @@ function resolution(overrides: Record<string, unknown> = {}) {
     flavor: "standard",
     provenance: "client" as const,
     confirmed: false,
+    doubtful: false,
     modelFileId: 122055,
     sex: 2,
     creatureType: "Humanoid",
@@ -216,6 +217,12 @@ describe("listResolutions", () => {
 });
 
 describe("npc_resolution invariants", () => {
+  it("rejects a doubtful row that is not a moderator's", async () => {
+    await expect(
+      upsertResolution(resolution({ provenance: "client", confirmed: false, doubtful: true })),
+    ).rejects.toThrow(/npc_resolution_doubtful_provenance_check/);
+  });
+
   it("rejects a client row marked confirmed", async () => {
     await expect(
       db().query(

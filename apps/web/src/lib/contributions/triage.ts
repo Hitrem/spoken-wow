@@ -53,6 +53,8 @@ export type NpcSummary = {
   flavor: string | null;
   provenance: Provenance;
   confirmed: boolean;
+  /** A moderator's answer they flagged for a later look -- see migration 0054. */
+  doubtful: boolean;
   /**
    * flavorsFor(race, gender), or [] when either is unknown -- corpus.ts is server-only, so this
    * is computed once here rather than in the client component that renders it.
@@ -65,7 +67,10 @@ export type NpcSummary = {
   conflict: NpcConflictOption[];
 };
 
-export type NpcConflictOption = Pick<NpcResolution, "npcKind" | "race" | "gender" | "flavor" | "provenance">;
+export type NpcConflictOption = Pick<
+  NpcResolution,
+  "npcKind" | "race" | "gender" | "flavor" | "provenance" | "doubtful"
+>;
 
 /** What an id-only lookup found for a kind-less contribution: one answer, or a conflict. */
 export type IdOnlyLookup = {
@@ -130,9 +135,17 @@ export async function npcSummaryFrom(
     flavor: resolution?.flavor ?? null,
     provenance: resolution?.provenance ?? "none",
     confirmed: resolution?.confirmed ?? false,
+    doubtful: resolution?.doubtful ?? false,
     flavorOptions:
       resolution?.race && resolution?.gender ? await flavorsFor(resolution.race, resolution.gender) : [],
-    conflict: conflict.map(({ npcKind, race, gender, flavor, provenance }) => ({ npcKind, race, gender, flavor, provenance })),
+    conflict: conflict.map(({ npcKind, race, gender, flavor, provenance, doubtful }) => ({
+      npcKind,
+      race,
+      gender,
+      flavor,
+      provenance,
+      doubtful,
+    })),
   };
 }
 

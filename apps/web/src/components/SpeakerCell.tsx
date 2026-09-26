@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 // `import type`: triage.ts is server-only (it pulls in corpus.ts), see ContributionTable.
 import type { NpcSummary } from "@/lib/contributions/triage";
 import { flavorOptionsFor, type FlavorScope } from "@/lib/contributions/speaker";
@@ -16,7 +17,13 @@ import { NPC_KINDS, type NpcKind, type Provenance } from "@/lib/npc/npc";
 import { GENDERS, gendersOf, RACES, type Gender } from "@/lib/voices/voices";
 
 /** What a saved answer posts: see SpeakerCell's own docstring for why every key is optional. */
-export type SpeakerAnswer = Partial<{ npcKind: NpcKind; race: string; gender: string; flavor: string }>;
+export type SpeakerAnswer = Partial<{
+  npcKind: NpcKind;
+  race: string;
+  gender: string;
+  flavor: string;
+  doubtful: boolean;
+}>;
 
 // A speaker's provenance as a pill: a letter or two, so the answer and its Edit fit on one
 // line, with what it means on hover.
@@ -32,6 +39,22 @@ export function ProvenanceBadge({ provenance }: { provenance: Provenance }) {
   return (
     <Badge variant="outline" className="cursor-help px-1.5 py-0 leading-5" title={pill.title}>
       {pill.short}
+    </Badge>
+  );
+}
+
+/**
+ * A moderator's answer they are not sure of (migration 0054): voiced like any other, flagged so
+ * /contributions/npcs can find it again for a second look.
+ */
+function DoubtBadge() {
+  return (
+    <Badge
+      variant="outline"
+      className="cursor-help border-amber-500/60 px-1.5 py-0 leading-5 text-amber-600 dark:text-amber-400"
+      title="Doubtful: a best answer, saved to be checked later"
+    >
+      doubt
     </Badge>
   );
 }
@@ -101,6 +124,7 @@ export default function SpeakerCell({
   const [race, setRace] = useState(npc.race ?? "");
   const [gender, setGender] = useState(npc.gender ?? "");
   const [flavor, setFlavor] = useState(npc.flavor ?? "");
+  const [doubtful, setDoubtful] = useState(npc.doubtful);
   // Only ever read for a kind-less row (npc.npcKind === null): NPC_KINDS's own values, "creature"
   // or "gameobject", picked by the moderator rather than guessed -- see NpcSummary's own
   // docstring for why resolveNpc refuses to make this guess itself.
@@ -122,6 +146,7 @@ export default function SpeakerCell({
         <div className="flex items-center gap-1 whitespace-nowrap">
           <span>{speaker(npc)}</span>
           <ProvenanceBadge provenance={npc.provenance} />
+          {npc.doubtful ? <DoubtBadge /> : null}
         </div>
         {speakerNote(npc) ? <p className="text-muted-foreground mt-0.5">{speakerNote(npc)}</p> : null}
       </div>
@@ -141,6 +166,7 @@ export default function SpeakerCell({
         <div className="flex items-center gap-1 whitespace-nowrap">
           <span>{speaker(npc)}</span>
           <ProvenanceBadge provenance={npc.provenance} />
+          {npc.doubtful ? <DoubtBadge /> : null}
           <Button
             size="sm"
             variant="ghost"
@@ -265,6 +291,15 @@ export default function SpeakerCell({
             Edit
           </Button>
         ) : null}
+        {/* Unticked by default and resent on every save: the flag is part of the answer, so a
+            save made without it is one the moderator now stands by. */}
+        <label
+          className="text-muted-foreground flex items-center gap-1"
+          title="Save as a best answer, to be checked later -- lines still voice from it"
+        >
+          <Checkbox checked={doubtful} onCheckedChange={(next) => setDoubtful(next === true)} />
+          doubt
+        </label>
         <Button
           size="sm"
           variant="outline"
@@ -278,8 +313,8 @@ export default function SpeakerCell({
             // (and risking retyping wrong) values this form doesn't even offer as inputs there.
             onSave(
               known
-                ? { flavor }
-                : { npcKind: kind || undefined, race, gender, flavor },
+                ? { flavor, doubtful }
+                : { npcKind: kind || undefined, race, gender, flavor, doubtful },
             );
             // Collapses back to the plain, settled view either way: the caller owns the request,
             // and a failed save leaves `npc` exactly as it was, so this re-shows that answer

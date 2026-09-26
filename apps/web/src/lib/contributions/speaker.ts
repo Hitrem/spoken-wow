@@ -29,6 +29,7 @@ export function summaryFromResolution(resolution: NpcResolution, flavorScopes: F
     flavor: resolution.flavor,
     provenance: resolution.provenance,
     confirmed: resolution.confirmed,
+    doubtful: resolution.doubtful,
     flavorOptions: flavorOptionsFor(resolution.race, resolution.gender, flavorScopes),
     conflict: [],
   };

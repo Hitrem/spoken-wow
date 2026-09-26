@@ -63,6 +63,7 @@ export type ActivityDetail = {
     race?: string | null;
     gender?: string | null;
     flavor?: string | null;
+    doubtful?: boolean;
   };
 
   // Admin.

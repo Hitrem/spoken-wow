@@ -37,14 +37,16 @@ const SPEAKER_CHIP_OPTIONS: ChipOption[] = PROVENANCES.map((option) => ({
   label: PROVENANCE_LABELS[option],
 }));
 
-type Progress = "unfinished" | "finished";
+const PROGRESSES = ["unfinished", "doubtful", "finished"] as const;
+type Progress = (typeof PROGRESSES)[number];
 
 function isProgress(value: unknown): value is Progress {
-  return value === "unfinished" || value === "finished";
+  return (PROGRESSES as readonly unknown[]).includes(value);
 }
 
 const PROGRESS_CHIP_OPTIONS: ChipOption[] = [
   { value: "unfinished", label: "Unfinished" },
+  { value: "doubtful", label: "Doubtful" },
   { value: "finished", label: "Finished" },
 ];
 
@@ -56,6 +58,15 @@ const PROGRESS_CHIP_OPTIONS: ChipOption[] = [
 function unfinished(npc: NpcSummary): boolean {
   if (npc.confirmed && !npc.race && !npc.gender && !npc.flavor) return false;
   return !npc.race || !npc.gender || (npc.flavorOptions.length > 0 && !npc.flavor);
+}
+
+/**
+ * Where an NPC stands for the progress filter. A blank outranks a doubt, being the more
+ * pressing thing to fill, and "finished" means neither.
+ */
+function progressOf(npc: NpcSummary): Progress {
+  if (unfinished(npc)) return "unfinished";
+  return npc.doubtful ? "doubtful" : "finished";
 }
 
 export default function NpcEditor({
@@ -125,7 +136,7 @@ export default function NpcEditor({
           !needle || String(npc.npcId).includes(needle) || (npc.npcName ?? "").toLowerCase().includes(needle),
       )
       .filter((npc) => !provenance || npc.provenance === provenance)
-      .filter((npc) => !progress || unfinished(npc) === (progress === "unfinished"));
+      .filter((npc) => !progress || progressOf(npc) === progress);
   }, [initial, saved, query, provenance, progress]);
 
   return (
@@ -202,7 +213,7 @@ export default function NpcEditor({
                   <td className="pr-3 text-xs">
                     <SpeakerCell
                       // Remount on a save, so the form's own state starts from the new answer.
-                      key={`${npc.provenance}:${npc.race}:${npc.gender}:${npc.flavor}`}
+                      key={`${npc.provenance}:${npc.race}:${npc.gender}:${npc.flavor}:${npc.doubtful}`}
                       npc={npc}
                       flavorScopes={flavorScopes}
                       readOnly={false}

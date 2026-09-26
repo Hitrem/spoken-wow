@@ -103,7 +103,7 @@ describe("resolveNpc", () => {
   it("prefers a moderator's answer over everything", async () => {
     vi.mocked(getResolution).mockResolvedValue({
       ...observed, race: "highmountaintauren", gender: "male", flavor: "grim",
-      provenance: "moderator", confirmed: true, note: null, resolvedBy: "u1", updatedAt: "now",
+      provenance: "moderator", confirmed: true, doubtful: false, note: null, resolvedBy: "u1", updatedAt: "now",
     });
     const row = await resolveNpc(observed);
     expect(row?.race).toBe("highmountaintauren");

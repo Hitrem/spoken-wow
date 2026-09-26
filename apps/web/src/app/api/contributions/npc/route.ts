@@ -73,6 +73,9 @@ export async function POST(request: Request) {
     flavor: orExisting(body.flavor, existing?.flavor ?? null, 64),
     provenance: "moderator",
     confirmed: true,
+    // Sent on every save rather than kept when absent, unlike the fields above: a save is the
+    // moderator's whole current answer, and one made without the flag is one they now stand by.
+    doubtful: body.doubtful === true,
     modelFileId: existing?.modelFileId ?? null,
     sex: existing?.sex ?? null,
     creatureType: existing?.creatureType ?? null,
@@ -88,7 +91,13 @@ export async function POST(request: Request) {
     lang: BASE_LANG,
     actorId: session.user.id,
     subject: resolutionKey(npcKind, npcId),
-    detail: { npcName: row.npcName, race: row.race, gender: row.gender, flavor: row.flavor },
+    detail: {
+      npcName: row.npcName,
+      race: row.race,
+      gender: row.gender,
+      flavor: row.flavor,
+      doubtful: row.doubtful,
+    },
   });
 
   return Response.json({ resolution: row });
