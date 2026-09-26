@@ -6,11 +6,14 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
-## Unreleased — player
+## 2.1.2 — player
 
 - **Contributions name the NPC's voice more often.** The Contribute button now also sends the
   appearances the NPC can be drawn with, which tell the site the exact voice the game gives
   it, including for NPCs added after vanilla.
+- **Closing the map with a gamepad no longer hangs the Forever client.** The quest log's Play,
+  Contribute and details buttons were created in a way that tainted the client's gamepad
+  navigation, so closing the map was blocked, and so was every button of the dialog saying so.
 
 ## 2.1.1 — player
 
