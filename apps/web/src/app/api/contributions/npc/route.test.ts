@@ -89,6 +89,37 @@ describe("POST /api/contributions/npc", () => {
     expect(await getResolution("creature", npcId)).toMatchObject({ flavor: "guard", doubtful: false });
   });
 
+  // The NPC tab's bulk save: only the flag is posted, and the guess on file becomes the answer.
+  it("takes a client guess as the moderator's answer when only the flag is posted", async () => {
+    await upsertResolution({
+      npcKind: "creature",
+      npcId,
+      npcName: "Some Guard",
+      race: "dwarf",
+      gender: "female",
+      flavor: "guard",
+      provenance: "client",
+      confirmed: false,
+      doubtful: false,
+      modelFileId: 12345,
+      sex: 1,
+      creatureType: "Humanoid",
+      build: "1.12.1.5875",
+      note: null,
+      resolvedBy: null,
+    });
+
+    expect((await POST(post({ npcKind: "creature", npcId, doubtful: true }))).status).toBe(200);
+    expect(await getResolution("creature", npcId)).toMatchObject({
+      race: "dwarf",
+      gender: "female",
+      flavor: "guard",
+      provenance: "moderator",
+      confirmed: true,
+      doubtful: true,
+    });
+  });
+
   it("refuses a kind it does not know", async () => {
     expect((await POST(post({ npcKind: "item", npcId, race: "tauren" }))).status).toBe(400);
   });

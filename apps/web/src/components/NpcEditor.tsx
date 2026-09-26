@@ -12,6 +12,8 @@ import { useCallback, useMemo, useState } from "react";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { useLang } from "@/components/LangProvider";
 import SpeakerCell, { type SpeakerAnswer } from "@/components/SpeakerCell";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { summaryFromResolution, type FlavorScope } from "@/lib/contributions/speaker";
 import type { NpcSummary } from "@/lib/contributions/triage";
@@ -102,12 +104,16 @@ export default function NpcEditor({
   const [saved, setSaved] = useState<Record<string, NpcSummary>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  /** Rows ticked for the bulk saves, keyed by NPC. */
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  /** A bulk run in flight, for its progress line and to hold every other control still meanwhile. */
+  const [bulk, setBulk] = useState<{ doubtful: boolean; done: number; total: number } | null>(null);
+  /** What the last bulk run came to, until the next one starts. */
+  const [bulkOutcome, setBulkOutcome] = useState<string | null>(null);
 
-  const save = useCallback(
-    async (npc: NpcSummary, answer: SpeakerAnswer) => {
-      const k = key(npc.npcKind, npc.npcId);
-      setBusy(k);
-      setFailed(null);
+  /** One answer, posted and taken into `saved`. True when it landed. */
+  const post = useCallback(
+    async (npc: NpcSummary, answer: SpeakerAnswer): Promise<boolean> => {
       // Every row here came from npc_resolution, so npcKind is never null and the route's
       // required kind is always the row's own.
       const response = await fetch("/api/contributions/npc", {
@@ -115,15 +121,54 @@ export default function NpcEditor({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...answer, npcKind: npc.npcKind, npcId: npc.npcId }),
       }).catch(() => null);
-      setBusy(null);
-      if (!response?.ok) {
-        setFailed(k);
-        return;
-      }
+      if (!response?.ok) return false;
       const { resolution } = (await response.json()) as { resolution: NpcResolution };
-      setSaved((current) => ({ ...current, [k]: summaryFromResolution(resolution, flavorScopes) }));
+      setSaved((current) => ({
+        ...current,
+        [key(npc.npcKind, npc.npcId)]: summaryFromResolution(resolution, flavorScopes),
+      }));
+      return true;
     },
     [flavorScopes],
+  );
+
+  const save = useCallback(
+    async (npc: NpcSummary, answer: SpeakerAnswer) => {
+      const k = key(npc.npcKind, npc.npcId);
+      setBusy(k);
+      setFailed(null);
+      const ok = await post(npc, answer);
+      setBusy(null);
+      if (!ok) setFailed(k);
+    },
+    [post],
+  );
+
+  /**
+   * Each ticked NPC's answer as it stands, saved as the moderator's own -- a guess taken as
+   * right, or a doubt settled or raised. Only `doubtful` is sent: the route keeps race, gender
+   * and flavor for a key left off the POST, so nothing on the row is retyped. One at a time,
+   * as the triage table's bulk accept is, so a failure is attributable to its row.
+   */
+  const saveMany = useCallback(
+    async (npcs: NpcSummary[], doubtful: boolean) => {
+      setBulkOutcome(null);
+      setBulk({ doubtful, done: 0, total: npcs.length });
+      const refused: string[] = [];
+      for (const [index, npc] of npcs.entries()) {
+        if (!(await post(npc, { doubtful }))) refused.push(key(npc.npcKind, npc.npcId));
+        setBulk({ doubtful, done: index + 1, total: npcs.length });
+      }
+      setBulk(null);
+      // The failed rows stay ticked, so pressing the same button again is the whole retry.
+      setSelected(new Set(refused));
+      setBulkOutcome(
+        `Saved ${npcs.length - refused.length} of ${npcs.length}` +
+          (doubtful ? " as doubtful" : "") +
+          (refused.length > 0 ? ` -- ${refused.length} failed and left selected.` : "."),
+      );
+    },
+    [post],
   );
 
   // Not rebuilt when only `busy` or `failed` changes.
@@ -138,6 +183,21 @@ export default function NpcEditor({
       .filter((npc) => !provenance || npc.provenance === provenance)
       .filter((npc) => !progress || progressOf(npc) === progress);
   }, [initial, saved, query, provenance, progress]);
+
+  // Only rows still on screen count, as in the triage table: a ticked row a filter now hides
+  // must not be saved by a button that no longer shows it.
+  const selectedRows = rows.filter((npc) => selected.has(key(npc.npcKind, npc.npcId)));
+  // A bulk save keeps each row's own answer, so a row without a race and gender has nothing to
+  // keep -- saving it would file "this NPC has no race" as a decision nobody made.
+  const savable = selectedRows.filter((npc) => npc.race && npc.gender);
+  const allTicked = rows.length > 0 && selectedRows.length === rows.length;
+  const toggle = (k: string, on: boolean) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (on) next.add(k);
+      else next.delete(k);
+      return next;
+    });
 
   return (
     <>
@@ -166,12 +226,67 @@ export default function NpcEditor({
         </span>
       </div>
 
+      {rows.length > 0 ? (
+        <div className="mb-3 flex min-h-8 flex-wrap items-center gap-2 text-xs">
+          {bulk ? (
+            <span className="text-muted-foreground">
+              Saving{bulk.doubtful ? " as doubtful" : ""}: {bulk.done} of {bulk.total}…
+            </span>
+          ) : (
+            <>
+              {selectedRows.length > 0 ? (
+                <>
+                  <span className="text-muted-foreground">{selectedRows.length} selected</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={savable.length === 0}
+                    onClick={() => void saveMany(savable, false)}
+                  >
+                    Save ({savable.length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={savable.length === 0}
+                    onClick={() => void saveMany(savable, true)}
+                  >
+                    Save as doubtful ({savable.length})
+                  </Button>
+                  {savable.length < selectedRows.length ? (
+                    <span className="text-muted-foreground">
+                      {selectedRows.length - savable.length} without a race and gender skipped
+                    </span>
+                  ) : null}
+                  <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                    Clear
+                  </Button>
+                </>
+              ) : (
+                <span className="text-muted-foreground">Tick rows to save their answers in bulk.</span>
+              )}
+              {bulkOutcome ? <span className="text-muted-foreground ml-2">{bulkOutcome}</span> : null}
+            </>
+          )}
+        </div>
+      ) : null}
+
       {rows.length === 0 ? (
         <p className="text-muted-foreground text-sm">Nothing here.</p>
       ) : (
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead className="text-muted-foreground text-left text-xs">
             <tr>
+              <th className="border-b py-2 pr-2 font-normal">
+                <Checkbox
+                  aria-label="Select every NPC shown"
+                  checked={allTicked ? true : selectedRows.length > 0 ? "indeterminate" : false}
+                  disabled={bulk !== null}
+                  onCheckedChange={(on) =>
+                    setSelected(on === true ? new Set(rows.map((npc) => key(npc.npcKind, npc.npcId))) : new Set())
+                  }
+                />
+              </th>
               <th className="border-b py-2 pr-3 font-normal">ID</th>
               <th className="border-b py-2 pr-3 font-normal">Name</th>
               <th className="border-b py-2 pr-3 font-normal">Race / gender / flavor</th>
@@ -183,6 +298,14 @@ export default function NpcEditor({
               const k = key(npc.npcKind, npc.npcId);
               return (
                 <tr key={k} className="align-top [&>td]:border-b [&>td]:py-2 [&>td]:leading-5">
+                  <td className="pr-2">
+                    <Checkbox
+                      aria-label={`Select NPC ${npc.npcId}`}
+                      checked={selected.has(k)}
+                      disabled={bulk !== null}
+                      onCheckedChange={(on) => toggle(k, on === true)}
+                    />
+                  </td>
                   <td className="pr-3 text-xs whitespace-nowrap">
                     <span className="font-mono">{npc.npcId}</span>
                     {npc.npcKind === "gameobject" ? (
@@ -217,7 +340,7 @@ export default function NpcEditor({
                       npc={npc}
                       flavorScopes={flavorScopes}
                       readOnly={false}
-                      busy={busy === k}
+                      busy={busy === k || bulk !== null}
                       onSave={(answer) => void save(npc, answer)}
                     />
                     {failed === k ? (
