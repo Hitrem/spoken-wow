@@ -6,6 +6,7 @@
  * npc_resolution beyond what is rendered crosses into the client.
  */
 import { SearchIcon } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
@@ -38,6 +39,10 @@ const SPEAKER_CHIP_OPTIONS: ChipOption[] = PROVENANCES.map((option) => ({
 
 type Progress = "unfinished" | "finished";
 
+function isProgress(value: unknown): value is Progress {
+  return value === "unfinished" || value === "finished";
+}
+
 const PROGRESS_CHIP_OPTIONS: ChipOption[] = [
   { value: "unfinished", label: "Unfinished" },
   { value: "finished", label: "Finished" },
@@ -62,9 +67,26 @@ export default function NpcEditor({
   flavorScopes: FlavorScope[];
 }) {
   const lang = useLang();
-  const [query, setQuery] = useState("");
-  const [provenance, setProvenance] = useState<Provenance | undefined>();
-  const [progress, setProgress] = useState<Progress | undefined>();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  // The filters live in the URL, so a reload or a shared link keeps the view. Written with
+  // history.replaceState rather than router.replace, for zones/Explorer.tsx's reason: the rows
+  // are all here already, and Next re-renders useSearchParams() from a native history call.
+  const query = params.get("q") ?? "";
+  const speakerParam = params.get("speaker");
+  const provenance = isProvenance(speakerParam) ? speakerParam : undefined;
+  const progressParam = params.get("progress");
+  const progress = isProgress(progressParam) ? progressParam : undefined;
+  const setParam = useCallback(
+    (name: string, value: string | undefined) => {
+      const search = new URLSearchParams(params.toString());
+      if (value) search.set(name, value);
+      else search.delete(name);
+      const next = search.toString();
+      window.history.replaceState(null, "", next ? `${pathname}?${next}` : pathname);
+    },
+    [params, pathname],
+  );
   /** What this session saved, over the server's rows, keyed by NPC. */
   const [saved, setSaved] = useState<Record<string, NpcSummary>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -113,20 +135,20 @@ export default function NpcEditor({
           type="search"
           placeholder="Filter by id or name"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => setParam("q", event.target.value)}
           className="h-8 max-w-xs text-sm"
         />
         <FilterChip
           label="speaker"
           value={provenance}
           options={SPEAKER_CHIP_OPTIONS}
-          onChange={(next) => setProvenance(isProvenance(next) ? next : undefined)}
+          onChange={(next) => setParam("speaker", next)}
         />
         <FilterChip
           label="progress"
           value={progress}
           options={PROGRESS_CHIP_OPTIONS}
-          onChange={(next) => setProgress(next as Progress | undefined)}
+          onChange={(next) => setParam("progress", next)}
         />
         <span className="text-muted-foreground text-xs">
           {rows.length} of {initial.length}
