@@ -3,7 +3,7 @@ curseforge: 1713138
 release: zones-audio-ptBR
 section: zones
 lang: ptBR
-version: 1.0.0
+version: 2.0.0
 slug: spoken-zones-audio-ptbr
 name: Spoken Zones Audio: Portuguese
 summary: The Brazilian Portuguese narration for Spoken Zones: every zone and subzone read aloud in Portuguese.
