@@ -899,12 +899,17 @@ every player to take an update, and the legacy-client players install their zips
    character one, and resolves to no race at all. That is a normal outcome, not a failure:
    `narrator-male` has always been the pseudo-race for things that do not have one.
 
-**The flavor cannot be detected in game, and it is worth knowing why before going looking.**
-`tts_cli/flavors.py` recovers it by reading SoundEntries names like
-`DwarfFemaleMaternalNPCGreetings`. No client API exposes a creature's `NPCSoundID`, nor the
-sound the game chose to play when the gossip frame opened, and the modern client's data has no
-`SoundKitName` table at all. So for a new NPC the flavor is defaulted and flagged, and a
-moderator is the only thing that can improve it.
+**The flavor is read from the creature's appearances, not from the unit on screen.**
+`tts_cli/flavors.py` recovers it for the corpus from SoundEntries names like
+`DwarfFemaleMaternalNPCGreetings`. In game, no API exposes a creature's `NPCSoundID` or which
+appearance a unit is drawn with: `GetDisplayInfo()` on a model built with `SetUnit` answers 0.
+`SetCreature(npcId)` does answer, but it rolls one of the creature's appearances (at most
+four) by spawn probability, fresh on every call. So the addon rolls a dozen times on one
+hidden frame and sends every appearance it saw as `displays=`. `voiceFromDisplays` keeps the
+ones drawn with the body the client reported and maps them through `display-voices.json`. One
+voice left is written as `display`, confirmed. Several voices on one body, as with a dwarf
+woman who can be maternal, young or guard, leave the row `client`, with the flavor chosen
+among those voices.
 
 An envelope carrying no `kind` resolves to nothing rather than being assumed a creature.
 `ReportButton:TargetForGUID` accepts any GUID `Enums.GUID:CanHaveID` allows, which includes
@@ -927,7 +932,7 @@ reported even when a moderator overrules it — evidence about the NPC is worth 
 guess it produced — along with the client build, since model ids are per-build data.
 
 Precedence is enforced in the SQL rather than by whoever calls it: `moderator` outranks
-`corpus`, which outranks `client`, which outranks `none`, and a write only lands when it ranks
+`corpus`, which outranks `display`, which outranks `client`, which outranks `none`, and a write only lands when it ranks
 at least as high as what is already there. A submission carrying less information can never
 erase one carrying more — the case that matters is a player on an older addon, whose envelope
 has no model at all, submitting for an NPC somebody else already resolved.
