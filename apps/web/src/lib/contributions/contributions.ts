@@ -12,6 +12,12 @@ import type { Envelope, EnvelopeSource } from "./envelope";
 export const STATUSES = ["new", "accepted", "rejected"] as const;
 export type ContributionStatus = (typeof STATUSES)[number];
 
+/** The most rows one api/contributions/resolve-many request resolves; the page sends more in chunks of this. */
+export const RESOLVE_MANY_MAX = 200;
+
+/** One row's answer from api/contributions/resolve-many. */
+export type ResolveManyResult = { ok: true } | { ok: false; error: string };
+
 export function isStatus(value: unknown): value is ContributionStatus {
   return typeof value === "string" && (STATUSES as readonly string[]).includes(value);
 }

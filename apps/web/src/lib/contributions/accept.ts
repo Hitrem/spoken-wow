@@ -32,6 +32,7 @@ import { db } from "@/lib/db";
 import { observedFrom } from "@/lib/npc/resolve";
 import { getResolution, getResolutionsById, type NpcKind } from "@/lib/npc/store";
 import { BASE_LANG, isLang, type Lang } from "@/lib/lang";
+import type { CorpusLine } from "@/lib/corpus";
 import { corpus } from "@/lib/quests/catalogue";
 import { isVoice } from "@/lib/voices/voices";
 
@@ -114,7 +115,10 @@ async function resolvedSpeaker(
  *     corpus's own trailing whitespace is normalised away) means this NPC is added as one more
  *     speaker of it, unless they already are one.
  */
-async function prepareLine(contribution: Contribution): Promise<{ ok: true; prepared: Prepared } | ResolveRefusal> {
+async function prepareLine(
+  contribution: Contribution,
+  corpusLines?: readonly CorpusLine[],
+): Promise<{ ok: true; prepared: Prepared } | ResolveRefusal> {
   const speaker = await resolvedSpeaker(observationMeta(contribution));
   if (speaker === "conflict") {
     return {
@@ -157,7 +161,7 @@ async function prepareLine(contribution: Contribution): Promise<{ ok: true; prep
     return { ok: false, reason: "malformed", message: "contribution has no text to voice" };
   }
 
-  const lines = (await corpus()).lines;
+  const lines = corpusLines ?? (await corpus()).lines;
 
   if (!isGossip) {
     const exists = lines.some((l) => answersQuestMoment(l.lineId, identity.lineId));
@@ -232,6 +236,34 @@ async function insertSpeaker(
   );
 }
 
+/**
+ * One writer per line id past this point, so two accepts of the same line running side by side
+ * (resolveContributions) can never both find it missing and both write it.
+ */
+async function lockLine(client: PoolClient, lineId: string): Promise<void> {
+  await client.query(`select pg_advisory_xact_lock(hashtext('quest_line:' || $1))`, [lineId]);
+}
+
+/**
+ * insertSpeaker, unless this NPC already speaks the line. Asked of the table rather than the
+ * catalogue: in a batch the catalogue is read once, before any of it is written, so a speaker
+ * another row of the same batch just added is only in the table.
+ */
+async function addSpeakerOnce(
+  client: PoolClient,
+  contributionId: number,
+  lineId: string,
+  variant: number,
+  speaker: Speaker,
+): Promise<void> {
+  const { rowCount } = await client.query(
+    `select 1 from "quest_line_speaker"
+      where "lang" = $1 and "lineId" = $2 and "npcType" = $3 and "npcId" = $4`,
+    [BASE_LANG, lineId, speaker.npcType, speaker.npcId],
+  );
+  if (!rowCount) await insertSpeaker(client, contributionId, lineId, variant, speaker);
+}
+
 async function insertLine(
   client: PoolClient,
   contributionId: number,
@@ -275,6 +307,7 @@ async function acceptTranslation(
   client: PoolClient,
   contribution: Contribution,
   userId: string,
+  corpusLines?: readonly CorpusLine[],
 ): Promise<ResolveRefusal | null> {
   const { quest, event } = contribution.meta;
   if (!(quest && event)) {
@@ -289,7 +322,7 @@ async function acceptTranslation(
     return { ok: false, reason: "malformed", message: `unknown quest event "${event}"` };
   }
 
-  const english = (await corpus()).lines.filter((line) =>
+  const english = (corpusLines ?? (await corpus()).lines).filter((line) =>
     answersQuestMoment(line.lineId, identity.lineId),
   );
   if (english.length === 0) {
@@ -335,11 +368,15 @@ async function acceptTranslation(
 /**
  * Change a contribution's status, writing its line into the quest tables first when the target
  * is "accepted" for a fresh quests row.
+ *
+ * `corpusLines` is the English catalogue to match against, read by the caller -- a batch reads
+ * it once for all its rows. Left out, it is read here.
  */
 export async function resolveContribution(
   id: number,
   status: ContributionStatus,
   userId: string,
+  corpusLines?: readonly CorpusLine[],
 ): Promise<ResolveOutcome> {
   const client = await db().connect();
   // Set only on the path below where rollback itself throws -- that is the one case that
@@ -387,22 +424,25 @@ export async function resolveContribution(
       contribution.source === "quests" &&
       contribution.locale !== BASE_LANG
     ) {
-      const refused = await acceptTranslation(client, contribution, userId);
+      const refused = await acceptTranslation(client, contribution, userId, corpusLines);
       if (refused) {
         await client.query("rollback");
         return refused;
       }
     } else if (status === "accepted" && contribution.source === "quests" && !written) {
-      const result = await prepareLine(contribution);
+      const result = await prepareLine(contribution, corpusLines);
       if (!result.ok) {
         await client.query("rollback");
         return result;
       }
       const { prepared } = result;
       if (prepared.kind === "line") {
-        // Checked again inside the transaction: a concurrent accept of another contribution for
-        // the same line may have written it since prepareLine read the catalogue. Whichever
-        // lands first wins; this one is then only accepted.
+        // Checked again inside the transaction, under the line's lock: a concurrent accept of
+        // another contribution for the same line may have written it since prepareLine read
+        // the catalogue. Whichever lands first wins; a quest line is then only accepted, and a
+        // gossip line gets this NPC as one more speaker, as prepareLine would have said had it
+        // seen the line.
+        await lockLine(client, prepared.identity.lineId);
         const { rowCount: taken } = await client.query(
           `select 1 from "quest_line" where "lang" = $1 and ("lineId" = $2 or "lineId" like $2 || ':%')`,
           [BASE_LANG, prepared.identity.lineId],
@@ -410,9 +450,12 @@ export async function resolveContribution(
         if (!taken) {
           await insertLine(client, id, userId, prepared.identity, prepared.text);
           await insertSpeaker(client, id, prepared.identity.lineId, 0, prepared.speaker);
+        } else if (prepared.identity.source === "gossip") {
+          await addSpeakerOnce(client, id, prepared.identity.lineId, 0, prepared.speaker);
         }
       } else if (prepared.kind === "speaker") {
-        await insertSpeaker(client, id, prepared.lineId, prepared.variant, prepared.speaker);
+        await lockLine(client, prepared.lineId);
+        await addSpeakerOnce(client, id, prepared.lineId, prepared.variant, prepared.speaker);
       }
     }
 
@@ -456,4 +499,39 @@ export async function resolveContribution(
   } finally {
     if (!released) client.release();
   }
+}
+
+/** How many rows of a batch resolve at once -- well inside the pool (db.ts's POOL_MAX). */
+const BATCH_CONCURRENCY = 8;
+
+/**
+ * resolveContribution for many rows, side by side, reading the catalogue once for all of them.
+ *
+ * Reading it per row is what made a bulk accept crawl: every line written moves the
+ * catalogue's stamp, so the next row rebuilt the whole of it. Rows of one batch can share a
+ * line; lockLine and the re-checks under it are what keep them from both writing it.
+ *
+ * Each row is still its own transaction, so one refused (or failing) row leaves the rest
+ * landed. A row that throws is answered as an Error, in its place.
+ */
+export async function resolveContributions(
+  ids: readonly number[],
+  status: ContributionStatus,
+  userId: string,
+): Promise<Map<number, ResolveOutcome | Error>> {
+  const corpusLines = status === "accepted" ? (await corpus()).lines : undefined;
+  const outcomes = new Map<number, ResolveOutcome | Error>();
+  let next = 0;
+  const worker = async () => {
+    while (next < ids.length) {
+      const id = ids[next++];
+      try {
+        outcomes.set(id, await resolveContribution(id, status, userId, corpusLines));
+      } catch (error) {
+        outcomes.set(id, error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(BATCH_CONCURRENCY, ids.length) }, worker));
+  return outcomes;
 }
