@@ -32,7 +32,11 @@ import { usePendingPush } from "@/components/usePendingPush";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { ContributionStatus } from "@/lib/contributions/contributions";
+import {
+  RESOLVE_MANY_MAX,
+  type ContributionStatus,
+  type ResolveManyResult,
+} from "@/lib/contributions/contributions";
 import { CLIENT_FAMILIES, CLIENT_FAMILY_LABELS, type ClientSummary } from "@/lib/contributions/client";
 import { flavorOptionsFor, summaryFromResolution, type FlavorScope } from "@/lib/contributions/speaker";
 import { contributionsHref, MISSING, NEEDS_DECISION, type ClientFilter, type SpeakerFilter } from "@/lib/contributions/query";
@@ -284,7 +288,16 @@ export default function ContributionTable({
     [flavorScopes, router],
   );
 
-  /** One row's status change, shared by its own buttons and the bulk ones. True when it landed. */
+  /** A row's status change landed: shown at once, without waiting for a reload. */
+  const landed = useCallback((id: number, next: ContributionStatus) => {
+    setRefusals(withoutRefusal(id));
+    setResolved((current) => ({ ...current, [id]: next }));
+    // "Add to explorer" is the same POST as Accept, re-sent for a row already accepted -- this
+    // is what hides the button once it has worked, without waiting for a reload.
+    if (next === "accepted") setLineCreated((current) => new Set(current).add(id));
+  }, []);
+
+  /** One row's status change, from its own buttons. True when it landed. */
   const send = useCallback(async (id: number, next: ContributionStatus): Promise<boolean> => {
     const response = await fetch("/api/contributions/resolve", {
       method: "POST",
@@ -299,13 +312,9 @@ export default function ContributionTable({
       setRefusals(withRefusal(id, body?.error));
       return false;
     }
-    setRefusals(withoutRefusal(id));
-    setResolved((current) => ({ ...current, [id]: next }));
-    // "Add to explorer" is the same POST as Accept, re-sent for a row already accepted -- this
-    // is what hides the button once it has worked, without waiting for a reload.
-    if (next === "accepted") setLineCreated((current) => new Set(current).add(id));
+    landed(id, next);
     return true;
-  }, []);
+  }, [landed]);
 
   const resolve = useCallback(
     async (id: number, next: ContributionStatus) => {
@@ -326,19 +335,35 @@ export default function ContributionTable({
   const [confirmAll, setConfirmAll] = useState(false);
 
   /**
-   * The same POST as a row's own button, once per row, one at a time: each accept is its own
-   * transaction writing quest lines (accept.ts), and running them in parallel is how two rows
-   * for the same line would race each other's collision check. A row that is refused keeps its
-   * refusal under it, exactly as if its own button had been pressed, and the rest carry on.
+   * The rows sent to api/contributions/resolve-many, a chunk per request, resolved side by side
+   * on the server (accept.ts's resolveContributions). A row that is refused keeps its refusal
+   * under it, exactly as if its own button had been pressed, and the rest carry on.
    */
   const resolveMany = useCallback(
     async (ids: number[], next: ContributionStatus) => {
       setBulkOutcome(null);
       setBulk({ next, done: 0, total: ids.length });
       const refused: number[] = [];
-      for (const [index, id] of ids.entries()) {
-        if (!(await send(id, next))) refused.push(id);
-        setBulk({ next, done: index + 1, total: ids.length });
+      for (let start = 0; start < ids.length; start += RESOLVE_MANY_MAX) {
+        const chunk = ids.slice(start, start + RESOLVE_MANY_MAX);
+        const response = await fetch("/api/contributions/resolve-many", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ids: chunk, status: next }),
+        }).catch(() => null);
+        const body = (await response?.json().catch(() => null)) as
+          | { results?: Record<number, ResolveManyResult>; error?: unknown }
+          | null;
+        for (const id of chunk) {
+          const result = response?.ok ? body?.results?.[id] : undefined;
+          if (result?.ok) {
+            landed(id, next);
+          } else {
+            refused.push(id);
+            setRefusals(withRefusal(id, result ? result.error : body?.error));
+          }
+        }
+        setBulk({ next, done: Math.min(start + chunk.length, ids.length), total: ids.length });
       }
       setBulk(null);
       // The refused rows stay ticked, so fixing their speakers and pressing the same button again
@@ -349,7 +374,7 @@ export default function ContributionTable({
           (refused.length > 0 ? ` -- ${refused.length} refused and left selected.` : "."),
       );
     },
-    [send],
+    [landed],
   );
 
   const rows = initial.filter((row) => {
