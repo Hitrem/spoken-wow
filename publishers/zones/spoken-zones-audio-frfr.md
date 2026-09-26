@@ -3,7 +3,7 @@ curseforge: 1713125
 release: zones-audio-frFR
 section: zones
 lang: frFR
-version: 1.0.0
+version: 2.0.0
 slug: spoken-zones-audio-frfr
 name: Spoken Zones Audio: French
 summary: The French narration for Spoken Zones: every zone and subzone read aloud in French.

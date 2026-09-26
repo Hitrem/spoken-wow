@@ -3,7 +3,7 @@ curseforge: 1712807
 release: zones-audio-esES
 section: zones
 lang: esES
-version: 1.0.0
+version: 2.0.0
 slug: spoken-zones-audio-eses
 name: Spoken Zones Audio: Spanish (EU)
 summary: The European Spanish narration for Spoken Zones: every zone and subzone read aloud in Spanish (EU).

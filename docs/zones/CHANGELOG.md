@@ -7,40 +7,40 @@ The addon and the pack have numbered themselves independently since 2.0.0, so a 
 which of the two it belongs to when there is any doubt: a section headed `## <version> — audio`
 is the pack's, and `scripts/zones/release.sh` matches on the kind as well as the number. A
 section with no kind in its heading is the addon's. A language's pack numbers itself too, from
-1.0.0, and its sections are headed by its release tag: `## <version> — zones-audio-esMX`.
+2.0.0 in step with the English pack (Spanish (AL) shipped first, as 1.0.0), and its sections are headed by its release tag: `## <version> — zones-audio-esMX`.
 
-## 1.0.0 — zones-audio-deDE — 2026-09-26
+## 2.0.0 — zones-audio-deDE — 2026-09-26
 
 - **The first German sound pack**, `SpokenZonesAudio_deDE`: every zone and subzone
   Spoken Zones has lore for, read aloud in German. It plays only while Spoken Zones is
   showing German text, and installs beside the English pack rather than over it.
 
-## 1.0.0 — zones-audio-esES — 2026-09-26
+## 2.0.0 — zones-audio-esES — 2026-09-26
 
 - **The first Spanish (EU) sound pack**, `SpokenZonesAudio_esES`: every zone and subzone
   Spoken Zones has lore for, read aloud in European Spanish. It plays only while Spoken Zones is
   showing Spanish (EU) text, and installs beside the English pack rather than over it.
 
-## 1.0.0 — zones-audio-frFR — 2026-09-26
+## 2.0.0 — zones-audio-frFR — 2026-09-26
 
 - **The first French sound pack**, `SpokenZonesAudio_frFR`: every zone and subzone
   Spoken Zones has lore for, read aloud in French. It plays only while Spoken Zones is
   showing French text, and installs beside the English pack rather than over it.
 
-## 1.0.0 — zones-audio-ptBR — 2026-09-26
+## 2.0.0 — zones-audio-ptBR — 2026-09-26
 
 - **The first Portuguese sound pack**, `SpokenZonesAudio_ptBR`: every zone and subzone
   Spoken Zones has lore for, read aloud in Brazilian Portuguese. It plays only while Spoken Zones is
   showing Portuguese text, and installs beside the English pack rather than over it.
 
-## 1.0.0 — zones-audio-ruRU — 2026-09-26
+## 2.0.0 — zones-audio-ruRU — 2026-09-26
 
 - **The first Russian sound pack**, `SpokenZonesAudio_ruRU`: every zone and subzone
   Spoken Zones has lore for, read aloud in Russian. It plays only while Spoken Zones is
   showing Russian text, and installs beside the English pack rather than over it.
   Ravaged Twilight Camp is not voiced yet and stays silent.
 
-## 1.0.0 — zones-audio-esMX — 2026-09-26
+## 1.0.0 — zones-audio-esMX — 2026-09-25
 
 - **The first Spanish (AL) sound pack**, `SpokenZonesAudio_esMX`: every zone and subzone
   Spoken Zones has lore for, read aloud in Latin American Spanish. It plays only while Spoken

@@ -1565,7 +1565,8 @@ already at the bitrate they ship, so there is nothing to transcode. Its `.toc` s
 `X-SpokenZones-Language: esMX`, so Spoken Zones plays it only under Spanish (AL) text, and it
 installs beside the English pack rather than over it.
 
-The pack numbers itself from 1.0.0 in its own page, and its changelog sections are headed by
+The pack numbers itself in its own page, from 2.0.0 so it starts level with the English pack
+(Spanish (AL) shipped first, as 1.0.0), and its changelog sections are headed by
 its release tag: `## <version> — zones-audio-esMX`. It has no Wago project — Wago refuses a
 file this size — so its page has no `wago:`, and `./scripts/audio-github-release.sh zones esMX`
 is where a Wago player finds it. Nothing under `build/` or `dist/` is committed, so after a
