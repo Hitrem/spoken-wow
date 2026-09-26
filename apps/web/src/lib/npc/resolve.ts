@@ -31,6 +31,8 @@ export type Observed = {
   npcId: number | null;
   npcName: string | null;
   modelFileId: number | null;
+  /** Appearance ids the addon rolled for this creature; empty when it sent none. */
+  displayIds: number[];
   sex: number | null;
   creatureType: string | null;
   build: string | null;
@@ -50,6 +52,23 @@ function digits(value: string | undefined): number | null {
   if (!value || !DIGITS.test(value)) return null;
   const n = Number(value);
   return Number.isSafeInteger(n) && n <= INT32_MAX ? n : null;
+}
+
+// A creature has at most four appearances (Creature.DisplayID_0..3). The addon rolls a dozen
+// times, so more distinct ids than this can only be a hand-edited envelope, and each one costs
+// a table lookup.
+const MAX_DISPLAYS = 16;
+
+// Each entry through digits(), like every other number an envelope carries: one bad entry
+// drops that entry, not the list.
+function displayIdsFrom(value: string | undefined): number[] {
+  const ids: number[] = [];
+  for (const part of (value ?? "").split(",")) {
+    const id = digits(part.trim());
+    if (id !== null && id > 0 && !ids.includes(id)) ids.push(id);
+    if (ids.length === MAX_DISPLAYS) break;
+  }
+  return ids;
 }
 
 export function observedFrom(meta: Record<string, string>): Observed {
@@ -73,6 +92,7 @@ export function observedFrom(meta: Record<string, string>): Observed {
     npcId,
     npcName: npc?.[2]?.trim() || null,
     modelFileId: digits(meta.model),
+    displayIds: displayIdsFrom(meta.displays),
     sex: digits(meta.sex),
     creatureType: meta.creature || null,
     build: meta.build || null,

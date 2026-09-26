@@ -18,6 +18,7 @@ describe("observedFrom", () => {
       npcId: 205729,
       npcName: "Boarton Shadetotem",
       modelFileId: 122055,
+      displayIds: [],
       sex: 2,
       creatureType: "Humanoid",
       build: "1.60.1/69913",
@@ -32,6 +33,7 @@ describe("observedFrom", () => {
       npcId: 205729,
       npcName: "Boarton Shadetotem",
       modelFileId: null,
+      displayIds: [],
       sex: null,
       creatureType: null,
       build: null,
@@ -72,6 +74,24 @@ describe("observedFrom", () => {
   it("refuses an out-of-range sex the same way", () => {
     expect(observedFrom({ npc: "1 X", sex: "99999999999" }).sex).toBe(null);
   });
+
+  it("reads the appearance ids the addon rolled", () => {
+    expect(observedFrom({ npc: "3084 Bluffwatcher", displays: "2141,9391,9392" }).displayIds).toEqual([
+      2141, 9391, 9392,
+    ]);
+  });
+
+  // The envelope is unauthenticated text: one bad entry drops that entry, not the rest.
+  it("keeps the well-formed ids of a damaged list, once each", () => {
+    expect(observedFrom({ npc: "1 X", displays: "2141,,x9,2141,99999999999, 9392" }).displayIds).toEqual([
+      2141, 9392,
+    ]);
+  });
+
+  it("stops at sixteen ids, since a creature has at most four appearances", () => {
+    const many = Array.from({ length: 40 }, (_, i) => i + 1).join(",");
+    expect(observedFrom({ npc: "1 X", displays: many }).displayIds).toHaveLength(16);
+  });
 });
 
 vi.mock("@/lib/quests/catalogue", () => ({
@@ -94,6 +114,7 @@ const observed = {
   npcId: 205729,
   npcName: "Boarton Shadetotem",
   modelFileId: 122055,
+  displayIds: [] as number[],
   sex: 2,
   creatureType: "Humanoid",
   build: "1.60.1/69913",
