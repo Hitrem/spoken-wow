@@ -66,3 +66,52 @@ export async function voiceForDisplay(displayId: number): Promise<DisplayVoice> 
   }
   return { voice: null, exact: false, reason: `${bare} is not on the roster` };
 }
+
+/** The model file an appearance is drawn with, or null for one not on file. */
+export function modelForDisplay(displayId: number): number | null {
+  return BY_DISPLAY[String(displayId)]?.[0] ?? null;
+}
+
+export type DisplaysVoice =
+  | { exact: true; voice: { race: string; gender: Gender; flavor: string | null } }
+  | { exact: false; race: string; gender: Gender; flavors: string[] };
+
+/**
+ * The voice behind a creature's appearances, as the addon rolled them.
+ *
+ * SetCreature picks one of a creature's appearances at random per call, so the addon learns
+ * which appearances exist, not which one the player is looking at. The model it reports for
+ * the unit on screen says which body that is, so only appearances drawn with that body stay.
+ * Bodies are compared through each appearance's own model, never through the voice: Elatrell
+ * Featherlight's blood elf body speaks with a Skybourne voice, and comparing voices would throw
+ * away the one exact answer.
+ *
+ * One voice left, and every appearance exact about it: the answer. Several voices on one body
+ * (a dwarf woman with the maternal, young and guard sets): the voices on offer, for the caller
+ * to pick between. Bodies still mixed, because no model was reported: nothing, since picking
+ * one would be a coin toss with the NPC's gender.
+ */
+export async function voiceFromDisplays(
+  displayIds: number[],
+  modelFileId: number | null,
+): Promise<DisplaysVoice | null> {
+  const body = raceForModel(modelFileId);
+  const sameBody = (displayId: number) => {
+    if (!body) return true;
+    const drawn = raceForModel(modelForDisplay(displayId));
+    return !drawn || (drawn.race === body.race && drawn.gender === body.gender);
+  };
+  const answers = await Promise.all(displayIds.filter(sameBody).map(voiceForDisplay));
+  const voiced = answers.flatMap((answer) => (answer.voice ? [{ ...answer.voice, exact: answer.exact }] : []));
+  if (!voiced.length) return null;
+
+  const names = new Set(voiced.map((v) => `${v.race}-${v.gender}-${v.flavor ?? ""}`));
+  if (names.size === 1 && voiced.every((v) => v.exact)) {
+    const { race, gender, flavor } = voiced[0];
+    return { exact: true, voice: { race, gender, flavor } };
+  }
+  if (new Set(voiced.map((v) => `${v.race}-${v.gender}`)).size !== 1) return null;
+  const { race, gender } = voiced[0];
+  const flavors = [...new Set(voiced.flatMap((v) => (v.flavor ? [v.flavor] : [])))].sort();
+  return { exact: false, race, gender, flavors };
+}
