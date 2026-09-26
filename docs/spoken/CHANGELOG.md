@@ -1,5 +1,12 @@
 # Changelog — Spoken Player
 
+## 2.2.2 — 2026-09-26
+
+- **Minimal Classic matches the Forever client's bronze.** On WoW Forever the panel's border,
+  cast bar trim and portrait ring now take the same bronze tint as the game's own frames,
+  instead of standing out in plain metal. **Bronze tint** under `/sp options` turns it off; it
+  is on by default and only offered on Forever. Other clients are unchanged.
+
 ## 2.2.1 — 2026-09-23
 
 - **No more Lua error on logout or `/reload` with the Minimal Classic layout.** When its
