@@ -9,6 +9,17 @@ is the pack's, and `scripts/zones/release.sh` matches on the kind as well as the
 section with no kind in its heading is the addon's. A language's pack numbers itself too, from
 2.0.0 in step with the English pack (Spanish (AL) shipped first, as 1.0.0), and its sections are headed by its release tag: `## <version> — zones-audio-esMX`.
 
+## 2.2.0 — 2026-09-26
+
+- **Lore in nine more languages**: German, Spanish (EU), Spanish (AL), French, Portuguese,
+  Russian, Korean, Simplified and Traditional Chinese. Every zone and subzone is written in each,
+  under the names your client uses for those places. Spoken Zones picks your client's language,
+  and `/spz lang <code>` (for example `/spz lang deDE`) picks another.
+- **Narration in six of them**: the new sound packs for German, Spanish (EU), Spanish (AL),
+  French, Portuguese and Russian play while their language's lore is showing. They need this
+  version; on 2.1.0 they install but stay silent. Each installs beside the English pack.
+- The sound pack dropdown names each pack by its language rather than by its quality.
+
 ## 2.0.0 — zones-audio-deDE — 2026-09-26
 
 - **The first German sound pack**, `SpokenZonesAudio_deDE`: every zone and subzone
