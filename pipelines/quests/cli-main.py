@@ -142,10 +142,11 @@ elif args.mode == "export-locale-text":
 elif args.mode == "build":
     locale_text = None
     if args.locale_text:
-        # The client-locale tables ship once per language, in the pack that holds its gossip:
-        # a faction pack carrying them too would be the same megabytes three more times.
-        if args.pack != "gossip":
-            raise SystemExit(f"--locale-text is for the gossip pack, not '{args.pack}'")
+        # The client-locale tables ship once per language, in the pack that holds its gossip -
+        # its Gossip pack, or its All pack when it ships as one: a faction pack carrying them
+        # too would be the same megabytes three more times.
+        if args.pack not in ("gossip", "all"):
+            raise SystemExit(f"--locale-text is for the gossip or all pack, not '{args.pack}'")
         lang, locale_text = load_locale_text(args.locale_text)
         if lang != args.language:
             raise SystemExit(f"{args.locale_text} holds {lang} text, not --language "

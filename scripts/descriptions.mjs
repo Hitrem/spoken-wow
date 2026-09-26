@@ -110,7 +110,8 @@ const GENERATED_NOTE =
 
 // `wago` is not among them: a language's sound pack is on CurseForge alone, since Wago refuses
 // a file its size and the page's `release:` already sends a Wago reader to GitHub instead.
-const REQUIRED = ["curseforge", "slug", "name", "summary", "categories", "license"];
+// Nor is `curseforge`, for a pack released on GitHub before its CurseForge project exists.
+const REQUIRED = ["slug", "name", "summary", "categories", "license"];
 
 // CurseForge's summary field. Enforced here rather than discovered in the form,
 // where the failure is a truncated sentence nobody re-reads.
@@ -147,7 +148,7 @@ async function loadGroups() {
           `${name}/${file}: summary is ${meta.summary.length} characters, over CurseForge's ${SUMMARY_LIMIT}`,
         );
       }
-      if (!/^\d+$/.test(meta.curseforge)) {
+      if (meta.curseforge !== undefined && !/^\d+$/.test(meta.curseforge)) {
         throw new Error(
           `${name}/${file}: 'curseforge' should be the numeric CurseForge project id`,
         );
@@ -306,7 +307,7 @@ async function main() {
     for (const group of groups) {
       for (const page of group.pages) {
         console.log(
-          `     ${page.meta.slug} (CurseForge ${page.meta.curseforge}, ` +
+          `     ${page.meta.slug} (${page.meta.curseforge ? `CurseForge ${page.meta.curseforge}` : "not on CurseForge yet"}, ` +
             `${page.meta.wago ? `Wago ${page.meta.wago}` : "not on Wago"}): ` +
             `summary ${page.meta.summary.length}/${SUMMARY_LIMIT} chars`,
         );

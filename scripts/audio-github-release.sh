@@ -193,6 +193,13 @@ release_target() {
 
   # An existing release is added to rather than replaced: re-running after one upload of six
   # failed should finish the job, not start a new release that drops the five that worked.
+  # A pack can reach GitHub before its CurseForge project exists (scripts/lib/packs.mjs), and
+  # the notes should not send a reader to a store that does not have it.
+  local elsewhere="CurseForge carries it too, and Wago's upload endpoint refuses a file this size."
+  if [[ -z "$(field "$section" "$lang" "$pack" curseforge)" ]]; then
+    elsewhere="Wago's upload endpoint refuses a file this size, and it is not on CurseForge yet."
+  fi
+
   if gh release view "$tag" >/dev/null 2>&1; then
     echo "  release exists -- uploading the asset into it"
     gh release upload "$tag" "$zip_path" --clobber || return 1
@@ -204,7 +211,7 @@ release_target() {
 
 **This pack is data only.** It needs [$needs](https://addons.wago.io/addons/$needs), which plays it; installed alone it does nothing.
 
-Released here because the pack is $size: CurseForge carries it too, and Wago's upload endpoint refuses a file this size." || return 1
+Released here because the pack is $size: $elsewhere" || return 1
   fi
 
   echo "  released -- $(gh release view "$tag" --json url -q .url)"
