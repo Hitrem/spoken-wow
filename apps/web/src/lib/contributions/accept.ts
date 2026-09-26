@@ -303,10 +303,12 @@ async function acceptTranslation(
   const text = contribution.text;
   const seen = new Set<string>();
   for (const line of english) {
-    const key = `${line.lineId}#${line.variant ?? 0}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    // Per variant: its $N is spoken in the form the variant's player gender takes.
+    // Variant 0 only: a language keeps one text per line id, whichever content patch the
+    // English variants come from (tts_cli/locale_import.py says why).
+    if (line.variant) continue;
+    if (seen.has(line.lineId)) continue;
+    seen.add(line.lineId);
+    // Per line id: its $N is spoken in the form the line's player gender takes.
     const skipReason = skipReasonFor(
       identity.source, text, contribution.locale as Lang, line.playerGender,
     );
@@ -322,7 +324,7 @@ async function acceptTranslation(
           and not exists (select 1 from "quest_line" t
                            where t."lineId" = $1 and t."variant" = $2 and t."lang" = $3)`,
       [
-        line.lineId, line.variant ?? 0, contribution.locale, text, skipReason === null,
+        line.lineId, 0, contribution.locale, text, skipReason === null,
         skipReason, userId, `contribution #${contribution.id}`, BASE_LANG,
       ],
     );

@@ -76,7 +76,8 @@ function rowOf(lines: CorpusLine[]): CorpusLine {
 describe("a language read over the English lines", () => {
   it("has every English line, and says which it has not translated", async () => {
     const [english, italian] = await Promise.all([corpus(), corpus(LANG)]);
-    expect(italian.lines).toHaveLength(english.lines.length);
+    // Every English row but a second variant's: see "a line with two English variants".
+    expect(italian.lines).toHaveLength(english.lines.filter((row) => !row.variant).length);
 
     const row = rowOf(italian.lines);
     expect(row.text).toBe(line.text);
@@ -103,6 +104,37 @@ describe("a language read over the English lines", () => {
     const row = rowOf((await corpus()).lines);
     expect(row.text).toBe(line.text);
     expect(row.missing).toBeUndefined();
+  });
+});
+
+describe("a line with two English variants", () => {
+  // Quest 4265 has a quest_template row per content patch, so the English carries both:
+  // complete as one text under two titles, accept as two texts. One file either way.
+  const LINE = "q:4265:complete";
+
+  async function translateVariant(variant: number, text: string) {
+    await db().query(
+      `insert into "quest_line"
+         ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "questId",
+          "questTitle", "fileName", "text", "originalText", "generatable")
+       select "lineId", "variant", $2, 1, true, 'extracted', "source", "questId",
+              "questTitle", "fileName", $3, "originalText", true
+         from "quest_line"
+        where "lineId" = $1 and "variant" = $4 and "lang" = 'enUS' and "isCurrent"`,
+      [LINE, LANG, text, variant],
+    );
+  }
+
+  it("is one line per speaker in another language, translated from variant 0", async () => {
+    const english = (await corpus()).lines.filter((row) => row.lineId === LINE);
+    if (new Set(english.map((row) => row.variant)).size < 2) return;
+    await translateVariant(0, "Bienvenido a casa.");
+
+    const rows = (await corpus(LANG)).lines.filter((row) => row.lineId === LINE);
+    expect(rows.map((row) => row.variant ?? 0)).toEqual(
+      english.filter((row) => !row.variant).map(() => 0),
+    );
+    expect(rows.every((row) => row.text === "Bienvenido a casa." && row.generatable)).toBe(true);
   });
 });
 

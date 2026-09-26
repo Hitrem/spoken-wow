@@ -190,3 +190,47 @@ def test_a_line_the_corpus_does_not_carry_is_left_alone(db):
              "localeText": "x", "generatable": True, "skipReason": None}
     counts = import_locale(db, "zhTW", [stray], {})
     assert counts["lines without an English line"] == 1
+
+
+def _variants(conn, line_id):
+    with conn.cursor() as cur:
+        cur.execute("""select "variant", "originalText" from "quest_line"
+                        where "lineId" = %s and "lang" = 'enUS' and "isCurrent"
+                        order by "variant" """, (line_id,))
+        return cur.fetchall()
+
+
+def _translated_variants(conn, line_id):
+    with conn.cursor() as cur:
+        cur.execute("""select "variant", "text" from "quest_line"
+                        where "lineId" = %s and "lang" = 'zhTW' and "isCurrent"
+                        order by "variant" """, (line_id,))
+        return cur.fetchall()
+
+
+def _line(line_id, original, text="你好"):
+    return {"lineId": line_id, "originalText": original, "text": text, "localeText": text,
+            "generatable": True, "skipReason": None}
+
+
+# Quest 4265 has a row per content patch, so the corpus carries two variants of each of its
+# lines: the same English under two titles for complete, two different Englishes for accept.
+def test_a_line_with_two_variants_of_one_english_text_is_translated_once(db):
+    variants = _variants(db, "q:4265:complete")
+    if len(variants) != 2 or variants[0][1] != variants[1][1]:
+        pytest.skip("needs q:4265:complete as two variants of one English text")
+    import_locale(db, "zhTW", [_line("q:4265:complete", variants[0][1])], {})
+    assert _translated_variants(db, "q:4265:complete") == [(0, "你好")]
+
+
+def test_a_line_with_two_variants_of_different_english_is_translated_once(db):
+    variants = _variants(db, "q:4265:accept")
+    if len(variants) != 2 or variants[0][1] == variants[1][1]:
+        pytest.skip("needs q:4265:accept as two variants of different English texts")
+    lines = [_line("q:4265:accept", original) for _, original in reversed(variants)]
+    counts = import_locale(db, "zhTW", lines, {})
+    assert _translated_variants(db, "q:4265:accept") == [(0, "你好")]
+    assert counts["lines promote"] == 1
+
+    again = import_locale(db, "zhTW", lines, {})
+    assert again["lines promote"] == 0

@@ -143,6 +143,12 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
  * line ids and file names are derived from the English text, and the speakers are facts
  * about the world -- so a language contributes only what it says and what it calls things.
  *
+ * ONE ROW PER LINE ID AND SPEAKER, NOT PER VARIANT. A second English variant is the same
+ * quest in another content patch -- kept in English for the addon's title lookup -- and it
+ * shares the first's file and, on every line in the corpus, its speakers. A language has one
+ * text for it (locale_import.py writes it as variant 0), so a second row would be the same
+ * line and the same mp3 listed twice.
+ *
  * Where it has not said, the English stands in and `missing` says so. That is a rendering,
  * never a row: nothing here is written back, exported or voiced. A line whose text is
  * missing is not generatable, so the English cannot be recorded under the language's name.
@@ -183,7 +189,7 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
        left join "entity_name" nn
          on nn."kind" = s."npcType" and nn."entityId" = s."npcId"::text
         and nn."lang" = $1 and nn."isCurrent"
-      where s."lang" = '${BASE_LANG}'
+      where s."lang" = '${BASE_LANG}' and s."variant" = 0
       order by s."ord"`,
     [lang],
   );

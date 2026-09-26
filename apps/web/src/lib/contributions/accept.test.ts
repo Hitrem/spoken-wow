@@ -11,6 +11,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { closeDb, db } from "@/lib/db";
+import { BASE_LANG } from "@/lib/lang";
 import { upsertResolution } from "@/lib/npc/store";
 import { corpus, lineIndex } from "@/lib/quests/catalogue";
 import { isGap, matchingLines, NO_CONTEXT } from "@/lib/search";
@@ -345,5 +346,55 @@ describe("resolveContribution: quests accept", () => {
     expect((await linesFor(GUARD_LINE)).map((l) => l.origin)).not.toContain("contributed");
     const speakers = (await lineIndex()).get(GUARD_LINE)!;
     expect(speakers.some((l) => l.npcId === npcId && l.contributionId === id)).toBe(true);
+  });
+});
+
+describe("resolveContribution: a translation", () => {
+  // A language no import on this machine writes, so the rows here are this test's own.
+  const LOCALE = "ptBR";
+
+  async function translation(quest: string, event: string, text: string): Promise<number> {
+    const dedup = `accept-test-${Math.random().toString(36).slice(2)}`;
+    await createContribution({
+      source: "quests",
+      key: `${quest}:${event}`,
+      locale: LOCALE,
+      build: "1.12.1/5875",
+      text,
+      meta: { quest, event, title: "Liberado de la colmena", kind: "creature", npc: "7880 Ginro" },
+      raw: `raw:${dedup}`,
+      dedup,
+      body: null,
+      name: null,
+      email: null,
+      userId: null,
+      ip: null,
+    });
+    const { rows } = await db().query<{ id: number }>(`select "id" from "contribution" where "dedup" = $1`, [dedup]);
+    contributionIds.push(rows[0].id);
+    return rows[0].id;
+  }
+
+  it("writes a line with two English variants once, as variant 0", async () => {
+    // q:4265:complete is one English text under two content patches' titles.
+    const { rows: english } = await db().query<{ variant: number }>(
+      `select "variant" from "quest_line" where "lineId" = 'q:4265:complete' and "lang" = $1 and "isCurrent"`,
+      [BASE_LANG],
+    );
+    if (english.length < 2) return;
+    const { rows: existing } = await db().query(
+      `select 1 from "quest_line" where "lineId" = 'q:4265:complete' and "lang" = $1`,
+      [LOCALE],
+    );
+    if (existing.length) return;
+
+    const id = await translation("4265", "complete", "Bem-vindo de volta, $N.");
+    expect((await resolveContribution(id, "accepted", RESOLVER)).ok).toBe(true);
+
+    const { rows } = await db().query<{ variant: number }>(
+      `select "variant" from "quest_line" where "lineId" = 'q:4265:complete' and "lang" = $1`,
+      [LOCALE],
+    );
+    expect(rows.map((row) => row.variant)).toEqual([0]);
   });
 });
