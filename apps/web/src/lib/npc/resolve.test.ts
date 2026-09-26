@@ -98,6 +98,7 @@ vi.mock("@/lib/quests/catalogue", () => ({
   npcVoiceFromCorpus: vi.fn(),
   defaultFlavorFor: vi.fn(),
 }));
+vi.mock("./display-voices", () => ({ voiceFromDisplays: vi.fn() }));
 vi.mock("./store", () => ({
   NPC_KINDS: ["creature", "gameobject"],
   getResolution: vi.fn(),
@@ -106,6 +107,7 @@ vi.mock("./store", () => ({
 
 import { defaultFlavorFor, npcVoiceFromCorpus } from "@/lib/quests/catalogue";
 
+import { voiceFromDisplays } from "./display-voices";
 import { getResolution, upsertResolution } from "./store";
 import { resolveNpc } from "./resolve";
 
@@ -194,5 +196,58 @@ describe("resolveNpc", () => {
     expect(await resolveNpc({ ...observed, npcKind: null })).toBe(null);
     expect(getResolution).not.toHaveBeenCalled();
     expect(upsertResolution).not.toHaveBeenCalled();
+  });
+  it("takes the game's voice for the appearance the player saw, confirmed", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
+    });
+    const row = await resolveNpc({ ...observed, displayIds: [2141, 9392] });
+    expect(voiceFromDisplays).toHaveBeenCalledWith([2141, 9392], 122055);
+    expect(row).toMatchObject({
+      race: "tauren", gender: "female", flavor: "official", provenance: "display", confirmed: true,
+    });
+  });
+
+  it("picks the default flavor when it is one the appearances offer", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: false, race: "dwarf", gender: "female", flavors: ["guard", "maternal", "young"],
+    });
+    vi.mocked(defaultFlavorFor).mockResolvedValue("maternal");
+    const row = await resolveNpc({ ...observed, displayIds: [36630, 144322, 146689] });
+    expect(row).toMatchObject({
+      race: "dwarf", gender: "female", flavor: "maternal", provenance: "client", confirmed: false,
+    });
+  });
+
+  it("picks among the offered flavors when the default is not one of them", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: false, race: "dwarf", gender: "female", flavors: ["guard", "young"],
+    });
+    vi.mocked(defaultFlavorFor).mockResolvedValue("maternal");
+    const row = await resolveNpc({ ...observed, displayIds: [144322, 146689] });
+    expect(row).toMatchObject({ flavor: "guard", provenance: "client", confirmed: false });
+  });
+
+  it("falls back to the model when the appearances say nothing", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue(null);
+    vi.mocked(defaultFlavorFor).mockResolvedValue("warrior");
+    const row = await resolveNpc({ ...observed, displayIds: [999_999] });
+    expect(row).toMatchObject({ race: "tauren", gender: "male", flavor: "warrior", provenance: "client" });
+  });
+
+  it("does not look appearances up when the envelope carried none", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockClear();
+    await resolveNpc(observed);
+    expect(voiceFromDisplays).not.toHaveBeenCalled();
   });
 });

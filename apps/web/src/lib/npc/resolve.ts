@@ -1,19 +1,22 @@
 /**
  * Who is speaking a contributed line.
  *
- * Three sources, in this order, and the order is the whole design:
+ * Four sources, in this order, and the order is the whole design:
  *
  *   1. A moderator's answer, if one exists. They may know something no data source does.
  *   2. The corpus, for an NPC it already carries. Exact, including the flavor, which is
  *      recovered from display data no client API exposes.
- *   3. What the client saw: a model file id, which names a race and a gender but says nothing
- *      about flavor, so the flavor is defaulted and the row is left unconfirmed.
+ *   3. The appearances the addon rolled with SetCreature, kept where they match the body the
+ *      client reported, and mapped through display-voices.json. Exact when one voice is left.
+ *   4. What the client saw: a model file id, which names a race and a gender. The flavor is
+ *      narrowed by step 3 where it offered several, defaulted otherwise, and left unconfirmed.
  *
  * An NPC that answers to none of them resolves to no race, which is a normal outcome rather
  * than a failure: the corpus already carries `narrator-male` for things that are not a race.
  */
 import { defaultFlavorFor, npcVoiceFromCorpus } from "@/lib/quests/catalogue";
 
+import { voiceFromDisplays } from "./display-voices";
 import { raceForModel } from "./models";
 import { INT32_MAX } from "./npc";
 import { getResolution, NPC_KINDS, upsertResolution, type NpcKind, type NpcResolution } from "./store";
@@ -138,7 +141,33 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
     });
   }
 
-  const fromModel = raceForModel(observed.modelFileId);
+  // The appearances the addon rolled, filtered to the body the player saw. One voice left is
+  // the game's own answer, as exact as the corpus: display-voices.json reads it from the same
+  // NPCSounds data tts_cli/flavors.py reads for the corpus.
+  const fromDisplays = observed.displayIds.length
+    ? await voiceFromDisplays(observed.displayIds, observed.modelFileId)
+    : null;
+  if (fromDisplays?.exact) {
+    return upsertResolution({
+      npcKind,
+      npcId,
+      npcName: observed.npcName,
+      ...fromDisplays.voice,
+      provenance: "display",
+      confirmed: true,
+      doubtful: false,
+      modelFileId: observed.modelFileId,
+      sex: observed.sex,
+      creatureType: observed.creatureType,
+      build: observed.build,
+      note: null,
+      resolvedBy: null,
+    });
+  }
+
+  // Several voices on one body still settle the race and gender, and narrow the flavor to the
+  // ones this NPC can actually speak with.
+  const fromModel = fromDisplays ?? raceForModel(observed.modelFileId);
   // A flavor nobody has confirmed, derived the way tts_cli/flavors.py's fallback_flavors
   // derives its own: "standard" where the race-gender has it, otherwise its busiest flavor,
   // from the corpus rather than a constant. A constant would leave four race-genders
@@ -147,7 +176,11 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
   // "tauren-male-standard", which nothing can produce. defaultFlavorFor answers null for a race
   // the corpus has never carried a flavored line for at all, and null is left alone rather than
   // guessed at: the row is unconfirmed regardless, and a moderator or the pipeline can decide.
-  const flavor = fromModel ? await defaultFlavorFor(fromModel.race, fromModel.gender) : null;
+  const fallback = fromModel ? await defaultFlavorFor(fromModel.race, fromModel.gender) : null;
+  // The default wins when the appearances offer it, so a narrowed row and a model-only row
+  // agree wherever they can.
+  const offered = fromDisplays?.flavors ?? [];
+  const flavor = offered.length && !offered.includes(fallback ?? "") ? offered[0] : fallback;
   return upsertResolution({
     npcKind,
     npcId,
