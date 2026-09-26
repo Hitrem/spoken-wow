@@ -8,17 +8,49 @@
 import { SearchIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
+import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { useLang } from "@/components/LangProvider";
 import SpeakerCell, { type SpeakerAnswer } from "@/components/SpeakerCell";
 import { Input } from "@/components/ui/input";
 import { summaryFromResolution, type FlavorScope } from "@/lib/contributions/speaker";
 import type { NpcSummary } from "@/lib/contributions/triage";
 import { localeHref } from "@/lib/lang";
-import type { NpcKind } from "@/lib/npc/npc";
+import { isProvenance, PROVENANCES, type NpcKind, type Provenance } from "@/lib/npc/npc";
 import type { NpcResolution } from "@/lib/npc/store";
+import { wowheadForeverUrl } from "@/lib/wowhead";
 
 function key(npcKind: NpcKind | null, npcId: number): string {
   return `${npcKind}:${npcId}`;
+}
+
+// ContributionTable's own words for the same four, so a speaker reads the same on both tabs.
+const PROVENANCE_LABELS: Record<Provenance, string> = {
+  corpus: "Corpus",
+  client: "Guessed",
+  moderator: "Moderated",
+  none: "Unknown",
+};
+
+const SPEAKER_CHIP_OPTIONS: ChipOption[] = PROVENANCES.map((option) => ({
+  value: option,
+  label: PROVENANCE_LABELS[option],
+}));
+
+type Progress = "unfinished" | "finished";
+
+const PROGRESS_CHIP_OPTIONS: ChipOption[] = [
+  { value: "unfinished", label: "Unfinished" },
+  { value: "finished", label: "Finished" },
+];
+
+/**
+ * Whether this NPC's voice still has a blank to fill: race, gender, or a flavor its race and
+ * gender offer. A confirmed row with every field null is settled rather than blank -- someone
+ * decided it has no race (see SpeakerCell's speakerNote) -- so it counts as finished.
+ */
+function unfinished(npc: NpcSummary): boolean {
+  if (npc.confirmed && !npc.race && !npc.gender && !npc.flavor) return false;
+  return !npc.race || !npc.gender || (npc.flavorOptions.length > 0 && !npc.flavor);
 }
 
 export default function NpcEditor({
@@ -31,6 +63,8 @@ export default function NpcEditor({
 }) {
   const lang = useLang();
   const [query, setQuery] = useState("");
+  const [provenance, setProvenance] = useState<Provenance | undefined>();
+  const [progress, setProgress] = useState<Progress | undefined>();
   /** What this session saved, over the server's rows, keyed by NPC. */
   const [saved, setSaved] = useState<Record<string, NpcSummary>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -67,8 +101,10 @@ export default function NpcEditor({
       .filter(
         (npc) =>
           !needle || String(npc.npcId).includes(needle) || (npc.npcName ?? "").toLowerCase().includes(needle),
-      );
-  }, [initial, saved, query]);
+      )
+      .filter((npc) => !provenance || npc.provenance === provenance)
+      .filter((npc) => !progress || unfinished(npc) === (progress === "unfinished"));
+  }, [initial, saved, query, provenance, progress]);
 
   return (
     <>
@@ -79,6 +115,18 @@ export default function NpcEditor({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           className="h-8 max-w-xs text-sm"
+        />
+        <FilterChip
+          label="speaker"
+          value={provenance}
+          options={SPEAKER_CHIP_OPTIONS}
+          onChange={(next) => setProvenance(isProvenance(next) ? next : undefined)}
+        />
+        <FilterChip
+          label="progress"
+          value={progress}
+          options={PROGRESS_CHIP_OPTIONS}
+          onChange={(next) => setProgress(next as Progress | undefined)}
         />
         <span className="text-muted-foreground text-xs">
           {rows.length} of {initial.length}
@@ -106,7 +154,17 @@ export default function NpcEditor({
                     <span className="font-mono">{npc.npcId}</span>
                     {npc.npcKind === "gameobject" ? (
                       <span className="text-muted-foreground"> · object</span>
-                    ) : null}
+                    ) : null}{" "}
+                    <a
+                      // Always the Anniversary branch: every NPC here was named by a contribution,
+                      // and a contribution comes from that client -- see wowhead.ts.
+                      href={wowheadForeverUrl(npc.npcKind ?? "creature", npc.npcId)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-muted-foreground hover:underline"
+                    >
+                      wh↗
+                    </a>
                   </td>
                   <td className="pr-3 text-xs">{npc.npcName ?? <span className="text-muted-foreground">unnamed</span>}</td>
                   <td className="pr-3 text-xs">
