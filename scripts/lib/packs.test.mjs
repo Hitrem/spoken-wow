@@ -107,13 +107,13 @@ test("changelogSection takes exactly the language pack's section", () => {
   assert.throws(() => changelogSection(CHANGELOG + "\n## 2.1.0 — books-audio-esMX\n", "2.1.0", "books-audio-esMX"), /two/);
 });
 
-test("a language may ship its quests as one All pack, and English may not", () => {
+test("a language may ship its quests as one pack, with no suffix,, and English may not", () => {
   const allFr = ["quests", "fr.md", { section: "quests", lang: "frFR", pack: "all",
-    version: "2.0.0", release: "quests-audio-all-frFR", slug: "spoken-quests-audio-all-frfr",
+    version: "2.0.0", release: "quests-audio-frFR", slug: "spoken-quests-audio-frfr",
     name: "Spoken Quests Audio: French" }];
   const fr = findPack("quests", "frFR", "all", loadPacks(tree([allFr])));
-  assert.equal(fr.folder, "SpokenQuestsAudioAll_frFR");
-  assert.equal(fr.tag, "quests-audio-all-frFR/v2.0.0");
+  assert.equal(fr.folder, "SpokenQuestsAudio_frFR");
+  assert.equal(fr.tag, "quests-audio-frFR/v2.0.0");
   assert.equal(fr.curseforge, null);
 
   const allEn = ["quests", "en.md", { section: "quests", lang: "enUS", pack: "all",

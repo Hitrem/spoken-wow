@@ -6,17 +6,17 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
-## 2.0.0 — quests-audio-all-esES — 2026-09-27
+## 2.0.0 — quests-audio-esES — 2026-09-27
 
-- **The first Spanish (EU) sound pack**, `SpokenQuestsAudioAll_esES`: every quest and gossip line
+- **The first Spanish (EU) sound pack**, `SpokenQuestsAudio_esES`: every quest and gossip line
   Spoken Quests has a European Spanish take for, in one pack for both factions. It carries the
   European Spanish gossip text too, so gossip is recognised on an esES client. It installs beside the
   English packs rather than over them; pick the language under **Voice Language**.
   Needs Spoken Quests 2.1.1 or later.
 
-## 2.0.0 — quests-audio-all-frFR — 2026-09-27
+## 2.0.0 — quests-audio-frFR — 2026-09-27
 
-- **The first French sound pack**, `SpokenQuestsAudioAll_frFR`: every quest and gossip line
+- **The first French sound pack**, `SpokenQuestsAudio_frFR`: every quest and gossip line
   Spoken Quests has a French take for, in one pack for both factions. It carries the
   French gossip text too, so gossip is recognised on a frFR client. It installs beside the
   English packs rather than over them; pick the language under **Voice Language**.

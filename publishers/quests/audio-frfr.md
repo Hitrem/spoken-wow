@@ -1,10 +1,10 @@
 ---
-release: quests-audio-all-frFR
+release: quests-audio-frFR
 section: quests
 lang: frFR
 pack: all
 version: 2.0.0
-slug: spoken-quests-audio-all-frfr
+slug: spoken-quests-audio-frfr
 name: Spoken Quests Audio: French
 summary: Every quest and gossip line for Spoken Quests, voiced in French. One pack, both factions. Needs Spoken Quests.
 categories:
@@ -20,7 +20,7 @@ One pack holds everything: Alliance quests, Horde quests, the quests both sides 
 
 ## Installing
 
-Install **Spoken Quests** first; this pack is inert without it. Extract into `Interface/AddOns` and leave the folder name as shipped (`SpokenQuestsAudioAll_frFR`) — Spoken Quests finds packs by folder name.
+Install **Spoken Quests** first; this pack is inert without it. Extract into `Interface/AddOns` and leave the folder name as shipped (`SpokenQuestsAudio_frFR`) — Spoken Quests finds packs by folder name.
 
 Spoken Quests speaks in your client's language by default. To hear French on another client, pick it under **Voice Language** in the Spoken Quests settings; **Fallback Language** decides what plays for a line this pack does not hold.
 

@@ -33,8 +33,9 @@ export const SECTIONS = ["quests", "zones", "books"];
 const QUESTS_PACKS = { alliance: "Alliance", horde: "Horde", shared: "Shared", gossip: "Gossip" };
 // A language may instead ship its quests as one pack holding every line: one folder is one answer
 // to "which do I install", and a GitHub release takes a file up to 2 GB. CurseForge does not take
-// one that size, so a language that goes there later is split into the four.
-const LANGUAGE_QUESTS_PACKS = { ...QUESTS_PACKS, all: "All" };
+// one that size, so a language that goes there later is split into the four. Being the only pack,
+// it carries no suffix: SpokenQuestsAudio_frFR, released as quests-audio-frFR.
+const LANGUAGE_QUESTS_PACKS = { ...QUESTS_PACKS, all: "" };
 
 function englishFolder(section, pack) {
   if (section === "zones") return "SpokenZonesAudio";
@@ -43,7 +44,8 @@ function englishFolder(section, pack) {
 }
 
 function englishRelease(section, pack) {
-  return section === "quests" ? `quests-audio-${pack}` : `${section}-audio`;
+  if (section !== "quests") return `${section}-audio`;
+  return pack === "all" ? "quests-audio" : `quests-audio-${pack}`;
 }
 
 const NOT_A_PAGE = new Set(["README.md"]);
