@@ -476,6 +476,44 @@ VoiceOver.Contribute:HasGap()
 Expect("asking whether there is a gap with nothing on screen never touches the model probe",
     (stub.SetUnitCount and stub.SetUnitCount() or 0), idleSetUnitBefore)
 
+---------------------------------------------------------------- which appearances it can wear
+-- SetCreature rolls one of a creature's appearances per call, so a dozen rolls tell the site
+-- which appearances exist; the model above says which body the player is looking at.
+SpokenEnv.Addon.db.profile.Contribute.HideButtons = false
+stub.HidePanels()
+world.questID = 9402
+world.title = "Guarded Words"
+world.questText = "Nothing on file for this one."
+world.npcName = "Bluffwatcher"
+world.npcGUID = "Creature-0-0-0-0-3084-0"
+world.modelFileID = 122055
+world.creatureDisplays[3084] = { 9392, 2141, 9391, 8572 }
+world.displaysUncached = true
+stub.ShowPanel("QuestFrameDetailPanel")
+
+local rollsBefore = stub.SetCreatureCount()
+local early = VoiceOver.Contribute:Capture()
+Expect("a creature not cached yet sends no appearances", early:match("\ndisplays=") == nil, true)
+Expect("...after a dozen rolls", stub.SetCreatureCount() - rollsBefore, 12)
+
+world.displaysUncached = false
+local rolled = VoiceOver.Contribute:Capture()
+Expect("the appearances are sent once they answer, sorted and once each",
+    rolled:match("\ndisplays=2141,8572,9391,9392\n") ~= nil, true)
+
+local rolledOnce = stub.SetCreatureCount()
+VoiceOver.Contribute:Capture()
+Expect("an NPC whose appearances are known is not rolled again", stub.SetCreatureCount(), rolledOnce)
+
+stub.HidePanels()
+world.npcGUID = "GameObject-0-0-0-0-3085-0"
+world.creatureDisplays[3085] = { 1 }
+stub.ShowPanel("QuestFrameDetailPanel")
+local objectRolls = stub.SetCreatureCount()
+local object = VoiceOver.Contribute:Capture()
+Expect("a gameobject is never rolled", stub.SetCreatureCount(), objectRolls)
+Expect("...and sends no appearances", object:match("\ndisplays=") == nil, true)
+
 ------------------------------------------------------------------ a closed window keeps no button
 -- Walking away from an NPC closes the gossip window with none of the refresh events, and the
 -- client goes on answering GetGossipText with the last words. The button used to stay up,
