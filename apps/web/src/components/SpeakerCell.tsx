@@ -105,9 +105,9 @@ export default function SpeakerCell({
   // or "gameobject", picked by the moderator rather than guessed -- see NpcSummary's own
   // docstring for why resolveNpc refuses to make this guess itself.
   const [kind, setKind] = useState<NpcKind | "">("");
-  // Only ever reachable for a `moderator` row (see below) -- a moderator's own settled answer
-  // stays plain until they ask to change it, so an always-present form isn't one stray click
-  // away from silently overwriting a considered "no race" with an empty save.
+  // Reachable for a `moderator` row and a `client` guess (see below) -- a moderator's own
+  // settled answer stays plain until they ask to change it, so an always-present form isn't one
+  // stray click away from silently overwriting a considered "no race" with an empty save.
   const [editing, setEditing] = useState(false);
 
   // Read-only too for somebody api/contributions/npc would refuse: the answer as it stands,
@@ -155,11 +155,13 @@ export default function SpeakerCell({
     );
   }
 
-  // `known` (race and gender already right, only the flavor is a guess) is specifically the
+  // `known` (race and gender taken as right, only the flavor is a guess) is specifically the
   // `client` provenance's own shape -- a moderator reopening their own row via Edit gets the
   // full race/gender/flavor selects below instead, since a moderator revising their own answer
-  // may want to correct any of the three, not just the flavor.
-  const known = npc.provenance === "client";
+  // may want to correct any of the three, not just the flavor. So does a guess the moderator
+  // has said is wrong (its own Edit, below): the model the client reported is only a guess,
+  // and a guessed bloodelf can be a human captain.
+  const known = npc.provenance === "client" && !editing;
   // The "nothing known" state's own flavor options: flavorScopes is the whole corpus, so this
   // narrows to whatever race and gender were just picked, the same shape flavorOptions already
   // is for the "client" state -- npc.flavorOptions answers for the race-gender on file, not
@@ -252,6 +254,16 @@ export default function SpeakerCell({
             alone doesn't carry. */}
         {npc.provenance !== "none" ? (
           <ProvenanceBadge provenance={npc.provenance} />
+        ) : null}
+        {known ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            onClick={() => setEditing(true)}
+          >
+            Edit
+          </Button>
         ) : null}
         <Button
           size="sm"
