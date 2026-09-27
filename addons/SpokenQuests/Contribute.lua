@@ -665,7 +665,7 @@ end
 --- back straight after. The modern one (the Forever client) has no selection functions at all
 --- and takes the entry's index instead -- asked second, because a classic client that also
 --- carries C_QuestLog would ignore the index and answer for whatever is selected.
-local function QuestLogDescription(questID)
+function Contribute:QuestLogDescription(questID)
     if GetQuestLogSelection and SelectQuestLogEntry and GetNumQuestLogEntries and GetQuestLogTitle then
         for index = 1, (GetNumQuestLogEntries()) do
             local id = select(8, GetQuestLogTitle(index))
@@ -695,7 +695,7 @@ end
 --- contribution sent from the quest giver's own dialog. `from=log` says which of the two this
 --- was.
 function Contribute:CaptureFromLog(questID, title)
-    local text = questID and QuestLogDescription(questID)
+    local text = questID and self:QuestLogDescription(questID)
     if not text or text == "" then
         return nil
     end

@@ -1,5 +1,11 @@
 # Changelog — Spoken Player
 
+## Unreleased
+
+- Quest and NPC captions appear inside the player with one or two lines and
+  two-word highlighting. Timing is approximate. Change the settings under
+  `/spoken options`; scroll to read and click the text to follow again.
+
 ## 2.2.2 — 2026-09-26
 
 - **Minimal Classic matches the Forever client's bronze.** On WoW Forever the panel's border,

@@ -58,6 +58,13 @@ Defaults = {
             -- the player the same box and a player who does not want one wants none.
             HideButtons = false,
         },
+        Transcript = {
+            Enabled = true,
+            AutoScroll = true,
+            Lines = 2,
+            HighlightWord = true,
+            FontSize = 16,
+        },
         Minimap = {
             LibDBIcon = {}, -- LibDBIcon's own: minimapPos, lock, hide
             -- What each mouse button does. "Menu" opens the list; any other value is a
@@ -180,6 +187,7 @@ function Addon:Enable()
     self:Migrate()
     self.enabled = true
     PlayerFrame:Initialize()
+    Transcript:Initialize()
     Minimap:Setup()
     Options:Setup()
 
@@ -198,6 +206,17 @@ function Addon:Enable()
             SoundQueue:RemoveAllSoundsFromQueue()
         elseif command == "skip" then
             SoundQueue:Skip()
+        elseif command == "transcript" then
+            Transcript:SetEnabled(not Addon.db.profile.Transcript.Enabled)
+        elseif command == "transcript on" then
+            Transcript:SetEnabled(true)
+        elseif command == "transcript off" then
+            Transcript:SetEnabled(false)
+        elseif command == "transcript reset" then
+            Transcript:Reset()
+        elseif command == "transcript 1" or command == "transcript 2" then
+            Addon.db.profile.Transcript.Lines = tonumber(command:sub(-1))
+            Transcript:RefreshConfig()
         elseif command == "options" or command == "settings" then
             Options:Open()
         elseif command == "share" and Gather then
@@ -211,9 +230,10 @@ function Addon:Enable()
                 print(format("  source %s (%s)", key, source.addon or "?"))
             end
             for _, line in ipairs(PlayerFrame:Describe()) do print("  " .. line) end
+            print("  " .. Transcript:Describe())
             for _, err in ipairs(Callbacks.errors) do print("  callback error: " .. err) end
         else
-            print("Spoken: /spoken play | stop | skip | options | reset | diagnostics")
+            print("Spoken: /spoken play | stop | skip | transcript [on|off|1|2|reset] | options | reset | diagnostics")
         end
     end
 end

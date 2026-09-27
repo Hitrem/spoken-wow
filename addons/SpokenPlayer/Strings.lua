@@ -4,6 +4,17 @@ setfenv(1, SpokenEnv)
 -- English is the fallback: a locale file assigns only the keys it translates.
 L = {
     PLAY = "Play",
+    TRANSCRIPT = "Transcript",
+    TRANSCRIPT_SHOW = "Show captions in the player",
+    TRANSCRIPT_SHOW_TIP = "Show one or two lines of quest or NPC dialogue inside the portrait player. Captions move and scale with the player.",
+    TRANSCRIPT_AUTO = "Follow narration",
+    TRANSCRIPT_AUTO_TIP = "Advance the captions using estimated word timing. Mouse-wheel scrolling holds the page until you click the captions or the next recording starts.",
+    TRANSCRIPT_LINES = "Caption lines",
+    TRANSCRIPT_HIGHLIGHT = "Highlight two words around the voice",
+    TRANSCRIPT_HIGHLIGHT_TIP = "Highlight the estimated current word and the next visible word in gold. At the end of a page, keep the previous word highlighted instead. Timing is approximate because the recordings have no word timestamps.",
+    TRANSCRIPT_SIZE = "Caption text size",
+    TRANSCRIPT_RESET = "Reset caption settings",
+    TRANSCRIPT_HINT = "Scroll to read earlier or later pages. Click the captions to follow the voice again. Word timing is approximate.",
     OPT_MINIMAL_PLAYER = "Minimal Classic player",
     OPT_MINIMAL_PLAYER_TIP = "Compact native-style portrait and progress bar. Click the quest title to skip it, or the plus button for the queue; right-click for playback and source actions. Turn off to restore the original player.",
     MIN_QUEUE_HINT = "%1$d queued. Click to show or hide the queue.",

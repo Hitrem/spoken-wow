@@ -90,6 +90,26 @@ local function Build(canvas)
         function() return cfg().FrameScale end, function(v) cfg().FrameScale = v end, refresh)
     layout:Button(L.OPT_RESET, 120, function() PlayerFrame:Reset() end)
 
+    layout:Section(L.TRANSCRIPT)
+    local transcript = function() return Addon.db.profile.Transcript end
+    local refreshTranscript = function() Transcript:RefreshConfig() end
+    layout:Checkbox(L.TRANSCRIPT_SHOW, L.TRANSCRIPT_SHOW_TIP,
+        function() return transcript().Enabled end,
+        function(v) Transcript:SetEnabled(v) end)
+    layout:Slider(L.TRANSCRIPT_LINES, 1, 2, 1,
+        function() return transcript().Lines end,
+        function(v) transcript().Lines = v end, refreshTranscript, Layout.Number)
+    layout:Checkbox(L.TRANSCRIPT_HIGHLIGHT, L.TRANSCRIPT_HIGHLIGHT_TIP,
+        function() return transcript().HighlightWord end,
+        function(v) transcript().HighlightWord = v end, refreshTranscript)
+    layout:Checkbox(L.TRANSCRIPT_AUTO, L.TRANSCRIPT_AUTO_TIP,
+        function() return transcript().AutoScroll end,
+        function(v) transcript().AutoScroll = v; Transcript.manualScroll = false end, refreshTranscript)
+    layout:Slider(L.TRANSCRIPT_SIZE, 12, 26, 1,
+        function() return transcript().FontSize end,
+        function(v) transcript().FontSize = v end, refreshTranscript, Layout.Number)
+    layout:Button(L.TRANSCRIPT_RESET, 210, function() Transcript:Reset() end)
+
     -- Everything about how a line is played, whichever addon queued it: the two feature
     -- addons each used to carry their own channel control, and a player with both
     -- installed had two settings for one thing.

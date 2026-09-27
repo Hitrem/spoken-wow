@@ -16,6 +16,7 @@
     <Include file="Locale\zhCN.lua"/>
     <Include file="Locale\zhTW.lua"/>
     <Include file="UI\Layout.lua"/>
+    <Include file="UI\Transcript.lua"/>
     <Include file="UI\Portrait.lua"/>
     <Include file="UI\StaticPortrait.lua"/>
     <Include file="UI\Actions.lua"/>

@@ -24,7 +24,7 @@ SpokenEnv.SoundUtils={
 }
 SpokenEnv.Options={Open=function() end}
 ''')
-for name in ['Callbacks.lua','SoundQueue.lua','Sources.lua','Strings.lua','UI/Portrait.lua','UI/StaticPortrait.lua','UI/Actions.lua','UI/PlayerFrame.lua','UI/MinimalPlayer.lua','API.lua']: load(name)
+for name in ['Callbacks.lua','SoundQueue.lua','Sources.lua','Strings.lua','UI/Transcript.lua','UI/Portrait.lua','UI/StaticPortrait.lua','UI/Actions.lua','UI/PlayerFrame.lua','UI/MinimalPlayer.lua','API.lua']: load(name)
 lua.execute('''
 local E=SpokenEnv
 local P,Q,A=E.MinimalPlayer,E.SoundQueue,E.Addon
