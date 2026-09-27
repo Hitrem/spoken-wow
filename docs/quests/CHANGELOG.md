@@ -6,6 +6,41 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 2.0.0 — quests-audio-deDE — 2026-09-27
+
+- **The first German sound pack**, `SpokenQuestsAudio_deDE`: every quest and gossip line
+  Spoken Quests has a German take for, in one pack for both factions. It carries the
+  German gossip text too, so gossip is recognised on a deDE client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
+## 2.0.0 — quests-audio-esMX — 2026-09-27
+
+- **The first Spanish (AL) sound pack**, `SpokenQuestsAudio_esMX`: every quest and gossip line
+  Spoken Quests has a Latin American Spanish take for, in one pack for both factions. It carries the
+  Latin American Spanish gossip text too, so gossip is recognised on a esMX client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
+## 2.0.0 — quests-audio-ptBR — 2026-09-27
+
+- **The first Portuguese sound pack**, `SpokenQuestsAudio_ptBR`: every quest and gossip line
+  Spoken Quests has a Brazilian Portuguese take for, in one pack for both factions. It carries the
+  Brazilian Portuguese gossip text too, so gossip is recognised on a ptBR client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+  **Partial**: the game's Portuguese text is missing for most quest completions, so it
+  voices most quest offers and gossip but only 120 turn-ins. Set **Fallback Language** to
+  English to hear the rest.
+
+## 2.0.0 — quests-audio-ruRU — 2026-09-27
+
+- **The first Russian sound pack**, `SpokenQuestsAudio_ruRU`: every quest and gossip line
+  Spoken Quests has a Russian take for, in one pack for both factions. It carries the
+  Russian gossip text too, so gossip is recognised on a ruRU client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
 ## 2.0.0 — quests-audio-esES — 2026-09-27
 
 - **The first Spanish (EU) sound pack**, `SpokenQuestsAudio_esES`: every quest and gossip line
