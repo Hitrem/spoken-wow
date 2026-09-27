@@ -18,9 +18,35 @@ function bracketed(text: string, raceTag: string | undefined): string {
   return accentTagged(audioTags(text), raceTag);
 }
 
+/**
+ * How a paragraph break reaches fish-tts.ts, which speaks each paragraph on its own: every run
+ * of whitespace holding a newline becomes exactly this, and every other run one space.
+ */
+export const PARAGRAPH_BREAK = "\n";
+
+/**
+ * fish.audio's S2 models fill a paragraph break with a sound nobody asked for -- a laugh, a
+ * moan, a mumble -- in roughly a third of takes: tried on twelve esMX lines, three draws each,
+ * 10 such sounds with the breaks sent and none with them flattened. So a break is never sent;
+ * fish-tts.ts splits the line at PARAGRAPH_BREAK and joins the parts with a silence. The
+ * break stays in the shaped text because that is where fish-tts.ts finds it, and because
+ * moving one is then a text change the staleness check sees.
+ *
+ * Each paragraph is shaped on its own, so each opens with the race's accent direction: it
+ * will be a request of its own, and a direction in an earlier one does not carry over.
+ */
+function paragraphed(text: string, raceTag: string | undefined): string {
+  return text
+    .split(/\s*\n\s*/)
+    .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .map((paragraph) => bracketed(paragraph, raceTag))
+    .join(PARAGRAPH_BREAK);
+}
+
 // fish.audio's S2 models read [bracketed] cues as directions too, so it is shaped the same
 // way until listening shows which of them it performs.
 export const SHAPE: Record<Provider, (text: string, raceTag: string | undefined) => string> = {
   elevenlabs: bracketed,
-  fish: bracketed,
+  fish: paragraphed,
 };
