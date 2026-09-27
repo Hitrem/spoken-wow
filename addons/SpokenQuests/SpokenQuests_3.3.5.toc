@@ -1,6 +1,15 @@
 ## Interface: 30300
 ## Title: Spoken Quests
 ## Notes: Quest and gossip dialogue read aloud, through the Spoken player. Formerly VoiceOver Redux. Restores quest and gossip voiceovers on 3.3.5 servers.
+## Notes-deDE: Quest- und Tratschdialoge, vorgelesen durch den Spoken-Player. Ehemals VoiceOver Redux. Stellt die Quest- und Tratsch-Vertonungen auf 3.3.5-Servern wieder her.
+## Notes-esES: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en servidores 3.3.5.
+## Notes-esMX: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en servidores 3.3.5.
+## Notes-frFR: Dialogues de quêtes et de discussions lus à voix haute grâce au lecteur Spoken. Anciennement VoiceOver Redux. Restaure les voix des quêtes et discussions sur les serveurs 3.3.5.
+## Notes-ptBR: Diálogos de missões e conversas lidos em voz alta através do reprodutor Spoken. Anteriormente VoiceOver Redux. Restaura as vozes de missões e conversas em servidores 3.3.5.
+## Notes-ruRU: Диалоги заданий и сплетен, озвученные через проигрыватель Spoken. Ранее — VoiceOver Redux. Возвращает озвучку заданий и сплетен на серверах 3.3.5.
+## Notes-koKR: Spoken 플레이어로 퀘스트와 잡담 대사를 소리내어 읽습니다. 이전 이름은 VoiceOver Redux. 3.3.5 서버에서 퀘스트와 잡담 음성을 복원합니다.
+## Notes-zhCN: 通过 Spoken 播放器朗读任务和闲聊对话。前身为 VoiceOver Redux。 在3.3.5 服务器上恢复任务和闲聊语音。
+## Notes-zhTW: 透過 Spoken 播放器朗讀任務和閒聊對話。前身為 VoiceOver Redux。 在3.3.5 伺服器上恢復任務和閒聊語音。
 ## Version: 2.1.2
 ## SavedVariables: SpokenQuestsDB
 ## Dependencies: SpokenPlayer
