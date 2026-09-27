@@ -115,7 +115,7 @@ function SettingsPanel:Setup()
                 row.note:SetText(format("%s  |cff888888%s%s|r",
                     (string.gsub(module.Title, "Spoken Quests Audio: ", "")),
                     module.ContentVersion or "",
-                    loaded and "" or "  (not loaded)"))
+                    loaded and "" or (" " .. L.OPT_NOT_LOADED_SUFFIX)))
                 row.note:Show()
             end
         end
