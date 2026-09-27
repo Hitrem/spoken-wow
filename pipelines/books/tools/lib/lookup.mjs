@@ -19,7 +19,8 @@ import { dirname, join } from "node:path";
 
 import pg from "pg";
 
-import { indexLua, pageIndex } from "./lua.mjs";
+import { indexLua, pageIndex, quote } from "./lua.mjs";
+import { spokenText } from "./text.mjs";
 
 const ROOT = new URL("../../../../", import.meta.url).pathname;
 const LANG = "enUS";
@@ -89,7 +90,8 @@ export function packLua(lang, clips, entries = null) {
     // Null only for a take imported from a store this app did not cut. Written as 0 so
     // the addon can tell "unknown" from "short" and fall back to its own timer.
     const len = row.durationSec === null ? 0 : row.durationSec;
-    lines.push(`\t\t[${row.pageId}] = { file = "${row.file}", len = ${len} },`);
+    const text = row.text == null ? "" : `, text = ${quote(spokenText(row.text))}`;
+    lines.push(`\t\t[${row.pageId}] = { file = "${row.file}", len = ${len}${text} },`);
   }
   lines.push("\t},");
 
@@ -126,7 +128,7 @@ export async function buildLookup({ lang = LANG, out = lookupPath(lang) } = {}) 
     // longer in the corpus has nothing to narrate, and an entry for it would be a row the
     // addon can never reach.
     const { rows } = await pool.query(
-      `select b."pageId", t."file", t."durationSec"
+      `select b."pageId", b."text", t."file", t."durationSec"
          from "take" t
          join "book_line" b
            on b."lineId" = t."lineId" and b."lang" = t."lang" and b."isCurrent"

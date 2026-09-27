@@ -1,8 +1,15 @@
 # Changelog
 
-Notable changes to Spoken Books and its sound pack. Both are versioned together: a pack is
-built from the same corpus export the addon ships, so installing one release of each is the
-only combination that is tested.
+Notable changes to Spoken Books and its sound pack. An addon update can use an
+existing compatible sound pack unless the release notes say otherwise.
+
+## 2.1.1 — 2026-09-27
+
+- Book narration now supplies captions to Spoken Player 2.2.3. English text
+  is included for every page, including unopened pages queued for narration.
+- Future sound pack exports include caption text in the voice language. Older
+  translated packs can caption pages you have opened during this session.
+- Existing English sound packs work without downloading the audio again.
 
 ## 2.1.0 — 2026-09-21
 

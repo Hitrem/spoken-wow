@@ -5,6 +5,8 @@ setfenv(1, SpokenEnv)
 Transcript = { elapsed = 0, manualScroll = false }
 
 local GAP = 4
+local EXPANDED_LINES = 8
+local BUTTON_SIZE = 14
 local HIGHLIGHT = "|cffffd100"
 local UTF8_CHAR = "[%z\1-\127\194-\244][\128-\191]*"
 local function Clamp(value, low, high)
@@ -14,6 +16,7 @@ local function Config()
     return Addon.db and Addon.db.profile.Transcript or Defaults.profile.Transcript
 end
 local function LineCount()
+    if Config().Expanded then return EXPANDED_LINES end
     return Config().Lines == 1 and 1 or 2
 end
 local function CharacterCount(text)
@@ -120,7 +123,7 @@ end
 
 function Transcript:Reflow()
     if not self.measure or not self.labels then return end
-    local available = math.max(1, self.frame:GetWidth())
+    local available = math.max(1, self.frame:GetWidth() - BUTTON_SIZE - GAP)
     local width = math.max(1, available - 2) -- Leave room for glyph rounding.
     self.lines, self.segments = {}, {}
     local line, lineText
@@ -228,6 +231,14 @@ function Transcript:TurnPage(delta)
     self:Update()
 end
 
+function Transcript:ToggleExpanded()
+    -- Keep a manually chosen passage in view when the page size changes.
+    local firstLine = ((self.page or 1) - 1) * LineCount() + 1
+    Config().Expanded = not Config().Expanded
+    self.page = math.floor((firstLine - 1) / LineCount()) + 1
+    self:RefreshConfig()
+end
+
 -- The player owns position, scale, border and controls. This module owns only
 -- the caption text and its reading position.
 function Transcript:HeightForClip(clip)
@@ -277,6 +288,7 @@ end
 function Transcript:Reset()
     local cfg = Config()
     cfg.Lines, cfg.FontSize, cfg.AutoScroll, cfg.HighlightWord = 2, 16, true, true
+    cfg.Expanded = false
     self.manualScroll = false
     self:RefreshConfig()
 end
@@ -290,6 +302,9 @@ end
 function Transcript:RefreshConfig()
     if not self.frame then return end
     local size = Config().FontSize or 16
+    local glyph = [[Interface\Buttons\UI-]] .. (Config().Expanded and "Minus" or "Plus")
+    self.expand:SetNormalTexture(glyph .. "Button-Up")
+    self.expand:SetPushedTexture(glyph .. "Button-Down")
     self.measure:SetFont(GameFontNormal:GetFont(), size, "")
     for row, label in ipairs(self.labels) do
         label:SetFont(GameFontNormal:GetFont(), size, "")
@@ -340,7 +355,26 @@ function Transcript:Initialize()
     end
     frame:SetScript("OnLeave", HideTooltip)
     frame:SetScript("OnHide", HideTooltip)
-    self.labels = { Label(frame), Label(frame) }
+    self.expand = CreateFrame("Button", nil, frame)
+    self.expand:SetSize(BUTTON_SIZE, BUTTON_SIZE)
+    self.expand:SetPoint("TOPRIGHT", 0, -1)
+    self.expand:SetHighlightTexture([[Interface\Buttons\UI-PlusButton-Hilight]], "ADD")
+    self.expand:SetScript("OnClick", function()
+        self:ToggleExpanded()
+        GameTooltip_Hide()
+    end)
+    self.expand:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(Config().Expanded and L.TRANSCRIPT_COLLAPSE or L.TRANSCRIPT_EXPAND)
+        GameTooltip:Show()
+    end)
+    local function HideExpandTooltip()
+        if GameTooltip:GetOwner() == self.expand then GameTooltip_Hide() end
+    end
+    self.expand:SetScript("OnLeave", HideExpandTooltip)
+    self.expand:SetScript("OnHide", HideExpandTooltip)
+    self.labels = {}
+    for row = 1, EXPANDED_LINES do self.labels[row] = Label(frame) end
     self.measure = Label(frame)
     self.measure:Hide() -- No width/anchors: measure the actual unwrapped glyphs.
     frame:SetScript("OnSizeChanged", function() self:Reflow() end)

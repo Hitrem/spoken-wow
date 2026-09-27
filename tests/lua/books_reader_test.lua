@@ -44,6 +44,11 @@ Expect("...and what the book is called", B:BookOf(261).title, "Hillsbrad Town Re
 ---------------------------------------------------------------- mail is not a book
 stub.ShowPage({ title = "A letter", number = 1, text = REGISTRY_1, creator = "Somebody" })
 Expect("a letter with a creator is not read", B:PageOnScreen(), nil)
+local savedPageText = B.pageText
+B.pageText = nil
+Expect("mail is never captured for captions", B:PageOnScreen(), nil)
+Expect("...even if its words match a book", B.pageText, nil)
+B.pageText = savedPageText
 
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_1 })
 _G.MailFrame = { IsShown = function() return true end }

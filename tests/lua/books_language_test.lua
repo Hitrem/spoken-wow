@@ -24,7 +24,8 @@ local function Install(packs, locale)
         version = 1,
         index = { ["Registry"] = { [1] = {} } },
         loose = {},
-        pages = { [PAGE] = { book = 1, number = 1 }, [ONLY_ENGLISH] = { book = 1, number = 2 } },
+        pages = { [PAGE] = { book = 1, number = 1, text = "English first page." },
+            [ONLY_ENGLISH] = { book = 1, number = 2, text = "English second page." } },
         books = { [1] = { title = "Registry", pages = { PAGE, ONLY_ENGLISH } } },
     }
     local B = {}
@@ -80,6 +81,13 @@ Expect("D. without a German pack a German page is not recognised", B:PageOnScree
 B = Install({ ENGLISH, INDEXED }, "deDE")
 stub.ShowPage({ title = "Stadtregister", number = 1, text = GERMAN_TEXT })
 Expect("D. with one, it is found by the German title and words", B:PageOnScreen(), PAGE)
+Expect("D. older translated packs can caption the page opened in the client",
+    B:ClipFor(PAGE).present.transcript, GERMAN_TEXT)
+Expect("D. a fallback page uses English captions rather than the open German page",
+    B:ClipFor(ONLY_ENGLISH).present.transcript, "English second page.")
+SpokenBooksDB.voiceLanguage = "enUS"
+Expect("D. choosing an English voice uses the saved English words",
+    B:ClipFor(PAGE).present.transcript, "English first page.")
 B = Install({ ENGLISH, INDEXED }, "enUS")
 stub.ShowPage({ title = "Stadtregister", number = 1, text = GERMAN_TEXT })
 Expect("D. ...and only on a German client", B:PageOnScreen(), nil)
@@ -93,6 +101,13 @@ stub.ShowPage({ title = "Stadtregister", number = 1, text = GERMAN_TEXT })
 Expect("D. a pack in another language is not asked", B:PageOnScreen(), nil)
 
 ---------------------------------------------------------------- E. reports
+B = Install({ ENGLISH, GERMAN }, "deDE")
+Expect("E. a translated page with no text never shows English under German audio",
+    B:ClipFor(PAGE).present.transcript, nil)
+SpokenBooksAudioPacks.SpokenBooksAudio_deDE.pages = { [PAGE] = {
+    file = "15", len = 2, text = "Gespeicherte deutsche Seite." } }
+Expect("E. new packs provide captions before a page is opened",
+    B:ClipFor(PAGE).present.transcript, "Gespeicherte deutsche Seite.")
 B = Install({ ENGLISH })
 Expect("E. an English report keeps its address", B:ReportURL(PAGE, "enUS"),
     "https://spoken.rusty.one/books/r/15")

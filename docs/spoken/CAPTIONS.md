@@ -1,6 +1,7 @@
-# Quest captions
+# Captions
 
-Spoken can show one or two lines of quest and NPC dialogue inside the player.
+Spoken can show quest dialogue, NPC dialogue, zone lore and book pages inside the
+player. Compact captions show one or two lines; expanded captions show eight.
 The captions follow the recording and highlight two adjacent words in gold.
 They move, resize and scale with the player in both layouts.
 
@@ -8,12 +9,14 @@ They move, resize and scale with the player in both layouts.
 
 The screenshot above is from WoW Forever on Linux. The player confirmed the
 layout and approximate timing in game. Other clients have not been checked
-visually.
+visually. The expanded view and zone/book captions still need an in-game visual check.
 
 ## Controls
 
 - `/spoken transcript` toggles captions; `on` and `off` also work.
-- `/spoken transcript 1` shows one line; `/spoken transcript 2` shows two.
+- The small **+** button expands captions to eight lines. **−** restores your
+  compact line setting. The player grows downward and keeps the unit icon in place.
+- `/spoken transcript 1` sets one compact line; `/spoken transcript 2` sets two.
 - `/spoken options` has settings for line count, font size, highlighting and
   automatic following.
 - Scroll over the captions to read other pages. Click the text to follow the
@@ -36,8 +39,18 @@ log replays can use the quest description. A completion recording never uses
 the acceptance text as a substitute. Different quest wording and pauses in a
 recording can still make the highlight drift.
 
-Books and zone lore do not provide caption text yet. Other sources can supply
-`clip.present.transcript`; the player also accepts the existing `clip.text`.
+Zone and subzone captions use the full lore in the actual voice language, including
+English audio fallback. Book clips carry their own page text, so turning or closing
+the book does not change the captions of a queued recording. The English addon
+export includes every page. New book sound pack exports include the voice language's
+text; older translated packs can caption pages opened during the current session.
+Mail is excluded. Captions stay hidden when matching text is unavailable.
+
+Other sources can supply `clip.present.transcript`; the player also accepts
+`clip.text`. Book captions are exported by `pipelines/books/tools/lib/lua.mjs`
+using the same plain text conversion as narration. The current English export
+was regenerated from the public `/api/books/search?lang=enUS` catalogue on
+2026-09-27; page IDs, book order and lookup checksums are unchanged.
 
 ## Checks
 
@@ -46,10 +59,13 @@ Run from the repository root:
 ```sh
 make test-player
 node scripts/check-addon-xml.mjs
+make zones-check
+make books-test
 ```
 
 The caption suite is `tests/captions/verify.lua`. It runs the real queue,
 player layouts, actions and quest adapter with simulated widgets and time.
 It checks playback changes, page boundaries, Unicode, resizing, attachment,
-queue placement and settings. The fixture models layout and text width; it
+queue placement, expansion and settings. The books and zones suites also cover
+caption sources, language fallback and queued pages. The fixture models layout and text width; it
 does not reproduce the game's font rendering or audio.

@@ -93,7 +93,7 @@ local function HighlightCount()
 end
 local function CheckLayout()
     local _,count=Captions()
-    Check(count<=cfg.Lines,'only the requested number of lines is visible')
+    Check(count<=(cfg.Expanded and 8 or cfg.Lines),'only the requested number of lines is visible')
     for _,label in ipairs(T.labels) do
         if label:IsShown() then
             Check(not label.wordWrap and not label:GetText():find('\n'),'each caption label is exactly one non-wrapping line')
@@ -174,6 +174,20 @@ CheckLayout()
 SlashCmdList.SPOKEN('transcript 2')
 Check(cfg.Lines==2 and T.frame:GetHeight()==twoLineHeight,'two-line command restores compact pair of lines')
 Check(M.frame.bounds[2]==M.frame.bounds[4],'vertical resize is locked to the number of lines')
+local compactTop, compactWord, compactElapsed = M.frame:GetTop(), T.activeWord, T:GetElapsed()
+T.expand:Fire('OnClick')
+Check(cfg.Expanded and select(2,Captions())==8,'the plus button opens eight caption lines')
+Check(T.frame:GetHeight()==twoLineHeight*4,'expanded captions grow inside the player')
+Check(math.abs(M.frame:GetTop()-compactTop)<.001,'expanding leaves the portrait in place')
+Check(T.activeWord==compactWord and T:GetElapsed()==compactElapsed,'expanding does not restart playback or its highlight')
+Check(T.expand:GetLeft()>T.labels[1]:GetRight(),'the caption button has space beside the text')
+CheckLayout()
+T:TurnPage(1)
+local firstVisible=(T.page-1)*8+1
+T.expand:Fire('OnClick')
+Check(not cfg.Expanded and cfg.Lines==2 and T.frame:GetHeight()==twoLineHeight,'minus restores the compact preference')
+Check(T.manualScroll and T.page==math.floor((firstVisible-1)/2)+1,'collapsing keeps the manually selected passage visible')
+T:Follow()
 cfg.HighlightWord=false; T:RefreshConfig()
 Check(HighlightCount()==0 and T.activeWord==word,'highlight can be disabled while captions keep following')
 cfg.HighlightWord=true; cfg.AutoScroll=false; T:RefreshConfig()
@@ -225,6 +239,11 @@ for i=1,6 do extra[i]=Clip('extra'..i,'Later dialogue',10); source:Enqueue(extra
 M:ToggleQueue()
 Check(M.drawer:IsShown() and M.queueNote:IsShown(),'expanded queue still displays rows and its paging note')
 Check(M.drawer:GetTop()<T.frame:GetBottom(),'downward queue drawer cannot overlap captions')
+T.expand:Fire('OnClick')
+Check(M.drawer:GetTop()<T.frame:GetBottom() or M.drawer:GetBottom()>T.frame:GetTop(),
+    'the open queue stays clear of expanded captions, including when it flips upward')
+Check(T.frame:GetBottom()>M.panel:GetBottom(),'the panel encloses expanded captions and queue')
+T.expand:Fire('OnClick')
 Check(M.panel:GetBottom()<M.drawer:GetBottom(),'the shared background encloses the expanded queue')
 Check(math.abs(M.frame:GetTop()-playerTop)<.001,'opening the queue leaves the unit icon in place')
 local anchor={M.frame:GetPoint(1)}
@@ -265,6 +284,11 @@ local original=E.PlayerFrame.frame
 Check(T.frame:GetParent()==original and original:IsShown() and not M.frame:IsShown(),'switching skins attaches captions to the original player')
 Check(T.frame:GetTop()<original.portrait:GetBottom(),'original-skin captions stay below portrait and action controls')
 Check(T.frame:GetBottom()>original.background:GetBottom(),'original background extends behind the captions')
+local originalTop=original:GetTop()
+T.expand:Fire('OnClick')
+Check(select(2,Captions())==8 and T.frame:GetBottom()>original.background:GetBottom(),'the floating-head layout encloses expanded captions')
+Check(math.abs(original:GetTop()-originalTop)<.001,'expanding preserves the floating head position')
+T.expand:Fire('OnClick')
 local previousWidth=T.frame:GetWidth()
 original:SetWidth(620)
 Check(T.frame:GetWidth()>previousWidth,'resizing the original player reflows the attached text')
@@ -278,6 +302,9 @@ for _,point in ipairs({'TOPLEFT','CENTER','BOTTOM'}) do
     Check(math.abs(M.frame:GetTop()-top)<.001,'one-line mode preserves '..point..' portrait position')
     cfg.Lines=2; T:RefreshConfig()
     Check(math.abs(M.frame:GetTop()-top)<.001,'two-line mode preserves '..point..' portrait position')
+    T:ToggleExpanded()
+    Check(math.abs(M.frame:GetTop()-top)<.001,'expanded mode preserves '..point..' portrait position')
+    T:ToggleExpanded()
 end
 Q:RemoveAllSoundsFromQueue()
 
@@ -287,8 +314,8 @@ local multilingual='Welcome, Windbeard!\nПривет путник. '..string.re
 source:Enqueue(Clip('unicode',multilingual,120))
 for _,size in ipairs({12,26}) do
     for _,width in ipairs({300,900}) do
-        for _,count in ipairs({1,2}) do
-            cfg.FontSize,cfg.Lines=size,count
+        for _,count in ipairs({1,2,8}) do
+            cfg.FontSize,cfg.Lines,cfg.Expanded=size,count==1 and 1 or 2,count==8
             M.frame:SetWidth(width); T:RefreshConfig()
             T.manualScroll,T.page=true,1
             local displayed={}
@@ -303,6 +330,7 @@ for _,size in ipairs({12,26}) do
     end
 end
 -- Sample playback through split UTF-8 words and page boundaries in one-line mode.
+cfg.Expanded=false; cfg.Lines=1; T:RefreshConfig()
 T:Follow()
 for sample=1,100 do
     Advance(1)

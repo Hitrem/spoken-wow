@@ -71,6 +71,9 @@ Expect("...keyed the way the corpus names the line", clip.key, "b:261")
 Expect("...pointing into the pack's own folder",
     clip.path, [[Interface\AddOns\SpokenBooksAudio\Sounds\261.mp3]])
 Expect("...carrying the recorded duration", clip.length, 30.5)
+Expect("...carrying the first page's saved captions", clip.present.transcript,
+    SpokenBooksData.pages[261].text)
+Expect("...with readable text even before opening the book", #clip.present.transcript > 0, true)
 Expect("...titled with the book", clip.present.header, "Hillsbrad Town Registry")
 Expect("...and numbered, because this book has more than one page", clip.present.label, "Page 1 of 4")
 Expect("a page the pack does not carry has no clip", B:ClipFor(263), nil)
@@ -107,6 +110,10 @@ Expect("opening page 1 queues the whole book, skipping the page with no clip",
 local before = #QueuedPages()
 Expect("turning to a page already queued changes nothing", B:SyncTo(262), 0)
 Expect("...and leaves the queue alone", #QueuedPages(), before)
+Expect("...and leaves the current clip's captions on its own page",
+    Spoken:GetQueue()[1].present.transcript, SpokenBooksData.pages[261].text)
+Expect("the next queued page already carries its own captions",
+    Spoken:GetQueue()[2].present.transcript, SpokenBooksData.pages[262].text)
 
 Expect("turning to the last queued page also changes nothing", B:SyncTo(265), 0)
 

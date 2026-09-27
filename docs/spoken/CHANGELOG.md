@@ -1,10 +1,12 @@
 # Changelog — Spoken Player
 
-## Unreleased
+## 2.2.3 — 2026-09-27
 
 - Quest and NPC captions appear inside the player with one or two lines and
   two-word highlighting. Timing is approximate. Change the settings under
   `/spoken options`; scroll to read and click the text to follow again.
+- Zone lore and book pages use the same captions. A small plus/minus button
+  switches between compact captions and an eight-line reading area in either layout.
 
 ## 2.2.2 — 2026-09-26
 

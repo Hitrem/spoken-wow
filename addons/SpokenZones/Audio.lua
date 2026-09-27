@@ -522,6 +522,11 @@ function SpokenZones:NewLoreSound(mapID, areaKey)
 	end
 
 	local label = self:GetAudioLabel(mapID, areaKey)
+	local language = pack.language or "enUS"
+	local data = self.CaptionLore and self.CaptionLore[language]
+	local entries = data and (areaKey and data.subzones or data.zones)
+	local entry = entries and entries[mapID]
+	if areaKey then entry = entry and entry[areaKey] end
 	return {
 		key = areaKey and ("s:" .. mapID .. ":" .. areaKey) or ("z:" .. mapID),
 		path = path,
@@ -536,6 +541,7 @@ function SpokenZones:NewLoreSound(mapID, areaKey)
 			-- needs to place it.
 			header = self:GetMapName(mapID) or label,
 			label = label,
+			transcript = entry and entry.full,
 			bullet = "zone",
 			-- A zone has no speaker; the book is the whole answer.
 			portrait = { kind = "texture", texture = BOOK },

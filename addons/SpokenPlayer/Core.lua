@@ -62,6 +62,7 @@ Defaults = {
             Enabled = true,
             AutoScroll = true,
             Lines = 2,
+            Expanded = false,
             HighlightWord = true,
             FontSize = 16,
         },
