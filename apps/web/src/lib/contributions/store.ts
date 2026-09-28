@@ -128,6 +128,51 @@ export async function setContributionNpcKind(
   return true;
 }
 
+/**
+ * The same line sent again, now naming its speaker, fills in the speaker the first copy lacked.
+ *
+ * The triage key is quest and moment, not NPC, so an envelope from an addon that could not see
+ * the NPC and a later one that could hash to the same "dedup" -- and without this the second is
+ * only a count, its NPC dropped on the floor. Only ever fills: a row whose envelope already
+ * named an NPC keeps it, the client's own observation standing as it does in
+ * setContributionNpc. `meta || excluded.meta` rather than a replace, so nothing the first copy
+ * carried is lost; the text is the same by construction (it is in the hash).
+ *
+ * Written against an `excluded`-shaped source so the upsert below and fillContributionNpcs share
+ * one rule; the latter aliases its unnested parameters as `excluded`.
+ */
+const FILL_NPC_WHEN = `coalesce("contribution"."meta"->>'npc', '') = ''
+             and coalesce(excluded."meta"->>'npc', '') <> ''`;
+const FILL_NPC_SET = `"meta" = case when ${FILL_NPC_WHEN}
+                        then "contribution"."meta" || excluded."meta"
+                        else "contribution"."meta" end,
+           "raw" = case when ${FILL_NPC_WHEN} then excluded."raw" else "contribution"."raw" end`;
+
+/**
+ * Fill in the speaker of already-stored lines from resends that name one, without counting a
+ * resend as another player: what scripts/backfill-contribution-npcs.mts does with a file a
+ * contributor re-gathered after an addon update. One statement for the lot, since the script
+ * may run over a tunnel where a round trip per line is minutes. Returns the dedups it changed.
+ */
+export async function fillContributionNpcs(
+  inputs: Pick<Submission, "dedup" | "meta" | "raw">[],
+): Promise<string[]> {
+  if (inputs.length === 0) return [];
+  const { rows } = await db().query<{ dedup: string }>(
+    `update "contribution"
+        set ${FILL_NPC_SET}, "updatedAt" = now()
+       from unnest($1::text[], $2::jsonb[], $3::text[]) as excluded ("dedup", "meta", "raw")
+      where "contribution"."dedup" = excluded."dedup" and ${FILL_NPC_WHEN}
+      returning "contribution"."dedup"`,
+    [
+      inputs.map((input) => input.dedup),
+      inputs.map((input) => JSON.stringify(input.meta)),
+      inputs.map((input) => input.raw),
+    ],
+  );
+  return rows.map((row) => row.dedup);
+}
+
 export async function createContribution(
   input: Submission & {
     body: string | null;
@@ -145,6 +190,7 @@ export async function createContribution(
      values ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13)
      on conflict ("dedup") do update
        set "count" = "contribution"."count" + 1,
+           ${FILL_NPC_SET},
            "updatedAt" = now()`,
     [
       input.source,
