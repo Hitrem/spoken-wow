@@ -10,6 +10,7 @@ setfenv(1, VoiceOver)
 --   Options.lua            General and sound-pack tabs of the options window
 --   UI/SettingsPanel.lua   the same settings on the interface-settings canvas
 --   UI/DialogPlayButton.lua  Play/Stop button on quest and gossip windows
+--   Compatibility.lua      Play/Stop button on the quest-log details panel
 --   UI/ContributeButton.lua  Contribute button on quest and gossip windows
 --   Contribute.lua         Contribute button tooltip
 --   ReportButton.lua       the copy-link dialog for reporting a line
@@ -149,6 +150,7 @@ L.OPT_PLAY = "Play"
 L.OPT_STOP = "Stop"
 L.OPT_STOP_TIP = "Stop reading"
 L.OPT_READ_TIP = "Read this aloud"
+L.OPT_GREETING = "Greeting"
 L.OPT_AUTOPLAY_OFF_TIP = "Autoplay is off in the Spoken Quests settings."
 L.OPT_CONTRIBUTE = "Contribute"
 L.OPT_REPORT = "Report"
