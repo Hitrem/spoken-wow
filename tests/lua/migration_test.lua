@@ -153,5 +153,17 @@ _G.SpokenQuestsDB = { global = { migratedFrom = "VoiceOverRedux" }, profiles = {
 env.Addon:Enable()
 Expect("PLAYER_LOGIN migrates from tables that loaded after the player", env.Addon.db.profile.Frame.FrameScale, 0.45)
 
+------------------------------------------------ the compartment flag reaches existing profiles
+-- The minimap db now carries a default the first releases did not have; AceDB merges
+-- new default keys into profiles that already exist, so no migration step is needed.
+Clean()
+_G.VoiceOverDB = { profiles = { Default = { MinimapButton = { LibDBIcon = { minimapPos = 3 } } } } }
+env = stub.LoadSpoken(SPOKEN)
+Expect("an old profile gains the compartment flag", env.Addon.db.profile.Minimap.LibDBIcon.showInCompartment, true)
+Expect("...with what it had kept", env.Addon.db.profile.Minimap.LibDBIcon.minimapPos, 3)
+env.Addon.db.profile.Minimap.LibDBIcon.showInCompartment = false
+env = stub.LoadSpoken(SPOKEN)
+Expect("a player's own choice survives the next login", env.Addon.db.profile.Minimap.LibDBIcon.showInCompartment, false)
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll migration tests passed")

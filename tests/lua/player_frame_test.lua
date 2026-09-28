@@ -124,6 +124,9 @@ Expect("no actions, no strip", F.frame.actions.shown, 0)
 env, quests, zones = Boot()
 Expect("exactly one LDB object, named Spoken", stub.ldbObjects.Spoken ~= nil and stub.dbIcons.Spoken ~= nil, true)
 Expect("...registered against the player's saved position", stub.dbIcons.Spoken.db, env.Addon.db.profile.Minimap.LibDBIcon)
+-- The frame the lib keeps for the addon; the lib's clicks pass it, and it is the anchor
+-- the addon holds for the compartment's clicks too.
+local mmButton = stub.dbIcons.Spoken.button
 env.Minimap:AddEntry("zones", { id = "lore", text = "Open lore window", order = 1, onClick = function() end })
 env.Minimap:AddEntry("quests", { id = "opts", text = "Quest settings", order = 1, onClick = function() end })
 local menu = env.Minimap:BuildMenu()
@@ -138,7 +141,7 @@ Expect("RemoveEntry", getn(env.Minimap:BuildMenu()), 4)
 -- background, its highlight under the cursor, its closing on a click elsewhere and its
 -- toggling with it. Nothing here reimplements any of that.
 stub.ResetDropDowns()
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 Expect("left-clicking opens the client's menu", stub.openDropDown ~= nil, true)
 local shown = {}
 for _, entry in ipairs(stub.dropDownEntries) do
@@ -149,7 +152,7 @@ end
 -- separating the groups, and a heading reads as a row of the group above it.
 Expect("...listing the player's entries, then each source's under its name, ruled apart",
     table.concat(shown, "|"), "Play/Pause|Stop|Settings|---|[Quests]|Quest settings")
-Expect("...anchored to the button", stub.openDropDown.dropdownAnchor, _G.Minimap)
+Expect("...anchored to the button", stub.openDropDown.dropdownAnchor, mmButton)
 
 -- The menu opens under the cursor, which is still on the button, so the button's tooltip
 -- is still up and the two overlap. The tooltip goes.
@@ -160,15 +163,15 @@ stub.ldbObjects.Spoken.OnTooltipShow(tip)
 Expect("the tooltip says nothing while the menu is open", tip:NumLines(), 1)
 Expect("...and hides itself if the cursor goes back over the button", tip:IsShown(), false)
 
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 stub.ldbObjects.Spoken.OnTooltipShow(tip)
 Expect("with the menu closed it says what the clicks do again", tip:NumLines() > 3, true)
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 Expect("clicking the button again closes it", stub.openDropDown, nil)
 
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 local chose = false
 for _, entry in ipairs(stub.dropDownEntries) do
     if entry.text == "Quest settings" then
@@ -185,8 +188,9 @@ Expect("...and the menu closes itself", stub.openDropDown, nil)
 -- The three private-server clients have no UIDropDownMenu worth the name, so the player
 -- draws its own: a background, a highlight, a catcher for the click that dismisses it.
 env, quests, zones = Boot("1.12")
+mmButton = stub.dbIcons.Spoken.button
 env.Minimap:AddEntry("quests", { id = "opts", text = "Quest settings", order = 1, onClick = function() end })
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 local frame = _G.SpokenMinimapMenu
 Expect("a menu of its own opens", frame ~= nil and frame:IsShown(), true)
 Expect("...on a background of its own", frame and frame:GetBackdrop() ~= nil, true)
@@ -195,9 +199,9 @@ local firstRow = frame.rows[1]
 Expect("...rows that clear the border", firstRow and firstRow.anchor and firstRow.anchor.x >= 12, true)
 Expect("...that highlight under the cursor", firstRow and firstRow:GetHighlightTexture() ~= nil
     and firstRow:GetHighlightTexture():GetTexture() ~= nil, true)
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 Expect("clicking the button again closes it", frame:IsShown(), false)
-stub.ldbObjects.Spoken.OnClick(_G.Minimap, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
 Expect("something catches a click outside", _G.SpokenMinimapMenuCatcher:IsShown(), true)
 _G.SpokenMinimapMenuCatcher:Click()
 Expect("...and that click closes the menu", frame:IsShown(), false)

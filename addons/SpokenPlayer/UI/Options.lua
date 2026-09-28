@@ -165,6 +165,13 @@ local function Build(canvas)
     layout:Checkbox(L.OPT_MINIMAP_LOCK, nil,
         function() return mm().lock end,
         function(v) mm().lock = v end, function() Minimap:Refresh() end)
+    -- Blizzard's addon compartment exists on the modern clients only; the player's
+    -- button shows there too, opening the same menu, and this row switches it.
+    if AddonCompartmentFrame then
+        layout:Checkbox(L.OPT_MINIMAP_COMPARTMENT, L.OPT_MINIMAP_COMPARTMENT_TIP,
+            function() return mm().showInCompartment end,
+            function(v) Minimap:ToggleCompartment(v) end)
+    end
 
     -- Feature addons register a button here to reach their own settings. The section is
     -- created with the first of them: with no feature addon installed there is nothing
