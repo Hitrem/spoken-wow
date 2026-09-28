@@ -21,18 +21,23 @@
  * reason to make that crossing at all.
  */
 import { useLang } from "@/components/LangProvider";
-import { localeHref } from "@/lib/lang";
+import { localeHref, type Lang } from "@/lib/lang";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { memo, useCallback, useState } from "react";
 
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import SpeakerCell, { ProvenanceBadge, type SpeakerAnswer } from "@/components/SpeakerCell";
+import { LiteButton, LiteCheckbox } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
 import { usePendingPush } from "@/components/usePendingPush";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { ContributionStatus } from "@/lib/contributions/contributions";
+import {
+  RESOLVE_MANY_MAX,
+  type ContributionStatus,
+  type ResolveManyResult,
+} from "@/lib/contributions/contributions";
 import { CLIENT_FAMILIES, CLIENT_FAMILY_LABELS, type ClientSummary } from "@/lib/contributions/client";
 import { flavorOptionsFor, summaryFromResolution, type FlavorScope } from "@/lib/contributions/speaker";
 import { contributionsHref, MISSING, NEEDS_DECISION, type ClientFilter, type SpeakerFilter } from "@/lib/contributions/query";
@@ -89,6 +94,7 @@ const STATUS_CHIP_OPTIONS: ChipOption[] = STATUS_OPTIONS.map((option) => ({
 
 const PROVENANCE_LABELS: Record<Provenance, string> = {
   corpus: "Corpus",
+  display: "Game data",
   client: "Guessed",
   moderator: "Moderated",
   none: "Unknown",
@@ -124,6 +130,9 @@ function when(at: string): string {
 
 export default function ContributionTable({
   initial,
+  matching,
+  page,
+  pages,
   status,
   provenance,
   client,
@@ -131,7 +140,12 @@ export default function ContributionTable({
   flavorScopes,
   canAnswerNpc,
 }: {
+  /** This page's rows. */
   initial: ContributionRow[];
+  /** Every row the filters match, on any page -- what "Accept all" acts on. */
+  matching: { id: number; status: ContributionStatus }[];
+  page: number;
+  pages: number;
   status: ContributionStatus | "all";
   provenance: SpeakerFilter;
   client: ClientFilter;
@@ -239,7 +253,7 @@ export default function ContributionTable({
           gender: option.gender,
           flavor: option.flavor,
           provenance: option.provenance,
-          confirmed: option.provenance === "corpus" || option.provenance === "moderator",
+          confirmed: option.provenance === "corpus" || option.provenance === "display" || option.provenance === "moderator",
           doubtful: option.doubtful,
           flavorOptions: flavorOptionsFor(option.race, option.gender, flavorScopes),
           conflict: [],
@@ -283,7 +297,16 @@ export default function ContributionTable({
     [flavorScopes, router],
   );
 
-  /** One row's status change, shared by its own buttons and the bulk ones. True when it landed. */
+  /** A row's status change landed: shown at once, without waiting for a reload. */
+  const landed = useCallback((id: number, next: ContributionStatus) => {
+    setRefusals(withoutRefusal(id));
+    setResolved((current) => ({ ...current, [id]: next }));
+    // "Add to explorer" is the same POST as Accept, re-sent for a row already accepted -- this
+    // is what hides the button once it has worked, without waiting for a reload.
+    if (next === "accepted") setLineCreated((current) => new Set(current).add(id));
+  }, []);
+
+  /** One row's status change, from its own buttons. True when it landed. */
   const send = useCallback(async (id: number, next: ContributionStatus): Promise<boolean> => {
     const response = await fetch("/api/contributions/resolve", {
       method: "POST",
@@ -298,13 +321,9 @@ export default function ContributionTable({
       setRefusals(withRefusal(id, body?.error));
       return false;
     }
-    setRefusals(withoutRefusal(id));
-    setResolved((current) => ({ ...current, [id]: next }));
-    // "Add to explorer" is the same POST as Accept, re-sent for a row already accepted -- this
-    // is what hides the button once it has worked, without waiting for a reload.
-    if (next === "accepted") setLineCreated((current) => new Set(current).add(id));
+    landed(id, next);
     return true;
-  }, []);
+  }, [landed]);
 
   const resolve = useCallback(
     async (id: number, next: ContributionStatus) => {
@@ -325,30 +344,48 @@ export default function ContributionTable({
   const [confirmAll, setConfirmAll] = useState(false);
 
   /**
-   * The same POST as a row's own button, once per row, one at a time: each accept is its own
-   * transaction writing quest lines (accept.ts), and running them in parallel is how two rows
-   * for the same line would race each other's collision check. A row that is refused keeps its
-   * refusal under it, exactly as if its own button had been pressed, and the rest carry on.
+   * The rows sent to api/contributions/resolve-many, a chunk per request, resolved side by side
+   * on the server (accept.ts's resolveContributions). A row that is refused keeps its refusal
+   * under it, exactly as if its own button had been pressed, and the rest carry on.
    */
   const resolveMany = useCallback(
     async (ids: number[], next: ContributionStatus) => {
       setBulkOutcome(null);
       setBulk({ next, done: 0, total: ids.length });
       const refused: number[] = [];
-      for (const [index, id] of ids.entries()) {
-        if (!(await send(id, next))) refused.push(id);
-        setBulk({ next, done: index + 1, total: ids.length });
+      for (let start = 0; start < ids.length; start += RESOLVE_MANY_MAX) {
+        const chunk = ids.slice(start, start + RESOLVE_MANY_MAX);
+        const response = await fetch("/api/contributions/resolve-many", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ids: chunk, status: next }),
+        }).catch(() => null);
+        const body = (await response?.json().catch(() => null)) as
+          | { results?: Record<number, ResolveManyResult>; error?: unknown }
+          | null;
+        for (const id of chunk) {
+          const result = response?.ok ? body?.results?.[id] : undefined;
+          if (result?.ok) {
+            landed(id, next);
+          } else {
+            refused.push(id);
+            setRefusals(withRefusal(id, result ? result.error : body?.error));
+          }
+        }
+        setBulk({ next, done: Math.min(start + chunk.length, ids.length), total: ids.length });
       }
       setBulk(null);
       // The refused rows stay ticked, so fixing their speakers and pressing the same button again
       // is the whole retry.
       setSelected(new Set(refused));
+      // Rows that left this view leave gaps on this page; the server fills them from the next.
+      router.refresh();
       setBulkOutcome(
         `${STATUS_LABELS[next]}: ${ids.length - refused.length} of ${ids.length}` +
           (refused.length > 0 ? ` -- ${refused.length} refused and left selected.` : "."),
       );
     },
-    [send],
+    [landed, router],
   );
 
   const rows = initial.filter((row) => {
@@ -362,18 +399,25 @@ export default function ContributionTable({
   /** The ids among `from` a bulk change to `next` would actually change. */
   const changeable = (from: ContributionRow[], next: ContributionStatus) =>
     from.filter((row) => (resolved[row.id] ?? row.status) !== next).map((row) => row.id);
-  const shownToAccept = changeable(rows, "accepted");
+  // Every matching row, not just this page's: "Accept all" is for the whole filtered queue.
+  const shownToAccept = matching
+    .filter((row) => (resolved[row.id] ?? row.status) !== "accepted")
+    .map((row) => row.id);
   const selectedToAccept = changeable(selectedRows, "accepted");
   const selectedToReject = changeable(selectedRows, "rejected");
   const allTicked = rows.length > 0 && selectedRows.length === rows.length;
 
-  const toggle = (id: number, on: boolean) =>
-    setSelected((current) => {
-      const next = new Set(current);
-      if (on) next.add(id);
-      else next.delete(id);
-      return next;
-    });
+  // Stable, like every callback a row is handed: a row redraws only when its own props change.
+  const toggle = useCallback(
+    (id: number, on: boolean) =>
+      setSelected((current) => {
+        const next = new Set(current);
+        if (on) next.add(id);
+        else next.delete(id);
+        return next;
+      }),
+    [],
+  );
 
   /**
    * Move one dropdown and keep the other, then push it -- a soft navigation, not a state
@@ -381,8 +425,11 @@ export default function ContributionTable({
    * ReportTable.tsx's own `go`; the mapping itself is contributionsHref, pulled out to
    * lib/contributions/query.ts so it can be tested without rendering FilterChip or this table.
    */
-  function go(next: { status?: ContributionStatus | "all"; provenance?: SpeakerFilter; client?: ClientFilter }) {
-    push(localeHref(lang, contributionsHref({ status, provenance, client }, next)));
+  function go(
+    next: { status?: ContributionStatus | "all"; provenance?: SpeakerFilter; client?: ClientFilter },
+    toPage = 1,
+  ) {
+    push(localeHref(lang, contributionsHref({ status, provenance, client }, next, toPage)));
   }
 
   return (
@@ -422,7 +469,10 @@ export default function ContributionTable({
             <>
               {confirmAll ? (
                 <>
-                  <span>Accept all {shownToAccept.length} shown? A quests line can&apos;t be reopened after.</span>
+                  <span>
+                    Accept all {shownToAccept.length} matching{pages > 1 ? `, on every page` : ""}? A quests
+                    line can&apos;t be reopened after.
+                  </span>
                   <Button
                     size="sm"
                     onClick={() => {
@@ -443,7 +493,7 @@ export default function ContributionTable({
                   disabled={shownToAccept.length === 0}
                   onClick={() => setConfirmAll(true)}
                 >
-                  Accept all shown ({shownToAccept.length})
+                  Accept all matching ({shownToAccept.length})
                 </Button>
               )}
               {selectedRows.length > 0 ? (
@@ -473,6 +523,7 @@ export default function ContributionTable({
               {bulkOutcome ? <span className="text-muted-foreground ml-2">{bulkOutcome}</span> : null}
             </>
           )}
+          <Pager page={page} pages={pages} total={matching.length} onGo={(to) => go({}, to)} />
         </div>
       ) : null}
 
@@ -507,243 +558,341 @@ export default function ContributionTable({
 
           <tbody>
             {rows.map((row) => {
-              const current = resolved[row.id] ?? row.status;
-              const found = existing[row.id];
               const npc =
                 (row.npc?.npcKind ? npcOverrides[overrideKey(row.npc.npcKind, row.npc.npcId)] : undefined) ??
                 npcOverrides[contributionKey(row.id)] ??
                 row.npc;
-
               return (
-                // Top-aligned, not middle: the NPC/Speaker cell below can grow to a whole form's
-                // height (race/gender/flavor selects), and centring every other
-                // cell against that made the short ones float to mid-row instead of sitting on
-                // a scannable line.
-                <tr
+                <ContributionTableRow
                   key={row.id}
-                  // Anchor, not just a key: an accepted quests row's line carries a link back
-                  // here (LineRow.tsx's "contributed" badge), and this is what it jumps to.
-                  id={`contribution-${row.id}`}
-                  className="align-top [&>td]:border-b [&>td]:py-2 [&>td]:leading-5"
-                >
-                  <td className="pr-2">
-                    <Checkbox
-                      aria-label={`Select contribution ${row.id}`}
-                      checked={selected.has(row.id)}
-                      disabled={bulk !== null}
-                      onCheckedChange={(on) => toggle(row.id, on === true)}
-                    />
-                  </td>
-
-                  <td className="text-muted-foreground pr-3 text-xs whitespace-nowrap">
-                    {when(row.createdAt)}
-                  </td>
-
-                  <td className="pr-3 text-xs whitespace-nowrap">
-                    {/* The raw triage key moved here, as a hover title -- the NPC and Quest
-                        columns are what a moderator scans now (finding 1), but the key is still
-                        worth having for a zones/books row, where neither column applies. */}
-                    <Badge variant="outline" className="py-0 leading-5" title={row.key}>
-                      {SOURCE_LABELS[row.source]}
-                    </Badge>
-                  </td>
-
-                  {/* NPC and Speaker, merged: who the NPC is and who voices their lines are the
-                      same question, and showing them as two columns meant scanning across the
-                      row to connect an id in one cell with a form three cells later. Name/id/
-                      links stay on their own line; the voice -- settled text for a corpus NPC,
-                      the override form for one that isn't -- sits right beneath it. */}
-                  <td className="max-w-[20rem] pr-3 text-xs">
-                    {npc ? (
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1 whitespace-nowrap">
-                          <a
-                            href={localeHref(lang, `/quests?q=${npc.npcId}&filter=npc`)}
-                            className="truncate hover:underline"
-                            title={npc.npcName ?? undefined}
-                          >
-                            {npc.npcName ?? "unnamed"}{" "}
-                            <span className="text-muted-foreground">#{npc.npcId}</span>
-                          </a>
-                          <a
-                            href={
-                              // The corpus's own exact answer means it has this NPC on the branch
-                              // the corpus is built from; anything else -- including a post-vanilla
-                              // NPC like 205729 -- is only ever on the client's own branch. See
-                              // wowhead.ts for why two branches exist rather than one.
-                              //
-                              // A kind-less row (npc.npcKind === null) has no real kind to link
-                              // with yet -- "creature" is a convenience guess for this link only,
-                              // never stored, and every quest/gossip npc field this table has ever
-                              // seen has in fact named one.
-                              npc.provenance === "corpus"
-                                ? wowheadEntityUrl(npc.npcKind ?? "creature", npc.npcId)
-                                : wowheadForeverUrl(npc.npcKind ?? "creature", npc.npcId)
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-muted-foreground shrink-0 hover:underline"
-                          >
-                            wh↗
-                          </a>
-                        </div>
-                        {npc.conflict.length > 0 ? (
-                          <NpcConflict
-                            npc={npc}
-                            busy={npcBusy === row.id}
-                            onPick={(option) => void pickConflict(row.id, npc, option)}
-                          />
-                        ) : (
-                          <SpeakerCell
-                            npc={npc}
-                            flavorScopes={flavorScopes}
-                            readOnly={!canAnswerNpc}
-                            busy={npcBusy === row.id}
-                            onSave={(answer) => void overrideNpc(row.id, npc, answer)}
-                          />
-                        )}
-                      </div>
-                    ) : row.source === "quests" ? (
-                      // No NPC named at all: whoever triages it can say who speaks it.
-                      <MissingNpcForm busy={npcBusy === row.id} onSave={(answer) => void nameNpc(row.id, answer)} />
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-
-                  <td className="max-w-[14rem] pr-3 text-xs whitespace-nowrap">
-                    {row.quest === null ? (
-                      <span className="text-muted-foreground">—</span>
-                    ) : row.quest === "gossip" ? (
-                      "Gossip"
-                    ) : (
-                      <>
-                        <span className="truncate">{row.quest.title}</span>{" "}
-                        <a
-                          href={wowheadQuestUrl(row.quest.questId)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-muted-foreground hover:underline"
-                        >
-                          #{row.quest.questId}
-                        </a>
-                      </>
-                    )}
-                  </td>
-
-                  {/* Which game, then the locale and the exact build underneath: the version is
-                      in the label, and the build number is what tells a beta's builds apart. */}
-                  <td className="pr-3 text-xs whitespace-nowrap">
-                    <div>{row.client.label}</div>
-                    <div className="text-muted-foreground">
-                      {row.locale}
-                      {row.client.buildNumber ? ` · ${row.client.buildNumber}` : null}
-                    </div>
-                  </td>
-
-                  <td className="pr-3 text-xs whitespace-nowrap">{row.count}</td>
-
-                  <td className="max-w-md pr-3">
-                    {/* Collapsed by default: a full quest's dialogue in an open cell is the
-                        "table stops being a scan" failure this markup exists to avoid. */}
-                    <details>
-                      <summary className="text-muted-foreground cursor-pointer text-xs">
-                        {row.text ? `${row.text.length} chars` : "no text"}
-                        {found !== undefined ? " · corpus already has this key" : ""}
-                        {row.body ? " · note attached" : ""}
-                      </summary>
-                      <p className="mt-1 whitespace-pre-wrap">{row.text ?? "(no text sent)"}</p>
-                      {row.body ? (
-                        // The optional complaint: collected on the form, stored as `body`, and
-                        // until now rendered nowhere -- a player who explained what was wrong
-                        // had that reach no one. Shown here rather than its own column because
-                        // most rows won't have one and a column that's usually empty is a scan
-                        // slower than the details cell it would sit next to.
-                        <div className="mt-2 rounded border p-2">
-                          <p className="text-muted-foreground text-xs font-medium">
-                            What they said was wrong:
-                          </p>
-                          <p className="mt-1 whitespace-pre-wrap">{row.body}</p>
-                        </div>
-                      ) : null}
-                      {found !== undefined ? (
-                        // A "missing" key the corpus already answers to is a corpus bug, not
-                        // an absent line -- shown beside the submitted text so that reading is
-                        // a glance, not a second lookup.
-                        <div className="bg-muted/40 mt-2 rounded p-2">
-                          <p className="text-muted-foreground text-xs font-medium">
-                            Already on file:
-                          </p>
-                          <p className="mt-1 whitespace-pre-wrap">{found}</p>
-                        </div>
-                      ) : null}
-                    </details>
-                  </td>
-
-                  <td className="pr-3 text-xs whitespace-nowrap">{STATUS_LABELS[current]}</td>
-
-                  <td>
-                    <div className="flex items-center justify-end gap-1">
-                      {current !== "accepted" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy === row.id || bulk !== null}
-                          onClick={() => void resolve(row.id, "accepted")}
-                        >
-                          Accept
-                        </Button>
-                      ) : row.source === "quests" && !(row.hasLine || lineCreated.has(row.id)) ? (
-                        // A quests row accepted before this feature existed (or reopened and
-                        // re-accepted since) has no line in the quest tables yet -- Accept itself is
-                        // hidden once `current` is already "accepted", so this is the only way
-                        // back to the same POST, still gated by resolveContribution's own rules
-                        // (needs-speaker, collision, one-way).
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy === row.id || bulk !== null}
-                          onClick={() => void resolve(row.id, "accepted")}
-                        >
-                          Add to explorer
-                        </Button>
-                      ) : null}
-                      {current !== "rejected" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy === row.id || bulk !== null}
-                          onClick={() => void resolve(row.id, "rejected")}
-                        >
-                          Reject
-                        </Button>
-                      ) : null}
-                      {current !== "new" ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={busy === row.id || bulk !== null}
-                          onClick={() => void resolve(row.id, "new")}
-                        >
-                          Reopen
-                        </Button>
-                      ) : null}
-                    </div>
-                    {refusals[row.id] ? (
-                      // Plain words, straight from resolveContribution's own refusal message --
-                      // silence here used to be the whole failure mode ("Degrade per row on a
-                      // failed resolve"), and a moderator staring at a button that visibly did
-                      // nothing has no way to tell "try again" from "fix something first".
-                      <p className="text-destructive mt-1 text-right text-xs">{refusals[row.id]}</p>
-                    ) : null}
-                  </td>
-                </tr>
+                  row={row}
+                  current={resolved[row.id] ?? row.status}
+                  npc={npc}
+                  found={existing[row.id]}
+                  selected={selected.has(row.id)}
+                  busy={busy === row.id}
+                  npcBusy={npcBusy === row.id}
+                  locked={bulk !== null}
+                  refusal={refusals[row.id]}
+                  lineCreated={lineCreated.has(row.id)}
+                  canAnswerNpc={canAnswerNpc}
+                  flavorScopes={flavorScopes}
+                  lang={lang}
+                  onToggle={toggle}
+                  onResolve={resolve}
+                  onOverrideNpc={overrideNpc}
+                  onPickConflict={pickConflict}
+                  onNameNpc={nameNpc}
+                />
               );
             })}
           </tbody>
         </table>
       )}
+      {rows.length > 0 && pages > 1 ? (
+        <div className="mt-3 flex text-xs">
+          <Pager page={page} pages={pages} total={matching.length} onGo={(to) => go({}, to)} />
+        </div>
+      ) : null}
     </>
+  );
+}
+
+/**
+ * One row of the table, redrawn only when its own props change -- which is why the table hands
+ * it plain values (`selected`, `busy`) rather than the sets and ids they come from, and stable
+ * callbacks. Drawn inline, one tick of one checkbox redrew every row on the page.
+ */
+const ContributionTableRow = memo(function ContributionTableRow({
+  row,
+  current,
+  npc,
+  found,
+  selected,
+  busy,
+  npcBusy,
+  locked,
+  refusal,
+  lineCreated,
+  canAnswerNpc,
+  flavorScopes,
+  lang,
+  onToggle,
+  onResolve,
+  onOverrideNpc,
+  onPickConflict,
+  onNameNpc,
+}: {
+  row: ContributionRow;
+  /** The row's status, with this session's own changes over the server's. */
+  current: ContributionStatus;
+  npc: NpcSummary | null;
+  /** The corpus text the row's key already resolves to, if any. */
+  found: string | undefined;
+  selected: boolean;
+  /** This row's own resolve is in flight. */
+  busy: boolean;
+  /** This row's NPC answer is in flight. */
+  npcBusy: boolean;
+  /** A bulk run is in flight: every row's buttons hold still. */
+  locked: boolean;
+  refusal: string | undefined;
+  /** "Add to explorer" worked on this row this session. */
+  lineCreated: boolean;
+  canAnswerNpc: boolean;
+  flavorScopes: FlavorScope[];
+  lang: Lang;
+  onToggle: (id: number, on: boolean) => void;
+  onResolve: (id: number, next: ContributionStatus) => Promise<void>;
+  onOverrideNpc: (id: number, npc: NpcSummary, answer: SpeakerAnswer) => Promise<void>;
+  onPickConflict: (id: number, npc: NpcSummary, option: NpcConflictOption) => Promise<void>;
+  onNameNpc: (id: number, answer: { npcKind: NpcKind; npcId: number; npcName: string }) => Promise<void>;
+}) {
+  return (
+    // Top-aligned, not middle: the NPC/Speaker cell below can grow to a whole form's
+      // height (race/gender/flavor selects), and centring every other
+      // cell against that made the short ones float to mid-row instead of sitting on
+      // a scannable line.
+      <tr
+        // Anchor, not just a key: an accepted quests row's line carries a link back
+        // here (LineRow.tsx's "contributed" badge), and this is what it jumps to.
+        id={`contribution-${row.id}`}
+        className="align-top [&>td]:border-b [&>td]:py-2 [&>td]:leading-5"
+      >
+        <td className="pr-2">
+          <LiteCheckbox
+            aria-label={`Select contribution ${row.id}`}
+            checked={selected}
+            disabled={locked}
+            onChange={(event) => onToggle(row.id, event.target.checked)}
+          />
+        </td>
+
+        <td className="text-muted-foreground pr-3 text-xs whitespace-nowrap">
+          {when(row.createdAt)}
+        </td>
+
+        <td className="pr-3 text-xs whitespace-nowrap">
+          {/* The raw triage key moved here, as a hover title -- the NPC and Quest
+              columns are what a moderator scans now (finding 1), but the key is still
+              worth having for a zones/books row, where neither column applies. */}
+          <Badge variant="outline" className="py-0 leading-5" title={row.key}>
+            {SOURCE_LABELS[row.source]}
+          </Badge>
+        </td>
+
+        {/* NPC and Speaker, merged: who the NPC is and who voices their lines are the
+            same question, and showing them as two columns meant scanning across the
+            row to connect an id in one cell with a form three cells later. Name/id/
+            links stay on their own line; the voice -- settled text for a corpus NPC,
+            the override form for one that isn't -- sits right beneath it. */}
+        <td className="max-w-[20rem] pr-3 text-xs">
+          {npc ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
+                <a
+                  href={localeHref(lang, `/quests?q=${npc.npcId}&filter=npc`)}
+                  className="truncate hover:underline"
+                  title={npc.npcName ?? undefined}
+                >
+                  {npc.npcName ?? "unnamed"}{" "}
+                  <span className="text-muted-foreground">#{npc.npcId}</span>
+                </a>
+                <a
+                  href={
+                    // The corpus's own exact answer means it has this NPC on the branch
+                    // the corpus is built from; anything else -- including a post-vanilla
+                    // NPC like 205729 -- is only ever on the client's own branch. See
+                    // wowhead.ts for why two branches exist rather than one.
+                    //
+                    // A kind-less row (npc.npcKind === null) has no real kind to link
+                    // with yet -- "creature" is a convenience guess for this link only,
+                    // never stored, and every quest/gossip npc field this table has ever
+                    // seen has in fact named one.
+                    npc.provenance === "corpus"
+                      ? wowheadEntityUrl(npc.npcKind ?? "creature", npc.npcId)
+                      : wowheadForeverUrl(npc.npcKind ?? "creature", npc.npcId)
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground shrink-0 hover:underline"
+                >
+                  wh↗
+                </a>
+              </div>
+              {npc.conflict.length > 0 ? (
+                <NpcConflict
+                  npc={npc}
+                  busy={npcBusy}
+                  onPick={(option) => void onPickConflict(row.id, npc, option)}
+                />
+              ) : (
+                <SpeakerCell
+                  npc={npc}
+                  flavorScopes={flavorScopes}
+                  readOnly={!canAnswerNpc}
+                  busy={npcBusy}
+                  onSave={(answer) => void onOverrideNpc(row.id, npc, answer)}
+                />
+              )}
+            </div>
+          ) : row.source === "quests" ? (
+            // No NPC named at all: whoever triages it can say who speaks it.
+            <MissingNpcForm busy={npcBusy} onSave={(answer) => void onNameNpc(row.id, answer)} />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </td>
+
+        <td className="max-w-[14rem] pr-3 text-xs whitespace-nowrap">
+          {row.quest === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : row.quest === "gossip" ? (
+            "Gossip"
+          ) : (
+            <>
+              <span className="truncate">{row.quest.title}</span>{" "}
+              <a
+                href={wowheadQuestUrl(row.quest.questId)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:underline"
+              >
+                #{row.quest.questId}
+              </a>
+            </>
+          )}
+        </td>
+
+        {/* Which game, then the locale and the exact build underneath: the version is
+            in the label, and the build number is what tells a beta's builds apart. */}
+        <td className="pr-3 text-xs whitespace-nowrap">
+          <div>{row.client.label}</div>
+          <div className="text-muted-foreground">
+            {row.locale}
+            {row.client.buildNumber ? ` · ${row.client.buildNumber}` : null}
+          </div>
+        </td>
+
+        <td className="pr-3 text-xs whitespace-nowrap">{row.count}</td>
+
+        <td className="max-w-md pr-3">
+          {/* Collapsed by default: a full quest's dialogue in an open cell is the
+              "table stops being a scan" failure this markup exists to avoid. */}
+          <details>
+            <summary className="text-muted-foreground cursor-pointer text-xs">
+              {row.text ? `${row.text.length} chars` : "no text"}
+              {found !== undefined ? " · corpus already has this key" : ""}
+              {row.body ? " · note attached" : ""}
+            </summary>
+            <p className="mt-1 whitespace-pre-wrap">{row.text ?? "(no text sent)"}</p>
+            {row.body ? (
+              // The optional complaint: collected on the form, stored as `body`, and
+              // until now rendered nowhere -- a player who explained what was wrong
+              // had that reach no one. Shown here rather than its own column because
+              // most rows won't have one and a column that's usually empty is a scan
+              // slower than the details cell it would sit next to.
+              <div className="mt-2 rounded border p-2">
+                <p className="text-muted-foreground text-xs font-medium">
+                  What they said was wrong:
+                </p>
+                <p className="mt-1 whitespace-pre-wrap">{row.body}</p>
+              </div>
+            ) : null}
+            {found !== undefined ? (
+              // A "missing" key the corpus already answers to is a corpus bug, not
+              // an absent line -- shown beside the submitted text so that reading is
+              // a glance, not a second lookup.
+              <div className="bg-muted/40 mt-2 rounded p-2">
+                <p className="text-muted-foreground text-xs font-medium">
+                  Already on file:
+                </p>
+                <p className="mt-1 whitespace-pre-wrap">{found}</p>
+              </div>
+            ) : null}
+          </details>
+        </td>
+
+        <td className="pr-3 text-xs whitespace-nowrap">{STATUS_LABELS[current]}</td>
+
+        <td>
+          <div className="flex items-center justify-end gap-1">
+            {current !== "accepted" ? (
+              <LiteButton
+                variant="outline"
+                disabled={busy || locked}
+                onClick={() => void onResolve(row.id, "accepted")}
+              >
+                Accept
+              </LiteButton>
+            ) : row.source === "quests" && !(row.hasLine || lineCreated) ? (
+              // A quests row accepted before this feature existed (or reopened and
+              // re-accepted since) has no line in the quest tables yet -- Accept itself is
+              // hidden once `current` is already "accepted", so this is the only way
+              // back to the same POST, still gated by resolveContribution's own rules
+              // (needs-speaker, collision, one-way).
+              <LiteButton
+                variant="outline"
+                disabled={busy || locked}
+                onClick={() => void onResolve(row.id, "accepted")}
+              >
+                Add to explorer
+              </LiteButton>
+            ) : null}
+            {current !== "rejected" ? (
+              <LiteButton
+                variant="outline"
+                disabled={busy || locked}
+                onClick={() => void onResolve(row.id, "rejected")}
+              >
+                Reject
+              </LiteButton>
+            ) : null}
+            {current !== "new" ? (
+              <LiteButton
+                variant="ghost"
+                disabled={busy || locked}
+                onClick={() => void onResolve(row.id, "new")}
+              >
+                Reopen
+              </LiteButton>
+            ) : null}
+          </div>
+          {refusal ? (
+            // Plain words, straight from resolveContribution's own refusal message --
+            // silence here used to be the whole failure mode ("Degrade per row on a
+            // failed resolve"), and a moderator staring at a button that visibly did
+            // nothing has no way to tell "try again" from "fix something first".
+            <p className="text-destructive mt-1 text-right text-xs">{refusal}</p>
+          ) : null}
+        </td>
+      </tr>
+  );
+});
+
+/** Which page of the matching rows this is, and the way to the next and previous ones. */
+function Pager({
+  page,
+  pages,
+  total,
+  onGo,
+}: {
+  page: number;
+  pages: number;
+  total: number;
+  onGo: (page: number) => void;
+}) {
+  if (pages <= 1) return null;
+  return (
+    <span className="text-muted-foreground ml-auto flex items-center gap-1">
+      <LiteButton variant="ghost" className="h-6 px-2 text-xs" disabled={page <= 1} onClick={() => onGo(page - 1)}>
+        ← Prev
+      </LiteButton>
+      Page {page} of {pages} · {total} rows
+      <LiteButton variant="ghost" className="h-6 px-2 text-xs" disabled={page >= pages} onClick={() => onGo(page + 1)}>
+        Next →
+      </LiteButton>
+    </span>
   );
 }
 
@@ -825,9 +974,9 @@ function MissingNpcForm({
         onChange={(event) => setNpcName(event.target.value)}
         className="h-7 w-32 rounded border bg-transparent px-1.5 text-xs"
       />
-      <Button type="submit" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={busy || !valid}>
+      <LiteButton type="submit" variant="outline" className="h-7 px-2 text-xs" disabled={busy || !valid}>
         Add
-      </Button>
+      </LiteButton>
     </form>
   );
 }
@@ -855,15 +1004,14 @@ function NpcConflict({
             {option.npcKind}: {[option.race, option.gender, option.flavor].filter(Boolean).join("-") || "no race"}
           </span>
           <ProvenanceBadge provenance={option.provenance} />
-          <Button
-            size="sm"
+          <LiteButton
             variant="outline"
             className="h-6 px-2 text-xs"
             disabled={busy}
             onClick={() => onPick(option)}
           >
             This one
-          </Button>
+          </LiteButton>
         </div>
       ))}
     </div>

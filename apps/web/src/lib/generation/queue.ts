@@ -103,6 +103,11 @@ export type QueueSnapshot = {
    */
   latestBatch: { cancelled: number; stoppedBecause: string | null } | null;
   /**
+   * The languages paused now, whoever paused them. Global like the counts: a queue that has
+   * stopped moving should say why, even to someone who cannot resume it.
+   */
+  paused: { lang: Lang; pausedAt: string; by: string | null }[];
+  /**
    * Each owner's queue, in the order they drain: the first QUEUE_MAX_ACTIVE are active, the
    * rest wait. Ranked exactly as activeLanes ranks them, so the panel says what the worker does.
    */
@@ -221,6 +226,10 @@ export async function enqueue(
  * unfinished job, their oldest one is older than anything queued after them, so a queue that
  * started keeps its place until its older work is done. A job backing off after a 429 is still
  * pending, so it keeps its owner's place too.
+ *
+ * Work in a paused language is left out of the ranking, so a paused queue gives its place to
+ * the next one instead of holding a slot it will not use, and takes it back on Resume if its
+ * oldest job is still older than everyone else's.
  */
 export async function activeLanes(max: number): Promise<Lane[]> {
   // One grouped pass over the lane index rather than a self-join on the owner: the join had
@@ -232,6 +241,7 @@ export async function activeLanes(max: number): Promise<Lane[]> {
        select "owner", "provider", min(min("id")) over (partition by "owner") as first
          from "regeneration_job"
         where "state" in ('pending', 'running')
+          and "lang" not in (select "lang" from "regeneration_pause")
         group by "owner", "provider"
      ),
      ranked as (
@@ -255,6 +265,9 @@ export async function activeLanes(max: number): Promise<Lane[]> {
  * stood one process down and another has not yet stood up.
  *
  * The lane is optional so that "anything due" stays expressible; the worker always passes one.
+ *
+ * Nothing in a paused language is due, an expired lease included: reclaiming one is a fresh
+ * attempt, and a fresh attempt is the spending the pause was pressed to hold back.
  *
  * A negative `leaseMs` is how the tests produce an already-expired lease.
  */
@@ -284,6 +297,7 @@ export async function claimNext(
         select "id" from "regeneration_job"
          where (("state" = 'pending' and "notBefore" <= now())
             or ("state" = 'running' and "leaseUntil" < now()))
+           and "lang" not in (select "lang" from "regeneration_pause")
            ${inLane}
          order by "id"
          for update skip locked
@@ -399,6 +413,41 @@ export async function cancelPending(
 }
 
 /**
+ * Stop claiming work in these languages until they are resumed.
+ *
+ * Jobs already running finish, as they do on Stop: their characters are at the provider and
+ * billed either way. Pending work stays pending, and keeps its files under the credit guard.
+ *
+ * Answers with the languages this call paused, leaving out any already paused, so the
+ * activity log records one pause per press that changed something rather than one per click.
+ */
+export async function pauseQueue(langs: readonly Lang[], by: string | null): Promise<Lang[]> {
+  const { rows } = await db().query<{ lang: Lang }>(
+    `insert into "regeneration_pause" ("lang", "pausedBy")
+     select unnest($1::text[]), $2
+     on conflict ("lang") do nothing
+     returning "lang"`,
+    [langs, by],
+  );
+  await recordActivities(
+    rows.map((row) => ({ kind: "queue.paused" as const, lang: row.lang, actorId: by, detail: {} })),
+  );
+  return rows.map((row) => row.lang);
+}
+
+/** Lift the pause on these languages. Answers with the ones that were paused. */
+export async function resumeQueue(langs: readonly Lang[], by: string | null): Promise<Lang[]> {
+  const { rows } = await db().query<{ lang: Lang }>(
+    `delete from "regeneration_pause" where "lang" = any($1::text[]) returning "lang"`,
+    [langs],
+  );
+  await recordActivities(
+    rows.map((row) => ({ kind: "queue.resumed" as const, lang: row.lang, actorId: by, detail: {} })),
+  );
+  return rows.map((row) => row.lang);
+}
+
+/**
  * Whether this batch has been stopped.
  *
  * Asked by the worker before it hands a failed job back to the queue: a job put back to
@@ -424,7 +473,15 @@ type JobAggregateRow = {
   unpriced: string;
   running: { source: Source; lang: Lang; lineId: string; npcName: string; preview: string }[];
   failures: { source: Source; lang: Lang; lineId: string; message: string }[];
-  queues: { owner: string | null; name: string; pending: number; running: number; rank: number }[];
+  queues: {
+    owner: string | null;
+    name: string;
+    pending: number;
+    running: number;
+    /** Null when everything the owner has left is in a paused language. */
+    rank: number | null;
+  }[];
+  paused: { lang: Lang; pausedAt: string; by: string | null }[];
   finished: { id: string; source: Source; lang: Lang; lineId: string; file: string; version: number }[];
   cursor: string | null;
   through: string | null;
@@ -517,7 +574,11 @@ export async function snapshot(
           where "state" in ('done', 'failed') and "id" > (select through from dismissal)
        ),
        queue_owners as (
-         select "owner", min("id") as first,
+         -- Ranked by the oldest job the worker may claim, as activeLanes ranks them, so a
+         -- queue whose work is all paused has no place rather than one it is not using.
+         select "owner",
+                min("id") filter (where "lang" not in (select "lang" from "regeneration_pause"))
+                  as first,
                 count(*) filter (where "state" = 'pending')::int as pending,
                 count(*) filter (where "state" = 'running')::int as running
            from "regeneration_job"
@@ -526,9 +587,14 @@ export async function snapshot(
        ),
        ranked_queues as (
          select q."owner", coalesce(u."name", 'Deleted account') as name, q.pending, q.running,
-                (row_number() over (order by q.first) - 1)::int as rank
+                case when q.first is not null
+                     then (row_number() over (order by q.first nulls last) - 1)::int end as rank
            from queue_owners q
            left join "user" u on u."id" = q."owner"
+       ),
+       pauses as (
+         select p."lang", p."pausedAt", u."name" as by from "regeneration_pause" p
+           left join "user" u on u."id" = p."pausedBy"
        ),
        shown as (
          select max("id")::text as max from "regeneration_job"
@@ -539,7 +605,9 @@ export async function snapshot(
          coalesce((select json_agg(r) from running_jobs r), '[]') as running,
          coalesce((select json_agg(f) from recent_failures f), '[]') as failures,
          coalesce((select json_agg(p) from finished_page p), '[]') as finished,
-         coalesce((select json_agg(r order by r.rank) from ranked_queues r), '[]') as queues,
+         coalesce((select json_agg(r order by r.rank nulls last, r.name) from ranked_queues r), '[]')
+           as queues,
+         coalesce((select json_agg(p order by p."lang") from pauses p), '[]') as paused,
          (select max from terminal) as cursor,
          (select max from shown) as through
        from job_counts jc`,
@@ -576,13 +644,14 @@ export async function snapshot(
           stoppedBecause: latest.rows[0].stoppedBecause,
         }
       : null,
+    paused: row.paused,
     queues: row.queues.map((queue) => ({
       owner: queue.owner,
       name: queue.name,
       pending: queue.pending,
       running: queue.running,
-      status: queue.rank < maxActive ? "active" : "waiting",
-      ahead: queue.rank < maxActive ? 0 : queue.rank,
+      status: queue.rank === null ? "paused" : queue.rank < maxActive ? "active" : "waiting",
+      ahead: queue.rank === null || queue.rank < maxActive ? 0 : queue.rank,
       mine: viewerId !== null && queue.owner === viewerId,
     })),
     finished,

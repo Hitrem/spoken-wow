@@ -30,8 +30,16 @@ import { normaliseText } from "@books-tools/lib/text.mjs";
 import { recordActivity } from "@/lib/activity/store";
 import { db } from "@/lib/db";
 import { observedFrom } from "@/lib/npc/resolve";
-import { getResolution, getResolutionsById, type NpcKind } from "@/lib/npc/store";
+import {
+  getResolution,
+  getResolutions,
+  getResolutionsById,
+  resolutionKey,
+  type NpcKind,
+  type NpcResolution,
+} from "@/lib/npc/store";
 import { BASE_LANG, isLang, type Lang } from "@/lib/lang";
+import type { CorpusLine } from "@/lib/corpus";
 import { corpus } from "@/lib/quests/catalogue";
 import { isVoice } from "@/lib/voices/voices";
 
@@ -73,18 +81,46 @@ type Prepared =
   | { kind: "speaker"; lineId: string; variant: number; speaker: Speaker }
   | { kind: "line"; identity: LineIdentity; text: string; speaker: Speaker };
 
+/**
+ * The npc_resolution rows for many contributions' NPCs, read up front in two queries -- what
+ * linesInExplorer hands resolvedSpeaker so a page of rows is not a round trip per row.
+ */
+type Resolutions = {
+  byKey: Map<string, NpcResolution>;
+  byId: Map<number, NpcResolution[]>;
+};
+
+async function resolutionsFor(contributions: readonly Contribution[]): Promise<Resolutions> {
+  const keys: { npcKind: NpcKind; npcId: number }[] = [];
+  const ids: number[] = [];
+  for (const contribution of contributions) {
+    const observed = observedFrom(observationMeta(contribution));
+    if (observed.npcId === null) continue;
+    if (observed.npcKind) keys.push({ npcKind: observed.npcKind, npcId: observed.npcId });
+    else ids.push(observed.npcId);
+  }
+  const [byKey, byId] = await Promise.all([getResolutions(keys), getResolutionsById([...new Set(ids)])]);
+  return { byKey, byId };
+}
+
 /** Who speaks a quests contribution, from npc_resolution -- the same lookup triage.ts's page renders from. */
 async function resolvedSpeaker(
   meta: Record<string, string>,
+  resolutions?: Resolutions,
 ): Promise<Speaker | "conflict" | null> {
   const observed = observedFrom(meta);
   if (observed.npcId === null) return null;
 
   let resolution;
   if (observed.npcKind) {
-    resolution = await getResolution(observed.npcKind, observed.npcId);
+    resolution = resolutions
+      ? resolutions.byKey.get(resolutionKey(observed.npcKind, observed.npcId))
+      : await getResolution(observed.npcKind, observed.npcId);
   } else {
-    const lookup = idOnlyResolution((await getResolutionsById([observed.npcId])).get(observed.npcId));
+    const rows = resolutions
+      ? resolutions.byId.get(observed.npcId)
+      : (await getResolutionsById([observed.npcId])).get(observed.npcId);
+    const lookup = idOnlyResolution(rows);
     if (lookup.conflict.length) return "conflict";
     resolution = lookup.resolution;
   }
@@ -102,6 +138,58 @@ async function resolvedSpeaker(
 }
 
 /**
+ * The catalogue, indexed for the questions prepareLine and acceptTranslation ask of it -- a
+ * linear scan per row was most of what a page of accepted rows, or a batch accept, cost.
+ *
+ * `byPrefix` holds each line under its own id and under every shorter `:`-joined prefix of it,
+ * which is exactly answersQuestMoment: `q:1:accept` finds `q:1:accept` and `q:1:accept:m`.
+ * `gossipByText` is the by-text match below, keyed on race, gender and normalised text. Both
+ * keep the catalogue's order, so a first match is the same line a scan would have found.
+ *
+ * Kept per catalogue array, which is replaced whenever the tables move (catalogue.ts).
+ */
+type CorpusIndex = {
+  byPrefix: Map<string, CorpusLine[]>;
+  gossipByText: Map<string, CorpusLine[]>;
+  /** A line's place in the catalogue, for "whichever comes first". */
+  position: Map<CorpusLine, number>;
+};
+
+const corpusIndexes = new WeakMap<readonly CorpusLine[], CorpusIndex>();
+
+function pushTo<K>(map: Map<K, CorpusLine[]>, key: K, line: CorpusLine): void {
+  const group = map.get(key);
+  if (group) group.push(line);
+  else map.set(key, [line]);
+}
+
+function gossipTextKey(race: string, gender: string, text: string): string {
+  return `${race}|${gender}|${text}`;
+}
+
+function indexOf(lines: readonly CorpusLine[]): CorpusIndex {
+  let index = corpusIndexes.get(lines);
+  if (index) return index;
+  index = { byPrefix: new Map(), gossipByText: new Map(), position: new Map() };
+  for (const [position, line] of lines.entries()) {
+    index.position.set(line, position);
+    const parts = line.lineId.split(":");
+    for (let end = parts.length; end >= 2; end--) pushTo(index.byPrefix, parts.slice(0, end).join(":"), line);
+    if (parts.length < 2) pushTo(index.byPrefix, line.lineId, line);
+    if (line.source === "gossip") {
+      pushTo(index.gossipByText, gossipTextKey(line.race, line.gender, normaliseText(line.originalText)), line);
+    }
+  }
+  corpusIndexes.set(lines, index);
+  return index;
+}
+
+/** The lines answering a quest moment, in catalogue order: answersQuestMoment, from the index. */
+function answering(lines: readonly CorpusLine[], momentId: string): CorpusLine[] {
+  return (indexOf(lines).byPrefix.get(momentId) ?? []).filter((line) => answersQuestMoment(line.lineId, momentId));
+}
+
+/**
  * What accepting a quests contribution writes, or a refusal.
  *
  * The tables are the corpus, so "is this line already there" is asked of them:
@@ -114,8 +202,12 @@ async function resolvedSpeaker(
  *     corpus's own trailing whitespace is normalised away) means this NPC is added as one more
  *     speaker of it, unless they already are one.
  */
-async function prepareLine(contribution: Contribution): Promise<{ ok: true; prepared: Prepared } | ResolveRefusal> {
-  const speaker = await resolvedSpeaker(observationMeta(contribution));
+async function prepareLine(
+  contribution: Contribution,
+  corpusLines?: readonly CorpusLine[],
+  resolutions?: Resolutions,
+): Promise<{ ok: true; prepared: Prepared } | ResolveRefusal> {
+  const speaker = await resolvedSpeaker(observationMeta(contribution), resolutions);
   if (speaker === "conflict") {
     return {
       ok: false,
@@ -157,26 +249,28 @@ async function prepareLine(contribution: Contribution): Promise<{ ok: true; prep
     return { ok: false, reason: "malformed", message: "contribution has no text to voice" };
   }
 
-  const lines = (await corpus()).lines;
+  const lines = corpusLines ?? (await corpus()).lines;
 
   if (!isGossip) {
-    const exists = lines.some((l) => answersQuestMoment(l.lineId, identity.lineId));
+    const exists = answering(lines, identity.lineId).length > 0;
     return { ok: true, prepared: exists ? { kind: "exists" } : { kind: "line", identity, text: contribution.text, speaker } };
   }
 
   // By id, or by text: 1,644 of the corpus's gossip lines carry trailing whitespace in
   // `originalText` that normaliseText (already applied to contribution.text at intake,
   // submission.ts) strips, so a verbatim duplicate of one of them hashes differently.
+  // Whichever of the two comes first in the catalogue, as a scan for either would find.
   const text = contribution.text;
-  const match = lines.find(
-    (l) =>
-      l.source === "gossip" &&
-      (l.lineId === identity.lineId ||
-        (l.race === speaker.race && l.gender === speaker.gender && normaliseText(l.originalText) === text)),
+  const index = indexOf(lines);
+  const byId = (index.byPrefix.get(identity.lineId) ?? []).find(
+    (l) => l.source === "gossip" && l.lineId === identity.lineId,
   );
+  const byText = index.gossipByText.get(gossipTextKey(speaker.race, speaker.gender, text))?.[0];
+  const match =
+    byId && byText ? (index.position.get(byId)! <= index.position.get(byText)! ? byId : byText) : (byId ?? byText);
   if (!match) return { ok: true, prepared: { kind: "line", identity, text, speaker } };
 
-  const speaks = lines.some(
+  const speaks = (index.byPrefix.get(match.lineId) ?? []).some(
     (l) => l.lineId === match.lineId && l.npcType === speaker.npcType && l.npcId === speaker.npcId,
   );
   if (speaks) return { ok: true, prepared: { kind: "exists" } };
@@ -201,10 +295,32 @@ export async function contributedSpeakerExists(contributionId: number, client?: 
  * "Set the speaker first".
  */
 export async function lineIsInExplorer(contribution: Contribution): Promise<boolean> {
-  if (contribution.source !== "quests" || contribution.status !== "accepted") return false;
-  if (await contributedSpeakerExists(contribution.id)) return true;
-  const result = await prepareLine(contribution);
-  return result.ok && result.prepared.kind === "exists";
+  return (await linesInExplorer([contribution])).has(contribution.id);
+}
+
+/**
+ * lineIsInExplorer for many contributions at once, answered as the ids whose line is there:
+ * one query for the speaker rows already written, two for the NPCs, and the catalogue read
+ * once -- what the moderator page asks of every accepted row it shows.
+ */
+export async function linesInExplorer(contributions: readonly Contribution[]): Promise<Set<number>> {
+  const candidates = contributions.filter((c) => c.source === "quests" && c.status === "accepted");
+  if (candidates.length === 0) return new Set();
+
+  const { rows } = await db().query<{ contributionId: number }>(
+    `select distinct "contributionId" from "quest_line_speaker" where "contributionId" = any($1::int[])`,
+    [candidates.map((c) => c.id)],
+  );
+  const found = new Set(rows.map((row) => row.contributionId));
+
+  const rest = candidates.filter((c) => !found.has(c.id));
+  if (rest.length === 0) return found;
+  const [resolutions, lines] = await Promise.all([resolutionsFor(rest), corpus().then((c) => c.lines)]);
+  for (const contribution of rest) {
+    const result = await prepareLine(contribution, lines, resolutions);
+    if (result.ok && result.prepared.kind === "exists") found.add(contribution.id);
+  }
+  return found;
 }
 
 async function insertSpeaker(
@@ -230,6 +346,34 @@ async function insertSpeaker(
       voiceNameFor(speaker.race, speaker.gender, speaker.flavor), contributionId,
     ],
   );
+}
+
+/**
+ * One writer per line id past this point, so two accepts of the same line running side by side
+ * (resolveContributions) can never both find it missing and both write it.
+ */
+async function lockLine(client: PoolClient, lineId: string): Promise<void> {
+  await client.query(`select pg_advisory_xact_lock(hashtext('quest_line:' || $1))`, [lineId]);
+}
+
+/**
+ * insertSpeaker, unless this NPC already speaks the line. Asked of the table rather than the
+ * catalogue: in a batch the catalogue is read once, before any of it is written, so a speaker
+ * another row of the same batch just added is only in the table.
+ */
+async function addSpeakerOnce(
+  client: PoolClient,
+  contributionId: number,
+  lineId: string,
+  variant: number,
+  speaker: Speaker,
+): Promise<void> {
+  const { rowCount } = await client.query(
+    `select 1 from "quest_line_speaker"
+      where "lang" = $1 and "lineId" = $2 and "npcType" = $3 and "npcId" = $4`,
+    [BASE_LANG, lineId, speaker.npcType, speaker.npcId],
+  );
+  if (!rowCount) await insertSpeaker(client, contributionId, lineId, variant, speaker);
 }
 
 async function insertLine(
@@ -275,6 +419,7 @@ async function acceptTranslation(
   client: PoolClient,
   contribution: Contribution,
   userId: string,
+  corpusLines?: readonly CorpusLine[],
 ): Promise<ResolveRefusal | null> {
   const { quest, event } = contribution.meta;
   if (!(quest && event)) {
@@ -289,9 +434,7 @@ async function acceptTranslation(
     return { ok: false, reason: "malformed", message: `unknown quest event "${event}"` };
   }
 
-  const english = (await corpus()).lines.filter((line) =>
-    answersQuestMoment(line.lineId, identity.lineId),
-  );
+  const english = answering(corpusLines ?? (await corpus()).lines, identity.lineId);
   if (english.length === 0) {
     return {
       ok: false,
@@ -335,11 +478,15 @@ async function acceptTranslation(
 /**
  * Change a contribution's status, writing its line into the quest tables first when the target
  * is "accepted" for a fresh quests row.
+ *
+ * `corpusLines` is the English catalogue to match against, read by the caller -- a batch reads
+ * it once for all its rows. Left out, it is read here.
  */
 export async function resolveContribution(
   id: number,
   status: ContributionStatus,
   userId: string,
+  corpusLines?: readonly CorpusLine[],
 ): Promise<ResolveOutcome> {
   const client = await db().connect();
   // Set only on the path below where rollback itself throws -- that is the one case that
@@ -387,22 +534,25 @@ export async function resolveContribution(
       contribution.source === "quests" &&
       contribution.locale !== BASE_LANG
     ) {
-      const refused = await acceptTranslation(client, contribution, userId);
+      const refused = await acceptTranslation(client, contribution, userId, corpusLines);
       if (refused) {
         await client.query("rollback");
         return refused;
       }
     } else if (status === "accepted" && contribution.source === "quests" && !written) {
-      const result = await prepareLine(contribution);
+      const result = await prepareLine(contribution, corpusLines);
       if (!result.ok) {
         await client.query("rollback");
         return result;
       }
       const { prepared } = result;
       if (prepared.kind === "line") {
-        // Checked again inside the transaction: a concurrent accept of another contribution for
-        // the same line may have written it since prepareLine read the catalogue. Whichever
-        // lands first wins; this one is then only accepted.
+        // Checked again inside the transaction, under the line's lock: a concurrent accept of
+        // another contribution for the same line may have written it since prepareLine read
+        // the catalogue. Whichever lands first wins; a quest line is then only accepted, and a
+        // gossip line gets this NPC as one more speaker, as prepareLine would have said had it
+        // seen the line.
+        await lockLine(client, prepared.identity.lineId);
         const { rowCount: taken } = await client.query(
           `select 1 from "quest_line" where "lang" = $1 and ("lineId" = $2 or "lineId" like $2 || ':%')`,
           [BASE_LANG, prepared.identity.lineId],
@@ -410,9 +560,12 @@ export async function resolveContribution(
         if (!taken) {
           await insertLine(client, id, userId, prepared.identity, prepared.text);
           await insertSpeaker(client, id, prepared.identity.lineId, 0, prepared.speaker);
+        } else if (prepared.identity.source === "gossip") {
+          await addSpeakerOnce(client, id, prepared.identity.lineId, 0, prepared.speaker);
         }
       } else if (prepared.kind === "speaker") {
-        await insertSpeaker(client, id, prepared.lineId, prepared.variant, prepared.speaker);
+        await lockLine(client, prepared.lineId);
+        await addSpeakerOnce(client, id, prepared.lineId, prepared.variant, prepared.speaker);
       }
     }
 
@@ -456,4 +609,39 @@ export async function resolveContribution(
   } finally {
     if (!released) client.release();
   }
+}
+
+/** How many rows of a batch resolve at once -- well inside the pool (db.ts's POOL_MAX). */
+const BATCH_CONCURRENCY = 8;
+
+/**
+ * resolveContribution for many rows, side by side, reading the catalogue once for all of them.
+ *
+ * Reading it per row is what made a bulk accept crawl: every line written moves the
+ * catalogue's stamp, so the next row rebuilt the whole of it. Rows of one batch can share a
+ * line; lockLine and the re-checks under it are what keep them from both writing it.
+ *
+ * Each row is still its own transaction, so one refused (or failing) row leaves the rest
+ * landed. A row that throws is answered as an Error, in its place.
+ */
+export async function resolveContributions(
+  ids: readonly number[],
+  status: ContributionStatus,
+  userId: string,
+): Promise<Map<number, ResolveOutcome | Error>> {
+  const corpusLines = status === "accepted" ? (await corpus()).lines : undefined;
+  const outcomes = new Map<number, ResolveOutcome | Error>();
+  let next = 0;
+  const worker = async () => {
+    while (next < ids.length) {
+      const id = ids[next++];
+      try {
+        outcomes.set(id, await resolveContribution(id, status, userId, corpusLines));
+      } catch (error) {
+        outcomes.set(id, error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(BATCH_CONCURRENCY, ids.length) }, worker));
+  return outcomes;
 }

@@ -6,6 +6,78 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 0.0.1 — quests-audio-deDE — 2026-09-27
+
+- **Experimental.** A first cut, numbered 0.0.1 so it does not read as finished: expect
+  lines to be re-recorded, and report the ones that sound wrong.
+- **The first German sound pack**, `SpokenQuestsAudio_deDE`: every quest and gossip line
+  Spoken Quests has a German take for, in one pack for both factions. It carries the
+  German gossip text too, so gossip is recognised on a deDE client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
+## 0.0.1 — quests-audio-esMX — 2026-09-27
+
+- **Experimental.** A first cut, numbered 0.0.1 so it does not read as finished: expect
+  lines to be re-recorded, and report the ones that sound wrong.
+- **The first Spanish (AL) sound pack**, `SpokenQuestsAudio_esMX`: every quest and gossip line
+  Spoken Quests has a Latin American Spanish take for, in one pack for both factions. It carries the
+  Latin American Spanish gossip text too, so gossip is recognised on a esMX client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
+## 0.0.1 — quests-audio-ptBR — 2026-09-27
+
+- **Experimental.** A first cut, numbered 0.0.1 so it does not read as finished: expect
+  lines to be re-recorded, and report the ones that sound wrong.
+- **The first Portuguese sound pack**, `SpokenQuestsAudio_ptBR`: every quest and gossip line
+  Spoken Quests has a Brazilian Portuguese take for, in one pack for both factions. It carries the
+  Brazilian Portuguese gossip text too, so gossip is recognised on a ptBR client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+  **Partial**: the game's Portuguese text is missing for most quest completions, so it
+  voices most quest offers and gossip but only 120 turn-ins. Set **Fallback Language** to
+  English to hear the rest.
+
+## 0.0.1 — quests-audio-ruRU — 2026-09-27
+
+- **Experimental.** A first cut, numbered 0.0.1 so it does not read as finished: expect
+  lines to be re-recorded, and report the ones that sound wrong.
+- **The first Russian sound pack**, `SpokenQuestsAudio_ruRU`: every quest and gossip line
+  Spoken Quests has a Russian take for, in one pack for both factions. It carries the
+  Russian gossip text too, so gossip is recognised on a ruRU client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
+## 0.0.1 — quests-audio-esES — 2026-09-27
+
+- **Experimental.** A first cut, numbered 0.0.1 so it does not read as finished: expect
+  lines to be re-recorded, and report the ones that sound wrong.
+- **The first Spanish (EU) sound pack**, `SpokenQuestsAudio_esES`: every quest and gossip line
+  Spoken Quests has a European Spanish take for, in one pack for both factions. It carries the
+  European Spanish gossip text too, so gossip is recognised on an esES client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
+## 0.0.1 — quests-audio-frFR — 2026-09-27
+
+- **Experimental.** A first cut, numbered 0.0.1 so it does not read as finished: expect
+  lines to be re-recorded, and report the ones that sound wrong.
+- **The first French sound pack**, `SpokenQuestsAudio_frFR`: every quest and gossip line
+  Spoken Quests has a French take for, in one pack for both factions. It carries the
+  French gossip text too, so gossip is recognised on a frFR client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+
+## 2.1.2 — player
+
+- **Contributions name the NPC's voice more often.** The Contribute button now also sends the
+  appearances the NPC can be drawn with, which tell the site the exact voice the game gives
+  it, including for NPCs added after vanilla.
+- **Closing the map with a gamepad no longer hangs the Forever client.** The quest log's Play,
+  Contribute and details buttons were created in a way that tainted the client's gamepad
+  navigation, so closing the map was blocked, and so was every button of the dialog saying so.
+
 ## 2.1.1 — player
 
 - **Autoplay can be turned off.** Untick **Read dialogue when it opens** in the Spoken Quests

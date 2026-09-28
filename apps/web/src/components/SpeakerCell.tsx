@@ -8,8 +8,7 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { LiteButton, LiteCheckbox } from "@/components/LiteControls";
 // `import type`: triage.ts is server-only (it pulls in corpus.ts), see ContributionTable.
 import type { NpcSummary } from "@/lib/contributions/triage";
 import { flavorOptionsFor, type FlavorScope } from "@/lib/contributions/speaker";
@@ -29,6 +28,7 @@ export type SpeakerAnswer = Partial<{
 // line, with what it means on hover.
 const PROVENANCE_PILLS: Record<Provenance, { short: string; title: string }> = {
   corpus: { short: "C", title: "Corpus: the game's own data for this NPC" },
+  display: { short: "D", title: "Display: the game's voice set for the appearance the client saw" },
   client: { short: "G", title: "Guess: from the model the client reported" },
   moderator: { short: "M", title: "Moderator: set by hand" },
   none: { short: "?", title: "No race: nothing known about this NPC" },
@@ -93,8 +93,8 @@ function speakerNote(npc: NpcSummary): string | null {
 /**
  * Who voices an NPC, in three states keyed on `confirmed`, not `provenance` alone, for the
  * reason speakerNote already draws that distinction: `confirmed` is the column resolveNpc and
- * the override route agree means "trust this" (migration 0031 only ever sets it for "corpus" or
- * "moderator"), so a settled answer renders plainly.
+ * the override route agree means "trust this" (migrations 0031 and 0055 only ever set it for
+ * "corpus", "display" or "moderator"), so a settled answer renders plainly.
  *
  *   - confirmed: plain text; a moderator's own answer adds an Edit that reopens the form.
  *   - unconfirmed, race and gender known ("client"): race-gender as text, a flavor select
@@ -154,8 +154,10 @@ export default function SpeakerCell({
   }
 
   if (npc.confirmed && !editing) {
-    // A moderator's own settled answer (the only other `confirmed` provenance -- migration
-    // 0031). Shown plainly like the corpus, but with a small edit control that reopens the form
+    // A moderator's own settled answer, or a `display` one (the other `confirmed` provenances --
+    // migrations 0031 and 0055). A display answer can still be wrong when the addon's rolls
+    // missed the appearance the player saw, so it keeps this Edit rather than the corpus's
+    // read-only view. Shown plainly like the corpus, but with a small edit control that reopens the form
     // below, preselected with the current values via the same useState initialisers above. The
     // store already lets a moderator write over a moderator row -- upsertResolution's `where`
     // compares ranks with `<=`, so an equal rank still updates (store.test.ts's "lets a
@@ -167,14 +169,13 @@ export default function SpeakerCell({
           <span>{speaker(npc)}</span>
           <ProvenanceBadge provenance={npc.provenance} />
           {npc.doubtful ? <DoubtBadge /> : null}
-          <Button
-            size="sm"
+          <LiteButton
             variant="ghost"
             className="h-5 px-1.5 py-0 text-xs"
             onClick={() => setEditing(true)}
           >
             Edit
-          </Button>
+          </LiteButton>
         </div>
         {speakerNote(npc) ? <p className="text-muted-foreground mt-0.5">{speakerNote(npc)}</p> : null}
       </div>
@@ -282,14 +283,13 @@ export default function SpeakerCell({
           <ProvenanceBadge provenance={npc.provenance} />
         ) : null}
         {known ? (
-          <Button
-            size="sm"
+          <LiteButton
             variant="ghost"
             className="h-7 px-2 text-xs"
             onClick={() => setEditing(true)}
           >
             Edit
-          </Button>
+          </LiteButton>
         ) : null}
         {/* Unticked by default and resent on every save: the flag is part of the answer, so a
             save made without it is one the moderator now stands by. */}
@@ -297,11 +297,10 @@ export default function SpeakerCell({
           className="text-muted-foreground flex items-center gap-1"
           title="Save as a best answer, to be checked later -- lines still voice from it"
         >
-          <Checkbox checked={doubtful} onCheckedChange={(next) => setDoubtful(next === true)} />
+          <LiteCheckbox checked={doubtful} onChange={(event) => setDoubtful(event.target.checked)} />
           doubt
         </label>
-        <Button
-          size="sm"
+        <LiteButton
           variant="outline"
           className="h-7 px-2 text-xs"
           // A kind-less row with no kind picked yet has nothing valid to POST -- the route
@@ -323,7 +322,7 @@ export default function SpeakerCell({
           }}
         >
           Save
-        </Button>
+        </LiteButton>
       </div>
       {speakerNote(npc) ? <p className="text-muted-foreground">{speakerNote(npc)}</p> : null}
     </div>

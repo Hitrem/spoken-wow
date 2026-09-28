@@ -234,3 +234,12 @@ export async function contributionLocale(id: number): Promise<string | null> {
   );
   return rows[0]?.locale ?? null;
 }
+
+/** contributionLocale for many ids in one query. An id that is not there is left out. */
+export async function contributionLocales(ids: readonly number[]): Promise<Map<number, string>> {
+  const { rows } = await db().query<{ id: number; locale: string }>(
+    `select "id", "locale" from "contribution" where "id" = any($1::int[])`,
+    [ids],
+  );
+  return new Map(rows.map((row) => [row.id, row.locale]));
+}

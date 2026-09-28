@@ -16,6 +16,7 @@ const { applyPronunciation } = await import("@/lib/generation/pronunciation");
 const { accentTagged } = await import("@/lib/generation/narration");
 const { currentConfig } = await import("@/lib/generation/settings");
 const { clearOverride, writeOverride } = await import("./overrides");
+const { SHAPE } = await import("@/lib/generation/speakers/shape");
 const { staleFiles } = await import("./staleness");
 
 /**
@@ -26,10 +27,10 @@ const { staleFiles } = await import("./staleness");
 const LINE = "q:33:accept";
 const file = audioRelPath((await lineIndex()).get(LINE)![0]);
 
-/** What generation would send for this line right now. */
-async function currentHash(): Promise<string> {
+/** What generation would send this line's provider right now. */
+async function currentHash(provider: "elevenlabs" | "fish" = "elevenlabs"): Promise<string> {
   const line = (await fileIndex()).get(file)!;
-  return spokenHash(applyPronunciation(line.text, fileDefaults().rules));
+  return spokenHash(SHAPE[provider](applyPronunciation(line.text, fileDefaults().rules), undefined));
 }
 
 async function liveTake(hash: string | null, provider: "elevenlabs" | "fish" = "elevenlabs") {
@@ -116,7 +117,7 @@ describe("staleFiles", () => {
   });
 
   it("judges a fish.audio take by what fish.audio would be sent", async () => {
-    await liveTake(await currentHash(), "fish");
+    await liveTake(await currentHash("fish"), "fish");
     expect(await staleFiles([file])).toEqual(new Set());
 
     await writeOverride(file, LINE, "Something else entirely.", null);

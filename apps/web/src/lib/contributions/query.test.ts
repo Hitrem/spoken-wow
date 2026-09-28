@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MISSING, NEEDS_DECISION, contributionsHref, matchesSpeaker, nextContributionFilters } from "./query";
+import { MISSING, NEEDS_DECISION, contributionsHref, matchesSpeaker, nextContributionFilters, pageOf } from "./query";
 
 describe("nextContributionFilters", () => {
   const current = { status: "new", provenance: "all", client: "all" } as const;
@@ -43,6 +43,21 @@ describe("contributionsHref", () => {
     expect(
       contributionsHref({ status: "all", provenance: "all", client: "all" }, { provenance: NEEDS_DECISION }),
     ).toBe(`/contributions?status=all&provenance=${NEEDS_DECISION}&client=all`);
+  });
+});
+
+describe("paging", () => {
+  it("carries a page past the first, and leaves the first page bare", () => {
+    const filters = { status: "new", provenance: "all", client: "all" } as const;
+    expect(contributionsHref(filters, {}, 3)).toBe("/contributions?status=new&provenance=all&client=all&page=3");
+    expect(contributionsHref(filters, {}, 1)).toBe("/contributions?status=new&provenance=all&client=all");
+    // A filter change starts again from the first page.
+    expect(contributionsHref(filters, { status: "accepted" })).toBe("/contributions?status=accepted&provenance=all&client=all");
+  });
+
+  it("reads anything that is not a positive integer as the first page", () => {
+    expect(pageOf("4")).toBe(4);
+    for (const value of [undefined, "", "0", "-2", "1.5", "abc"]) expect(pageOf(value)).toBe(1);
   });
 });
 

@@ -123,6 +123,10 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
           : "stopped a batch",
         quote: str(d.reason) ?? str(d.label),
       };
+    case "queue.paused":
+      return { what: "paused the regeneration queue", quote: null };
+    case "queue.resumed":
+      return { what: "resumed the regeneration queue", quote: null };
     case "text.edited":
       return { what: version ? `edited the text (v${version})` : "edited the text", quote: str(d.text) };
     case "text.restored":

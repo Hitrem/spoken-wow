@@ -24,7 +24,7 @@ export const INT32_MAX = 2147483647;
 // a fifth value added here without a matching rank in provenanceRank fail loudly instead of
 // silently sorting as the lowest rank. Follows lib/contributions/contributions.ts's STATUSES
 // pattern.
-export const PROVENANCES = ["corpus", "client", "moderator", "none"] as const;
+export const PROVENANCES = ["corpus", "display", "client", "moderator", "none"] as const;
 export type Provenance = (typeof PROVENANCES)[number];
 
 /** Matches lib/contributions/contributions.ts's isStatus, for /contributions's provenance filter. */

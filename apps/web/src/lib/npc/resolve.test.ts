@@ -18,6 +18,7 @@ describe("observedFrom", () => {
       npcId: 205729,
       npcName: "Boarton Shadetotem",
       modelFileId: 122055,
+      displayIds: [],
       sex: 2,
       creatureType: "Humanoid",
       build: "1.60.1/69913",
@@ -32,6 +33,7 @@ describe("observedFrom", () => {
       npcId: 205729,
       npcName: "Boarton Shadetotem",
       modelFileId: null,
+      displayIds: [],
       sex: null,
       creatureType: null,
       build: null,
@@ -72,12 +74,31 @@ describe("observedFrom", () => {
   it("refuses an out-of-range sex the same way", () => {
     expect(observedFrom({ npc: "1 X", sex: "99999999999" }).sex).toBe(null);
   });
+
+  it("reads the appearance ids the addon rolled", () => {
+    expect(observedFrom({ npc: "3084 Bluffwatcher", displays: "2141,9391,9392" }).displayIds).toEqual([
+      2141, 9391, 9392,
+    ]);
+  });
+
+  // The envelope is unauthenticated text: one bad entry drops that entry, not the rest.
+  it("keeps the well-formed ids of a damaged list, once each", () => {
+    expect(observedFrom({ npc: "1 X", displays: "2141,,x9,2141,99999999999, 9392" }).displayIds).toEqual([
+      2141, 9392,
+    ]);
+  });
+
+  it("stops at sixteen ids, since a creature has at most four appearances", () => {
+    const many = Array.from({ length: 40 }, (_, i) => i + 1).join(",");
+    expect(observedFrom({ npc: "1 X", displays: many }).displayIds).toHaveLength(16);
+  });
 });
 
 vi.mock("@/lib/quests/catalogue", () => ({
   npcVoiceFromCorpus: vi.fn(),
   defaultFlavorFor: vi.fn(),
 }));
+vi.mock("./display-voices", () => ({ voiceFromDisplays: vi.fn() }));
 vi.mock("./store", () => ({
   NPC_KINDS: ["creature", "gameobject"],
   getResolution: vi.fn(),
@@ -86,6 +107,7 @@ vi.mock("./store", () => ({
 
 import { defaultFlavorFor, npcVoiceFromCorpus } from "@/lib/quests/catalogue";
 
+import { voiceFromDisplays } from "./display-voices";
 import { getResolution, upsertResolution } from "./store";
 import { resolveNpc } from "./resolve";
 
@@ -94,6 +116,7 @@ const observed = {
   npcId: 205729,
   npcName: "Boarton Shadetotem",
   modelFileId: 122055,
+  displayIds: [] as number[],
   sex: 2,
   creatureType: "Humanoid",
   build: "1.60.1/69913",
@@ -173,5 +196,82 @@ describe("resolveNpc", () => {
     expect(await resolveNpc({ ...observed, npcKind: null })).toBe(null);
     expect(getResolution).not.toHaveBeenCalled();
     expect(upsertResolution).not.toHaveBeenCalled();
+  });
+  it("takes the game's voice for the appearance the player saw, confirmed", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
+    });
+    const row = await resolveNpc({ ...observed, displayIds: [2141, 9392] });
+    expect(voiceFromDisplays).toHaveBeenCalledWith([2141, 9392], 122055);
+    expect(row).toMatchObject({
+      race: "tauren", gender: "female", flavor: "official", provenance: "display", confirmed: true,
+    });
+  });
+
+  it("picks the default flavor when it is one the appearances offer", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: false, race: "dwarf", gender: "female", flavors: ["guard", "maternal", "young"],
+    });
+    vi.mocked(defaultFlavorFor).mockResolvedValue("maternal");
+    const row = await resolveNpc({ ...observed, displayIds: [36630, 144322, 146689] });
+    expect(row).toMatchObject({
+      race: "dwarf", gender: "female", flavor: "maternal", provenance: "client", confirmed: false,
+    });
+  });
+
+  it("picks among the offered flavors when the default is not one of them", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: false, race: "dwarf", gender: "female", flavors: ["guard", "young"],
+    });
+    vi.mocked(defaultFlavorFor).mockResolvedValue("maternal");
+    const row = await resolveNpc({ ...observed, displayIds: [144322, 146689] });
+    expect(row).toMatchObject({ flavor: "guard", provenance: "client", confirmed: false });
+  });
+
+  it("falls back to the model when the appearances say nothing", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue(null);
+    vi.mocked(defaultFlavorFor).mockResolvedValue("warrior");
+    const row = await resolveNpc({ ...observed, displayIds: [999_999] });
+    expect(row).toMatchObject({ race: "tauren", gender: "male", flavor: "warrior", provenance: "client" });
+  });
+
+  it("does not look appearances up when the envelope carried none", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockClear();
+    await resolveNpc(observed);
+    expect(voiceFromDisplays).not.toHaveBeenCalled();
+  });
+  // The envelope is unauthenticated: appearances alone must not be able to plant a confirmed
+  // voice. Without a model the server knows, they narrow a guess and nothing more.
+  it("does not confirm a voice from appearances without a model it knows", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockResolvedValue({
+      exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
+    });
+    vi.mocked(defaultFlavorFor).mockResolvedValue("standard");
+    const row = await resolveNpc({ ...observed, modelFileId: null, displayIds: [9392] });
+    expect(row).toMatchObject({
+      race: "tauren", gender: "female", flavor: "official", provenance: "client", confirmed: false,
+    });
+  });
+
+  // Gameobject ids are their own id space; SetCreature would describe whichever creature shares
+  // the number, so a gameobject's appearances mean nothing even if an envelope carries them.
+  it("never looks appearances up for a gameobject", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
+    vi.mocked(voiceFromDisplays).mockClear();
+    await resolveNpc({ ...observed, npcKind: "gameobject", displayIds: [9392] });
+    expect(voiceFromDisplays).not.toHaveBeenCalled();
   });
 });

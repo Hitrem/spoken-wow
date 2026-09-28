@@ -97,10 +97,12 @@ if [ "$LANGUAGE" != enUS ]; then
   STORE="$REPO/build/quests/$LANGUAGE/audio"
   PACKS="$(node "$REPO/scripts/lib/packs.mjs" list quests "$LANGUAGE" | tr '\n' ' ')"
 fi
-# A language's Gossip pack also carries that language's gossip text, so a client in it matches
-# the NPC's words (tts_cli/locale_text.py). make writes the file first (export-locale-text).
+# A language's Gossip pack - or its All pack, when it ships as one - also carries that language's
+# gossip text, so a client in it matches the NPC's words (tts_cli/locale_text.py). make writes
+# the file first (export-locale-text).
 LOCALE_TEXT="$REPO/build/quests/$LANGUAGE/locale-text.json.gz"
-if [ "$LANGUAGE" != enUS ] && [[ " $PACKS " == *" gossip "* ]] && [ ! -f "$LOCALE_TEXT" ]; then
+if [ "$LANGUAGE" != enUS ] && [[ " $PACKS " == *" gossip "* || " $PACKS " == *" all "* ]] \
+    && [ ! -f "$LOCALE_TEXT" ]; then
   echo "error: no $LANGUAGE gossip text at $LOCALE_TEXT -- run: make quests-export-locale-text LOCALE=$LANGUAGE" >&2
   exit 1
 fi
@@ -300,7 +302,7 @@ for pack in $PACKS; do
     title="$(pack_field "$pack" name)"
     version="$(pack_field "$pack" version)"
     language_args=(--language "$LANGUAGE")
-    if [ "$pack" = gossip ]; then language_args+=(--locale-text "$LOCALE_TEXT"); fi
+    if [ "$pack" = gossip ] || [ "$pack" = all ]; then language_args+=(--locale-text "$LOCALE_TEXT"); fi
   fi
 
   echo

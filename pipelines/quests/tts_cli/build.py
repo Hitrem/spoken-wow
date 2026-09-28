@@ -291,8 +291,9 @@ def build_module(corpus: dict, store_dir: str, dist_dir: str = DEFAULT_DIST_DIR,
     and stays quiet. See tts_cli/factions.py.
 
     `locale_text` is `language`'s rows from tts_cli.locale_text, and adds that language's
-    gossip tables under generated/<language>/, loaded only on a client in it. Only a
-    language's Gossip pack is given them (cli-main.py refuses the rest). The English tables
+    gossip tables under generated/<language>/, loaded only on a client in it. Only the
+    language's pack holding its gossip - Gossip, or All - is given them (cli-main.py refuses
+    the rest). The English tables
     are written either way: they are what matches on an English client.
     """
     if locale_text is not None and (not language or language == "enUS"):

@@ -80,14 +80,29 @@ export function nextContributionFilters(
   };
 }
 
-/** nextContributionFilters, turned into the href /contributions's own rows read back. */
-export function contributionsHref(current: ContributionFilters, next: FilterChange): string {
+/** How many rows one page of /contributions shows. */
+export const PAGE_SIZE = 100;
+
+/** The `page` query parameter as a page number: 1 for anything that is not a positive integer. */
+export function pageOf(value: unknown): number {
+  const page = Number(value);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+/**
+ * nextContributionFilters, turned into the href /contributions's own rows read back.
+ *
+ * `page` only when asked for: a filter change starts again from the first page, since the
+ * page it was on may not exist in the new view.
+ */
+export function contributionsHref(current: ContributionFilters, next: FilterChange, page = 1): string {
   const filters = nextContributionFilters(current, next);
   const params = new URLSearchParams({
     status: filters.status,
     provenance: filters.provenance,
     client: filters.client,
   });
+  if (page > 1) params.set("page", String(page));
   return `/contributions?${params}`;
 }
 

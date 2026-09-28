@@ -16,7 +16,7 @@ import { upsertResolution } from "@/lib/npc/store";
 import { corpus, lineIndex } from "@/lib/quests/catalogue";
 import { isGap, matchingLines, NO_CONTEXT } from "@/lib/search";
 
-import { lineIsInExplorer, resolveContribution } from "./accept";
+import { lineIsInExplorer, resolveContribution, resolveContributions } from "./accept";
 import { gossipFileName, gossipHash, gossipLineId, questFileName, questLineId } from "./naming";
 import { createContribution, setContributionNpcKind, type Contribution } from "./store";
 
@@ -348,6 +348,48 @@ describe("resolveContribution: quests accept", () => {
     expect((await linesFor(GUARD_LINE)).map((l) => l.origin)).not.toContain("contributed");
     const speakers = (await lineIndex()).get(GUARD_LINE)!;
     expect(speakers.some((l) => l.npcId === npcId && l.contributionId === id)).toBe(true);
+  });
+});
+
+describe("resolveContributions: a batch, side by side", () => {
+  it("two contributions for one quest moment write one line and are both accepted", async () => {
+    await speaker(npcId, "orc", "female", "standard");
+    await speaker(npcId + 1, "orc", "female", "standard");
+    const first = await questContribution({}, npcId, "Bring me six wolf pelts, druid.");
+    const second = await questContribution({}, npcId + 1, "Bring me six wolf pelts, mage.");
+
+    const outcomes = await resolveContributions([first, second], "accepted", RESOLVER);
+    expect([first, second].map((id) => (outcomes.get(id) as { ok: boolean }).ok)).toEqual([true, true]);
+
+    expect(await linesFor(questLineId(questId, "accept"))).toHaveLength(1);
+    const written = [...(await speakersOf(first)), ...(await speakersOf(second))];
+    expect(written).toHaveLength(1);
+  });
+
+  it("one new gossip line sent by two NPCs is written once, with both as its speakers", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    await speaker(npcId + 1, "tauren", "male", "warrior");
+    const text = "The winds carry word of you, stranger. Walk with the Earth Mother.";
+    const first = await gossipContribution(text, npcId);
+    const second = await gossipContribution(text, npcId + 1);
+
+    const outcomes = await resolveContributions([first, second], "accepted", RESOLVER);
+    expect([first, second].map((id) => (outcomes.get(id) as { ok: boolean }).ok)).toEqual([true, true]);
+
+    const lineId = gossipLineId(gossipHash(text, "tauren", "male"));
+    expect(await linesFor(lineId)).toHaveLength(1);
+    expect((await speakersOf(first)).map((s) => s.lineId)).toEqual([lineId]);
+    expect((await speakersOf(second)).map((s) => s.lineId)).toEqual([lineId]);
+  });
+
+  it("a refused row keeps its refusal and the rest still land", async () => {
+    await speaker(npcId, "orc", "female", "standard");
+    const good = await questContribution({}, npcId);
+    const unresolved = await questContribution({ event: "complete" }, npcId + 2);
+
+    const outcomes = await resolveContributions([good, unresolved], "accepted", RESOLVER);
+    expect(outcomes.get(good)).toMatchObject({ ok: true });
+    expect(outcomes.get(unresolved)).toMatchObject({ ok: false, reason: "needs-speaker" });
   });
 });
 

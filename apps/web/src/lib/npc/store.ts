@@ -51,9 +51,11 @@ export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcRe
 
 // Provenance is a rank, not a set of equally-trusted labels: a submission carrying less
 // information must never erase one carrying more. `moderator` outranks everything because a
-// person decided; `corpus` outranks `client` because it is exact, including a flavor nothing
-// else can supply; `client` outranks `none` because a mapped model id is still an observation
-// where a bare envelope is none at all. This CASE is inlined into the upsert's `where` twice
+// person decided; `corpus` outranks `client` because it is exact, flavor included; `display`
+// sits between them, because it is the game's own voice set for the appearance the player saw
+// and so beats a model guess, but the corpus is the older authority for every NPC it carries;
+// `client` outranks `none` because a mapped model id is still an observation where a bare
+// envelope is none at all. This CASE is inlined into the upsert's `where` twice
 // (once for the stored row, once for the incoming one) so the comparison lives in the one
 // place both sides of a write pass through, rather than in whichever caller happens to be last.
 //
@@ -67,8 +69,9 @@ export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcRe
 // must beat a `none` row) goes red immediately, naming the value, instead of shipping quietly.
 function provenanceRank(column: string): string {
   return `case ${column}
-    when 'moderator' then 3
-    when 'corpus' then 2
+    when 'moderator' then 4
+    when 'corpus' then 3
+    when 'display' then 2
     when 'client' then 1
     when 'none' then 0
     else -1

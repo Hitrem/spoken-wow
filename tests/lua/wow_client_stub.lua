@@ -20,6 +20,12 @@ local world = {
     -- the load takes. Without this the stub always answers immediately once shown, which is
     -- why an early-click read racing the load was never once exercised before this existed.
     modelStillLoading = false,
+    -- npcId -> the appearance ids SetCreature can roll for it. Each call takes the next one in
+    -- turn, so the addon's rolls see every appearance the way that many random ones almost
+    -- always would, and a test stays deterministic.
+    creatureDisplays = {},
+    -- True for a creature the client has not cached yet: GetDisplayInfo reads 0.
+    displaysUncached = false,
     unitSex = 2,          -- UnitSex: 1 unknown, 2 male, 3 female
     creatureType = "Humanoid",
     panels = {},
@@ -370,7 +376,9 @@ function M.FrameCount() return frameCount end
 -- probe that is built once but re-primed on every refresh, which is the cost that actually
 -- matters (SetUnit is what starts a model loading).
 local setUnitCount = 0
+local setCreatureCount = 0
 function M.SetUnitCount() return setUnitCount end
+function M.SetCreatureCount() return setCreatureCount end
 function _G.CreateFrame(kind, name, parent)
     frameCount = frameCount + 1
     local f = name and Frame(name) or MakeFrame(nil)
@@ -427,6 +435,20 @@ function _G.CreateFrame(kind, name, parent)
                 error("OnModelLoaded is not a recognised script type on this client")
             end
             self.scripts[script] = fn
+        end
+    end
+    -- Kept apart from the PlayerModel above on purpose: that one is the addon's model probe,
+    -- tracked as M.playerModel, and the appearance roller must never replace it.
+    if kind == "DressUpModel" then
+        function f:SetCreature(id)
+            self.creature = id
+            setCreatureCount = setCreatureCount + 1
+            local displays = world.creatureDisplays[id]
+            self.display = displays and displays[(setCreatureCount - 1) % #displays + 1] or nil
+        end
+        function f:GetDisplayInfo()
+            if world.displaysUncached then return 0 end
+            return self.display or 0
         end
     end
     return f

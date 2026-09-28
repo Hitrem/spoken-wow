@@ -188,6 +188,11 @@ export type QueueSnapshot = {
   failures: { source: Source; lang: Lang; lineId: string; message: string }[];
   latestBatch: { cancelled: number; stoppedBecause: string | null } | null;
   /**
+   * The languages paused now, and by whom. Optional for the reason `queues` is: an older
+   * server omits it.
+   */
+  paused?: { lang: Lang; pausedAt: string; by: string | null }[];
+  /**
    * Each owner's queue in drain order. Mirrors QueueSnapshot["queues"] in queue.ts.
    *
    * Optional although this release always sends it: an older server omits it, and a tab can
@@ -282,6 +287,16 @@ export async function stopQueue(): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: "{}",
   }).catch(() => {});
+}
+
+/** Hold the queue in the caller's languages, keeping what is waiting. */
+export async function pauseQueue(): Promise<void> {
+  await fetch("/api/regenerate/queue/pause", { method: "POST" }).catch(() => {});
+}
+
+/** Let a paused queue run again, in the caller's languages. */
+export async function resumeQueue(): Promise<void> {
+  await fetch("/api/regenerate/queue/resume", { method: "POST" }).catch(() => {});
 }
 
 /**
