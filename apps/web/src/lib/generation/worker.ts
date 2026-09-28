@@ -379,20 +379,26 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
     try {
       if (!isLeader()) return;
 
-      const now = Date.now();
       const open = await Promise.all(
         (await activeLanes(maxActive)).map(async (lane) => {
           const key = laneKey(lane);
           const state = stateOf(key);
-          const width = afterRateLimit(await widthOf(lane, state), state.rateLimitedAt, now);
-          return { lane, key, state, width };
+          return { lane, key, state, width: await widthOf(lane, state) };
         }),
       );
       forgetIdle(new Set(open.map((entry) => entry.key)));
 
       while (!stopped && isLeader()) {
+        // The cool-down is applied per claim, not once per pump: one pump can outlive many
+        // jobs, each settle refilling its slot from inside this loop, and a 429 that lands
+        // meanwhile must narrow the lane from the next claim on - not once the loop drains.
+        const now = Date.now();
         const key = pickLane(
-          open.map((entry) => ({ key: entry.key, running: entry.state.running, width: entry.width })),
+          open.map((entry) => ({
+            key: entry.key,
+            running: entry.state.running,
+            width: afterRateLimit(entry.width, entry.state.rateLimitedAt, now),
+          })),
           running.size,
           cap,
         );
