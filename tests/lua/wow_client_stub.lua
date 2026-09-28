@@ -860,8 +860,39 @@ M.ldbObjects = {}
 libs["LibDataBroker-1.1"] = { NewDataObject = function(_, name, obj) M.ldbObjects[name] = obj; return obj end }
 M.dbIcons = {}
 libs["LibDBIcon-1.0"] = {
-    Register = function(_, name, obj, db) M.dbIcons[name] = { obj = obj, db = db } end,
+    Register = function(self, name, obj, db)
+        M.dbIcons[name] = { obj = obj, db = db }
+        -- The real lib registers the button's compartment entry when the flag is set,
+        -- through the same hook the player's toggle calls.
+        if db and db.showInCompartment then
+            self:AddButtonToCompartment(name)
+        end
+    end,
     Show = function() end, Hide = function() end, Lock = function() end, Unlock = function() end, Refresh = function() end,
+    -- Enough of the addon compartment for the player's wrapper to be testable: entries
+    -- join the frame's list and leave it again, and nothing happens on the clients
+    -- (every one before the modern) without the frame.
+    AddButtonToCompartment = function(self, name)
+        if not _G.AddonCompartmentFrame then return end
+        local icon = M.dbIcons[name]
+        if not icon then return end
+        icon.compartmentData = { text = name, icon = icon.obj.icon or "" }
+        table.insert(_G.AddonCompartmentFrame.registeredAddons, icon.compartmentData)
+    end,
+    RemoveButtonFromCompartment = function(self, name)
+        if not _G.AddonCompartmentFrame then return end
+        local icon = M.dbIcons[name]
+        if icon and icon.compartmentData then
+            local list = _G.AddonCompartmentFrame.registeredAddons
+            for i = 1, #list do
+                if list[i] == icon.compartmentData then
+                    table.remove(list, i)
+                    icon.compartmentData = nil
+                    return
+                end
+            end
+        end
+    end,
 }
 _G.LibStub = setmetatable({
     -- Real enough to let a genuinely-vendored LibStub library (LibDeflate, so far) register

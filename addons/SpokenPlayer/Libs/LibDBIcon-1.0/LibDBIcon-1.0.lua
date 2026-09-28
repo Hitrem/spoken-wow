@@ -6,7 +6,7 @@
 --
 
 local DBICON10 = "LibDBIcon-1.0"
-local DBICON10_MINOR = 44 -- Bump on changes
+local DBICON10_MINOR = 45 -- Bump on changes
 if not LibStub then error(DBICON10 .. " requires LibStub.") end
 local ldb = LibStub("LibDataBroker-1.1", true)
 if not ldb then error(DBICON10 .. " requires LibDataBroker-1.1.") end
@@ -18,7 +18,7 @@ lib.callbackRegistered = lib.callbackRegistered or nil
 lib.callbacks = lib.callbacks or LibStub("CallbackHandler-1.0"):New(lib)
 lib.notCreated = lib.notCreated or {}
 lib.radius = lib.radius or 5
-local next, Minimap, CreateFrame = next, Minimap, CreateFrame
+local next, Minimap, CreateFrame, AddonCompartmentFrame = next, Minimap, CreateFrame, AddonCompartmentFrame
 lib.tooltip = lib.tooltip or CreateFrame("GameTooltip", "LibDBIconTooltip", UIParent, "GameTooltipTemplate")
 local isDraggingButton = false
 
@@ -26,6 +26,15 @@ function lib:IconCallback(event, name, key, value)
 	if lib.objects[name] then
 		if key == "icon" then
 			lib.objects[name].icon:SetTexture(value)
+			if lib:IsButtonInCompartment(name) and lib:IsButtonCompartmentAvailable() then
+				local addonList = AddonCompartmentFrame.registeredAddons
+				for i = 1, #addonList do
+					if addonList[i].text == name then
+						addonList[i].icon = value
+						return
+					end
+				end
+			end
 		elseif key == "iconCoords" then
 			lib.objects[name].icon:UpdateCoord()
 		elseif key == "iconR" then
@@ -92,6 +101,33 @@ local function onLeave(self)
 	local obj = self.dataObject
 	if obj.OnLeave then
 		obj.OnLeave(self)
+	end
+end
+
+local function onEnterCompartment(self, menu)
+	local buttonName = menu.text
+	local object = lib.objects[buttonName]
+	if object and object.dataObject then
+		if object.dataObject.OnTooltipShow then
+			lib.tooltip:SetOwner(self, "ANCHOR_NONE")
+			lib.tooltip:SetPoint(getAnchors(self))
+			object.dataObject.OnTooltipShow(lib.tooltip)
+			lib.tooltip:Show()
+		elseif object.dataObject.OnEnter then
+			object.dataObject.OnEnter(self)
+		end
+	end
+end
+
+local function onLeaveCompartment(self, menu)
+	lib.tooltip:Hide()
+
+	local buttonName = menu.text
+	local object = lib.objects[buttonName]
+	if object and object.dataObject then
+		if object.dataObject.OnLeave then
+			object.dataObject.OnLeave(self)
+		end
 	end
 end
 
@@ -279,6 +315,12 @@ local function createButton(name, object, db)
 			button:Hide()
 		end
 	end
+
+	-- The addon compartment's entry lives on the button object, so registering the
+	-- button is what registers it with the addon compartment frame.
+	if db and db.showInCompartment then
+		lib:AddButtonToCompartment(name)
+	end
 	lib.callbacks:Fire("LibDBIcon_IconCreated", button, name) -- Fire 'Icon Created' callback
 end
 
@@ -317,7 +359,10 @@ end
 function lib:Register(name, object, db)
 	if not object.icon then error("Can't register LDB objects without icons set!") end
 	if lib.objects[name] or lib.notCreated[name] then error(DBICON10.. ": Object '".. name .."' is already registered.") end
-	if not db or not db.hide then
+	-- A hidden button is not created at all, unless the addon compartment wants it: the
+	-- compartment entry lives on the button object, so the flag has to force creation
+	-- even when the player would rather not have the minimap button.
+	if not db or not db.hide or db.showInCompartment then
 		createButton(name, object, db)
 	else
 		lib.notCreated[name] = {object, db}
@@ -447,6 +492,67 @@ end
 
 function lib:SetButtonToPosition(button, position)
 	updatePosition(lib.objects[button] or button, position)
+end
+
+--------------------------------------------------------------------------------
+-- Addon Compartment API
+--
+
+function lib:IsButtonCompartmentAvailable()
+	if AddonCompartmentFrame then
+		return true
+	end
+end
+
+function lib:IsButtonInCompartment(buttonName)
+	local object = lib.objects[buttonName]
+	if object and object.db and object.db.showInCompartment then
+		return true
+	end
+	return false
+end
+
+function lib:AddButtonToCompartment(buttonName, customIcon)
+	if lib:IsButtonCompartmentAvailable() then
+		local object = lib.objects[buttonName]
+		if object and not object.compartmentData then
+			if object.db then
+				object.db.showInCompartment = true
+			end
+			object.compartmentData = {
+				text = buttonName,
+				icon = customIcon or object.dataObject.icon,
+				notCheckable = true,
+				registerForAnyClick = true,
+				func = function(_, menuInputData, menu)
+					object.dataObject.OnClick(menu, menuInputData.buttonName)
+				end,
+				funcOnEnter = onEnterCompartment,
+				funcOnLeave = onLeaveCompartment,
+			}
+			AddonCompartmentFrame:RegisterAddon(object.compartmentData)
+		end
+	end
+end
+
+function lib:RemoveButtonFromCompartment(buttonName)
+	if lib:IsButtonCompartmentAvailable() then
+		local object = lib.objects[buttonName]
+		if object and object.compartmentData then
+			for i = 1, #AddonCompartmentFrame.registeredAddons do
+				local entry = AddonCompartmentFrame.registeredAddons[i]
+				if entry == object.compartmentData then
+					object.compartmentData = nil
+					if object.db then
+						object.db.showInCompartment = nil
+					end
+					table.remove(AddonCompartmentFrame.registeredAddons, i)
+					AddonCompartmentFrame:UpdateDisplay()
+					return
+				end
+			end
+		end
+	end
 end
 
 -- Upgrade!

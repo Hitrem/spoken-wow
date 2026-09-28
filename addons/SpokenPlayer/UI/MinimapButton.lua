@@ -310,3 +310,19 @@ function Minimap:Refresh()
         LibDBIcon:Refresh("Spoken", Addon.db.profile.Minimap.LibDBIcon)
     end
 end
+
+--- Whether the Spoken button also shows in Blizzard's addon compartment, on the
+--- modern clients that have one. The flag is the settings panel's; the lib's add and
+--- remove keep the compartment's entry in step, and writing the flag first means the
+--- choice sticks even where the frame does not exist to be updated.
+function Minimap:ToggleCompartment(shouldShow)
+    local db = Addon.db.profile.Minimap.LibDBIcon
+    db.showInCompartment = shouldShow
+    local LibDBIcon = LibStub("LibDBIcon-1.0", true)
+    if not LibDBIcon then return end
+    if shouldShow then
+        LibDBIcon:AddButtonToCompartment("Spoken")
+    else
+        LibDBIcon:RemoveButtonFromCompartment("Spoken")
+    end
+end
