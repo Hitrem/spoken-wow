@@ -196,7 +196,46 @@ describe("startWorker", () => {
     await worker.stop();
   });
 
-  it("cancels the rest of a batch after a fatal failure", async () => {
+  /**
+   * One job's failure is that job's, whatever its kind. A missing voice is one NPC's slot
+   * in a batch that spans dozens of them, and even an account-wide failure - out of credits,
+   * a bad key - is refused before anything is spent, so letting the rest fail on their own
+   * costs nothing and never takes down lines that would have worked.
+   */
+  it("skips a job whose voice is missing and generates the rest", async () => {
+    const batch = await seed(5);
+    const worker = startWorker(() => true, {
+      apiKeyFor: KEYED,
+      budget: async () => 1,
+      regenerate: { quests: async (lineId) =>
+        lineId === "q:3:accept"
+          ? {
+              ok: false,
+              failure: {
+                kind: "voice-missing",
+                message: 'no voice for "orc-female"',
+                status: 409,
+                fatal: true,
+              },
+            }
+          : OK },
+    });
+
+    await until(async () => {
+      const states = await statesOf(batch);
+      return (states.done ?? 0) === 4 && (states.failed ?? 0) === 1;
+    });
+    await worker.stop();
+
+    expect((await statesOf(batch)).cancelled).toBeUndefined();
+    const { rows } = await db().query<{ stoppedBecause: string | null }>(
+      `select "stoppedBecause" from "regeneration_batch" where "id" = $1`,
+      [batch],
+    );
+    expect(rows[0].stoppedBecause).toBeNull();
+  });
+
+  it("fails each job on its own after a fatal failure rather than cancelling the batch", async () => {
     const batch = await seed(5);
     const worker = startWorker(() => true, {
       apiKeyFor: KEYED,
@@ -212,26 +251,17 @@ describe("startWorker", () => {
       }) },
     });
 
-    await until(async () => {
-      const states = await statesOf(batch);
-      return (states.cancelled ?? 0) === 4 && (states.failed ?? 0) === 1;
-    });
+    await until(async () => (await statesOf(batch)).failed === 5);
     await worker.stop();
 
-    const { rows } = await db().query<{ stoppedBecause: string }>(
-      `select "stoppedBecause" from "regeneration_batch" where "id" = $1`,
-      [batch],
-    );
-    expect(rows[0].stoppedBecause).toContain("out of credits");
+    expect((await statesOf(batch)).cancelled).toBeUndefined();
   });
 
   /**
-   * The batch is enqueued by someone who had a key at the time, so reaching the worker
-   * without one means it was cleared or the master key changed underneath it. Every
-   * remaining job would be refused identically, which is what makes this fatal - and no
-   * request is made, so nothing is spent finding out.
+   * No request is made when the owner has no usable key, so nothing is spent by failing
+   * each job in turn - and the batch's other lines are not cancelled on its account.
    */
-  it("abandons a batch whose owner has no usable key, without generating", async () => {
+  it("fails every job of an owner with no usable key, without generating", async () => {
     const batch = await seed(4);
     let generated = 0;
     const worker = startWorker(() => true, {
@@ -243,19 +273,17 @@ describe("startWorker", () => {
       } },
     });
 
-    await until(async () => {
-      const states = await statesOf(batch);
-      return (states.cancelled ?? 0) === 3 && (states.failed ?? 0) === 1;
-    });
+    await until(async () => (await statesOf(batch)).failed === 4);
     await worker.stop();
 
     expect(generated).toBe(0);
+    expect((await statesOf(batch)).cancelled).toBeUndefined();
 
-    const { rows } = await db().query<{ stoppedBecause: string }>(
-      `select "stoppedBecause" from "regeneration_batch" where "id" = $1`,
+    const { rows } = await db().query<{ error: string }>(
+      `select "error" from "regeneration_job" where "batchId" = $1 limit 1`,
       [batch],
     );
-    expect(rows[0].stoppedBecause).toContain("ElevenLabs key");
+    expect(rows[0].error).toContain("ElevenLabs key");
   });
 
   // The job's language is what the generator is asked to speak: a Portuguese job handed on
@@ -747,14 +775,14 @@ describe("a fish.audio batch", () => {
     expect(rows[0].usd).toBeCloseTo(0.001);
   });
 
-  it("stops, naming fish.audio, when the owner has no fish.audio key", async () => {
+  it("fails, naming fish.audio, when the owner has no fish.audio key", async () => {
     const batch = await seed(2, "quests", "fish");
     const worker = startWorker(() => true, {
       apiKeyFor: async (_user, provider) => (provider === "fish" ? null : "eleven-key"),
       budget: async () => 1,
       regenerate: { quests: async () => OK },
     });
-    await until(async () => (await statesOf(batch)).failed === 1);
+    await until(async () => (await statesOf(batch)).failed === 2);
     await worker.stop();
 
     const { rows } = await db().query<{ error: string }>(
@@ -762,7 +790,7 @@ describe("a fish.audio batch", () => {
       [batch],
     );
     expect(rows[0].error).toMatch(/no usable fish\.audio key/);
-    expect((await statesOf(batch)).cancelled).toBe(1);
+    expect((await statesOf(batch)).cancelled).toBeUndefined();
   });
 
   it("sizes a lane by its owner's provider and model", async () => {

@@ -16,7 +16,6 @@ import { afterRateLimit, budgetFor, clampToPool, maxActiveFrom, pickLane } from 
 import {
   activeLanes,
   batchStopped,
-  cancelPending,
   claimNext,
   failJob,
   finishJob,
@@ -212,9 +211,9 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
   /**
    * What the lane's owner's plan allows, read at most once a minute.
    *
-   * A key or settings that cannot be read is a width of one rather than an error: the one job
-   * that is then claimed fails as `auth` in run() and cancels its batch, which is the answer
-   * the owner needs to see.
+   * A key or settings that cannot be read is a width of one rather than an error: each job
+   * then claimed fails as `auth` in run(), one at a time, which is the answer the owner needs
+   * to see.
    *
    * STALE WHILE REVALIDATE. pump() waits for every active lane's width before claiming
    * anything, and reading a plan is a network call with no timeout of its own. Awaited on
@@ -260,7 +259,7 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
   async function run(job: QueueJob, lane: LaneState): Promise<void> {
     // Whose credits this line is spent from. A batch is enqueued by someone who had a key at
     // the time, so reaching here without one means it was cleared or the master key changed
-    // underneath it - and every remaining job in the batch would fail identically.
+    // underneath it. Failed as this job only, like every failure below: see the note there.
     //
     // For the provider the job was queued with, not whichever the owner has chosen since.
     let apiKey: string | null;
@@ -274,12 +273,9 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
       const message =
         `the account that started this batch has no usable ${PROVIDER_NAME[job.provider]} key; set one in your` +
         " profile and start it again";
-      try {
-        await failJob(job.id, { kind: "auth", message });
-        await cancelPending(`Stopped after auth: ${message}`, { batchId: job.batchId });
-      } catch (error) {
-        console.error(`regeneration queue: job ${job.id} could not be failed`, error);
-      }
+      await failJob(job.id, { kind: "auth", message }).catch((error: unknown) =>
+        console.error(`regeneration queue: job ${job.id} could not be failed`, error),
+      );
       return;
     }
     // The owner's own settings, read per job so an edit on /voices applies to later lines.
@@ -300,12 +296,9 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
     const generate = generators[job.source];
     if (!generate) {
       const message = `no generator for ${job.source} jobs in this build`;
-      try {
-        await failJob(job.id, { kind: "bad-request", message });
-        await cancelPending(`Stopped: ${message}`, { batchId: job.batchId });
-      } catch (error) {
-        console.error(`regeneration queue: job ${job.id} could not be failed`, error);
-      }
+      await failJob(job.id, { kind: "bad-request", message }).catch((error: unknown) =>
+        console.error(`regeneration queue: job ${job.id} could not be failed`, error),
+      );
       return;
     }
 
@@ -342,7 +335,7 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
         return;
       }
 
-      const { kind, message, fatal } = result.failure;
+      const { kind, message } = result.failure;
 
       if (kind === "rate-limit") {
         lane.rateLimitedAt = Date.now();
@@ -355,14 +348,13 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
         }
       }
 
+      // Only this job fails; the rest of its batch carries on, whatever `fatal` says. `fatal`
+      // is the browser's contract (errors.ts) and assumes a batch is one voice and one key,
+      // which a queued batch is not: a "Regenerate all" spans every NPC slot, and cancelling
+      // it for one slot with no voice takes down every line that has one. Even an
+      // account-wide failure - no credits, a revoked key - is refused before anything is
+      // billed, so letting each remaining line fail on its own costs nothing but log rows.
       await failJob(job.id, { kind, message });
-
-      // Out of credits, a bad key or a missing voice fails every remaining line in the same
-      // way. Grinding through the rest of the batch to learn that once per line is exactly
-      // what the fatal flag exists to prevent - the reasoning is written out in errors.ts.
-      if (fatal) {
-        await cancelPending(`Stopped after ${kind}: ${message}`, { batchId: job.batchId });
-      }
     } catch (error) {
       console.error(
         `regeneration queue: job ${job.id} (${job.file}) settled but its outcome could not be` +
