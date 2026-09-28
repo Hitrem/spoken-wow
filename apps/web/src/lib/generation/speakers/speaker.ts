@@ -32,8 +32,8 @@ export type SpeakRequest = {
   lang: Lang;
   seed: number | null;
   /**
-   * Whether the line holds narration. A line that is all stage direction is one turn and
-   * still narration, so this is not `turns.length > 1`.
+   * Whether the line holds narration or a voice marker. A line that is all stage direction,
+   * or all one marked slot, is one turn and still this, so it is not `turns.length > 1`.
    */
   dialogue: boolean;
 };

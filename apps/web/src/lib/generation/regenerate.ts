@@ -27,7 +27,7 @@ import { sentText } from "./files";
 import { canonicalNpcId, seedFor } from "./seed";
 import { spokenHash } from "./spoken-hash";
 import { currentConfig } from "./settings";
-import { NARRATOR_VOICE, segments } from "./narration";
+import { NARRATOR_VOICE, segments, type Segment } from "./narration";
 import type { Speaker } from "./speakers/speaker";
 import { BUSY, withTakeLock } from "./lock";
 import { busy, failure, type Failure } from "./errors";
@@ -163,40 +163,46 @@ export async function regenerateLine(
     const spokenText = SHAPE[speaker.provider](
       sentText(source, lang, line.playerGender),
       config.raceTags[line.race],
+      config.raceTags,
     );
     // Lowest npcId in the group, so a file shared by many NPCs regenerates the same way
     // whichever row the button was pressed on. See canonicalNpcId.
     const seed = seedFor(canonicalNpcId(group), speaker.seedStrategy);
 
-    // A capitalised <stage direction> is the game narrating, not the NPC talking, so the line
-    // is spoken by two voices and the speaker makes one file of the turns. Everything below -
-    // seed, dictionary, credit accounting - is identical either way.
+    // A capitalised <stage direction> is the game narrating, not the NPC talking, and a
+    // _voice-marker_ hands a stretch to another slot, so the line may be spoken by several
+    // voices and the speaker makes one file of the turns. Everything below - seed, dictionary,
+    // credit accounting - is identical either way.
     const parts = segments(spokenText);
     const narrated = parts.some((part) => part.speaker === "narrator");
+    const multi = narrated || parts.some((part) => part.voice);
 
     // Resolved by name, because narrator-male is not a race-gender-flavor slot and so has no
-    // corpus line to read it off.
-    const narratorVoiceId = narrated ? voices.ids.get(NARRATOR_VOICE) : undefined;
-    if (narrated && !narratorVoiceId) {
+    // corpus line to read it off - and a marked slot has no corpus line either.
+    const slotOf = (part: Segment) =>
+      part.speaker === "narrator" ? NARRATOR_VOICE : (part.voice ?? line.voice);
+    for (const slot of new Set(parts.map(slotOf))) {
+      if (voices.ids.has(slot)) continue;
+      const why =
+        slot === NARRATOR_VOICE && narrated
+          ? "a line with stage directions"
+          : "a line that hands a stretch to it";
       return {
         ok: false,
         failure: failure(
           "voice-missing",
-          `${speaker.missing(NARRATOR_VOICE)}. Create it on /voices before generating a line with stage directions.`,
+          `${speaker.missing(slot)}. Create it on /voices before generating ${why}.`,
         ),
       };
     }
 
     const speech = await speaker.speak({
-      turns: narrated
-        ? parts.map((part) => ({
-            text: part.text,
-            voiceId: part.speaker === "narrator" ? narratorVoiceId! : voiceId,
-          }))
+      turns: multi
+        ? parts.map((part) => ({ text: part.text, voiceId: voices.ids.get(slotOf(part))! }))
         : [{ text: spokenText, voiceId }],
       lang,
       seed,
-      dialogue: narrated,
+      dialogue: multi,
     });
     if (!speech.ok) return { ok: false, failure: speech.failure };
 

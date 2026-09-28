@@ -710,6 +710,27 @@ this unblocked 62 previously silent lines without regenerating the corpus. **Not
 generated in bulk.** Tick **has narration** in the explorer to find these lines, listen, and
 regenerate the ones worth fixing through the usual controls.
 
+### Handing a stretch to another voice
+
+Some lines are spoken by somebody other than their giver, and nothing in Blizzard's text says
+so. Wizbang's Buzzbox quests are given by an object, so the line is correctly `narrator-male`,
+yet most of it is Wizbang talking through the machine. A rewrite can say it with a **voice
+marker**: a slot name between underscores, which hands the rest of the line, up to the next
+marker, to that slot.
+
+```
+A tiny voice crackles from deep within the machine.
+
+_goblin-male-zany_
+"Wizbang here! The next Buzzbox is north of Auberdine, on the beach..."
+```
+
+The marker must be a whole slot name as `/voices` lists it (`race-gender-flavor`, or
+`narrator-male`) and must stand alone, not inside a word. Stage directions inside a marked
+stretch are still the narrator's, a marked stretch takes its own race's accent direction, and
+a slot the account has no voice for is refused before anything is spent. The line then goes
+through the dialogue endpoint like a narrated one.
+
 ### Lines nobody will ever voice
 
 Some lines are not worth audio and never will be. The war-effort tallies read `$2113w` — a
