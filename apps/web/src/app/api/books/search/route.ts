@@ -5,7 +5,7 @@
  * The arithmetic stays here. Shaped on the zones route, including the 503 below.
  */
 import { catalogue, isCorpusEmpty, loadContext } from "@/lib/books/catalogue";
-import { langParam } from "@/lib/lang-server";
+import { langParam, worksHere } from "@/lib/lang-server";
 import { filtersFromParams, PAGE_SIZE } from "@/lib/books/filters";
 import { search } from "@/lib/books/search";
 
@@ -28,11 +28,19 @@ export async function GET(request: Request) {
   const { lang, denied } = await langParam(request);
   if (denied) return denied;
   const page = Math.max(1, Number(params.get("page")) || 1);
+  // Who made each take is for the people working in the language. For anybody else the
+  // filters are dropped rather than left to match nothing, so a translator's link still
+  // shows a visitor the lines.
+  const seesMadeBy = await worksHere(lang);
+  if (!seesMadeBy) {
+    filters.model = undefined;
+    filters.author = undefined;
+  }
 
   let pages;
   let context;
   try {
-    [pages, context] = await Promise.all([catalogue(lang), loadContext(lang)]);
+    [pages, context] = await Promise.all([catalogue(lang), loadContext(lang, seesMadeBy)]);
   } catch (error) {
     if (isCorpusEmpty(error)) return corpusEmpty(error);
     throw error;

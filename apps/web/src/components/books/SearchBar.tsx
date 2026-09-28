@@ -1,5 +1,7 @@
 "use client";
 
+import { MadeByChips } from "@/components/MadeBy";
+import type { MadeByFacets } from "@/lib/takes/made-by";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,6 +49,8 @@ type Props = {
   onClearAll: () => void;
   /** Editor and up: the ones who act on reports, so the ones who filter by them. */
   canTriage: boolean;
+  /** The model and author chips' options; present only for somebody working in the language. */
+  madeBy?: MadeByFacets;
 };
 
 export function SearchBar({
@@ -59,6 +63,7 @@ export function SearchBar({
   onChange,
   onClearAll,
   canTriage,
+  madeBy,
 }: Props) {
   const active = activeFilterCount(filters);
 
@@ -107,6 +112,14 @@ export function SearchBar({
         options={AUDIO_STATE_OPTIONS}
         onChange={(value) => onChange({ state: value as PageFilters["state"] })}
       />
+      {madeBy && (
+        <MadeByChips
+          facets={madeBy}
+          model={filters.model}
+          author={filters.author}
+          onChange={onChange}
+        />
+      )}
 
       {/* A checkbox rather than a chip: it is the one filter people leave on, and 88 of the
           1191 pages are the ones it hides. */}

@@ -77,9 +77,13 @@ export type LiveTake = {
   credits: number | null;
   durationSec: number | null;
   bytes: number;
+  provider: Provider;
   modelId: string | null;
   voiceId: string | null;
   createdAt: Date;
+  /** Who asked for it: null for anything the CLI imported, or a deleted account's. */
+  createdBy: string | null;
+  createdByName: string | null;
 };
 
 /**
@@ -98,10 +102,12 @@ export async function liveTakes(source: Source, lang: Lang = BASE_LANG): Promise
   return query<LiveTake>(
     `select t."lineId", t."file", t."version", c."takes", t."spokenHash", t."characters",
             t."credits", t."durationSec"::float8 as "durationSec", t."bytes"::float8 as "bytes",
-            t."modelId", t."voiceId", t."createdAt"
+            t."provider", t."modelId", t."voiceId", t."createdAt", t."createdBy",
+            u."name" as "createdByName"
        from "take" t
        join (select "file", count(*)::int as "takes" from "take"
               where "source" = $1 and "lang" = $2 group by "file") c using ("file")
+       left join "user" u on u."id" = t."createdBy"
       where t."source" = $1 and t."lang" = $2 and t."isCurrent"`,
     [source, lang],
   );

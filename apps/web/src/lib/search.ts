@@ -20,6 +20,7 @@ import type { LineIgnore } from "./quests/ignores";
 import type { LineOverride } from "./quests/override";
 import type { AudioState } from "./audio-state";
 import { isVoiceable } from "./text-gate";
+import { madeByFacets, madeByMatches, type MadeBy, type MadeByFacets } from "./takes/made-by";
 
 /** Which field the free-text query is matched against. */
 export type Filter = "any" | "npc" | "quest" | "text";
@@ -98,6 +99,13 @@ export type LineFilters = {
    */
   generatedBefore?: string;
   generatedAfter?: string;
+  /**
+   * The live take's model, as lib/takes/made-by.ts labels it, and the id of who made it.
+   * Both need `madeBy` in the context, which only somebody working in the language gets;
+   * without it they match nothing.
+   */
+  model?: string;
+  author?: string;
 };
 
 /** Midnight local at the start of a "YYYY-MM-DD", or null when it is not one. */
@@ -144,6 +152,8 @@ export type SearchContext = {
   reports?: Map<string, number>;
   /** file -> which take is live and how many there are. Public, like the other two rows'. */
   takes?: Map<string, { version: number; takes: number }>;
+  /** file -> who and what made the live take. Absent for anybody not working in the language. */
+  madeBy?: Map<string, MadeBy>;
 };
 
 export const NO_CONTEXT: SearchContext = { overrides: new Map() };
@@ -190,6 +200,8 @@ export type ResultLine = CorpusLine & {
   narrationRestored: boolean;
   /** Why this line will never be voiced, or null. Set only when the row is one of them. */
   ignored: string | null;
+  /** Who and what made the live take. Null with no take, or when the viewer may not know. */
+  madeBy: MadeBy | null;
 };
 
 export type SearchResult = {
@@ -201,6 +213,8 @@ export type SearchResult = {
   npcCount: number;
   offset: number;
   limit: number;
+  /** What the model and author chips offer. Absent when the context carried no `madeBy`. */
+  madeBy?: MadeByFacets;
 };
 
 export const PAGE_SIZE = 50;
@@ -363,6 +377,8 @@ export function matchingLines(
     reports,
     generatedBefore,
     generatedAfter,
+    model,
+    author,
   }: LineFilters = {},
   {
     overrides,
@@ -371,6 +387,7 @@ export function matchingLines(
     dirty: dirtyOf,
     ignores,
     reports: reportsOf,
+    madeBy,
   }: SearchContext = NO_CONTEXT,
 ): CorpusLine[] {
   const query = q.trim();
@@ -454,6 +471,10 @@ export function matchingLines(
     });
   }
 
+  if (model || author) {
+    lines = lines.filter((line) => madeByMatches(madeBy?.get(audioRelPath(line)), { model, author }));
+  }
+
   return [...lines].sort(order);
 }
 
@@ -486,6 +507,7 @@ export function search(
       narration: hasNarration(override ?? line.text),
       narrationRestored: override !== null && restoresOnlyNarration(override, line.text),
       ignored: context.ignores?.get(line.lineId)?.reason ?? null,
+      madeBy: context.madeBy?.get(audioPath) ?? null,
     };
   });
 
@@ -495,5 +517,6 @@ export function search(
     npcCount: new Set(all.map(npcKey)).size,
     offset: start,
     limit,
+    ...(context.madeBy && { madeBy: madeByFacets(context.madeBy.values()) }),
   };
 }

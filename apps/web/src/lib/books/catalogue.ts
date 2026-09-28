@@ -18,6 +18,7 @@ import { loadDirtyContext, NO_DIRT, type DirtyContext } from "@/lib/generation/d
 import { ownerEntityKind, type OwnerKind } from "./filters";
 import { spokenText, textHash, fileFor, isGeneratable } from "./tools";
 import { speakPlayerTokens } from "@/lib/player-words";
+import { madeByOf, type MadeBy } from "@/lib/takes/made-by";
 import { liveTakes } from "@/lib/takes/store";
 
 import { BASE_LANG, type Lang } from "@/lib/lang";
@@ -90,6 +91,11 @@ export type SearchContext = {
   dirt: DirtyContext;
   /** lineId -> how many reports are still open. The count only; the bodies are on /reports. */
   reports: Map<string, number>;
+  /**
+   * lineId -> who and what made the live take. Absent unless the viewer works in the
+   * language: the author is a person's name, and a visitor has no use for it.
+   */
+  madeBy?: Map<string, MadeBy>;
 };
 
 export const EMPTY_CONTEXT: SearchContext = {
@@ -257,7 +263,11 @@ export async function catalogue(lang: Lang = BASE_LANG): Promise<BookPage[]> {
   return memoByLang(cacheKey, lang, await stampOf(lang), () => build(lang));
 }
 
-export async function loadContext(lang: Lang = BASE_LANG): Promise<SearchContext> {
+/** `seesMadeBy`: whether the viewer works in the language. See SearchContext.madeBy. */
+export async function loadContext(
+  lang: Lang = BASE_LANG,
+  seesMadeBy = false,
+): Promise<SearchContext> {
   const [takeRows, reportRows, dirt] = await Promise.all([
     liveTakes("books", lang),
     // Grouped in the database rather than counted here: resolved rows are the ones that
@@ -295,6 +305,7 @@ export async function loadContext(lang: Lang = BASE_LANG): Promise<SearchContext
     ),
     reports: new Map(reportRows.map((row) => [row.lineId, row.open])),
     dirt,
+    ...(seesMadeBy && { madeBy: new Map(takeRows.map((row) => [row.lineId, madeByOf(row)])) }),
   };
 }
 

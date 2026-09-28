@@ -1,6 +1,8 @@
 "use client";
 
 import DateChip from "@/components/DateChip";
+import { MadeByChips } from "@/components/MadeBy";
+import type { MadeByFacets } from "@/lib/takes/made-by";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,6 +46,8 @@ type Props = {
    */
   /** Triager and up: only they can read the report bodies the filter points at. */
   canTriage: boolean;
+  /** The model and author chips' options; present only for somebody working in the language. */
+  madeBy?: MadeByFacets;
   query: string;
   inputRef: React.RefObject<HTMLInputElement | null>;
   onQueryChange: (value: string) => void;
@@ -57,6 +61,7 @@ export function SearchBar({
   zones,
   filters,
   canTriage,
+  madeBy,
   query,
   inputRef,
   onQueryChange,
@@ -127,6 +132,14 @@ export function SearchBar({
           value={filters.generatedBefore}
           onChange={(generatedBefore) => onChange({ generatedBefore })}
         />
+        {madeBy && (
+          <MadeByChips
+            facets={madeBy}
+            model={filters.model}
+            author={filters.author}
+            onChange={onChange}
+          />
+        )}
 
         {/* A checkbox rather than a value of `state`, because a line can be current and
             carry this at once: as a state it would hide whichever answer came second. */}

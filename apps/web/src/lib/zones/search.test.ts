@@ -13,6 +13,8 @@ import { describe, expect, it } from "vitest";
 import type { CatalogueEntry, SearchContext, Take } from "./catalogue";
 import { EMPTY_CONTEXT } from "./catalogue";
 import { SHORT_LINE } from "./filters";
+import { madeByOf } from "@/lib/takes/made-by";
+
 import { matching, search, stateOf } from "./search";
 
 function entry(overrides: Partial<CatalogueEntry> = {}): CatalogueEntry {
@@ -238,5 +240,28 @@ describe("dirty", () => {
   it("says nothing about a line with no audio", () => {
     const noTake = context({ dirt: { changes: [changed], acks: new Map() } });
     expect(search([entry({ spoken })], noTake).lines[0].dirty).toBe(false);
+  });
+});
+
+describe("made by", () => {
+  const entries = [entry({ id: "z:1" }), entry({ id: "z:2" }), entry({ id: "z:3" })];
+  const madeBy = new Map([
+    ["z:1", madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy" })],
+    ["z:2", madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: null, createdByName: null })],
+  ]);
+
+  it("narrows by model and author, and offers every one the takes hold", () => {
+    const result = search(entries, context({ madeBy }), { model: "fish:2.1-pro-free" });
+    expect(result.lines.map((line) => line.id)).toEqual(["z:1"]);
+    expect(result.lines[0].madeBy?.authorName).toBe("Amy");
+    expect(result.madeBy?.models).toEqual(["eleven:v3", "fish:2.1-pro-free"]);
+    expect(search(entries, context({ madeBy }), { author: "u1" }).total).toBe(1);
+  });
+
+  /** What the route hands a visitor: no map, so no names on the rows and no facets. */
+  it("says nothing about who made what without the map", () => {
+    const result = search(entries, context());
+    expect(result.madeBy).toBeUndefined();
+    expect(result.lines.every((line) => line.madeBy === null)).toBe(true);
   });
 });

@@ -37,5 +37,7 @@ export function activeFilterCount(filters: LineFilters): number {
     filters.reports,
     filters.generatedBefore,
     filters.generatedAfter,
+    filters.model,
+    filters.author,
   ].filter(Boolean).length;
 }

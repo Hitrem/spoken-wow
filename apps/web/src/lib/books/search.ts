@@ -11,6 +11,7 @@
 // needs regenerating.
 
 import { isDirty } from "@/lib/generation/dirty";
+import { madeByFacets, madeByMatches, type MadeBy, type MadeByFacets } from "@/lib/takes/made-by";
 
 import type { BookPage, SearchContext, Take } from "./catalogue";
 import { PAGE_SIZE, type Field, type PageFilters, type OwnerKind, type State } from "./filters";
@@ -48,6 +49,8 @@ export type ResultLine = {
   english?: string;
   /** The owner's English name, for a translator. Absent when reading English. */
   englishTitle?: string;
+  /** Who and what made the live take. Null with no take, or when the viewer may not know. */
+  madeBy: MadeBy | null;
 };
 
 export type SearchResult = {
@@ -61,6 +64,8 @@ export type SearchResult = {
   dirty: number;
   offset: number;
   limit: number;
+  /** What the model and author chips offer. Absent when the context carried no `madeBy`. */
+  madeBy?: MadeByFacets;
 };
 
 export function stateOf(page: BookPage, take: Take | undefined): State {
@@ -89,6 +94,7 @@ export function decorate(page: BookPage, context: SearchContext): ResultLine {
     state: stateOf(page, take),
     take: take ?? null,
     reportsOpen: context.reports.get(page.id) ?? 0,
+    madeBy: context.madeBy?.get(page.id) ?? null,
     ...(page.missing ? { missing: page.missing } : {}),
     ...(page.english === undefined
       ? {}
@@ -132,6 +138,7 @@ export function matching(lines: ResultLine[], filters: PageFilters = {}): Result
   // An id the corpus no longer carries matches nothing rather than everything: a report
   // about a page that has since been dropped must not read as "here it is".
   if (filters.line) out = out.filter((l) => l.id === filters.line);
+  if (filters.model || filters.author) out = out.filter((l) => madeByMatches(l.madeBy ?? undefined, filters));
 
   return out;
 }
@@ -176,5 +183,6 @@ export function search(
     dirty,
     offset,
     limit,
+    ...(context.madeBy && { madeBy: madeByFacets(context.madeBy.values()) }),
   };
 }

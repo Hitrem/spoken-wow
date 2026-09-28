@@ -3,6 +3,8 @@
 import { forwardRef, useCallback, useMemo } from "react";
 
 import DateChip from "@/components/DateChip";
+import { MadeByChips } from "@/components/MadeBy";
+import type { MadeByFacets } from "@/lib/takes/made-by";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,6 +25,8 @@ type Props = {
   onClearAll: () => void;
   /** Editor and up: the ones who act on reports, so the ones who filter by them. */
   canTriage: boolean;
+  /** The model and author chips' options; present only for somebody working in the language. */
+  madeBy?: MadeByFacets;
 };
 
 /** Corpus values, which label themselves. */
@@ -38,7 +42,7 @@ const SCOPE_OPTIONS: ChipOption[] = [
 ];
 
 const SearchBar = forwardRef<HTMLInputElement, Props>(function SearchBar(
-  { query, filters, facets, onQuery, onFilters, onClearAll, canTriage },
+  { query, filters, facets, onQuery, onFilters, onClearAll, canTriage, madeBy },
   ref,
 ) {
   const active = activeFilterCount({ ...filters, q: query });
@@ -151,6 +155,14 @@ const SearchBar = forwardRef<HTMLInputElement, Props>(function SearchBar(
           value={filters.generatedBefore}
           onChange={(generatedBefore) => onFilters({ generatedBefore })}
         />
+        {madeBy && (
+          <MadeByChips
+            facets={madeBy}
+            model={filters.model}
+            author={filters.author}
+            onChange={onFilters}
+          />
+        )}
 
         <div className="flex items-center gap-2 whitespace-nowrap">
           <Checkbox

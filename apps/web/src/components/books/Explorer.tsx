@@ -446,6 +446,7 @@ export function Explorer({ books }: { books: BookFacet[] }) {
         onChange={updateFilters}
         onClearAll={() => replaceQuery(new URLSearchParams())}
         canTriage={canEdit}
+        madeBy={result?.madeBy}
       />
 
       {/* A line id has no dropdown to sit in - it arrives by link from /reports - so
@@ -510,6 +511,7 @@ export function Explorer({ books }: { books: BookFacet[] }) {
                 return row;
               })}
               current={current}
+              showMadeBy={result.madeBy !== undefined}
               canRegenerate={canRegenerate}
               canEdit={canEdit}
               rowStates={rowStates}
