@@ -861,12 +861,21 @@ libs["LibDataBroker-1.1"] = { NewDataObject = function(_, name, obj) M.ldbObject
 M.dbIcons = {}
 libs["LibDBIcon-1.0"] = {
     Register = function(self, name, obj, db)
-        M.dbIcons[name] = { obj = obj, db = db }
+        -- The real lib builds (and keeps) a button frame for every registered object,
+        -- named the same way; the addon stores GetMinimapButton's answer as the anchor
+        -- its compartment clicks open on. The name cache makes this the same frame a
+        -- reload would see.
+        local button = M.Frame("LibDBIcon10_" .. name)
+        M.dbIcons[name] = { obj = obj, db = db, button = button }
         -- The real lib registers the button's compartment entry when the flag is set,
         -- through the same hook the player's toggle calls.
         if db and db.showInCompartment then
             self:AddButtonToCompartment(name)
         end
+    end,
+    GetMinimapButton = function(self, name)
+        local icon = M.dbIcons[name]
+        return icon and icon.button
     end,
     Show = function() end, Hide = function() end, Lock = function() end, Unlock = function() end, Refresh = function() end,
     -- Enough of the addon compartment for the player's wrapper to be testable: entries

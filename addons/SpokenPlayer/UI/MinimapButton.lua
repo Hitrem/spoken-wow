@@ -10,7 +10,7 @@ setfenv(1, SpokenEnv)
 Minimap = { entries = {} }
 
 local ICON = [[Interface\AddOns\SpokenPlayer\Textures\MinimapButton]]
-local ldbObject, menuFrame
+local ldbObject, menuFrame, minimapButton
 
 -- The player's own entries.
 local PLAYER_ENTRIES = {
@@ -247,6 +247,22 @@ local function ToggleMenu(anchor)
     ShowMenu(anchor)
 end
 
+--- One click on the button, wherever it is: on the minimap or in Blizzard's addon
+--- compartment. `button` is the frame a menu opens on and the one feature addons get;
+--- the lib's own button, not the frame the compartment clicked with (see OnClick).
+function Minimap:HandleClick(button, mouseButton)
+    local command = Addon.db.profile.Minimap.Commands[mouseButton]
+    if command == "Menu" then
+        ToggleMenu(button)
+    elseif command and command ~= "" then
+        local entry = Minimap:FindEntry(command)
+        if entry and entry.onClick then
+            PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
+            entry.onClick(button)
+        end
+    end
+end
+
 function Minimap:Setup()
     if ldbObject then return end
     local LibDataBroker = LibStub("LibDataBroker-1.1", true)
@@ -262,16 +278,21 @@ function Minimap:Setup()
         text = "Spoken",
         icon = ICON,
         OnClick = function(button, mouseButton)
-            local command = Addon.db.profile.Minimap.Commands[mouseButton]
-            if command == "Menu" then
-                ToggleMenu(button)
-            elseif command and command ~= "" then
-                local entry = Minimap:FindEntry(command)
-                if entry and entry.onClick then
-                    PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
-                    entry.onClick(button)
+            -- Blizzard's compartment calls the registered entry with its own menu frame,
+            -- which is closing as the click is handled: a menu opened on it is lost with
+            -- that frame (the first click shows nothing, and the leftover surfaces on
+            -- the next compartment open). From the compartment, wait for the close to
+            -- finish and open on our own button, which neither moves nor closes.
+            if minimapButton and button ~= minimapButton then
+                if C_Timer and C_Timer.After then
+                    C_Timer.After(0.05, function()
+                        Minimap:HandleClick(minimapButton, mouseButton)
+                    end)
+                    return
                 end
+                button = minimapButton
             end
+            Minimap:HandleClick(button, mouseButton)
         end,
         OnTooltipShow = function(tooltip)
             -- LibDBIcon shows the tooltip whatever this adds to it, so a menu that is
@@ -302,6 +323,9 @@ function Minimap:Setup()
         end,
     })
     LibDBIcon:Register("Spoken", ldbObject, db)
+    -- The frame the lib built for this addon. The compartment hands the OnClick a
+    -- different, short-lived frame (see OnClick), so the real button is kept here.
+    minimapButton = LibDBIcon:GetMinimapButton("Spoken")
 end
 
 function Minimap:Refresh()

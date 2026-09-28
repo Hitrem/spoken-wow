@@ -41,6 +41,29 @@ env.Minimap:ToggleCompartment(true)
 Expect("turning it back on re-registers it", #registered, 1)
 Expect("...and marks it on", mm.showInCompartment, true)
 
+--------------------------------------------------------------- clicks open on our button, not the menu's
+-- Blizzard's compartment calls the entry with its own menu frame, which is closing as
+-- the click is handled. The minimap passes the real button, so that path runs now and
+-- anchors to it; the compartment path waits for the close and anchors to our button.
+local ldb = stub.ldbObjects["Spoken"]
+local button = stub.dbIcons["Spoken"].button
+local compartmentMenu = stub.Frame("SpokenCompartmentMenu")
+ldb.OnClick(button, "LeftButton")
+Expect("a minimap click opens the menu at once", stub.openDropDown, _G.SpokenMinimapDropDown)
+Expect("...anchored to the button", _G.SpokenMinimapDropDown.dropdownAnchor, button)
+_G.CloseDropDownMenus()
+ldb.OnClick(compartmentMenu, "LeftButton")
+Expect("a compartment click waits for the menu to close", stub.openDropDown, nil)
+stub.Advance(0.06)
+Expect("...then opens on our button", stub.openDropDown, _G.SpokenMinimapDropDown)
+Expect("...never on the compartment's frame", _G.SpokenMinimapDropDown.dropdownAnchor, button)
+_G.CloseDropDownMenus()
+local pausedBefore = env.Addon.db.char.IsPaused
+ldb.OnClick(compartmentMenu, "MiddleButton")
+Expect("a compartment command waits too", env.Addon.db.char.IsPaused, pausedBefore)
+stub.Advance(0.06)
+Expect("...then runs after the close", env.Addon.db.char.IsPaused, not pausedBefore)
+
 ---------------------------------------------------------------- ...and nothing where there is no frame
 Clean()
 env = stub.LoadSpoken(SPOKEN)
