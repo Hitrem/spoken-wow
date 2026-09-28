@@ -129,6 +129,17 @@ Expect("picking a second time works too", stub.PickDropdown(greetings, "Never"),
 Expect("...and stores that", db.Audio.GossipFrequency, VO.Enums.GossipFrequency.Never)
 Expect("...with the ticked entry moved", stub.OpenDropdown(greetings)[4].checked, true)
 
+---------------------------------------------------------------- the gather switch stays in the player's settings
+-- The switch is the player's alone: quests and books both feed the one store, so a
+-- mirror here could only ever repeat it -- a player cannot have quests off and pages on.
+local gather
+for _, child in ipairs(SettingsPanel.panel.content.children) do
+    if type(child.text) == "table" and child.text.text == "Gather missing data" then
+        gather = child
+    end
+end
+Expect("the gather switch is not on the quests panel", gather == nil, true)
+
 ---------------------------------------------------------------- packs and profiles, inline
 -- Both used to be a branch of an options tree behind a button, which is two clicks and a
 -- second window to answer "is my audio installed" or "which profile am I on".

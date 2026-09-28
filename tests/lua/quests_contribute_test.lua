@@ -233,6 +233,12 @@ Spoken.Contribute.Encode = realEncode
 -- through it firing (stub.FinishModelLoad) or through the fallback that reads the
 -- still-shown probe directly on a later refresh (stub.modelCallbackDisabled) -- the same
 -- outcome either way, which is the point.
+--
+-- Gathering stays off for this whole block: with it on, every HasGap below would
+-- Capture through GatherLine, and Capture's click-time model read would resolve each
+-- guid on the very first refresh -- the poll, the callback and the probe states under
+-- test would never get their turn. Gathering itself is gather_test.lua's subject.
+SpokenEnv.Spoken.Gather:SetEnabled(false)
 stub.HidePanels()
 world.questID = 9401
 world.title = "Nothing Heard Yet"
@@ -531,5 +537,7 @@ for _, hook in ipairs(_G.GossipFrame.hooks.OnHide or {}) do hook(_G.GossipFrame)
 Expect("closing the window with no event takes the button with it", lingering:IsShown(), false)
 stub.FireEvent("QUEST_FINISHED")
 Expect("...and no later event brings it back while nothing is open", lingering:IsShown(), false)
+
+SpokenEnv.Spoken.Gather:SetEnabled(true)
 
 os.exit(Failures() == 0 and 0 or 1)

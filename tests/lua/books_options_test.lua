@@ -20,6 +20,11 @@ for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader",
     assert(loadfile(BOOKS .. file .. ".lua"))("SpokenBooks", B)
 end
 B:InitDB()
+-- The player the gather switch belongs to: faked, since this suite boots Books alone.
+-- The /spb gather shortcut and the status line read it.
+_G.Spoken = { Gather = { _on = nil,
+    IsEnabled = function(self) if self._on == nil then return true end return self._on end,
+    SetEnabled = function(self, v) self._on = v and true or false end } }
 B:SetupOptions()
 
 ---------------------------------------------------------------- registration
@@ -76,6 +81,15 @@ autoplay:SetChecked(false)
 autoplay.scripts.OnClick(autoplay)
 Expect("...and unticking it is the same as /spb autoplay", SpokenBooksDB.autoplay, false)
 SpokenBooksDB.autoplay = true
+
+---------------------------------------------------------------- the gather switch stays in the player's settings
+-- The switch is the player's alone: quests and books both feed the one store, so a
+-- mirror here could only ever repeat it -- a reader cannot have pages off and lines on.
+-- Only the /spb gather shortcut still reaches the player's switch from here.
+SlashCmdList["SPOKENBOOKS"]("gather")
+Expect("/spb gather turns gathering off", _G.Spoken.Gather._on, false)
+SlashCmdList["SPOKENBOOKS"]("gather")
+Expect("...and toggles it back on", _G.Spoken.Gather._on, true)
 
 ---------------------------------------------------------------- forgetting what was read
 SpokenBooksCharDB.read = { ["Hillsbrad Town Registry"] = true, ["Jitters' Journal"] = true }
