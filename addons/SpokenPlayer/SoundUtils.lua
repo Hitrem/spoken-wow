@@ -62,11 +62,14 @@ function SoundUtils:IsSoundEnabled(channel)
 end
 
 --- Plays the file and stops it at once, to learn whether it exists. Also false when the
---- channel is muted; ask WhyInaudible first to tell the two apart.
+--- channel is muted; ask WhyInaudible first to tell the two apart. The probe has to go
+--- out on the channel the clip will play on: without one the client uses SFX, and a
+--- player with effects switched off gets every file reported missing.
 ---@param clip { path: string }
+---@param channel string
 ---@return boolean exists
-function SoundUtils:TestSound(clip)
-    local willPlay, handle = PlaySoundFile(clip.path)
+function SoundUtils:TestSound(clip, channel)
+    local willPlay, handle = PlaySoundFile(clip.path, channel)
     if willPlay then
         StopSound(handle)
     end
