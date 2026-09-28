@@ -446,6 +446,43 @@ describe("cancelPending", () => {
       [portuguese]: true,
     });
   });
+
+  it("logs one Stop of several batches as one row, with the batches grouped under it", async () => {
+    const first = await createBatch("first", null, "quests", "koKR");
+    const second = await createBatch("second", null, "quests", "koKR");
+    batches.push(first, second);
+    await enqueue(first, [line(1)], "quests", "koKR");
+    await enqueue(second, [line(2), line(3)], "quests", "koKR");
+
+    await cancelPending("Stopped by Ana", { langs: ["koKR"] });
+
+    const { rows } = await db().query<{ kind: string; subject: string | null; detail: Record<string, unknown> }>(
+      `select "kind", "subject", "detail" from "activity"
+        where "subject" = any($1)
+           or ("kind" = 'queue.stopped' and "detail"->>'groupId' in
+                 (select "detail"->>'groupId' from "activity" where "subject" = any($1)))`,
+      [[first, second]],
+    );
+    const press = rows.find((row) => row.kind === "queue.stopped");
+    expect(press?.detail).toEqual({
+      groupId: expect.any(String),
+      batches: 2,
+      cancelled: 3,
+      reason: "Stopped by Ana",
+    });
+    expect(
+      rows
+        .filter((row) => row.kind === "batch.stopped")
+        .map((row) => [row.subject, row.detail.groupId, row.detail.cancelled])
+        .sort(),
+    ).toEqual(
+      [
+        [first, press?.detail.groupId, 1],
+        [second, press?.detail.groupId, 2],
+      ].sort(),
+    );
+    await db().query(`delete from "activity" where "detail"->>'groupId' = $1`, [press?.detail.groupId]);
+  });
 });
 
 describe("snapshot", () => {

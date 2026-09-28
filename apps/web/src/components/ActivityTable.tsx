@@ -19,7 +19,7 @@ import Link from "@/components/LocaleLink";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePendingPush } from "@/components/usePendingPush";
-import { CATEGORIES, categoryOf, type Category } from "@/lib/activity/kinds";
+import { CATEGORIES, categoryOf, FOLDS, type Category, type Group } from "@/lib/activity/kinds";
 import type { ActivityRow } from "@/lib/activity/store";
 import { usd } from "@/lib/generation/money";
 import { isProvider, PROVIDER_NAME } from "@/lib/generation/providers";
@@ -75,6 +75,11 @@ function num(value: unknown): number | null {
   return typeof value === "number" ? value : null;
 }
 
+/** "1 line", "2 lines", or "? lines" for a count the row does not carry. */
+function plural(n: number | null, noun: string, nouns = `${noun}s`): string {
+  return `${n === null ? "?" : n.toLocaleString()} ${n === 1 ? noun : nouns}`;
+}
+
 /** "a → b", or whichever half is known: rows backfilled from older tables carry neither. */
 function change(before: string | null, after: string | null): string | null {
   if (before && after) return `${before} → ${after}`;
@@ -105,18 +110,26 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
         quote: null,
       };
     case "take.acked":
-      return { what: "marked the audio fine after a pronunciation change", quote: null };
+      return { what: "marked the audio fine after a pronunciation change", quote: row.lineId ? null : row.subject };
+    case "marks.cleared":
+      return {
+        what: `marked ${plural(num(d.count), "file")} fine after a pronunciation change`,
+        quote: null,
+      };
     case "batch.queued":
       return {
-        what: `queued ${num(d.count)?.toLocaleString() ?? "?"} lines for regeneration`,
+        what: `queued ${plural(num(d.count), "line")} for regeneration`,
         quote: str(d.label),
       };
     case "batch.stopped":
       return {
-        what: num(d.cancelled)
-          ? `stopped a batch, cancelling ${num(d.cancelled)!.toLocaleString()} lines`
-          : "stopped a batch",
+        what: num(d.cancelled) ? `stopped a batch, cancelling ${plural(num(d.cancelled), "line")}` : "stopped a batch",
         quote: str(d.reason) ?? str(d.label),
+      };
+    case "queue.stopped":
+      return {
+        what: `stopped ${plural(num(d.batches), "batch", "batches")}, cancelling ${plural(num(d.cancelled), "line")}`,
+        quote: str(d.reason),
       };
     case "queue.paused":
       return { what: "paused the regeneration queue", quote: null };
@@ -190,6 +203,20 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
       return { what: `changed a contribution's ${str(d.field) ?? "details"}`, quote: null };
     case "report.resolved":
       return { what: `marked a report ${str(d.status) ?? "resolved"}`, quote: str(d.category) };
+    case "user.role_changed":
+      return { what: `made ${row.subjectName ?? "a removed user"} ${str(d.role) ?? "?"}`, quote: null };
+    case "user.banned":
+      return { what: `banned ${row.subjectName ?? "a removed user"}`, quote: str(d.banReason) };
+    case "user.unbanned":
+      return { what: `unbanned ${row.subjectName ?? "a removed user"}`, quote: null };
+    case "user.removed":
+      return { what: "removed a user", quote: null };
+    case "user.impersonated":
+      return { what: `signed in as ${row.subjectName ?? "a removed user"}`, quote: null };
+    // A kind this page does not know: one a newer release wrote before a rollback to this
+    // one. Shown by its name rather than breaking the page.
+    default:
+      return { what: String(row.kind), quote: null };
   }
 }
 
@@ -198,10 +225,26 @@ function target(row: ActivityRow): { href: string; label: string } | null {
   if (row.source && row.lineId) return { href: explorerHref(row.source, row.lineId), label: row.lineId };
   if (categoryOf(row.kind) === "voices") return row.subject ? { href: "/voices", label: row.subject } : null;
   if (row.kind.startsWith("lexicon.") && row.subject) return { href: lexiconHref(row.subject), label: "Pronunciation" };
-  if (row.kind.startsWith("grant.")) return { href: "/admin", label: "Users" };
+  if (row.kind.startsWith("grant.") || row.kind.startsWith("user.")) return { href: "/admin", label: "Users" };
   if (row.kind.startsWith("report.")) return { href: "/reports?view=all", label: `report ${row.subject}` };
   if (row.kind.startsWith("contribution.")) return { href: "/contributions", label: `contribution ${row.subject}` };
   return null;
+}
+
+const FOLD_OF = new Map(
+  (Object.entries(FOLDS) as [Group, (typeof FOLDS)[Group]][]).map(([kind, fold]) => [fold.parent as string, { kind, ...fold }]),
+);
+
+/**
+ * The rows a row opens onto, if it folds any (FOLDS). For a batch, `count` is what the
+ * server counted for the page's day range.
+ */
+function groupOf(row: ActivityRow): { kind: Group; id: string; count: number; noun: readonly [string, string] } | null {
+  const fold = FOLD_OF.get(row.kind);
+  const id = fold && str(row.detail[fold.key]);
+  if (!fold || !id) return null;
+  const count = fold.count === null ? row.takes : num(row.detail[fold.count]);
+  return { kind: fold.kind, id, count: count ?? 0, noun: fold.noun };
 }
 
 /** The takes a row lets you hear: the new one, and for a restore the one it replaced. */
@@ -256,7 +299,9 @@ export default function ActivityTable({
   const [pressed, setPressed] = useState(0);
   const [open, setOpen] = useState<string | null>(null);
   const loading = useRef(new Set<string>());
-  const [batches, setBatches] = useState<Record<string, ActivityRow[] | "failed">>({});
+  // Keyed by group and day range: the same batch lists different takes under another range.
+  const [groups, setGroups] = useState<Record<string, ActivityRow[] | "failed">>({});
+  const rangeKey = `${filter.from ?? ""}:${filter.to ?? ""}`;
 
   useEffect(() => {
     if (pressed === 0) return;
@@ -293,18 +338,24 @@ export default function ActivityTable({
     push(localeHref(lang, `/activity${params.size ? `?${params}` : ""}`));
   }
 
-  async function toggleBatch(row: ActivityRow) {
-    const batchId = str(row.detail.batchId);
-    if (!batchId) return;
+  const keyOf = (group: { kind: Group; id: string }) => `${group.kind}:${group.id}:${rangeKey}`;
+
+  async function toggleGroup(row: ActivityRow) {
+    const group = groupOf(row);
+    if (!group) return;
+    const key = keyOf(group);
     const opening = open !== row.id;
     setOpen(opening ? row.id : null);
     // A failed load is tried again on the next open; one still in flight is not.
-    if (!opening || Array.isArray(batches[batchId]) || loading.current.has(batchId)) return;
-    loading.current.add(batchId);
-    const response = await fetch(withLang(lang, `/api/activity/batch?id=${batchId}`)).catch(() => null);
+    if (!opening || Array.isArray(groups[key]) || loading.current.has(key)) return;
+    loading.current.add(key);
+    const params = new URLSearchParams({ id: group.id, kind: group.kind });
+    if (filter.from) params.set("from", filter.from);
+    if (filter.to) params.set("to", filter.to);
+    const response = await fetch(withLang(lang, `/api/activity/batch?${params}`)).catch(() => null);
     const takes = response?.ok ? ((await response.json()) as { takes: ActivityRow[] }).takes : null;
-    loading.current.delete(batchId);
-    setBatches((current) => ({ ...current, [batchId]: takes ?? "failed" }));
+    loading.current.delete(key);
+    setGroups((current) => ({ ...current, [key]: takes ?? "failed" }));
   }
 
   // Day headings between rows, so a column of bare clock times can be read.
@@ -367,8 +418,8 @@ export default function ActivityTable({
               const { what, quote } = describe(row);
               const link = target(row);
               const takes = takesOf(row);
-              const batchId = row.kind === "batch.queued" ? str(row.detail.batchId) : null;
-              const expanded = batchId !== null && open === row.id;
+              const group = groupOf(row);
+              const expanded = group !== null && open === row.id;
 
               out.push(
                 <tr key={row.id} className="align-top [&>td]:border-b [&>td]:py-2 [&>td]:leading-5">
@@ -406,38 +457,48 @@ export default function ActivityTable({
                     {takes.map((take) => (
                       <PlayTake key={take.version} take={take} onPlay={play} />
                     ))}
-                    {batchId && (row.takes ?? 0) > 0 && (
+                    {group && group.count > 0 && (
                       <Button
                         size="sm"
                         variant="ghost"
                         className="h-7 px-2"
                         aria-expanded={expanded}
-                        onClick={() => void toggleBatch(row)}
+                        onClick={() => void toggleGroup(row)}
                       >
                         {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-                        {row.takes!.toLocaleString()} {row.takes === 1 ? "take" : "takes"}
+                        {plural(group.count, ...group.noun)}
                       </Button>
                     )}
                   </td>
                 </tr>,
               );
 
-              if (expanded && batchId) {
-                const inner = batches[batchId];
+              if (expanded && group) {
+                const inner = groups[keyOf(group)];
                 out.push(
                   <tr key={`${row.id}-takes`}>
                     <td />
                     <td colSpan={3} className="border-b pb-2">
                       {inner === undefined ? (
-                        <p className="text-muted-foreground py-2 text-xs">Loading takes…</p>
+                        <p className="text-muted-foreground py-2 text-xs">Loading {group.noun[1]}…</p>
                       ) : inner === "failed" ? (
-                        <p className="text-destructive py-2 text-xs">Could not load this batch's takes.</p>
+                        <p className="text-destructive py-2 text-xs">Could not load these {group.noun[1]}.</p>
                       ) : (
                         <ul className="max-h-80 overflow-y-auto text-xs">
                           {inner.map((take) => (
                             <li key={take.id} className="flex items-center gap-2 py-0.5">
                               <span className="text-muted-foreground w-12 tabular-nums">{time(take.at)}</span>
-                              {take.source && take.lineId ? (
+                              {take.kind === "batch.stopped" ? (
+                                <span className="truncate">
+                                  {str(take.detail.label) ?? "a batch"}
+                                  {num(take.detail.cancelled) !== null && (
+                                    <span className="text-muted-foreground">
+                                      {" "}
+                                      · {plural(num(take.detail.cancelled), "line")} cancelled
+                                    </span>
+                                  )}
+                                </span>
+                              ) : take.source && take.lineId ? (
                                 <Link
                                   href={explorerHref(take.source, take.lineId)}
                                   className="truncate font-mono underline-offset-2 hover:underline"

@@ -25,9 +25,19 @@ export type ActivityDetail = {
     batchId?: string;
   };
   "take.restored": { version: number; from?: number | null };
-  "take.acked": Record<string, never>;
+  /** `groupId` when the take was one of several cleared in one click; the page folds it there. */
+  "take.acked": { groupId?: string };
+  "marks.cleared": { groupId: string; count: number };
   "batch.queued": { batchId: string; label?: string | null; count: number };
-  "batch.stopped": { batchId?: string; label?: string | null; reason?: string | null; cancelled?: number };
+  /** `groupId` when one Stop stopped several batches; the page folds it under that press. */
+  "batch.stopped": {
+    batchId?: string;
+    label?: string | null;
+    reason?: string | null;
+    cancelled?: number;
+    groupId?: string;
+  };
+  "queue.stopped": { groupId: string; batches: number; cancelled: number; reason?: string | null };
   "queue.paused": Record<string, never>;
   "queue.resumed": Record<string, never>;
 
@@ -75,9 +85,40 @@ export type ActivityDetail = {
   "contribution.resolved": { status: string; key?: string };
   "contribution.edited": { field: string; value?: unknown };
   "report.resolved": { status: string; category?: string };
+
+  // Accounts, through better-auth's admin plugin rather than this app's routes. Every
+  // language's, so a global admin's alone to read: see `global` in store.ts.
+  /** `role` as set-role received it: one role, or several joined with ", ". */
+  "user.role_changed": { role: string };
+  "user.banned": { banReason?: string; banExpiresIn?: number };
+  "user.unbanned": Record<string, never>;
+  "user.removed": Record<string, never>;
+  "user.impersonated": Record<string, never>;
 };
 
 export type ActivityKind = keyof ActivityDetail;
+
+/**
+ * Rows that open onto others: `parent` is shown, every `child` carrying the same `key` in
+ * its detail is left off the page and listed when the parent is opened. The page's filter
+ * (store.ts), its lookup (api/activity/batch) and its rows (ActivityTable) all read this.
+ *
+ * `count` is the parent's detail field saying how many children it has; a batch has none,
+ * because it cuts takes for as long as the queue runs, so the server counts them per range.
+ */
+export const FOLDS = {
+  batch: { parent: "batch.queued", child: "take.generated", key: "batchId", count: null, noun: ["take", "takes"] },
+  marks: { parent: "marks.cleared", child: "take.acked", key: "groupId", count: "count", noun: ["file", "files"] },
+  stops: { parent: "queue.stopped", child: "batch.stopped", key: "groupId", count: "batches", noun: ["batch", "batches"] },
+} as const satisfies Record<
+  string,
+  { parent: ActivityKind; child: ActivityKind; key: string; count: string | null; noun: readonly [string, string] }
+>;
+export type Group = keyof typeof FOLDS;
+
+export function isGroup(value: unknown): value is Group {
+  return typeof value === "string" && Object.hasOwn(FOLDS, value);
+}
 
 export const CATEGORIES = ["audio", "text", "voices", "admin"] as const;
 export type Category = (typeof CATEGORIES)[number];
@@ -93,6 +134,7 @@ export function isCategory(value: unknown): value is Category {
 const CATEGORY_OF: Record<string, Category> = {
   take: "audio",
   batch: "audio",
+  marks: "audio",
   queue: "audio",
   text: "text",
   name: "text",
@@ -108,6 +150,7 @@ const CATEGORY_OF: Record<string, Category> = {
   language: "admin",
   contribution: "admin",
   report: "admin",
+  user: "admin",
 };
 
 export function categoryOf(kind: string): Category | null {

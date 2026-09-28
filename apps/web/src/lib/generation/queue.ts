@@ -18,7 +18,9 @@
  * Portuguese take of a file is a different recording from the English one, and queueing both
  * is two jobs rather than a duplicate. It is what the generator is asked to speak in.
  */
-import { recordActivities } from "@/lib/activity/store";
+import { randomUUID } from "node:crypto";
+
+import { recordActivities, type ActivityEvent } from "@/lib/activity/store";
 import { db } from "@/lib/db";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 import type { Source } from "@/lib/sections";
@@ -398,18 +400,70 @@ export async function cancelPending(
                   where j."batchId" = b."id" and j."state" = 'cancelled') as "cancelled"`,
     [because, batchId, langs],
   );
-  await recordActivities(
-    stopped.map((batch) => ({
-      kind: "batch.stopped" as const,
-      lang: batch.lang,
-      source: batch.source,
-      subject: batch.id,
-      actorId: scope.by ?? null,
-      detail: { batchId: batch.id, label: batch.label, reason: because, cancelled: batch.cancelled },
-    })),
-  );
+  await recordActivities(stopEvents(stopped, because, scope.by ?? null));
 
   return rowCount ?? 0;
+}
+
+/**
+ * The log rows for one Stop. One press stops every batch with work waiting, and a batch
+ * per Regenerate click is a batch of one or two lines, so one press was a screenful of
+ * "stopped a batch" rows. Several batches in a language are one "queue.stopped" row, with
+ * each batch's row carrying its group id for the page to fold, as cleared marks are
+ * (migration 0057). One statement, so a group row never lands without its batches.
+ */
+function stopEvents(
+  stopped: { id: string; label: string; source: Source; lang: Lang; cancelled: number }[],
+  reason: string,
+  actorId: string | null,
+): ActivityEvent[] {
+  const byLang = new Map<Lang, typeof stopped>();
+  for (const batch of stopped) {
+    const batches = byLang.get(batch.lang);
+    if (batches) batches.push(batch);
+    else byLang.set(batch.lang, [batch]);
+  }
+
+  return [...byLang.entries()].flatMap(([lang, batches]) => {
+    const groupId = batches.length > 1 ? randomUUID() : null;
+    const sources = new Set(batches.map((batch) => batch.source));
+    const group: ActivityEvent[] = groupId
+      ? [
+          {
+            kind: "queue.stopped",
+            lang,
+            // A press can stop quests and zones batches alike; the row then names neither.
+            source: sources.size === 1 ? batches[0].source : null,
+            actorId,
+            detail: {
+              groupId,
+              batches: batches.length,
+              cancelled: batches.reduce((sum, batch) => sum + batch.cancelled, 0),
+              reason,
+            },
+          },
+        ]
+      : [];
+    return [
+      ...group,
+      ...batches.map(
+        (batch): ActivityEvent => ({
+          kind: "batch.stopped",
+          lang,
+          source: batch.source,
+          subject: batch.id,
+          actorId,
+          detail: {
+            batchId: batch.id,
+            label: batch.label,
+            reason,
+            cancelled: batch.cancelled,
+            ...(groupId ? { groupId } : {}),
+          },
+        }),
+      ),
+    ];
+  });
 }
 
 /**
