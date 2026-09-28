@@ -1,5 +1,11 @@
 # Changelog — Spoken Player
 
+## 2.2.4 — 2026-09-28
+
+- Caption settings and tooltips now follow the game client language in German,
+  Spanish (EU and Latin America), French, Brazilian Portuguese, Russian, Korean,
+  Simplified Chinese and Traditional Chinese. This includes expand and collapse.
+
 ## 2.2.3 — 2026-09-27
 
 - Quest and NPC captions appear inside the player with one or two lines and

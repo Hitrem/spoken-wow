@@ -27,6 +27,13 @@ visually. The expanded view and zone/book captions still need an in-game visual 
 Pausing freezes the text. Resuming restarts it with the recording. Skipping
 shows the next clip's text, and a clip without text hides the captions.
 
+## Settings language
+
+Caption settings and tooltips follow the game client language. Translations cover
+German, Spanish (EU and Latin America), French, Brazilian Portuguese, Russian,
+Korean, Simplified Chinese and Traditional Chinese. English is the fallback.
+The caption text itself follows the recording language.
+
 ## Timing and text
 
 The sound packs have recording durations but no word timestamps. Timing is
