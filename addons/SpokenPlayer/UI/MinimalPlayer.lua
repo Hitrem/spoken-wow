@@ -5,6 +5,9 @@ setfenv(1, SpokenEnv)
 MinimalPlayer = { rows = {}, offset = 0, expanded = false }
 local ART = [[Interface\AddOns\SpokenPlayer\Textures\]]
 local HEIGHT, WIDTH, MAX_ROWS = 98, 380, 4
+-- Space between the progress bar and the caption lines under it, and between
+-- the last caption line and the frame's bottom border.
+local CAPTION_GAP, CAPTION_BOTTOM = 4, 8
 -- The Forever client tints its frame metal bronze; its palette, so the player matches.
 local BRONZE = Version.IsCamelot and { .95, .68, .35 } or nil
 -- Portrait badges by bullet id. Quests use trimmed copies of their own glyphs; books
@@ -483,9 +486,11 @@ function MinimalPlayer:LayoutQueue()
     if not self.drawer or self.layingOut then return end
     self.layingOut = true
     local captionHeight = Transcript:HeightForClip(SoundQueue:GetCurrentSound())
-    local frameHeight = HEIGHT + captionHeight
+    local gap = captionHeight > 0 and CAPTION_GAP or 0
+    local bottom = captionHeight > 0 and CAPTION_BOTTOM or 0
+    local frameHeight = HEIGHT + captionHeight + gap + bottom
     Transcript:ResizePlayer(self.frame, frameHeight, Config().HidePortrait and 200 or 280, 1000)
-    Transcript:Dock(self.frame, self.content, "TOPLEFT", 0, -62,
+    Transcript:Dock(self.frame, self.content, "TOPLEFT", 0, -62 - gap,
         math.max(1, self.frame:GetWidth() - (Config().HidePortrait and 34 or 114)), captionHeight)
     local waiting = Waiting()
     self.offset = Clamp(self.offset, 0, math.max(0, waiting - MAX_ROWS))
@@ -509,7 +514,7 @@ function MinimalPlayer:LayoutQueue()
     local left = Config().HidePortrait and 16 or 96
     -- Tucked into the frame's bottom margin, so the rows start just under the bar.
     if up then self.drawer:SetPoint("BOTTOMLEFT", self.frame, "TOPLEFT", left, -8)
-    else self.drawer:SetPoint("TOPLEFT", self.frame, "BOTTOMLEFT", left, captionHeight > 0 and 8 or 16) end
+    else self.drawer:SetPoint("TOPLEFT", self.frame, "BOTTOMLEFT", left, captionHeight > 0 and 8 + bottom or 16) end
     self.drawer:SetShown(shown > 0)
     local glyph = [[Interface\Buttons\UI-]] .. (self.expanded and "Minus" or "Plus")
     self.fold.icon:SetTexture(glyph .. "Button-Up")
