@@ -10,7 +10,7 @@
 ## Notes-koKR: 모든 Spoken 애드온이 말하는 음성 플레이어, 1.12 서버용.
 ## Notes-zhCN: 所有 Spoken 插件共用的语音播放器，适用于 1.12 服务器。
 ## Notes-zhTW: 所有 Spoken 插件共用的語音播放器，適用於 1.12 伺服器。
-## Version: 2.2.2
+## Version: 2.2.4
 ## SavedVariables: SpokenPlayerDB
 ## OptionalDeps: VoiceOverRedux, ZoneLore
 # The renamed addons' tombstones. Migrate() runs on this addon's ADDON_LOADED and reads
@@ -21,3 +21,4 @@
 
 1.12\embeds.xml
 addon.xml
+1.12\Transcript.lua

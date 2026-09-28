@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { booksLua } from "./lua.mjs";
+import { booksLua, quote } from "./lua.mjs";
 import { pageChecksum } from "./naming.mjs";
 
 const entries = [
@@ -21,7 +21,18 @@ test("a page is indexed by title, number and checksum", () => {
 });
 
 test("a page records which book it belongs to and where", () => {
-  assert.match(booksLua(entries), /\[11\] = \{ book = 10, number = 2 \}/);
+  assert.match(booksLua(entries), /\[11\] = \{ book = 10, number = 2, text = "Two\." \}/);
+});
+
+test("captions omit page markup without changing the reader's checksum", () => {
+  const text = '<HTML><BODY><H1>Ledger</H1>Three crates.$B"Paid"</BODY></HTML>';
+  const lua = booksLua([{ ...entries[0], text }]);
+  assert.ok(lua.includes(`text = ${quote('Ledger Three crates. "Paid"')}`));
+  assert.ok(lua.includes(`[${pageChecksum(text)}] = 10`));
+});
+
+test("Lua strings preserve UTF-8 and escape quotes, backslashes and control bytes", () => {
+  assert.equal(quote('Été\\"\n\t\r\u00002'), '"Été\\\\\\"\\010\\009\\013\\0002"');
 });
 
 test("a book lists its pages in reading order", () => {

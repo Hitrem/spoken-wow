@@ -87,6 +87,11 @@ function SpokenBooks:ClipFor(pageId)
 			local entry = self:PackLanguage(pack) == language and pack.pages[pageId]
 			if entry then
 				local book = self:Data().books[place.book]
+				local text = entry.text
+				if not text and language == self.BASE_LANGUAGE then text = place.text end
+				if not text and self.pageText and self.pageText[language] then
+					text = self.pageText[language][pageId]
+				end
 				return {
 					key = "b:" .. pageId,
 					path = [[Interface\AddOns\]] .. pack.addon .. [[\Sounds\]] .. entry.file .. ".mp3",
@@ -100,6 +105,7 @@ function SpokenBooks:ClipFor(pageId)
 					language = language,
 					present = {
 						header = book and book.title or "",
+						transcript = text,
 						-- Only where there is more than one page: "page 1 of 1" is noise on a
 						-- letter, which is most of this corpus.
 						label = (book and #book.pages > 1)

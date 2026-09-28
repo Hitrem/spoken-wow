@@ -118,6 +118,7 @@ function PlayerFrame:InitDisplay()
     self.frame:SetScript("OnSizeChanged", function()
         self.frame.container.name:Update()
         self.frame.container.buttons:Update()
+        self:LayoutCaptions()
     end)
 end
 
@@ -305,12 +306,21 @@ end
 
 -- SetResizeBounds replaced SetMinResize/SetMaxResize; both exist across these clients.
 function PlayerFrame:SetResizeBounds(minWidth)
-    if self.frame.SetResizeBounds then
-        self.frame:SetResizeBounds(minWidth, PORTRAIT_SIZE, 10000, PORTRAIT_SIZE)
-    elseif self.frame.SetMinResize then
-        self.frame:SetMinResize(minWidth, PORTRAIT_SIZE)
-        self.frame:SetMaxResize(10000, PORTRAIT_SIZE)
-    end
+    local height = Transcript:HeightForClip(SoundQueue:GetCurrentSound())
+    self.captionExtra = height > 0 and height + 16 or 0
+    Transcript:ResizePlayer(self.frame, PORTRAIT_SIZE + self.captionExtra, minWidth, 10000)
+end
+
+function PlayerFrame:LayoutCaptions()
+    if MinimalPlayer:IsEnabled() then return end
+    local hidePortrait = Addon.db.profile.Frame.HidePortrait
+    local left = hidePortrait and 20 or PORTRAIT_SIZE + 15
+    local height = Transcript:HeightForClip(SoundQueue:GetCurrentSound())
+    Transcript:Dock(self.frame, self.frame, "TOPLEFT", left, -PORTRAIT_SIZE - 4,
+        math.max(1, WidthOf(self.frame) - left - 10), height)
+    self.frame.background:ClearAllPoints()
+    self.frame.background:SetPoint("TOPLEFT", hidePortrait and 0 or PORTRAIT_SIZE, 0)
+    self.frame.background:SetPoint("BOTTOMRIGHT")
 end
 
 local function BulletFor(clip, isHead, hovered)
@@ -418,6 +428,8 @@ function PlayerFrame:Update()
     self.frame:SetShown(not Addon.db.profile.Frame.HideFrame and not SoundQueue:IsEmpty())
     if not self.frame:IsShown() then return end
 
+    self:SetResizeBounds(Addon.db.profile.Frame.HidePortrait and 100 or PORTRAIT_SIZE + 100)
+
     self.frame.miniPause:Update()
     self.frame.portrait.pause:Update()
 
@@ -425,7 +437,7 @@ function PlayerFrame:Update()
     Portrait:Configure(self.frame.portrait, head)
     local actionCount = Actions:Configure(self.frame, head)
     local strip = actionCount > 0 and Actions.STRIP_HEIGHT or 0
-    self.frame.container:SetPoint("RIGHT", self.frame, "RIGHT", 0, strip / 2)
+    self.frame.container:SetPoint("RIGHT", self.frame, "RIGHT", 0, (strip + (self.captionExtra or 0)) / 2)
 
     self.frame.container:SetHeight(self.frame:GetHeight())
     self.frame.container:Hide() -- 1.12 quirk: forces a relayout before measuring
@@ -451,6 +463,7 @@ function PlayerFrame:Update()
     local contentTop = self.frame.container.name:GetTop() or 0
     local contentBottom = lastContent:GetBottom() or 0
     self.frame.container:SetHeight(contentTop - contentBottom)
+    self:LayoutCaptions()
 
     -- Again once the layout has settled: truncation and hover state both depend on where
     -- the rows ended up. Same frame on current clients, next frame on old ones.

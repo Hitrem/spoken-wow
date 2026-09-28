@@ -51,6 +51,7 @@ end
 --     present  = {
 --       header   = "Eagan Peltskinner",       -- NPC name | zone name | book title
 --       label    = "Wolves Across the Border",-- quest title | subzone | page label
+--       transcript = "Full dialogue text",   -- optional; falls back to clip.text
 --       bullet   = "quest-accept",            -- a RegisterBullet id
 --       tint     = { r, g, b },               -- optional row tint
 --       portrait = { kind = "model", creatureID = 196 }

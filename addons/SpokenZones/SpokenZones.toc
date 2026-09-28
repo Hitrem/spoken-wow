@@ -10,7 +10,7 @@
 ## Notes-koKR: Spoken 플레이어로 월드맵의 지역과 하위 지역 전승을 소리내어 읽습니다. 이전 이름은 ZoneLore.
 ## Notes-zhCN: 在世界地图上通过 Spoken 播放器朗读区域和次级区域传说。前身为 ZoneLore。
 ## Notes-zhTW: 在世界地圖上透過 Spoken 播放器朗讀區域和次級區域傳說。前身為 ZoneLore。
-## Version: 2.2.0
+## Version: 2.2.1
 ## Author: rusty
 ## SavedVariables: SpokenZonesDB
 ## SavedVariablesPerCharacter: SpokenZonesCharDB
@@ -59,8 +59,7 @@ Contribute.lua
 Autoplay.lua
 Data/enUS/Zones.lua
 Data/enUS/Subzones.lua
-# Every language's lore is parsed at login, and only the one being read builds its table:
-# each file returns early unless Language.lua chose that language.
+# Keep the selected lore and caption text for installed voices. Other languages return early.
 Data/deDE/Zones.lua
 Data/deDE/Subzones.lua
 Data/esES/Zones.lua

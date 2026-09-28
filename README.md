@@ -35,6 +35,10 @@ which is also what the 1.12, 2.4.3 and 3.3.5 clients draw. See
 [`docs/minimal-classic/`](docs/minimal-classic/README.md) for its controls,
 artwork sources and offline checks.
 
+Quest and NPC dialogue can also appear as one or two caption lines inside the
+player, with two words highlighted as the recording plays. Timing is approximate.
+See [caption controls and an in-game screenshot](docs/spoken/CAPTIONS.md).
+
 ## Layout
 
 ```

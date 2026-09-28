@@ -6,6 +6,11 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 2.1.3 — 2026-09-27
+
+- Queued quest and NPC dialogue now supplies captions to Spoken Player 2.2.3.
+  Replaying an accepted quest uses its quest log description when available.
+
 ## 0.0.2 — quests-audio-deDE — 2026-09-28
 
 - **Experimental**, still: expect lines to be re-recorded, and report the ones that sound wrong.

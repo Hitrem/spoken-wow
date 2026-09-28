@@ -180,6 +180,13 @@ local ACTIONS = { REPORT, STOP_GOSSIP }
 function Player:Prepare(soundData)
     local event = soundData.event
     local gossip = Enums.SoundEvent:IsGossipEvent(event)
+    -- Log replay clips have no dialog snapshot. Resolve only their acceptance text;
+    -- the log's description must never stand in for a reward or progress speech.
+    if event == Enums.SoundEvent.QuestAccept and (not soundData.text or soundData.text == "")
+        and Contribute and Contribute.QuestLogDescription and soundData.questID then
+        local ok, text = pcall(Contribute.QuestLogDescription, Contribute, soundData.questID)
+        if ok and type(text) == "string" then soundData.text = text end
+    end
     soundData.key = soundData.fileName
     soundData.path = soundData.filePath
     soundData.priority = gossip and "low" or "normal"

@@ -5,6 +5,9 @@ setfenv(1, SpokenEnv)
 MinimalPlayer = { rows = {}, offset = 0, expanded = false }
 local ART = [[Interface\AddOns\SpokenPlayer\Textures\]]
 local HEIGHT, WIDTH, MAX_ROWS = 98, 380, 4
+-- Space between the progress bar and the caption lines under it, and between
+-- the last caption line and the frame's bottom border.
+local CAPTION_GAP, CAPTION_BOTTOM = 4, 8
 -- The Forever client tints its frame metal bronze; its palette, so the player matches.
 local BRONZE = Version.IsCamelot and { .95, .68, .35 } or nil
 -- Portrait badges by bullet id. Quests use trimmed copies of their own glyphs; books
@@ -480,7 +483,15 @@ function MinimalPlayer:CreateQueueRow(index)
 end
 
 function MinimalPlayer:LayoutQueue()
-    if not self.drawer then return end
+    if not self.drawer or self.layingOut then return end
+    self.layingOut = true
+    local captionHeight = Transcript:HeightForClip(SoundQueue:GetCurrentSound())
+    local gap = captionHeight > 0 and CAPTION_GAP or 0
+    local bottom = captionHeight > 0 and CAPTION_BOTTOM or 0
+    local frameHeight = HEIGHT + captionHeight + gap + bottom
+    Transcript:ResizePlayer(self.frame, frameHeight, Config().HidePortrait and 200 or 280, 1000)
+    Transcript:Dock(self.frame, self.content, "TOPLEFT", 0, -62 - gap,
+        math.max(1, self.frame:GetWidth() - (Config().HidePortrait and 34 or 114)), captionHeight)
     local waiting = Waiting()
     self.offset = Clamp(self.offset, 0, math.max(0, waiting - MAX_ROWS))
     local shown = self.expanded and math.min(MAX_ROWS, waiting - self.offset) or 0
@@ -503,7 +514,7 @@ function MinimalPlayer:LayoutQueue()
     local left = Config().HidePortrait and 16 or 96
     -- Tucked into the frame's bottom margin, so the rows start just under the bar.
     if up then self.drawer:SetPoint("BOTTOMLEFT", self.frame, "TOPLEFT", left, -8)
-    else self.drawer:SetPoint("TOPLEFT", self.frame, "BOTTOMLEFT", left, 16) end
+    else self.drawer:SetPoint("TOPLEFT", self.frame, "BOTTOMLEFT", left, captionHeight > 0 and 8 + bottom or 16) end
     self.drawer:SetShown(shown > 0)
     local glyph = [[Interface\Buttons\UI-]] .. (self.expanded and "Minus" or "Plus")
     self.fold.icon:SetTexture(glyph .. "Button-Up")
@@ -521,6 +532,7 @@ function MinimalPlayer:LayoutQueue()
     self.panel:SetPoint("TOPLEFT", self.frame, "TOPLEFT", Config().HidePortrait and 0 or 44, up and height or -6)
     self.panel:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 0, shown > 0 and not up and 2 - height or 10)
     if self.resizer then self.resizer:SetShown(not Config().LockFrame and shown == 0) end
+    self.layingOut = false
 end
 
 function MinimalPlayer:ToggleQueue()
@@ -573,7 +585,7 @@ function MinimalPlayer:RefreshConfig(original)
     local cfg, frame = Config(), self.frame
     frame:SetScale(cfg.FrameScale)
     frame:SetFrameStrata(cfg.FrameStrata)
-    frame:SetResizeBounds(cfg.HidePortrait and 200 or 280, HEIGHT, 1000, HEIGHT)
+    frame:SetResizeBounds(cfg.HidePortrait and 200 or 280, frame:GetHeight(), 1000, frame:GetHeight())
     frame:SetWidth(Clamp((cfg.MinimalWidth or WIDTH) - (cfg.HidePortrait and 80 or 0), cfg.HidePortrait and 200 or 280, 1000))
     self.content:ClearAllPoints()
     self.content:SetPoint("TOPLEFT", cfg.HidePortrait and 16 or 96, -18)

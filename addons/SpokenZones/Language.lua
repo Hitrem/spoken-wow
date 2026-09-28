@@ -294,21 +294,33 @@ end
 
 -- Whether a generated data file for `code` should build its table.
 --
--- ONLY THE ACTIVE LANGUAGE. There is no English fallback per line: a place with no
--- lore in the language being read shows nothing, exactly as a zone with no lore at
--- all does. Falling back would put English prose under a German heading, which
--- reads as a translation somebody did badly rather than one nobody has done -- and
--- the readiness gate means a language on offer has no holes to fall through
--- anyway. See SpokenZones.Languages and the /spz lang preview override.
+-- Keep English available for captions when a translated sound pack lacks a clip.
+-- The lore browser still uses only the selected language.
 function SpokenZones:ShouldLoadLanguage(code)
-	return code == self.language
+	if code == self.language or code == BASE then return true end
+	if not self:CanRenderLanguage(code) then return false end
+	-- Packs can load after the lore tables. Their metadata is available before
+	-- their Lua, and keeps switching voices possible without retaining every language.
+	local count = (C_AddOns and C_AddOns.GetNumAddOns) or GetNumAddOns
+	local metadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+	if count and metadata then
+		for index = 1, count() do
+			if metadata(index, "X-SpokenZones-Language") == code then return true end
+		end
+	end
+	return false
 end
 
 function SpokenZones:RegisterLoreData(code, kind, data)
-	if code ~= self.language then
+	if not self:ShouldLoadLanguage(code) then
 		return
 	end
-	self[(kind == "zones") and "Zones" or "Subzones"] = data
+	self.CaptionLore = self.CaptionLore or {}
+	self.CaptionLore[code] = self.CaptionLore[code] or {}
+	self.CaptionLore[code][kind] = data
+	if code == self.language then
+		self[(kind == "zones") and "Zones" or "Subzones"] = data
+	end
 end
 
 -- Aliases are keyed by client locale, not content language, so this guard is

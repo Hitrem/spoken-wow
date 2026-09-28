@@ -33,12 +33,26 @@ end
 
 local ENGLISH = Pack("SpokenZonesAudio", "enUS", {
     [BOTH] = { file = "en-valley", len = 3 }, [ONLY_ENGLISH] = { file = "en-senjin", len = 3 } })
+ENGLISH.zones[MAP] = { file = "en-durotar", len = 5 }
 local GERMAN = Pack("SpokenZonesAudio_deDE", "deDE", { [BOTH] = { file = "de-valley", len = 3 } })
 local FRENCH = Pack("SpokenZonesAudio_frFR", "frFR", { [ONLY_ENGLISH] = { file = "fr-senjin", len = 3 } })
 
 ---------------------------------------------------------------- A. the active pack, then English
 local Z = Install({ ENGLISH, GERMAN, FRENCH })
+stub.SetAddOns({ { folder = "SpokenZonesAudio_deDE", meta = { ["X-SpokenZones-Language"] = "deDE" } } })
+Z:RegisterLoreData("enUS", "zones", { [MAP] = { name = "Durotar", full = "English zone lore." } })
+Z:RegisterLoreData("enUS", "subzones", { [MAP] = {
+    [BOTH] = { full = "English valley lore." }, [ONLY_ENGLISH] = { full = "English village lore." } } })
+Z:RegisterLoreData("deDE", "subzones", { [MAP] = { [BOTH] = { full = "Deutsche Geschichte." } } })
+Expect("A. installed voice metadata retains captions before that pack loads", Z:ShouldLoadLanguage("deDE"), true)
+Expect("A. unrelated languages do not allocate caption tables", Z:ShouldLoadLanguage("frFR"), false)
+Expect("A. registering captions leaves the lore browser's language alone", Z:GetLore(MAP).full, "English zone lore.")
+Expect("A. zones carry their full text", Z:NewLoreSound(MAP, nil).present.transcript, "English zone lore.")
 Z:SetActiveAudioPack("SpokenZonesAudio_deDE")
+Expect("A. captions match the chosen voice, even when reading another language",
+    Z:NewLoreSound(MAP, BOTH).present.transcript, "Deutsche Geschichte.")
+Expect("A. fallback captions match the English audio",
+    Z:NewLoreSound(MAP, ONLY_ENGLISH).present.transcript, "English village lore.")
 local _, _, pack = Z:GetAudioClip(MAP, BOTH)
 Expect("A. the active pack answers what it has", pack and pack.addon, "SpokenZonesAudio_deDE")
 _, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)

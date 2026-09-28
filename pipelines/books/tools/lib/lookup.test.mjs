@@ -8,6 +8,12 @@ test("English's lookup stays in the pack folder", () => {
   assert.match(lookupPath("enUS"), /addons\/SpokenBooksAudio\/Data\/Sounds\.lua$/);
 });
 
+test("a voiced page carries caption text from its current language row", () => {
+  const lua = packLua("esMX", [{ pageId: 15, file: "15", durationSec: 2.5,
+    text: "<H1>Registro</H1>Hola.$BAdiós." }]);
+  assert.match(lua, /text = "Registro Hola\. Adiós\."/);
+});
+
 test("another language's is build output, never in English's folder", () => {
   const path = lookupPath("esMX");
   assert.match(path, /build\/books\/esMX\/Data\/Sounds\.lua$/);
