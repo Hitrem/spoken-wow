@@ -52,7 +52,20 @@ export async function filtersFromParams(params: URLSearchParams): Promise<LineFi
     // definition of that rather than one here and another in the filter.
     generatedBefore: params.get("before") || undefined,
     generatedAfter: params.get("after") || undefined,
+    // Not checked against a closed set: the models and authors are whatever the takes hold.
+    // One nothing made matches nothing, which is the truthful answer.
+    model: params.get("model") || undefined,
+    author: params.get("author") || undefined,
   };
+}
+
+/**
+ * The filters with the model and author dropped, for somebody who may not see either. Dropped
+ * rather than left to match nothing, the way an unknown facet is: a translator's link opened
+ * by a visitor should show the lines, not an empty table.
+ */
+export function withoutMadeBy(filters: LineFilters): LineFilters {
+  return { ...filters, model: undefined, author: undefined };
 }
 
 /** Whether staleness has to be answered for the whole corpus, which is a query and a hash per take. */

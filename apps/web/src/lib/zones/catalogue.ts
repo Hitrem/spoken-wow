@@ -19,6 +19,7 @@ import { loadDirtyContext, NO_DIRT, type DirtyContext } from "@/lib/generation/d
 import { BASE_LANG, type Lang } from "@/lib/lang";
 
 import { corpusRows, currentLore } from "./lore";
+import { madeByOf, type MadeBy } from "@/lib/takes/made-by";
 import { liveTakes } from "@/lib/takes/store";
 import {
   assignFiles,
@@ -107,6 +108,11 @@ export type SearchContext = {
    * is about to ask -- and a count says no more than that badge does.
    */
   reports: Map<string, number>;
+  /**
+   * lineId -> who and what made the live take. Absent unless the viewer works in the
+   * language: the author is a person's name, and a visitor has no use for it.
+   */
+  madeBy?: Map<string, MadeBy>;
 };
 
 export const EMPTY_CONTEXT: SearchContext = {
@@ -318,7 +324,11 @@ export async function lineByPath(
   return (await linesByPath(lang)).get(`${mapID}/${slug}`);
 }
 
-export async function loadContext(lang: Lang = BASE_LANG): Promise<SearchContext> {
+/** `seesMadeBy`: whether the viewer works in the language. See SearchContext.madeBy. */
+export async function loadContext(
+  lang: Lang = BASE_LANG,
+  seesMadeBy = false,
+): Promise<SearchContext> {
   const [takeRows, reportRows, dirt] = await Promise.all([
     liveTakes("zones", lang),
     // Grouped in the database rather than counted here: the resolved rows are the ones
@@ -356,6 +366,7 @@ export async function loadContext(lang: Lang = BASE_LANG): Promise<SearchContext
     ),
     reports: new Map(reportRows.map((row) => [row.lineId, row.open])),
     dirt,
+    ...(seesMadeBy && { madeBy: new Map(takeRows.map((row) => [row.lineId, madeByOf(row)])) }),
   };
 }
 

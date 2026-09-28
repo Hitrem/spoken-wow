@@ -12,6 +12,7 @@
 // needs regenerating.
 
 import { isDirty } from "@/lib/generation/dirty";
+import { madeByFacets, madeByMatches, type MadeBy, type MadeByFacets } from "@/lib/takes/made-by";
 
 import type { CatalogueEntry, SearchContext, Take } from "./catalogue";
 import { PAGE_SIZE, SHORT_LINE, type LineFilters, type State } from "./filters";
@@ -53,6 +54,8 @@ export type ResultLine = {
   zoneNameMissing?: boolean;
   /** The English name, for a translator. Absent when reading English. */
   englishName?: string;
+  /** Who and what made the live take. Null with no take, or when the viewer may not know. */
+  madeBy: MadeBy | null;
 };
 
 export type SearchResult = {
@@ -66,6 +69,8 @@ export type SearchResult = {
   dirty: number;
   offset: number;
   limit: number;
+  /** What the model and author chips offer. Absent when the context carried no `madeBy`. */
+  madeBy?: MadeByFacets;
 };
 
 export function stateOf(entry: CatalogueEntry, take: Take | undefined): State {
@@ -89,6 +94,7 @@ export function decorate(entry: CatalogueEntry, context: SearchContext): ResultL
     state: stateOf(entry, take),
     take: take ?? null,
     reportsOpen: context.reports.get(entry.id) ?? 0,
+    madeBy: context.madeBy?.get(entry.id) ?? null,
     ...(entry.english === undefined
       ? {}
       : {
@@ -152,7 +158,7 @@ export function matching(lines: ResultLine[], filters: LineFilters = {}): Result
   // about a line that has since been dropped must not read as "here it is".
   if (filters.line) out = out.filter((l) => l.id === filters.line);
 
-  if (filters.modelId) out = out.filter((l) => l.take?.modelId === filters.modelId);
+  if (filters.model || filters.author) out = out.filter((l) => madeByMatches(l.madeBy ?? undefined, filters));
 
   if (filters.generatedAfter) {
     const at = dayStart(filters.generatedAfter);
@@ -207,5 +213,6 @@ export function search(
     dirty,
     offset,
     limit,
+    ...(context.madeBy && { madeBy: madeByFacets(context.madeBy.values()) }),
   };
 }

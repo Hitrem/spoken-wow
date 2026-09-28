@@ -42,8 +42,12 @@ export type LineFilters = {
   line?: string;
   generatedBefore?: string; // YYYY-MM-DD
   generatedAfter?: string;
-  /** Lines cut with a model the generation settings have since moved off. */
-  modelId?: string;
+  /**
+   * The live take's model as lib/takes/made-by.ts labels it ("eleven:v3"), and the id of
+   * who made it. Honoured only for somebody working in the language; see the search route.
+   */
+  model?: string;
+  author?: string;
 };
 
 // Below this, ElevenLabs documents v3 as unreliable, and 305 of the 1353 entries are
@@ -68,7 +72,8 @@ export function filterParams(filters: LineFilters): URLSearchParams {
   if (filters.line) params.set("line", filters.line);
   if (filters.generatedBefore) params.set("before", filters.generatedBefore);
   if (filters.generatedAfter) params.set("after", filters.generatedAfter);
-  if (filters.modelId) params.set("model", filters.modelId);
+  if (filters.model) params.set("model", filters.model);
+  if (filters.author) params.set("author", filters.author);
   return params;
 }
 
@@ -98,7 +103,8 @@ export function filtersFromParams(params: URLSearchParams): LineFilters {
     line: params.get("line") || undefined,
     generatedBefore: before && DATE.test(before) ? before : undefined,
     generatedAfter: after && DATE.test(after) ? after : undefined,
-    modelId: params.get("model") ?? undefined,
+    model: params.get("model") || undefined,
+    author: params.get("author") || undefined,
   };
 }
 
@@ -119,6 +125,7 @@ export function activeFilterCount(filters: LineFilters): number {
     filters.line,
     filters.generatedBefore,
     filters.generatedAfter,
-    filters.modelId,
+    filters.model,
+    filters.author,
   ].filter(Boolean).length;
 }

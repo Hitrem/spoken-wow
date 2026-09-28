@@ -85,7 +85,9 @@ export async function POST(request: NextRequest) {
   const filters = await filtersFromParams(new URLSearchParams(body.filters));
   const [catalogue, { voiced, context }] = await Promise.all([
     corpus(lang),
-    searchContext(needsStale(filters), false, lang),
+    // Behind `regenerate`, which is working in the language, so the model and author
+    // filters narrow the batch exactly as they narrowed the page it was quoted from.
+    searchContext(needsStale(filters), false, lang, true),
   ]);
   const lines = matchingLines(catalogue, voiced, filters, context);
   // The same overrides the estimate was built from, so what is queued is what was quoted.

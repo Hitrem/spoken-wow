@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { langParam } from "@/lib/lang-server";
+import { langParam, worksHere } from "@/lib/lang-server";
 import { corpus, isCorpusEmpty } from "@/lib/quests/catalogue";
 import { searchContext } from "@/lib/quests/context";
 import { dirtyQuestFiles } from "@/lib/quests/dirtiness";
 import { staleFiles } from "@/lib/quests/staleness";
-import { filtersFromParams, needsDirty, needsStale } from "@/lib/search-request";
+import { filtersFromParams, needsDirty, needsStale, withoutMadeBy } from "@/lib/search-request";
 import { PAGE_SIZE, search } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
@@ -28,16 +28,26 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Math.floor(Number(params.get("page")) || 1));
 
   // Only the context depends on the filters, so the corpus is fetched alongside them.
-  let filters, lines;
+  let filters, lines, seesMadeBy;
   try {
-    [filters, lines] = await Promise.all([filtersFromParams(params), corpus(lang)]);
+    [filters, lines, seesMadeBy] = await Promise.all([
+      filtersFromParams(params),
+      corpus(lang),
+      worksHere(lang),
+    ]);
   } catch (error) {
     // The zones and books searches answer an empty table the same way: a page can say "no
     // lines yet" where an unexplained 500 says nothing.
     if (!isCorpusEmpty(error)) throw error;
     return NextResponse.json({ error: (error as Error).message, code: "corpus_empty" }, { status: 503 });
   }
-  const { voiced, context } = await searchContext(needsStale(filters), needsDirty(filters), lang);
+  if (!seesMadeBy) filters = withoutMadeBy(filters);
+  const { voiced, context } = await searchContext(
+    needsStale(filters),
+    needsDirty(filters),
+    lang,
+    seesMadeBy,
+  );
 
   // "Clear all" needs every dirty file the filter matches, not a page of rows. The same
   // shape the zones search route answers for its own explorer.

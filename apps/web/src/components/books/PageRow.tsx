@@ -1,5 +1,6 @@
 "use client";
 
+import { MadeByCell } from "@/components/MadeBy";
 import { RenameButton } from "@/components/RenameButton";
 import { Untranslated, UntranslatedMark } from "@/components/Untranslated";
 import { ChevronDownIcon, Eraser, FlagIcon, PencilIcon, PlayIcon } from "lucide-react";
@@ -21,6 +22,8 @@ export type RowState =
 type Props = {
   line: ResultLine;
   current: boolean;
+  /** Whether to draw the "Made by" cell: the search sent it, so the viewer works here. */
+  showMadeBy: boolean;
   /** Editor and up: the regenerate control, and reading and resolving the row's reports. */
   canRegenerate: boolean;
   /** May write this page's text in the page's language, apart from regenerating it. */
@@ -67,6 +70,7 @@ const STATE_LABEL = {
 export function PageRow({
   line,
   current,
+  showMadeBy,
   canRegenerate,
   canEdit,
   groupRows,
@@ -234,6 +238,8 @@ export function PageRow({
           </div>
         )}
       </td>
+
+      {showMadeBy && <MadeByCell madeBy={line.madeBy} />}
 
       <td className="text-muted-foreground px-2 py-2 text-right text-xs whitespace-nowrap">
         {line.chars}

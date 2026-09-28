@@ -8,10 +8,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 
-import { langParam } from "@/lib/lang-server";
+import { langParam, worksHere } from "@/lib/lang-server";
 import { corpus } from "@/lib/quests/catalogue";
 import { searchContext } from "@/lib/quests/context";
-import { filtersFromParams, needsStale } from "@/lib/search-request";
+import { filtersFromParams, needsStale, withoutMadeBy } from "@/lib/search-request";
 import { batchJobs, matchingLines } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +19,13 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const { lang, denied } = await langParam(request);
   if (denied) return denied;
-  const filters = await filtersFromParams(request.nextUrl.searchParams);
+  // Gated like the search itself, or narrowing by author here would say whose lines are whose.
+  const seesMadeBy = await worksHere(lang);
+  let filters = await filtersFromParams(request.nextUrl.searchParams);
+  if (!seesMadeBy) filters = withoutMadeBy(filters);
   const [catalogue, { voiced, context }] = await Promise.all([
     corpus(lang),
-    searchContext(needsStale(filters), false, lang),
+    searchContext(needsStale(filters), false, lang, seesMadeBy),
   ]);
   const lines = matchingLines(catalogue, voiced, filters, context);
   // The same overrides the estimate is built from, so the quote prices the text that will

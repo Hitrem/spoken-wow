@@ -51,6 +51,12 @@ export type PageFilters = {
   reports?: Reports;
   /** One page id, which is how a report on /reports links into this explorer. */
   line?: string;
+  /**
+   * The live take's model as lib/takes/made-by.ts labels it ("eleven:v3"), and the id of
+   * who made it. Honoured only for somebody working in the language; see the search route.
+   */
+  model?: string;
+  author?: string;
 };
 
 export const PAGE_SIZE = 100;
@@ -86,6 +92,8 @@ export function filterParams(filters: PageFilters): URLSearchParams {
   if (filters.voiceable) params.set("voiceable", "1");
   if (filters.reports) params.set("fb", filters.reports);
   if (filters.line) params.set("line", filters.line);
+  if (filters.model) params.set("model", filters.model);
+  if (filters.author) params.set("author", filters.author);
   return params;
 }
 
@@ -109,6 +117,8 @@ export function filtersFromParams(params: URLSearchParams): PageFilters {
     voiceable: params.get("voiceable") === "1" || undefined,
     reports: oneOf(params.get("fb"), REPORTS),
     line: params.get("line") || undefined,
+    model: params.get("model") || undefined,
+    author: params.get("author") || undefined,
   };
 }
 
@@ -124,5 +134,7 @@ export function activeFilterCount(filters: PageFilters): number {
     filters.voiceable,
     filters.reports,
     filters.line,
+    filters.model,
+    filters.author,
   ].filter(Boolean).length;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { MadeByCell } from "@/components/MadeBy";
 import { RenameButton } from "@/components/RenameButton";
 import { Untranslated, UntranslatedMark } from "@/components/Untranslated";
 import {
@@ -26,6 +27,8 @@ export type RowState =
 type Props = {
   line: ResultLine;
   current: boolean;
+  /** Whether to draw the "Made by" cell: the search sent it, so the viewer works here. */
+  showMadeBy: boolean;
   /** Editor and up: the rewrite and regenerate controls. */
   canRegenerate: boolean;
   /** May write this line's text in the page's language, which a translator may do without
@@ -64,6 +67,7 @@ const STATE_LABEL = {
 export function LineRow({
   line,
   current,
+  showMadeBy,
   canRegenerate,
   canEdit,
   canTriage,
@@ -214,6 +218,8 @@ export function LineRow({
           </div>
         )}
       </td>
+
+      {showMadeBy && <MadeByCell madeBy={line.madeBy} />}
 
       <td className="py-1.5 pr-1 pl-2">
         <span className="flex items-center justify-end gap-1 whitespace-nowrap">

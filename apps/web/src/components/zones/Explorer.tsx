@@ -550,6 +550,8 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
   //----------------------------------------------------------------------------
 
   const pages = result ? Math.max(1, Math.ceil(result.total / PAGE_SIZE)) : 1;
+  // The search sends facets only to somebody working in the language; see MadeBy.tsx.
+  const showMadeBy = result?.madeBy !== undefined;
 
   return (
     <div className="pb-24">
@@ -557,6 +559,7 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
         zones={zones}
         filters={filters}
         canTriage={canTriage}
+        madeBy={result?.madeBy}
         query={query}
         inputRef={searchInput}
         onQueryChange={setQuery}
@@ -629,6 +632,8 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
           <col />
           {/* Audio: the state word, or the take selector, both of which are short. */}
           <col className="w-28" />
+          {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
+          {showMadeBy && <col className="w-36" />}
           {/* Wide enough for what the cell actually holds: icon buttons are 32px and an
               editor can have three side by side - report, edit, regenerate - plus the
               report count. Anything narrower and the row overflows left over the prose.
@@ -642,6 +647,7 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
             <th className="px-2 pb-1 font-medium">Subzone</th>
             <th className="px-2 pb-1 font-medium">Lore</th>
             <th className="px-2 pb-1 font-medium">Audio</th>
+            {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
             <th className="sr-only">Actions</th>
           </tr>
         </thead>
@@ -651,6 +657,7 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
               key={line.id}
               line={withEdits(line)}
               current={line.id === current?.id}
+              showMadeBy={showMadeBy}
               canRegenerate={canRegenerate}
               canEdit={canEdit}
               canTriage={canTriage}

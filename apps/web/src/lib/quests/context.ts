@@ -18,6 +18,7 @@
  * reads as its corpus text. Nothing is generated from this - regenerate.ts reads the
  * override itself, and there a failure *should* be fatal.
  */
+import { madeByOf } from "../takes/made-by";
 import { liveTakes } from "../takes/store";
 import { dirtyQuestFiles } from "./dirtiness";
 import { staleFiles } from "./staleness";
@@ -63,16 +64,20 @@ async function openReports(lang: Lang): Promise<Map<string, number>> {
  * @param outdated whether the audio-outdated filter is in force. One query and a sha-256
  *   per take, paid for only by the searches that ask.
  * @param dirty whether the pronunciation filter is in force. The same bargain.
+ * @param seesMadeBy whether the viewer works in the language, and so may know who made each
+ *   take. Nobody else gets the map, so no route can hand an author's name to a visitor.
  */
 export async function searchContext(
   outdated = false,
   dirty = false,
   lang: Lang = BASE_LANG,
+  seesMadeBy = false,
 ): Promise<{ voiced: Set<string>; context: SearchContext }> {
   const live = await liveTakes("quests", lang);
   const voiced = new Set(live.map((row) => row.file));
   const takes = new Map(live.map((row) => [row.file, { version: row.version, takes: row.takes }]));
   const generatedAt = new Map(live.map((row) => [row.file, row.createdAt.getTime()]));
+  const madeBy = seesMadeBy ? new Map(live.map((row) => [row.file, madeByOf(row)])) : undefined;
 
   try {
     // Overrides are English's alone -- they rewrite the English corpus. Staleness and dirt
@@ -92,12 +97,13 @@ export async function searchContext(
         reports,
         takes,
         generatedAt,
+        madeBy,
         stale: stale ?? undefined,
         dirty: dirt ?? undefined,
       },
     };
   } catch (error) {
     console.warn("[quests] search context unavailable, serving unmarked results:", error);
-    return { voiced, context: { ...NO_CONTEXT, takes, generatedAt } };
+    return { voiced, context: { ...NO_CONTEXT, takes, generatedAt, madeBy } };
   }
 }

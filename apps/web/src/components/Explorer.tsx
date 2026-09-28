@@ -75,6 +75,8 @@ function filterParams(filters: LineFilters): URLSearchParams {
   if (filters.reports) params.set("fb", filters.reports);
   if (filters.generatedBefore) params.set("before", filters.generatedBefore);
   if (filters.generatedAfter) params.set("after", filters.generatedAfter);
+  if (filters.model) params.set("model", filters.model);
+  if (filters.author) params.set("author", filters.author);
   return params;
 }
 
@@ -122,6 +124,8 @@ export default function Explorer({ facets }: { facets: Facets }) {
       reports: params.get("fb") === "open" ? "open" : undefined,
       generatedBefore: params.get("before") ?? undefined,
       generatedAfter: params.get("after") ?? undefined,
+      model: params.get("model") ?? undefined,
+      author: params.get("author") ?? undefined,
     }),
     [params, urlQuery],
   );
@@ -282,6 +286,8 @@ export default function Explorer({ facets }: { facets: Facets }) {
         ...("ignored" in next ? { ignored: next.ignored ? "1" : undefined } : {}),
         ...("generatedBefore" in next ? { before: next.generatedBefore } : {}),
         ...("generatedAfter" in next ? { after: next.generatedAfter } : {}),
+        ...("model" in next ? { model: next.model } : {}),
+        ...("author" in next ? { author: next.author } : {}),
       });
     },
     [updateUrl],
@@ -742,6 +748,9 @@ export default function Explorer({ facets }: { facets: Facets }) {
       .map((line) => line.audioPath),
   ).size;
 
+  // The search sends facets only to somebody working in the language; see MadeBy.tsx.
+  const showMadeBy = result?.madeBy !== undefined;
+
   return (
     <>
       <SearchBar
@@ -753,6 +762,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
         onFilters={updateFilters}
         onClearAll={clearAll}
         canTriage={showRegenerate}
+        madeBy={result?.madeBy}
       />
 
       {/* No dropdown to sit in: a line id arrives by link from /reports, so without this
@@ -820,6 +830,8 @@ export default function Explorer({ facets }: { facets: Facets }) {
             <col />
             {/* Audio: a state word, or the take selector. Both are short. */}
             <col className="w-28" />
+            {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
+            {showMadeBy && <col className="w-36" />}
             {/* Wide enough for what the cell actually holds, which the old w-20 was not:
                 icon buttons are 32px, and a collaborator can have four side by side --
                 report, edit, ignore, regenerate -- plus the report count. Anything narrower
@@ -834,6 +846,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
               <th className="px-2 pb-1 font-medium">Race / gender / flavor</th>
               <th className="px-2 pb-1 font-medium">Line</th>
               <th className="px-2 pb-1 font-medium">Audio</th>
+              {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
               <th className="sr-only">Actions</th>
             </tr>
           </thead>
@@ -843,6 +856,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
                 key={line.key}
                 line={line}
                 current={line.key === current?.key}
+                showMadeBy={showMadeBy}
                 canRegenerate={showRegenerate}
                 canEdit={canEdit}
                 canTriage={canEdit}

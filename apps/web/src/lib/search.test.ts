@@ -4,6 +4,7 @@ import { audioRelPath } from "./audio";
 import { npcKey } from "./corpus";
 import { corpus as catalogue } from "./quests/catalogue";
 import { batchJobs, isGap, matchingLines, search } from "./search";
+import { madeByOf } from "./takes/made-by";
 
 const corpus = await catalogue();
 /**
@@ -562,5 +563,33 @@ describe("reported lines", () => {
 
   it("matches nothing when the counts were never fetched, rather than everything", () => {
     expect(matchingLines(corpus, store, { reports: "open" })).toEqual([]);
+  });
+});
+
+describe("made by", () => {
+  const lines = all().slice(0, 3);
+  const file = (line: (typeof lines)[number]) => line.audioPath;
+  const context = {
+    overrides: new Map(),
+    madeBy: new Map([
+      [file(lines[0]), madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy" })],
+      [file(lines[1]), madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: null, createdByName: null })],
+    ]),
+  };
+
+  it("narrows to the files that model or author made, and labels the rows", () => {
+    const byModel = search(corpus, store, { model: "eleven:v3", limit: 20_000 }, context);
+    expect(new Set(byModel.lines.map(file))).toEqual(new Set([file(lines[1])]));
+    expect(byModel.lines[0].madeBy?.model).toBe("eleven:v3");
+    expect(byModel.madeBy?.authors).toEqual([{ id: "u1", name: "Amy" }]);
+
+    const byAuthor = matchingLines(corpus, store, { author: "u1" }, context);
+    expect(new Set(byAuthor.map(audioRelPath))).toEqual(new Set([file(lines[0])]));
+  });
+
+  it("sends no names and no facets without the map", () => {
+    const result = search(corpus, store, { limit: 5 });
+    expect(result.madeBy).toBeUndefined();
+    expect(result.lines.every((line) => line.madeBy === null)).toBe(true);
   });
 });
