@@ -1,6 +1,15 @@
 ## Interface: 11509, 20506, 16001
 ## Title: Spoken Zones
 ## Notes: Zone and subzone lore on the world map, read aloud through the Spoken player. Formerly ZoneLore.
+## Notes-deDE: Zonen- und Gebietslore auf der Weltkarte, vorgelesen durch den Spoken-Player. Ehemals ZoneLore.
+## Notes-esES: Historia de zonas y subzonas en el mapa del mundo, leída en voz alta a través del reproductor Spoken. Anteriormente ZoneLore.
+## Notes-esMX: Historia de zonas y subzonas en el mapa del mundo, leída en voz alta a través del reproductor Spoken. Anteriormente ZoneLore.
+## Notes-frFR: Histoire des zones et sous-zones sur la carte du monde, lue à voix haute grâce au lecteur Spoken. Anciennement ZoneLore.
+## Notes-ptBR: História de zonas e subzonas no mapa do mundo, lida em voz alta através do reprodutor Spoken. Anteriormente ZoneLore.
+## Notes-ruRU: История зон и подзон на карте мира, озвученная через проигрыватель Spoken. Ранее — ZoneLore.
+## Notes-koKR: Spoken 플레이어로 월드맵의 지역과 하위 지역 전승을 소리내어 읽습니다. 이전 이름은 ZoneLore.
+## Notes-zhCN: 在世界地图上通过 Spoken 播放器朗读区域和次级区域传说。前身为 ZoneLore。
+## Notes-zhTW: 在世界地圖上透過 Spoken 播放器朗讀區域和次級區域傳說。前身為 ZoneLore。
 ## Version: 2.2.1
 ## Author: rusty
 ## SavedVariables: SpokenZonesDB

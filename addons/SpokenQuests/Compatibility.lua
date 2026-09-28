@@ -774,9 +774,9 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
                 playButton:SetPoint("RIGHT", header, "RIGHT", -(backInset or 11), backOffset or 4)
                 playButton.setPlayState = function(button, isPlaying)
                     if button.contributing then
-                        button:SetText("Contribute")
+                        button:SetText(L.OPT_CONTRIBUTE)
                     else
-                        button:SetText(isPlaying and "Stop" or "Play")
+                        button:SetText(isPlaying and L.OPT_STOP or L.OPT_PLAY)
                     end
                 end
                 self.detailsPlayButton = playButton

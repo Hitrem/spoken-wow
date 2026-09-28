@@ -1,6 +1,15 @@
 ## Interface: 11509, 20506, 16001
 ## Title: Spoken Books
 ## Notes: Books, letters and notes read aloud through the Spoken player.
+## Notes-deDE: Bücher, Briefe und Notizen werden über den Spoken-Player vorgelesen.
+## Notes-esES: Libros, cartas y notas leídos en voz alta a través del reproductor Spoken.
+## Notes-esMX: Libros, cartas y notas leídos en voz alta a través del reproductor Spoken.
+## Notes-frFR: Livres, lettres et notes lus à voix haute grâce au lecteur Spoken.
+## Notes-ptBR: Livros, cartas e notas lidos em voz alta através do reprodutor Spoken.
+## Notes-ruRU: Книги, письма и заметки, озвученные через проигрыватель Spoken.
+## Notes-koKR: Spoken 플레이어로 책, 편지, 메모를 소리내어 읽습니다.
+## Notes-zhCN: 通过 Spoken 播放器朗读书籍、信件和笔记。
+## Notes-zhTW: 透過 Spoken 播放器朗讀書籍、信件和筆記。
 ## Version: 2.1.1
 ## Author: rusty
 ## SavedVariables: SpokenBooksDB

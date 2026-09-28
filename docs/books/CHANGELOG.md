@@ -11,6 +11,36 @@ existing compatible sound pack unless the release notes say otherwise.
   translated packs can caption pages you have opened during this session.
 - Existing English sound packs work without downloading the audio again.
 
+## 2.0.0 — books-audio-deDE — 2026-09-27
+
+- **The first German sound pack**, `SpokenBooksAudio_deDE`: 1143 pages read aloud from
+  the game's own German text. It plays on a deDE client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
+## 2.0.0 — books-audio-esES — 2026-09-27
+
+- **The first Spanish (EU) sound pack**, `SpokenBooksAudio_esES`: 1099 pages read aloud from
+  the game's own Spanish text. It plays on a esES client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
+## 2.0.0 — books-audio-esMX — 2026-09-27
+
+- **The first Spanish (AL) sound pack**, `SpokenBooksAudio_esMX`: 1088 pages read aloud from
+  the game's own Spanish text. It plays on a esMX client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
+## 2.0.0 — books-audio-frFR — 2026-09-27
+
+- **The first French sound pack**, `SpokenBooksAudio_frFR`: 1143 pages read aloud from
+  the game's own French text. It plays on a frFR client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
+## 2.0.0 — books-audio-ruRU — 2026-09-27
+
+- **The first Russian sound pack**, `SpokenBooksAudio_ruRU`: 1135 pages read aloud from
+  the game's own Russian text. It plays on a ruRU client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
 ## 2.1.0 — 2026-09-21
 
 - **A page nobody has narrated can be sent in.** On a book, letter or plaque the addon does

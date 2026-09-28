@@ -192,7 +192,7 @@ function Player:Prepare(soundData)
     soundData.priority = gossip and "low" or "normal"
     soundData.present = {
         header = soundData.name or "",
-        label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and "Greeting" or (gossip and "Gossip" or "")),
+        label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),
         bullet = BULLETS[event],
         tint = gossip and { 1, 1, 1 } or nil,
         portrait = {

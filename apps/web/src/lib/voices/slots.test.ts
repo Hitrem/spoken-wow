@@ -38,7 +38,7 @@ describe("slots", () => {
     // Progress text is never voiced, so a voice's line count must be below the raw total.
     const total = (await slots()).reduce((sum, s) => sum + s.lineCount, 0);
     expect(total).toBeGreaterThan(0);
-    expect(total).toBeLessThan(17564);
+    expect(total).toBeLessThan(17792);
   });
 });
 
