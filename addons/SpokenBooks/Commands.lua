@@ -52,6 +52,7 @@ local function Status()
 		SpokenBooksDB.autoplay and "on" or "off",
 		SpokenBooksDB.readWholeBook and "on" or "off",
 		SpokenBooksDB.readOnce and "on" or "off")
+	Print("gathering %s", SpokenBooks:GatherAvailable() and (Spoken.Gather:IsEnabled() and "on" or "off") or "unavailable")
 	-- Said whether or not read-once is on, because the count is what makes `/spb forget`
 	-- make sense, and because a reader turning the setting on wants to know what it will
 	-- already consider read.
@@ -73,6 +74,13 @@ SlashCmdList["SPOKENBOOKS"] = function(msg)
 		Toggle("readWholeBook", "reading the whole book")
 	elseif cmd == "once" then
 		Toggle("readOnce", "reading each book only once")
+	elseif cmd == "gather" then
+		if SpokenBooks:GatherAvailable() then
+			Spoken.Gather:SetEnabled(not Spoken.Gather:IsEnabled())
+			Print("gathering %s", Spoken.Gather:IsEnabled() and "enabled" or "disabled")
+		else
+			Print("gathering is unavailable -- no Spoken player offers background gathering")
+		end
 	elseif cmd == "forget" then
 		local count = SpokenBooks:ForgetRead()
 		Print("forgot %d book%s; they will be read again", count, count == 1 and "" or "s")
@@ -92,6 +100,6 @@ SlashCmdList["SPOKENBOOKS"] = function(msg)
 	elseif cmd == "status" then
 		Status()
 	else
-		Print("/spb read | stop | autoplay | whole | once | forget | settings | status")
+		Print("/spb read | stop | autoplay | whole | once | gather | forget | settings | status")
 	end
 end

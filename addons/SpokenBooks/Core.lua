@@ -101,6 +101,14 @@ function SpokenBooks:PlayerAvailable()
 	return _G.Spoken ~= nil and Spoken.IsCompatible ~= nil and Spoken:IsCompatible(REQUIRED_API)
 end
 
+--- Whether the player offers background gathering this panel can switch: present with
+--- the Gather table, absent on older players and where contributing is off.
+function SpokenBooks:GatherAvailable()
+	return _G.Spoken ~= nil and Spoken.Gather ~= nil
+		and type(Spoken.Gather.IsEnabled) == "function"
+		and type(Spoken.Gather.SetEnabled) == "function"
+end
+
 --- Registers this addon with the player. Returns the source, or nil when there is no
 --- player to register with -- which is not an error: the addon loads, and says so.
 function SpokenBooks:SetupSource()

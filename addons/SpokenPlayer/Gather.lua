@@ -37,7 +37,15 @@ local function Store()
 end
 
 function Gather:IsEnabled()
-    return Store().Enabled and true or false
+    -- On unless the player said otherwise: nothing gathered ever leaves the game by
+    -- itself -- the file goes out only in an upload the player runs -- so the default
+    -- is to keep everything, and the switch (here, and mirrored in the feature
+    -- addons) is the opt-out. A stored false is the only off.
+    local enabled = Store().Enabled
+    if enabled == nil then
+        return true
+    end
+    return enabled and true or false
 end
 
 function Gather:SetEnabled(enabled)

@@ -20,6 +20,11 @@ for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader",
     assert(loadfile(BOOKS .. file .. ".lua"))("SpokenBooks", B)
 end
 B:InitDB()
+-- The player the gather switch belongs to: faked, since this suite boots Books alone.
+-- Without it the Contribute section stays off the panel, as it does in-game.
+_G.Spoken = { Gather = { _on = nil,
+    IsEnabled = function(self) if self._on == nil then return true end return self._on end,
+    SetEnabled = function(self, v) self._on = v and true or false end } }
 B:SetupOptions()
 
 ---------------------------------------------------------------- registration
@@ -46,8 +51,8 @@ for _, child in ipairs(content.children) do
 end
 
 Expect("every section is there", table.concat(headings, "|"),
-    "Reading|Language|What this character has read")
-Expect("every switch has a row", table.getn(checkboxes), 3)
+    "Reading|Language|What this character has read|Contribute")
+Expect("every switch has a row", table.getn(checkboxes), 4)
 Expect("...and the record has its button", table.getn(buttons), 1)
 
 local function Labelled(text)
@@ -76,6 +81,19 @@ autoplay:SetChecked(false)
 autoplay.scripts.OnClick(autoplay)
 Expect("...and unticking it is the same as /spb autoplay", SpokenBooksDB.autoplay, false)
 SpokenBooksDB.autoplay = true
+
+---------------------------------------------------------------- gathering in the background
+local gather = Labelled("Gather missing pages in the background")
+Expect("the gather switch is on the panel", gather ~= nil, true)
+Expect("...reading the player on, gathering by default", gather.checked, true)
+gather:SetChecked(false)
+gather.scripts.OnClick(gather)
+Expect("unticking it opts out", _G.Spoken.Gather._on, false)
+
+SlashCmdList["SPOKENBOOKS"]("gather")
+Expect("...and /spb gather toggles it back on", _G.Spoken.Gather._on, true)
+SlashCmdList["SPOKENBOOKS"]("gather")
+Expect("...and off again", _G.Spoken.Gather._on, false)
 
 ---------------------------------------------------------------- forgetting what was read
 SpokenBooksCharDB.read = { ["Hillsbrad Town Registry"] = true, ["Jitters' Journal"] = true }

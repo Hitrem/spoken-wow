@@ -45,7 +45,7 @@ end
 local names = {}
 for _, heading in ipairs(headings) do table.insert(names, heading.text) end
 Expect("the settings are grouped into sections", table.concat(names, "|"),
-    "Dialogue|Sound packs|Troubleshooting|Profile")
+    "Dialogue|Sound packs|Contribute|Troubleshooting|Profile")
 
 local function Distinct(values)
     local seen, count = {}, 0
@@ -128,6 +128,25 @@ Expect("...and relabels", greetings.dropdownText, "Once per NPC")
 Expect("picking a second time works too", stub.PickDropdown(greetings, "Never"), true)
 Expect("...and stores that", db.Audio.GossipFrequency, VO.Enums.GossipFrequency.Never)
 Expect("...with the ticked entry moved", stub.OpenDropdown(greetings)[4].checked, true)
+
+---------------------------------------------------------------- the gather switch mirrors the player
+-- The same switch the player settings carry: gathering is per addon only in what it
+-- keeps, and this panel answers whether it is on without opening a second one.
+local gather
+for _, child in ipairs(SettingsPanel.panel.content.children) do
+    if type(child.text) == "table" and child.text.text == "Gather missing lines in the background" then
+        gather = child
+    end
+end
+Expect("the gather switch is on the panel", gather ~= nil, true)
+gather:GetScript("OnShow")(gather)
+Expect("...reading the player on, gathering by default", gather.checked, true)
+gather:SetChecked(false)
+gather:GetScript("OnClick")(gather)
+Expect("unticking it opts out", _G.Spoken.Gather:IsEnabled(), false)
+gather:SetChecked(true)
+gather:GetScript("OnClick")(gather)
+Expect("...and ticking it gathers again", _G.Spoken.Gather:IsEnabled(), true)
 
 ---------------------------------------------------------------- packs and profiles, inline
 -- Both used to be a branch of an options tree behind a button, which is two clicks and a

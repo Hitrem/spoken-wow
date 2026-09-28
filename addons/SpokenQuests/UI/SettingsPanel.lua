@@ -154,6 +154,19 @@ function SettingsPanel:Setup()
         end
     end
 
+    -- The player's switch, shown here too: gathering is per addon only in what it
+    -- keeps, and a player should see without opening a second panel whether it is on.
+    -- Absent where no player offers it, rather than a section with no switch in it.
+    local playerGather = _G.Spoken and Spoken.Gather
+    if playerGather and type(playerGather.IsEnabled) == "function"
+        and type(playerGather.SetEnabled) == "function" then
+        layout:Section(L.OPT_CONTRIBUTE)
+        layout:Checkbox(L.OPT_GATHER,
+            L.OPT_GATHER_TIP,
+            function() return playerGather:IsEnabled() end,
+            function(value) playerGather:SetEnabled(value) end)
+    end
+
     layout:Section(L.OPT_SECTION_TROUBLE)
     layout:Checkbox(L.OPT_PANEL_DEBUG,
         L.OPT_PANEL_DEBUG_TIP,
