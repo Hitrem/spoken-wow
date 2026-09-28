@@ -192,5 +192,16 @@ quests:Enqueue(gone); quests:Enqueue(next_)
 Expect("a file the client refuses is dropped", rec:Has("CLIP_DROPPED " .. gone.key .. " missing"), true)
 Expect("...and the queue moves on", world.played[1], next_.path)
 
+---------------------------------------------------------------- the existence probe
+-- SpokenQuests probes each file before admitting it. The probe must go out on the
+-- source's channel: without one the client uses SFX, and with effects switched off
+-- every file would be reported missing though Master plays it fine.
+Fresh()
+local probed = env.Sources:Register("probed", { title = "Probed", addon = "SpokenQuests", order = 3,
+    testBeforeQueue = true })
+local p = H.Clip()
+Expect("a probed source admits a file that exists", probed:Enqueue(p) ~= nil, true)
+Expect("...probing it on the source's channel", world.playedChannels[1], "Master")
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll queue tests passed")

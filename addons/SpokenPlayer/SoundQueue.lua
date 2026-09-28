@@ -460,7 +460,7 @@ function SoundQueue:Add(clip, source, front)
         end
     end
 
-    if source.testBeforeQueue and not SoundUtils:TestSound(clip) then
+    if source.testBeforeQueue and not SoundUtils:TestSound(clip, source:GetChannel()) then
         return nil, "missing"
     end
 

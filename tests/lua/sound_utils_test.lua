@@ -66,12 +66,13 @@ Expect("...and leaves no handle", gone.handle, nil)
 
 stub.ResetSound()
 local probe = { path = "b.ogg" }
-Expect("TestSound answers whether the file exists", SU:TestSound(probe), true)
+Expect("TestSound answers whether the file exists", SU:TestSound(probe, "Master"), true)
 Expect("...by playing it", world.played[1], "b.ogg")
+Expect("...on the channel it was given, not the client's SFX default", world.playedChannels[1], "Master")
 Expect("...and stopping it at once", world.stopped[1], 1)
 Expect("...without leaving a handle behind", probe.handle, nil)
 world.missing["gone.ogg"] = true
-Expect("TestSound says no for a missing file", SU:TestSound({ path = "gone.ogg" }), false)
+Expect("TestSound says no for a missing file", SU:TestSound({ path = "gone.ogg" }, "Master"), false)
 
 ---------------------------------------------------------------- 1.12
 stub.SetClient("1.12")
