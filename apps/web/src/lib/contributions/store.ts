@@ -138,8 +138,8 @@ export async function setContributionNpcKind(
  * setContributionNpc. `meta || excluded.meta` rather than a replace, so nothing the first copy
  * carried is lost; the text is the same by construction (it is in the hash).
  *
- * Written against an `excluded`-shaped source so the upsert below and fillContributionNpc share
- * one rule; the latter aliases its parameters as `excluded`.
+ * Written against an `excluded`-shaped source so the upsert below and fillContributionNpcs share
+ * one rule; the latter aliases its unnested parameters as `excluded`.
  */
 const FILL_NPC_WHEN = `coalesce("contribution"."meta"->>'npc', '') = ''
              and coalesce(excluded."meta"->>'npc', '') <> ''`;
@@ -149,21 +149,28 @@ const FILL_NPC_SET = `"meta" = case when ${FILL_NPC_WHEN}
            "raw" = case when ${FILL_NPC_WHEN} then excluded."raw" else "contribution"."raw" end`;
 
 /**
- * Fill in the speaker of an already-stored line from a resend that names one, without counting
- * the resend as another player: what scripts/backfill-contribution-npcs.mts does with a file
- * a contributor re-gathered after an addon update. Returns whether a row changed.
+ * Fill in the speaker of already-stored lines from resends that name one, without counting a
+ * resend as another player: what scripts/backfill-contribution-npcs.mts does with a file a
+ * contributor re-gathered after an addon update. One statement for the lot, since the script
+ * may run over a tunnel where a round trip per line is minutes. Returns the dedups it changed.
  */
-export async function fillContributionNpc(
-  input: Pick<Submission, "dedup" | "meta" | "raw">,
-): Promise<boolean> {
-  const { rowCount } = await db().query(
+export async function fillContributionNpcs(
+  inputs: Pick<Submission, "dedup" | "meta" | "raw">[],
+): Promise<string[]> {
+  if (inputs.length === 0) return [];
+  const { rows } = await db().query<{ dedup: string }>(
     `update "contribution"
         set ${FILL_NPC_SET}, "updatedAt" = now()
-       from (select $2::jsonb as "meta", $3::text as "raw") as excluded
-      where "contribution"."dedup" = $1 and ${FILL_NPC_WHEN}`,
-    [input.dedup, JSON.stringify(input.meta), input.raw],
+       from unnest($1::text[], $2::jsonb[], $3::text[]) as excluded ("dedup", "meta", "raw")
+      where "contribution"."dedup" = excluded."dedup" and ${FILL_NPC_WHEN}
+      returning "contribution"."dedup"`,
+    [
+      inputs.map((input) => input.dedup),
+      inputs.map((input) => JSON.stringify(input.meta)),
+      inputs.map((input) => input.raw),
+    ],
   );
-  return (rowCount ?? 0) > 0;
+  return rows.map((row) => row.dedup);
 }
 
 export async function createContribution(

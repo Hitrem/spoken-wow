@@ -12,7 +12,7 @@ import {
   acceptedContributions,
   countRecentContributions,
   createContribution,
-  fillContributionNpc,
+  fillContributionNpcs,
   listContributions,
   observationMeta,
   recordContributionHit,
@@ -138,30 +138,35 @@ describe("createContribution", () => {
   });
 });
 
-describe("fillContributionNpc", () => {
+describe("fillContributionNpcs", () => {
   it("fills a row with no NPC without counting the resend", async () => {
     await createContribution(submission({ meta: {}, raw: "first" }));
-    const filled = await fillContributionNpc({
-      dedup: `${dedup}-one`,
-      meta: { npc: "12345 X", kind: "creature" },
-      raw: "second",
-    });
-    expect(filled).toBe(true);
+    const filled = await fillContributionNpcs([
+      { dedup: `${dedup}-one`, meta: { npc: "12345 X", kind: "creature" }, raw: "second" },
+    ]);
+    expect(filled).toEqual([`${dedup}-one`]);
     const [row] = ours(await listContributions("new"));
     expect(row.count).toBe(1);
     expect(row.meta).toEqual({ npc: "12345 X", kind: "creature" });
     expect(row.raw).toBe("second");
   });
 
-  it("leaves a row that already names an NPC, and reports it", async () => {
+  it("returns only the rows it changed", async () => {
     await createContribution(submission());
-    const filled = await fillContributionNpc({ dedup: `${dedup}-one`, meta: { npc: "999 Y" }, raw: "x" });
-    expect(filled).toBe(false);
-    expect(ours(await listContributions("new"))[0].meta.npc).toBe("12345 X");
+    await createContribution(submission({ meta: {}, text: "Kill six.", dedup: `${dedup}-two` }));
+    const filled = await fillContributionNpcs([
+      { dedup: `${dedup}-one`, meta: { npc: "999 Y" }, raw: "x" },
+      { dedup: `${dedup}-two`, meta: { npc: "999 Y" }, raw: "x" },
+      { dedup: `${dedup}-none`, meta: { npc: "1 Z" }, raw: "x" },
+    ]);
+    expect(filled).toEqual([`${dedup}-two`]);
+    const rows = ours(await listContributions("new"));
+    expect(rows.find((row) => row.text === "Kill six.")?.meta.npc).toBe("999 Y");
+    expect(rows.find((row) => row.text !== "Kill six.")?.meta.npc).toBe("12345 X");
   });
 
-  it("does nothing for a line that was never stored", async () => {
-    expect(await fillContributionNpc({ dedup: `${dedup}-none`, meta: { npc: "1 Z" }, raw: "x" })).toBe(false);
+  it("does nothing for an empty list", async () => {
+    expect(await fillContributionNpcs([])).toEqual([]);
   });
 });
 

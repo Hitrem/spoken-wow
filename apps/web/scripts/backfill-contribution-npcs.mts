@@ -9,7 +9,7 @@
  * takes, or a JSON array of { envelope } objects. Every envelope goes through the app's own
  * parseEnvelope and submissionFrom, so its "dedup" is exactly the one intake computed; a row
  * with that dedup and no NPC gets the envelope's npc/kind/model/sex/creature merged into its
- * meta (store.ts's fillContributionNpc), and its speaker is then resolved as intake would have
+ * meta (store.ts's fillContributionNpcs), and its speaker is then resolved as intake would have
  * (lib/npc/resolve.ts). Nothing is inserted and no count moves: a line that was never stored,
  * or that already names an NPC, is only counted in the summary.
  *
@@ -21,7 +21,8 @@ import { readFileSync } from "node:fs";
 import { closeDb, db } from "@/lib/db";
 import { parseEnvelope } from "@/lib/contributions/envelope";
 import { envelopesFromSavedVariables } from "@/lib/contributions/saved-variables";
-import { fillContributionNpc } from "@/lib/contributions/store";
+import type { Submission } from "@/lib/contributions/contributions";
+import { fillContributionNpcs } from "@/lib/contributions/store";
 import { submissionFrom } from "@/lib/contributions/submission";
 import { observedFrom, resolveNpc } from "@/lib/npc/resolve";
 
@@ -56,56 +57,76 @@ const tally = {
   resolved: 0,
   resolveFailed: 0,
 };
-const seen = new Set<string>();
-const observations = new Map<string, ReturnType<typeof observedFrom>>();
 
+/** Progress on stderr, rewritten in place on a terminal so the summary on stdout stays clean. */
+function progress(label: string, done: number, total: number) {
+  if (process.stderr.isTTY) {
+    process.stderr.write(`\r  ${label} ${done}/${total}`);
+    if (done === total) process.stderr.write("\n");
+  } else if (done === total || done % 100 === 0) {
+    process.stderr.write(`  ${label} ${done}/${total}\n`);
+  }
+}
+
+// 1. Parse, locally. The same line in two files (a split upload, or two gatherings) is one row.
+const naming = new Map<string, Submission>();
 for (const file of files) {
-  for (const raw of envelopesIn(file)) {
+  const envelopes = envelopesIn(file);
+  console.error(`read ${envelopes.length} envelopes from ${file}`);
+  for (const raw of envelopes) {
     tally.envelopes += 1;
     const parsed = parseEnvelope(raw);
     const submission = parsed.ok && parsed.value.source === "quests" ? submissionFrom(parsed.value, raw, null) : null;
-    if (!submission) {
-      tally.refused += 1;
-      continue;
-    }
-    // The same line in two files (a split upload, or two gatherings) is one row.
-    if (seen.has(submission.dedup)) continue;
-    seen.add(submission.dedup);
-    if (!submission.meta.npc) {
-      tally.noNpc += 1;
-      continue;
-    }
+    if (!submission) tally.refused += 1;
+    else if (!submission.meta.npc) tally.noNpc += 1;
+    else naming.set(submission.dedup, submission);
+  }
+}
 
-    if (!dryRun && (await fillContributionNpc(submission))) {
-      tally.filled += 1;
-    } else {
-      // Why it was not filled -- or, on a dry run, whether it would be.
-      const { rows } = await db().query<{ npc: string | null }>(
-        `select "meta"->>'npc' as "npc" from "contribution" where "dedup" = $1`,
-        [submission.dedup],
-      );
-      if (rows.length === 0) tally.notStored += 1;
-      else if (rows[0].npc) tally.alreadyNamed += 1;
-      else tally.filled += 1;
-      continue;
-    }
+// 2. Where each stands, in one query: a round trip per line is minutes over a tunnel.
+console.error(`looking up ${naming.size} lines…`);
+const { rows } = await db().query<{ dedup: string; npc: string | null }>(
+  `select "dedup", "meta"->>'npc' as "npc" from "contribution" where "dedup" = any($1::text[])`,
+  [[...naming.keys()]],
+);
+const stored = new Map(rows.map((row) => [row.dedup, row.npc]));
+const toFill: Submission[] = [];
+for (const [dedup, submission] of naming) {
+  if (!stored.has(dedup)) tally.notStored += 1;
+  else if (stored.get(dedup)) tally.alreadyNamed += 1;
+  else toFill.push(submission);
+}
 
+// 3. Fill, in one statement. fillContributionNpcs re-checks each row, so a row named between
+// the lookup and here is left alone and simply not counted.
+let filled = toFill;
+if (!dryRun) {
+  console.error(`filling ${toFill.length} lines…`);
+  const changed = new Set(await fillContributionNpcs(toFill));
+  filled = toFill.filter((submission) => changed.has(submission.dedup));
+  tally.alreadyNamed += toFill.length - filled.length;
+}
+tally.filled = filled.length;
+
+// 4. Resolve each speaker once per distinct observation, as a batch upload does. This is the
+// slow part -- each reads the corpus -- hence the progress.
+if (!dryRun) {
+  const observations = new Map<string, ReturnType<typeof observedFrom>>();
+  for (const submission of filled) {
     // As storeSubmission does: build lives in its own column, so it goes back in for observedFrom.
     const observed = observedFrom({ ...submission.meta, build: submission.build });
     observations.set(JSON.stringify(observed), observed);
   }
-}
-
-// Once per distinct observation, as a batch upload does -- resolution reads the corpus.
-if (!dryRun) {
+  let done = 0;
   for (const observed of observations.values()) {
     try {
       await resolveNpc(observed);
       tally.resolved += 1;
     } catch (error) {
       tally.resolveFailed += 1;
-      console.error(`could not resolve ${observed.npcKind} ${observed.npcId}:`, error);
+      console.error(`\ncould not resolve ${observed.npcKind} ${observed.npcId}:`, error);
     }
+    progress("resolving speakers", ++done, observations.size);
   }
 }
 
