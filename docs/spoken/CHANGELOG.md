@@ -49,7 +49,7 @@
   `SavedVariables` folder, which you upload at spoken.rusty.one/contribute whenever you like.
   Nothing leaves your game until you do. `/spoken share` shows the steps again. Gathering
   stops at the 2,000 most recent lines.
-- **A new Contributions section in the settings**: **Gather missing lines in the background**
+- **A new Contributions section in the settings**: **Gather missing lines**
   turns gathering off, **How to send them** shows the steps, **Clear gathered lines** empties
   the file once it has been sent, and **Hide the Contribute buttons** turns every one of those
   buttons off in one place.

@@ -155,7 +155,7 @@ L.OPT_REPORT = "Report"
 L.OPT_CONTRIBUTE_TIP_LINE = "Spoken Quests doesn't have this line"
 L.OPT_CONTRIBUTE_TIP_QUEST = "Spoken Quests doesn't have this quest"
 L.OPT_CONTRIBUTE_TIP_SHARE = "Contribute your data by sharing data from your client"
-L.OPT_GATHER = "Gather missing lines in the background"
+L.OPT_GATHER = "Gather missing lines"
 L.OPT_GATHER_TIP = "Keep every quest dialogue Spoken has no voice for, so you can send them all at once. Nothing leaves your game until you upload it yourself."
 L.OPT_REPORT_COPY = "Spoken Quests|n|nCopy this address and open it in your browser to report this line."
 

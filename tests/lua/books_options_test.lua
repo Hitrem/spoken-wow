@@ -83,7 +83,7 @@ Expect("...and unticking it is the same as /spb autoplay", SpokenBooksDB.autopla
 SpokenBooksDB.autoplay = true
 
 ---------------------------------------------------------------- gathering in the background
-local gather = Labelled("Gather missing pages in the background")
+local gather = Labelled("Gather missing pages")
 Expect("the gather switch is on the panel", gather ~= nil, true)
 Expect("...reading the player on, gathering by default", gather.checked, true)
 gather:SetChecked(false)

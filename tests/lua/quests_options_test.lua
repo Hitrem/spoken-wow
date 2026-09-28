@@ -134,7 +134,7 @@ Expect("...with the ticked entry moved", stub.OpenDropdown(greetings)[4].checked
 -- keeps, and this panel answers whether it is on without opening a second one.
 local gather
 for _, child in ipairs(SettingsPanel.panel.content.children) do
-    if type(child.text) == "table" and child.text.text == "Gather missing lines in the background" then
+    if type(child.text) == "table" and child.text.text == "Gather missing lines" then
         gather = child
     end
 end
