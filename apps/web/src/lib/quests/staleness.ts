@@ -73,7 +73,7 @@ export async function staleFiles(
     // otherwise every dwarf line reads as stale forever rather than once.
     const pronounced = sentText(text, lang, line.playerGender);
     // By the provider that made the take: what it would be sent now is its question.
-    const spoken = SHAPE[row.provider](pronounced, raceTags[line.race]);
+    const spoken = SHAPE[row.provider](pronounced, raceTags[line.race], raceTags);
     if (spokenHash(spoken) !== row.spokenHash) {
       stale.add(row.file);
     }

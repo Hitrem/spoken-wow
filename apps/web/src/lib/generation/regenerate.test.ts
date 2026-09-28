@@ -472,6 +472,40 @@ describe("a line whose spoken text has been rewritten", () => {
     expect(rows[0].settings).toEqual({ stability: expect.any(Number) });
   });
 
+  it("hands a marked stretch to the slot it names, with that slot's accent", async () => {
+    const { options, calls } = stub();
+    await writeOverride(
+      await fileFor(SOLO),
+      SOLO,
+      "A voice crackles.\n\n_dwarf-male-grim_\nHiccup! <Static.> Ho Ho!",
+      null,
+    );
+
+    const result = await regenerate(SOLO, options);
+    expect(result.ok).toBe(true);
+
+    const dialogue = calls.find((call) => call.url.endsWith("/v1/text-to-dialogue"));
+    const body = dialogue!.body as { inputs: { text: string; voice_id: string }[] };
+    expect(body.inputs).toEqual([
+      { text: `${LEAD_IN}A voice crackles.`, voice_id: "voice-human-male-standard" },
+      { text: "[Scottish accent] Hiccup!", voice_id: "voice-dwarf-male-grim" },
+      { text: "Static.", voice_id: "voice-narrator-male" },
+      { text: "[Scottish accent] Ho Ho!", voice_id: "voice-dwarf-male-grim" },
+    ]);
+  });
+
+  it("refuses a marker naming a slot that does not exist, before spending anything", async () => {
+    const { options, calls } = stub();
+    await writeOverride(await fileFor(SOLO), SOLO, "Hi. _goblin-male-zany_ Wizbang here!", null);
+
+    const result = await regenerate(SOLO, options);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failure.message).toContain("goblin-male-zany");
+    expect(calls.some((call) => call.url.includes("/v1/text-to"))).toBe(false);
+  });
+
   it("leaves an ordinary line on text-to-speech", async () => {
     const { options, calls } = stub();
     await regenerate(SOLO, options);
