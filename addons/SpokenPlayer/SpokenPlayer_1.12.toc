@@ -21,3 +21,4 @@
 
 1.12\embeds.xml
 addon.xml
+1.12\Transcript.lua

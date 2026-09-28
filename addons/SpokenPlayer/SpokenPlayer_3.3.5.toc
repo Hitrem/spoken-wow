@@ -21,3 +21,4 @@
 
 3.3.5\embeds.xml
 addon.xml
+Transcript.xml

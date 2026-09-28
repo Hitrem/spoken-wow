@@ -216,7 +216,7 @@ function Addon:Enable()
         elseif command == "transcript reset" then
             Transcript:Reset()
         elseif command == "transcript 1" or command == "transcript 2" then
-            Addon.db.profile.Transcript.Lines = tonumber(command:sub(-1))
+            Addon.db.profile.Transcript.Lines = tonumber(string.sub(command, -1))
             Transcript:RefreshConfig()
         elseif command == "options" or command == "settings" then
             Options:Open()

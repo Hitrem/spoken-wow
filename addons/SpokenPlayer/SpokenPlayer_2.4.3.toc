@@ -21,3 +21,4 @@
 
 2.4.3\embeds.xml
 addon.xml
+Transcript.xml
