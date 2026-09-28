@@ -12,6 +12,7 @@ import {
   acceptedContributions,
   countRecentContributions,
   createContribution,
+  fillContributionNpc,
   listContributions,
   observationMeta,
   recordContributionHit,
@@ -115,6 +116,52 @@ describe("createContribution", () => {
     await createContribution(submission());
     await createContribution(submission({ text: "Kill six.", dedup: `${dedup}-two` }));
     expect(ours(await listContributions("new"))).toHaveLength(2);
+  });
+
+  it("fills in the NPC a first copy lacked when the same line comes back naming one", async () => {
+    await createContribution(submission({ meta: { event: "accept" }, raw: "first" }));
+    await createContribution(
+      submission({ meta: { npc: "12345 X", kind: "creature", model: "968705" }, raw: "second" }),
+    );
+    const [row] = ours(await listContributions("new"));
+    expect(row.count).toBe(2);
+    expect(row.meta).toEqual({ event: "accept", npc: "12345 X", kind: "creature", model: "968705" });
+    expect(row.raw).toBe("second");
+  });
+
+  it("keeps the NPC a first copy named over a resend naming another", async () => {
+    await createContribution(submission({ raw: "first" }));
+    await createContribution(submission({ meta: { npc: "999 Y" }, raw: "second" }));
+    const [row] = ours(await listContributions("new"));
+    expect(row.meta.npc).toBe("12345 X");
+    expect(row.raw).toBe("first");
+  });
+});
+
+describe("fillContributionNpc", () => {
+  it("fills a row with no NPC without counting the resend", async () => {
+    await createContribution(submission({ meta: {}, raw: "first" }));
+    const filled = await fillContributionNpc({
+      dedup: `${dedup}-one`,
+      meta: { npc: "12345 X", kind: "creature" },
+      raw: "second",
+    });
+    expect(filled).toBe(true);
+    const [row] = ours(await listContributions("new"));
+    expect(row.count).toBe(1);
+    expect(row.meta).toEqual({ npc: "12345 X", kind: "creature" });
+    expect(row.raw).toBe("second");
+  });
+
+  it("leaves a row that already names an NPC, and reports it", async () => {
+    await createContribution(submission());
+    const filled = await fillContributionNpc({ dedup: `${dedup}-one`, meta: { npc: "999 Y" }, raw: "x" });
+    expect(filled).toBe(false);
+    expect(ours(await listContributions("new"))[0].meta.npc).toBe("12345 X");
+  });
+
+  it("does nothing for a line that was never stored", async () => {
+    expect(await fillContributionNpc({ dedup: `${dedup}-none`, meta: { npc: "1 Z" }, raw: "x" })).toBe(false);
   });
 });
 

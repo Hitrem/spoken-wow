@@ -128,6 +128,44 @@ export async function setContributionNpcKind(
   return true;
 }
 
+/**
+ * The same line sent again, now naming its speaker, fills in the speaker the first copy lacked.
+ *
+ * The triage key is quest and moment, not NPC, so an envelope from an addon that could not see
+ * the NPC and a later one that could hash to the same "dedup" -- and without this the second is
+ * only a count, its NPC dropped on the floor. Only ever fills: a row whose envelope already
+ * named an NPC keeps it, the client's own observation standing as it does in
+ * setContributionNpc. `meta || excluded.meta` rather than a replace, so nothing the first copy
+ * carried is lost; the text is the same by construction (it is in the hash).
+ *
+ * Written against an `excluded`-shaped source so the upsert below and fillContributionNpc share
+ * one rule; the latter aliases its parameters as `excluded`.
+ */
+const FILL_NPC_WHEN = `coalesce("contribution"."meta"->>'npc', '') = ''
+             and coalesce(excluded."meta"->>'npc', '') <> ''`;
+const FILL_NPC_SET = `"meta" = case when ${FILL_NPC_WHEN}
+                        then "contribution"."meta" || excluded."meta"
+                        else "contribution"."meta" end,
+           "raw" = case when ${FILL_NPC_WHEN} then excluded."raw" else "contribution"."raw" end`;
+
+/**
+ * Fill in the speaker of an already-stored line from a resend that names one, without counting
+ * the resend as another player: what scripts/backfill-contribution-npcs.mts does with a file
+ * a contributor re-gathered after an addon update. Returns whether a row changed.
+ */
+export async function fillContributionNpc(
+  input: Pick<Submission, "dedup" | "meta" | "raw">,
+): Promise<boolean> {
+  const { rowCount } = await db().query(
+    `update "contribution"
+        set ${FILL_NPC_SET}, "updatedAt" = now()
+       from (select $2::jsonb as "meta", $3::text as "raw") as excluded
+      where "contribution"."dedup" = $1 and ${FILL_NPC_WHEN}`,
+    [input.dedup, JSON.stringify(input.meta), input.raw],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 export async function createContribution(
   input: Submission & {
     body: string | null;
@@ -145,6 +183,7 @@ export async function createContribution(
      values ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13)
      on conflict ("dedup") do update
        set "count" = "contribution"."count" + 1,
+           ${FILL_NPC_SET},
            "updatedAt" = now()`,
     [
       input.source,
