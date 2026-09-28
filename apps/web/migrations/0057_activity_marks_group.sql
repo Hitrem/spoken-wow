@@ -11,3 +11,10 @@
 
 create index "activity_marks_idx" on "activity" (("detail"->>'groupId'))
   where "kind" = 'take.acked';
+
+-- One Stop is folded the same way. It stops every batch with work waiting, one per
+-- Regenerate click, so a press was a screenful of "batch.stopped" rows; it now writes one
+-- "queue.stopped" row per language and the batches' rows carry its groupId.
+
+create index "activity_stops_idx" on "activity" (("detail"->>'groupId'))
+  where "kind" = 'batch.stopped';

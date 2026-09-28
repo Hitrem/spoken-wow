@@ -1,6 +1,7 @@
 /**
  * What one group row lists when it is opened on the activity page: the takes a queue batch
- * cut, or the marks one click cleared (`kind=marks`).
+ * cut, the marks one click cleared (`kind=marks`), or the batches one Stop stopped
+ * (`kind=stops`).
  *
  * Fetched on demand rather than sent with the page: the page folds a group into one row
  * precisely because it can be hundreds of rows, and most groups are never opened.
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
   }
   const kind = params.get("kind") ?? "batch";
   if (!isGroup(kind)) {
-    return Response.json({ error: "kind must be batch or marks" }, { status: 400 });
+    return Response.json({ error: "kind must be batch, marks or stops" }, { status: 400 });
   }
   const from = params.get("from") ?? undefined;
   const to = params.get("to") ?? undefined;

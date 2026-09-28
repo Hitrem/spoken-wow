@@ -75,6 +75,11 @@ function num(value: unknown): number | null {
   return typeof value === "number" ? value : null;
 }
 
+/** "1 line", "2 lines". */
+function plural(n: number, noun: string, nouns = `${noun}s`): string {
+  return `${n.toLocaleString()} ${n === 1 ? noun : nouns}`;
+}
+
 /** "a → b", or whichever half is known: rows backfilled from older tables carry neither. */
 function change(before: string | null, after: string | null): string | null {
   if (before && after) return `${before} → ${after}`;
@@ -108,20 +113,24 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
       return { what: "marked the audio fine after a pronunciation change", quote: row.lineId ? null : row.subject };
     case "marks.cleared":
       return {
-        what: `marked ${num(d.count)?.toLocaleString() ?? "?"} files fine after a pronunciation change`,
+        what: `marked ${num(d.count) === null ? "? files" : plural(num(d.count)!, "file")} fine after a pronunciation change`,
         quote: null,
       };
     case "batch.queued":
       return {
-        what: `queued ${num(d.count)?.toLocaleString() ?? "?"} lines for regeneration`,
+        what: `queued ${num(d.count) === null ? "? lines" : plural(num(d.count)!, "line")} for regeneration`,
         quote: str(d.label),
       };
     case "batch.stopped":
       return {
-        what: num(d.cancelled)
-          ? `stopped a batch, cancelling ${num(d.cancelled)!.toLocaleString()} lines`
-          : "stopped a batch",
-        quote: str(d.reason) ?? str(d.label),
+        what: num(d.cancelled) ? `stopped a batch, cancelling ${plural(num(d.cancelled)!, "line")}` : "stopped a batch",
+        // Under a Stop's row the reason is already on the press, so each batch names itself.
+        quote: str(d.groupId) ? str(d.label) : (str(d.reason) ?? str(d.label)),
+      };
+    case "queue.stopped":
+      return {
+        what: `stopped ${plural(num(d.batches) ?? 0, "batch", "batches")}, cancelling ${plural(num(d.cancelled) ?? 0, "line")}`,
+        quote: str(d.reason),
       };
     case "queue.paused":
       return { what: "paused the regeneration queue", quote: null };
@@ -224,8 +233,8 @@ function target(row: ActivityRow): { href: string; label: string } | null {
 }
 
 /**
- * The rows a row opens onto, if it folds any: a queue batch's takes, or the files one clear
- * of marks covered. `count` is what the server counted for the page's day range.
+ * The rows a row opens onto, if it folds any: a queue batch's takes, the files one clear
+ * of marks covered, or the batches one Stop stopped. `count` is what the server counted for the page's day range.
  */
 function groupOf(row: ActivityRow): { kind: Group; id: string; count: number; noun: [string, string] } | null {
   if (row.kind === "batch.queued") {
@@ -235,6 +244,10 @@ function groupOf(row: ActivityRow): { kind: Group; id: string; count: number; no
   if (row.kind === "marks.cleared") {
     const id = str(row.detail.groupId);
     return id ? { kind: "marks", id, count: num(row.detail.count) ?? 0, noun: ["file", "files"] } : null;
+  }
+  if (row.kind === "queue.stopped") {
+    const id = str(row.detail.groupId);
+    return id ? { kind: "stops", id, count: num(row.detail.batches) ?? 0, noun: ["batch", "batches"] } : null;
   }
   return null;
 }
@@ -478,7 +491,17 @@ export default function ActivityTable({
                           {inner.map((take) => (
                             <li key={take.id} className="flex items-center gap-2 py-0.5">
                               <span className="text-muted-foreground w-12 tabular-nums">{time(take.at)}</span>
-                              {take.source && take.lineId ? (
+                              {take.kind === "batch.stopped" ? (
+                                <span className="truncate">
+                                  {str(take.detail.label) ?? "a batch"}
+                                  {num(take.detail.cancelled) !== null && (
+                                    <span className="text-muted-foreground">
+                                      {" "}
+                                      · {plural(num(take.detail.cancelled)!, "line")} cancelled
+                                    </span>
+                                  )}
+                                </span>
+                              ) : take.source && take.lineId ? (
                                 <Link
                                   href={explorerHref(take.source, take.lineId)}
                                   className="truncate font-mono underline-offset-2 hover:underline"

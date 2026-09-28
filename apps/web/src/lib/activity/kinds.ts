@@ -29,7 +29,15 @@ export type ActivityDetail = {
   "take.acked": { groupId?: string };
   "marks.cleared": { groupId: string; count: number };
   "batch.queued": { batchId: string; label?: string | null; count: number };
-  "batch.stopped": { batchId?: string; label?: string | null; reason?: string | null; cancelled?: number };
+  /** `groupId` when one Stop stopped several batches; the page folds it under that press. */
+  "batch.stopped": {
+    batchId?: string;
+    label?: string | null;
+    reason?: string | null;
+    cancelled?: number;
+    groupId?: string;
+  };
+  "queue.stopped": { groupId: string; batches: number; cancelled: number; reason?: string | null };
   "queue.paused": Record<string, never>;
   "queue.resumed": Record<string, never>;
 

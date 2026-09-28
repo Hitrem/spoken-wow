@@ -150,6 +150,29 @@ describe("listActivity", () => {
       "b.mp3",
     ]);
   });
+
+  it("folds the batches one Stop stopped under the press", async () => {
+    const groupId = randomUUID();
+    const [a, b, alone] = [randomUUID(), randomUUID(), randomUUID()];
+    await recordActivities([
+      {
+        kind: "queue.stopped",
+        lang: "deDE",
+        source: "quests",
+        actorId: actor,
+        detail: { groupId, batches: 2, cancelled: 3, reason: "Stopped by Tester" },
+      },
+      { kind: "batch.stopped", lang: "deDE", source: "quests", actorId: actor, subject: a, detail: { batchId: a, cancelled: 1, groupId } },
+      { kind: "batch.stopped", lang: "deDE", source: "quests", actorId: actor, subject: b, detail: { batchId: b, cancelled: 2, groupId } },
+    ]);
+    await recordActivity({ kind: "batch.stopped", lang: "deDE", actorId: actor, subject: alone, detail: { batchId: alone } });
+
+    const { rows } = await listActivity({ lang: "deDE", actorId: actor });
+
+    expect(rows.map((row) => row.kind).sort()).toEqual(["batch.stopped", "queue.stopped"]);
+    expect(rows.find((row) => row.kind === "batch.stopped")?.subject).toBe(alone);
+    expect((await groupRows("deDE", "stops", groupId)).map((row) => row.subject).sort()).toEqual([a, b].sort());
+  });
 });
 
 /**

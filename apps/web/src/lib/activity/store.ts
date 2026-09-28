@@ -146,9 +146,13 @@ const JOINS = `left join "user" u on u."id" = a."actorId"
  */
 const BATCH_REACH = "30 days";
 
-/** The rows a group row folds away: a batch's takes, and the marks one click cleared. */
+/**
+ * The rows a group row folds away: a batch's takes, the marks one click cleared, and the
+ * batches one Stop stopped.
+ */
 const FOLDED = `(a."kind" = 'take.generated' and a."detail" ? 'batchId')
-                or (a."kind" = 'take.acked' and a."detail" ? 'groupId')`;
+                or (a."kind" = 'take.acked' and a."detail" ? 'groupId')
+                or (a."kind" = 'batch.stopped' and a."detail" ? 'groupId')`;
 
 type Row = Omit<ActivityRow, "at"> & { at: Date; cursorAt: string };
 
@@ -159,7 +163,8 @@ type Row = Omit<ActivityRow, "at"> & { at: Date; cursorAt: string };
  * TAKES A BATCH CUT ARE LEFT OUT and counted on the batch's row instead. A batch of three
  * hundred lines would otherwise be three hundred rows, pushing everything else that
  * happened that day off the page; groupRows lists them when the row is opened. Marks
- * cleared together are folded under their click's row the same way, for the same reason.
+ * cleared together, and batches stopped by one Stop, are folded under their click's row
+ * the same way, for the same reason.
  *
  * A batch keeps the time it was queued, so a day filter that finds it by a take cut that
  * day still sorts it under the day it was queued: moving it would break the keyset order.
@@ -243,16 +248,17 @@ export async function listActivity(
   };
 }
 
-/** The two kinds of row that open onto others, and the rows each one folds away. */
+/** The kinds of row that open onto others, and the rows each one folds away. */
 export const GROUPS = {
   batch: { kind: "take.generated", key: "batchId" },
   marks: { kind: "take.acked", key: "groupId" },
+  stops: { kind: "batch.stopped", key: "groupId" },
 } as const;
 export type Group = keyof typeof GROUPS;
 
 /**
- * What one group row lists when opened, newest first: a queue batch's takes, or the marks
- * one click cleared. Given the page's day range, only what happened in it, which is what
+ * What one group row lists when opened, newest first: a queue batch's takes, the marks
+ * one click cleared, or the batches one Stop stopped. Given the page's day range, only what happened in it, which is what
  * the row counted.
  */
 export async function groupRows(
