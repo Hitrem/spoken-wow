@@ -35,6 +35,29 @@ import { cn, timecode } from "@/lib/utils";
  */
 const RATES = [0.75, 1, 1.25, 1.5, 2];
 
+// The volume outlives the page: every explorer mounts its own element, and a level set on
+// quests should still be the level on zones. Storage can be absent or throw (private windows,
+// blocked site data), in which case the element's own default of full volume stands.
+const VOLUME_KEY = "spoken:volume";
+
+function storedVolume(): number | null {
+  try {
+    const raw = window.localStorage.getItem(VOLUME_KEY);
+    const value = Number(raw);
+    return raw !== null && value >= 0 && value <= 1 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeVolume(value: number) {
+  try {
+    window.localStorage.setItem(VOLUME_KEY, String(value));
+  } catch {
+    // Not remembered, and nothing else depends on it.
+  }
+}
+
 type Props = {
   /** The audio to play, or undefined when nothing is selected. */
   src: string | undefined;
@@ -72,6 +95,7 @@ export default function AudioPlayer({
   const [duration, setDuration] = useState(0);
   const [rate, setRate] = useState(1);
   const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
   // While dragging, the slider follows the pointer rather than timeupdate events. Without
   // this the thumb fights the playhead and snaps back every 250ms.
   const [scrubbing, setScrubbing] = useState<number | null>(null);
@@ -101,7 +125,10 @@ export default function AudioPlayer({
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
     const onRate = () => setRate(el.playbackRate);
-    const onVolume = () => setMuted(el.muted);
+    const onVolume = () => {
+      setMuted(el.muted);
+      setVolume(el.volume);
+    };
     // Not declared as onError on the element: a media element's error event does not
     // bubble, so React's delegation never sees it.
     const onError = fail;
@@ -115,6 +142,10 @@ export default function AudioPlayer({
     el.addEventListener("ratechange", onRate);
     el.addEventListener("volumechange", onVolume);
     el.addEventListener("error", onError);
+
+    const saved = storedVolume();
+    if (saved !== null) el.volume = saved;
+
     return () => {
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("loadedmetadata", onMeta);
@@ -149,6 +180,16 @@ export default function AudioPlayer({
     const el = local.current;
     if (!el) return;
     el.playbackRate = RATES[(RATES.indexOf(el.playbackRate) + 1) % RATES.length] ?? 1;
+  };
+
+  const changeVolume = (value: number) => {
+    const el = local.current;
+    if (!el) return;
+    el.volume = value;
+    // Dragging the level up is asking to hear it, so it lifts a mute rather than moving a
+    // slider that stays silent.
+    el.muted = value === 0;
+    storeVolume(value);
   };
 
   const position = scrubbing ?? time;
@@ -226,14 +267,28 @@ export default function AudioPlayer({
           size="icon"
           variant="ghost"
           onClick={() => {
-            if (local.current) local.current.muted = !local.current.muted;
+            const el = local.current;
+            if (!el) return;
+            // Unmuting a level dragged to zero would still be silence, so it comes back full.
+            if (!el.muted && el.volume > 0) el.muted = true;
+            else changeVolume(el.volume || 1);
           }}
           disabled={!src}
-          aria-label={muted ? "Unmute" : "Mute"}
+          aria-label={muted || volume === 0 ? "Unmute" : "Mute"}
           className="shrink-0"
         >
-          {muted ? <VolumeX /> : <Volume2 />}
+          {muted || volume === 0 ? <VolumeX /> : <Volume2 />}
         </Button>
+        <Slider
+          value={[muted ? 0 : volume]}
+          max={1}
+          step={0.01}
+          aria-label="Volume"
+          // Not disabled with nothing playing: the level is worth setting before the first
+          // line, and it is remembered either way. Same enlarged pointer target as the seek bar.
+          className="-my-2 w-20 shrink-0 cursor-pointer py-2"
+          onValueChange={([value]) => changeVolume(value ?? 0)}
+        />
 
         {/* An anchor, not a fetch: the file is same-origin, so `download` renames it on the
             way out and the browser handles the save. With nothing playing there is no href to
