@@ -102,17 +102,6 @@ function SpokenBooks:SetupOptions()
 		SpokenBooks:Print(L.OPT_FORGET_DONE_FMT:format(count, count == 1 and "" or "s"))
 	end, L.OPT_FORGET_TIP)
 
-	-- The player's switch, shown here too: gathering is per addon only in what it
-	-- keeps, and a reader should see without opening a second panel whether it is on.
-	-- Absent where no player offers it, rather than a section with no switch in it.
-	if SpokenBooks:GatherAvailable() then
-		layout:Section(L.CONTRIBUTE)
-		layout:Checkbox(L.OPT_GATHER,
-			L.OPT_GATHER_TIP,
-			function() return Spoken.Gather:IsEnabled() end,
-			function(value) Spoken.Gather:SetEnabled(value) end)
-	end
-
 	-- Derived rather than written as a number: a hardcoded height is a number nobody updates
 	-- when a row is added, and what that produces is a section you cannot scroll to.
 	scroller:SetContentHeight(layout:Height() + 40)

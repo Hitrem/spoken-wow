@@ -21,7 +21,7 @@ for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader",
 end
 B:InitDB()
 -- The player the gather switch belongs to: faked, since this suite boots Books alone.
--- Without it the Contribute section stays off the panel, as it does in-game.
+-- The /spb gather shortcut and the status line read it.
 _G.Spoken = { Gather = { _on = nil,
     IsEnabled = function(self) if self._on == nil then return true end return self._on end,
     SetEnabled = function(self, v) self._on = v and true or false end } }
@@ -51,8 +51,8 @@ for _, child in ipairs(content.children) do
 end
 
 Expect("every section is there", table.concat(headings, "|"),
-    "Reading|Language|What this character has read|Contribute")
-Expect("every switch has a row", table.getn(checkboxes), 4)
+    "Reading|Language|What this character has read")
+Expect("every switch has a row", table.getn(checkboxes), 3)
 Expect("...and the record has its button", table.getn(buttons), 1)
 
 local function Labelled(text)
@@ -82,18 +82,14 @@ autoplay.scripts.OnClick(autoplay)
 Expect("...and unticking it is the same as /spb autoplay", SpokenBooksDB.autoplay, false)
 SpokenBooksDB.autoplay = true
 
----------------------------------------------------------------- gathering in the background
-local gather = Labelled("Gather missing pages")
-Expect("the gather switch is on the panel", gather ~= nil, true)
-Expect("...reading the player on, gathering by default", gather.checked, true)
-gather:SetChecked(false)
-gather.scripts.OnClick(gather)
-Expect("unticking it opts out", _G.Spoken.Gather._on, false)
-
+---------------------------------------------------------------- the gather switch stays in the player's settings
+-- The switch is the player's alone: quests and books both feed the one store, so a
+-- mirror here could only ever repeat it -- a reader cannot have pages off and lines on.
+-- Only the /spb gather shortcut still reaches the player's switch from here.
 SlashCmdList["SPOKENBOOKS"]("gather")
-Expect("...and /spb gather toggles it back on", _G.Spoken.Gather._on, true)
+Expect("/spb gather turns gathering off", _G.Spoken.Gather._on, false)
 SlashCmdList["SPOKENBOOKS"]("gather")
-Expect("...and off again", _G.Spoken.Gather._on, false)
+Expect("...and toggles it back on", _G.Spoken.Gather._on, true)
 
 ---------------------------------------------------------------- forgetting what was read
 SpokenBooksCharDB.read = { ["Hillsbrad Town Registry"] = true, ["Jitters' Journal"] = true }
