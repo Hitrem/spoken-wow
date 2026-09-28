@@ -19,8 +19,8 @@ import Link from "@/components/LocaleLink";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePendingPush } from "@/components/usePendingPush";
-import { CATEGORIES, categoryOf, type Category } from "@/lib/activity/kinds";
-import type { ActivityRow, Group } from "@/lib/activity/store";
+import { CATEGORIES, categoryOf, FOLDS, type Category, type Group } from "@/lib/activity/kinds";
+import type { ActivityRow } from "@/lib/activity/store";
 import { usd } from "@/lib/generation/money";
 import { isProvider, PROVIDER_NAME } from "@/lib/generation/providers";
 import { localeHref, withLang } from "@/lib/lang";
@@ -75,9 +75,9 @@ function num(value: unknown): number | null {
   return typeof value === "number" ? value : null;
 }
 
-/** "1 line", "2 lines". */
-function plural(n: number, noun: string, nouns = `${noun}s`): string {
-  return `${n.toLocaleString()} ${n === 1 ? noun : nouns}`;
+/** "1 line", "2 lines", or "? lines" for a count the row does not carry. */
+function plural(n: number | null, noun: string, nouns = `${noun}s`): string {
+  return `${n === null ? "?" : n.toLocaleString()} ${n === 1 ? noun : nouns}`;
 }
 
 /** "a → b", or whichever half is known: rows backfilled from older tables carry neither. */
@@ -113,23 +113,22 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
       return { what: "marked the audio fine after a pronunciation change", quote: row.lineId ? null : row.subject };
     case "marks.cleared":
       return {
-        what: `marked ${num(d.count) === null ? "? files" : plural(num(d.count)!, "file")} fine after a pronunciation change`,
+        what: `marked ${plural(num(d.count), "file")} fine after a pronunciation change`,
         quote: null,
       };
     case "batch.queued":
       return {
-        what: `queued ${num(d.count) === null ? "? lines" : plural(num(d.count)!, "line")} for regeneration`,
+        what: `queued ${plural(num(d.count), "line")} for regeneration`,
         quote: str(d.label),
       };
     case "batch.stopped":
       return {
-        what: num(d.cancelled) ? `stopped a batch, cancelling ${plural(num(d.cancelled)!, "line")}` : "stopped a batch",
-        // Under a Stop's row the reason is already on the press, so each batch names itself.
-        quote: str(d.groupId) ? str(d.label) : (str(d.reason) ?? str(d.label)),
+        what: num(d.cancelled) ? `stopped a batch, cancelling ${plural(num(d.cancelled), "line")}` : "stopped a batch",
+        quote: str(d.reason) ?? str(d.label),
       };
     case "queue.stopped":
       return {
-        what: `stopped ${plural(num(d.batches) ?? 0, "batch", "batches")}, cancelling ${plural(num(d.cancelled) ?? 0, "line")}`,
+        what: `stopped ${plural(num(d.batches), "batch", "batches")}, cancelling ${plural(num(d.cancelled), "line")}`,
         quote: str(d.reason),
       };
     case "queue.paused":
@@ -232,24 +231,20 @@ function target(row: ActivityRow): { href: string; label: string } | null {
   return null;
 }
 
+const FOLD_OF = new Map(
+  (Object.entries(FOLDS) as [Group, (typeof FOLDS)[Group]][]).map(([kind, fold]) => [fold.parent as string, { kind, ...fold }]),
+);
+
 /**
- * The rows a row opens onto, if it folds any: a queue batch's takes, the files one clear
- * of marks covered, or the batches one Stop stopped. `count` is what the server counted for the page's day range.
+ * The rows a row opens onto, if it folds any (FOLDS). For a batch, `count` is what the
+ * server counted for the page's day range.
  */
-function groupOf(row: ActivityRow): { kind: Group; id: string; count: number; noun: [string, string] } | null {
-  if (row.kind === "batch.queued") {
-    const id = str(row.detail.batchId);
-    return id ? { kind: "batch", id, count: row.takes ?? 0, noun: ["take", "takes"] } : null;
-  }
-  if (row.kind === "marks.cleared") {
-    const id = str(row.detail.groupId);
-    return id ? { kind: "marks", id, count: num(row.detail.count) ?? 0, noun: ["file", "files"] } : null;
-  }
-  if (row.kind === "queue.stopped") {
-    const id = str(row.detail.groupId);
-    return id ? { kind: "stops", id, count: num(row.detail.batches) ?? 0, noun: ["batch", "batches"] } : null;
-  }
-  return null;
+function groupOf(row: ActivityRow): { kind: Group; id: string; count: number; noun: readonly [string, string] } | null {
+  const fold = FOLD_OF.get(row.kind);
+  const id = fold && str(row.detail[fold.key]);
+  if (!fold || !id) return null;
+  const count = fold.count === null ? row.takes : num(row.detail[fold.count]);
+  return { kind: fold.kind, id, count: count ?? 0, noun: fold.noun };
 }
 
 /** The takes a row lets you hear: the new one, and for a restore the one it replaced. */
@@ -343,10 +338,12 @@ export default function ActivityTable({
     push(localeHref(lang, `/activity${params.size ? `?${params}` : ""}`));
   }
 
+  const keyOf = (group: { kind: Group; id: string }) => `${group.kind}:${group.id}:${rangeKey}`;
+
   async function toggleGroup(row: ActivityRow) {
     const group = groupOf(row);
     if (!group) return;
-    const key = `${group.kind}:${group.id}:${rangeKey}`;
+    const key = keyOf(group);
     const opening = open !== row.id;
     setOpen(opening ? row.id : null);
     // A failed load is tried again on the next open; one still in flight is not.
@@ -469,7 +466,7 @@ export default function ActivityTable({
                         onClick={() => void toggleGroup(row)}
                       >
                         {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-                        {group.count.toLocaleString()} {group.noun[group.count === 1 ? 0 : 1]}
+                        {plural(group.count, ...group.noun)}
                       </Button>
                     )}
                   </td>
@@ -477,7 +474,7 @@ export default function ActivityTable({
               );
 
               if (expanded && group) {
-                const inner = groups[`${group.kind}:${group.id}:${rangeKey}`];
+                const inner = groups[keyOf(group)];
                 out.push(
                   <tr key={`${row.id}-takes`}>
                     <td />
@@ -497,7 +494,7 @@ export default function ActivityTable({
                                   {num(take.detail.cancelled) !== null && (
                                     <span className="text-muted-foreground">
                                       {" "}
-                                      · {plural(num(take.detail.cancelled)!, "line")} cancelled
+                                      · {plural(num(take.detail.cancelled), "line")} cancelled
                                     </span>
                                   )}
                                 </span>

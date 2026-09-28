@@ -98,6 +98,28 @@ export type ActivityDetail = {
 
 export type ActivityKind = keyof ActivityDetail;
 
+/**
+ * Rows that open onto others: `parent` is shown, every `child` carrying the same `key` in
+ * its detail is left off the page and listed when the parent is opened. The page's filter
+ * (store.ts), its lookup (api/activity/batch) and its rows (ActivityTable) all read this.
+ *
+ * `count` is the parent's detail field saying how many children it has; a batch has none,
+ * because it cuts takes for as long as the queue runs, so the server counts them per range.
+ */
+export const FOLDS = {
+  batch: { parent: "batch.queued", child: "take.generated", key: "batchId", count: null, noun: ["take", "takes"] },
+  marks: { parent: "marks.cleared", child: "take.acked", key: "groupId", count: "count", noun: ["file", "files"] },
+  stops: { parent: "queue.stopped", child: "batch.stopped", key: "groupId", count: "batches", noun: ["batch", "batches"] },
+} as const satisfies Record<
+  string,
+  { parent: ActivityKind; child: ActivityKind; key: string; count: string | null; noun: readonly [string, string] }
+>;
+export type Group = keyof typeof FOLDS;
+
+export function isGroup(value: unknown): value is Group {
+  return typeof value === "string" && Object.hasOwn(FOLDS, value);
+}
+
 export const CATEGORIES = ["audio", "text", "voices", "admin"] as const;
 export type Category = (typeof CATEGORIES)[number];
 

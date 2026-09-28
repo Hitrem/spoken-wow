@@ -418,7 +418,11 @@ function stopEvents(
   actorId: string | null,
 ): ActivityEvent[] {
   const byLang = new Map<Lang, typeof stopped>();
-  for (const batch of stopped) byLang.set(batch.lang, [...(byLang.get(batch.lang) ?? []), batch]);
+  for (const batch of stopped) {
+    const batches = byLang.get(batch.lang);
+    if (batches) batches.push(batch);
+    else byLang.set(batch.lang, [batch]);
+  }
 
   return [...byLang.entries()].flatMap(([lang, batches]) => {
     const groupId = batches.length > 1 ? randomUUID() : null;

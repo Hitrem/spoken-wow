@@ -12,16 +12,13 @@
  */
 import { NextRequest } from "next/server";
 
-import { GROUPS, groupRows, isDay, type Group } from "@/lib/activity/store";
+import { FOLDS, isGroup } from "@/lib/activity/kinds";
+import { groupRows, isDay } from "@/lib/activity/store";
 import { requireIn } from "@/lib/generation/authz";
 
 export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isGroup(value: unknown): value is Group {
-  return typeof value === "string" && Object.hasOwn(GROUPS, value);
-}
 
 export async function GET(request: NextRequest) {
   const { lang, denied } = await requireIn(request, "admin");
@@ -34,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
   const kind = params.get("kind") ?? "batch";
   if (!isGroup(kind)) {
-    return Response.json({ error: "kind must be batch, marks or stops" }, { status: 400 });
+    return Response.json({ error: `kind must be one of ${Object.keys(FOLDS).join(", ")}` }, { status: 400 });
   }
   const from = params.get("from") ?? undefined;
   const to = params.get("to") ?? undefined;

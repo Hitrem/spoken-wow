@@ -52,16 +52,22 @@ function banned(fields: { banReason?: unknown; banExpiresIn?: unknown }): Event 
   };
 }
 
+function roleChanged(role: unknown): Event {
+  return { kind: "user.role_changed", detail: { role: roleOf(role) } };
+}
+
+const UNBANNED: Event = { kind: "user.unbanned", detail: {} };
+
 const EVENTS: Record<string, (body: Body) => Event[]> = {
-  "/admin/set-role": (body) => [{ kind: "user.role_changed", detail: { role: roleOf(body.role) } }],
+  "/admin/set-role": (body) => [roleChanged(body.role)],
   "/admin/ban-user": (body) => [banned(body)],
-  "/admin/unban-user": () => [{ kind: "user.unbanned", detail: {} }],
+  "/admin/unban-user": () => [UNBANNED],
   "/admin/remove-user": () => [{ kind: "user.removed", detail: {} }],
   "/admin/impersonate-user": () => [{ kind: "user.impersonated", detail: {} }],
   "/admin/update-user": ({ data = {} }) => [
-    ...(data.role !== undefined ? [{ kind: "user.role_changed", detail: { role: roleOf(data.role) } } as Event] : []),
+    ...(data.role !== undefined ? [roleChanged(data.role)] : []),
     ...(data.banned === true ? [banned(data)] : []),
-    ...(data.banned === false ? [{ kind: "user.unbanned", detail: {} } as Event] : []),
+    ...(data.banned === false ? [UNBANNED] : []),
   ],
 };
 

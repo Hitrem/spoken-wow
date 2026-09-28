@@ -19,7 +19,7 @@ import { db } from "@/lib/db";
 import type { Lang } from "@/lib/lang";
 import type { Source } from "@/lib/sections";
 
-import { prefixesOf, type ActivityDetail, type ActivityKind, type Category } from "./kinds";
+import { FOLDS, prefixesOf, type ActivityDetail, type ActivityKind, type Category, type Group } from "./kinds";
 
 export type ActivityEvent<K extends ActivityKind = ActivityKind> = {
   kind: K;
@@ -146,13 +146,32 @@ const JOINS = `left join "user" u on u."id" = a."actorId"
  */
 const BATCH_REACH = "30 days";
 
+/** The rows a group row folds away, from FOLDS: a child counts only when it carries the key. */
+const FOLDED = Object.values(FOLDS)
+  .map(({ child, key }) => `(a."kind" = '${child}' and a."detail" ? '${key}')`)
+  .join(" or ");
+
 /**
- * The rows a group row folds away: a batch's takes, the marks one click cleared, and the
- * batches one Stop stopped.
+ * A day range as SQL: `from` and `to` as bounds, and `cut(row)` as the condition that puts
+ * that row's "at" inside them. The whole of the last day, not its first instant.
  */
-const FOLDED = `(a."kind" = 'take.generated' and a."detail" ? 'batchId')
-                or (a."kind" = 'take.acked' and a."detail" ? 'groupId')
-                or (a."kind" = 'batch.stopped' and a."detail" ? 'groupId')`;
+function dayRange(param: (value: unknown) => string, range: { from?: string; to?: string }) {
+  const from = range.from ? `${param(range.from)}::date` : null;
+  const to = range.to ? `${param(range.to)}::date + 1` : null;
+  const cut = (row: string) =>
+    [from && `${row}."at" >= ${from}`, to && `${row}."at" < ${to}`].filter(Boolean).join(" and ");
+  return { from, to, cut };
+}
+
+/** A query's positional parameters, and the function that adds one and names it. */
+function params(...initial: unknown[]) {
+  const values = [...initial];
+  const param = (value: unknown) => {
+    values.push(value);
+    return `$${values.length}`;
+  };
+  return { values, param };
+}
 
 type Row = Omit<ActivityRow, "at"> & { at: Date; cursorAt: string };
 
@@ -177,11 +196,7 @@ export async function listActivity(
 ): Promise<{ rows: ActivityRow[]; next: Cursor | null }> {
   const limit = filter.limit ?? 50;
   const where = [`not (${FOLDED})`];
-  const values: unknown[] = [filter.lang];
-  const param = (value: unknown) => {
-    values.push(value);
-    return `$${values.length}`;
-  };
+  const { values, param } = params(filter.lang);
 
   if (!filter.global) where.push(`a."kind" not like 'user.%'`);
   if (filter.category) {
@@ -190,11 +205,7 @@ export async function listActivity(
   if (filter.actorId) where.push(`a."actorId" = ${param(filter.actorId)}`);
   if (filter.source) where.push(`a."source" = ${param(filter.source)}`);
 
-  const from = filter.from ? `${param(filter.from)}::date` : null;
-  // The whole of the last day, not its first instant.
-  const to = filter.to ? `${param(filter.to)}::date + 1` : null;
-  const cut = (row: string) =>
-    [from && `${row}."at" >= ${from}`, to && `${row}."at" < ${to}`].filter(Boolean).join(" and ");
+  const { from, to, cut } = dayRange(param, filter);
   if (to) where.push(`a."at" < ${to}`);
   if (from) {
     // A batch queued before `from` still belongs to the range when it cut a take there:
@@ -248,18 +259,10 @@ export async function listActivity(
   };
 }
 
-/** The kinds of row that open onto others, and the rows each one folds away. */
-export const GROUPS = {
-  batch: { kind: "take.generated", key: "batchId" },
-  marks: { kind: "take.acked", key: "groupId" },
-  stops: { kind: "batch.stopped", key: "groupId" },
-} as const;
-export type Group = keyof typeof GROUPS;
-
 /**
  * What one group row lists when opened, newest first: a queue batch's takes, the marks
- * one click cleared, or the batches one Stop stopped. Given the page's day range, only what happened in it, which is what
- * the row counted.
+ * one click cleared, or the batches one Stop stopped. Given the page's day range, only what
+ * happened in it, which is what the row counted.
  */
 export async function groupRows(
   lang: Lang,
@@ -267,17 +270,11 @@ export async function groupRows(
   id: string,
   range: { from?: string; to?: string } = {},
 ): Promise<ActivityRow[]> {
-  const { kind, key } = GROUPS[group];
-  const values: unknown[] = [lang, kind, id];
+  const { child, key } = FOLDS[group];
+  const { values, param } = params(lang, child, id);
   const where = [`a."lang" = $1`, `a."kind" = $2`, `a."detail"->>'${key}' = $3`];
-  if (range.from) {
-    values.push(range.from);
-    where.push(`a."at" >= $${values.length}::date`);
-  }
-  if (range.to) {
-    values.push(range.to);
-    where.push(`a."at" < $${values.length}::date + 1`);
-  }
+  const { cut } = dayRange(param, range);
+  if (range.from || range.to) where.push(cut("a"));
   const { rows } = await db().query<Row>(
     `select ${COLUMNS}
        from "activity" a
