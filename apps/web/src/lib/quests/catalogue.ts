@@ -261,6 +261,12 @@ export async function lineIndex(lang: Lang = BASE_LANG): Promise<Map<string, Cor
  * by every NPC with the same gossip line, so it cannot answer "what does this one NPC carry"
  * without a second index carrying its own cache-invalidation story alongside it. This runs once
  * per contribution resolved, not per request, so the scan is the honest cost here.
+ *
+ * Extracted speakers only. The catalogue also carries the speakers of accepted contributions,
+ * and those were written from this NPC's own resolution at the time -- often an unconfirmed
+ * model guess. Reading one back as "the corpus" confirmed the guess and let it outrank every
+ * later, better answer: 50 Forever NPCs whose appearances name an exact voice were stuck on
+ * the default flavor that way.
  */
 export async function npcVoiceFromCorpus(
   npcType: string,
@@ -268,7 +274,7 @@ export async function npcVoiceFromCorpus(
 ): Promise<{ race: string; gender: string; flavor: string | null; npcName: string } | null> {
   const wanted = `${npcType}:${npcId}`;
   for (const line of (await corpus()).lines) {
-    if (npcKey(line) === wanted) {
+    if (line.contributionId === null && npcKey(line) === wanted) {
       return { race: line.race, gender: line.gender, flavor: line.flavor, npcName: line.npcName };
     }
   }
