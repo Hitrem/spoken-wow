@@ -30,12 +30,15 @@ export const SECTIONS = ["quests", "zones", "books"];
 
 // tts_cli/factions.py PACK_SUFFIXES, for the four that ship to CurseForge.
 const QUESTS_PACKS = { alliance: "Alliance", horde: "Horde", shared: "Shared", gossip: "Gossip" };
-// English's `all` is every line in one folder, released on GitHub alone: CurseForge will not take
-// a file that size, and its All project is the meta addon that pulls in the four instead. So the
-// one page describes both, and each store gets what it can carry. Its folder keeps the suffix
-// factions.py gives it, because the bare SpokenQuestsAudio is the meta addon's: a player with
-// both would have one overwrite the other.
+// English's `all` is a BUNDLE, released on GitHub alone: one zip holding the four split packs'
+// own folders, exactly as CurseForge installs them. CurseForge will not take a file that size,
+// and its All project is the meta addon that pulls in the four instead, so the one page
+// describes both and each store gets what it can carry. Being the same folders, the two channels
+// overwrite each other rather than installing every line twice, and the player needs to know no
+// fifth pack. Its `folder` names the zip only (SpokenQuestsAudioAll-<version>.zip): no folder of
+// that name is ever built, and the bare SpokenQuestsAudio-<version>.zip is the meta addon's.
 const ENGLISH_QUESTS_PACKS = { ...QUESTS_PACKS, all: "All" };
+const ENGLISH_QUESTS_BUNDLE = Object.values(QUESTS_PACKS).map((suffix) => "SpokenQuestsAudio" + suffix);
 // A language may instead ship its quests as one pack holding every line: one folder is one answer
 // to "which do I install", and a GitHub release takes a file up to 2 GB. CurseForge does not take
 // one that size, so a language that goes there later is split into the four. Being the only pack,
@@ -107,6 +110,7 @@ function toPack(page, meta) {
   return {
     page, section, lang, pack, version, github,
     curseforge: meta.curseforge ?? null, wago: meta.wago ?? null, release,
+    bundles: english && section === "quests" && pack === "all" ? ENGLISH_QUESTS_BUNDLE : null,
     slug: meta.slug, name: meta.name, folder,
     zip: english ? null : `${folder}-${version}.zip`,
     tag: english ? null : `${release}/v${version}`,
@@ -172,7 +176,8 @@ function main([command, ...args]) {
     const [section, lang, pack, field] = args;
     const found = findPack(section, lang, pack === "-" ? null : pack);
     if (!(field in found)) throw new Error(`no field '${field}'`);
-    console.log(found[field] ?? "");
+    const value = found[field];
+    console.log(Array.isArray(value) ? value.join(" ") : value ?? "");
   } else if (command === "changelog") {
     const [file, version, release] = args;
     process.stdout.write(changelogSection(readFileSync(file, "utf8"), version, release));

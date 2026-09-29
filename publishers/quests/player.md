@@ -31,7 +31,7 @@ Nothing to do. Your settings carry over on the first login, and the old `VoiceOv
 ## Pick a sound pack
 
 <!-- only:wago -->
-The audio is more than Wago's uploader takes, so it comes from GitHub as one download holding every line: take [All](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) and unzip it into `Interface/AddOns`. CurseForge carries the same lines split four ways, for anyone who wants only their side:
+The audio is more than Wago's uploader takes, so it comes from GitHub as one download holding all four packs: take [All](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) and unzip it into `Interface/AddOns`. CurseForge carries the same four packs one by one, for anyone who wants only their side:
 
 <!-- /only -->
 | Pack | Holds |

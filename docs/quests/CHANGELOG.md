@@ -16,10 +16,8 @@ by players with Contribute, and 1,275 of them have a voice in these packs: 464 q
   The Skybourne elves speak with voices of their own, one for each of the game's two voice
   sets per gender.
 - **Addressed reported lines.**
-- **On GitHub, one pack holds every line**, `SpokenQuestsAudioAll`, the way the other
-  languages' packs do. If you took the four packs from GitHub before, delete their folders
-  after installing it, or you keep two copies of the same lines. CurseForge keeps the same
-  four packs.
+- **On GitHub, one download holds all four packs**, `SpokenQuestsAudioAll-2.1.0.zip`: the same
+  four folders CurseForge installs, so it goes over whichever you have, from either store.
 - Still one format, Ogg Vorbis at 44.1 kHz. Install over 2.0.0.
 
 ## 2.1.3 — player

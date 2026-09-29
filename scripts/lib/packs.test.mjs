@@ -118,7 +118,7 @@ test("a language may ship its quests as one pack, with no suffix", () => {
 
 });
 
-test("English's one pack keeps its suffix, clear of the meta addon's bare folder", () => {
+test("English's all is a bundle of the four split packs' folders, zipped clear of the meta addon's name", () => {
   const allEn = ["quests", "en.md", { section: "quests", lang: "enUS", pack: "all",
     curseforge: "1660196", release: "quests-audio", slug: "spoken-quests-audio-all",
     name: "Spoken Quests Audio: All" }];
@@ -126,6 +126,9 @@ test("English's one pack keeps its suffix, clear of the meta addon's bare folder
   assert.equal(all.folder, "SpokenQuestsAudioAll");
   assert.equal(all.release, "quests-audio");
   assert.equal(all.github, true);
+  assert.deepEqual(all.bundles, ["SpokenQuestsAudioAlliance", "SpokenQuestsAudioHorde",
+    "SpokenQuestsAudioShared", "SpokenQuestsAudioGossip"]);
+  assert.equal(findPack("quests", "enUS", "horde", loadPacks(tree([hordeEn]))).bundles, null);
   assert.throws(() => loadPacks(tree([["quests", "en.md", { ...allEn[2], release: "quests-audio-all" }]])),
     /release should be quests-audio,/);
 });
