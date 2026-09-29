@@ -107,7 +107,7 @@ test("changelogSection takes exactly the language pack's section", () => {
   assert.throws(() => changelogSection(CHANGELOG + "\n## 2.1.0 — books-audio-esMX\n", "2.1.0", "books-audio-esMX"), /two/);
 });
 
-test("a language may ship its quests as one pack, with no suffix,, and English may not", () => {
+test("a language may ship its quests as one pack, with no suffix", () => {
   const allFr = ["quests", "fr.md", { section: "quests", lang: "frFR", pack: "all",
     version: "2.0.0", release: "quests-audio-frFR", slug: "spoken-quests-audio-frfr",
     name: "Spoken Quests Audio: French" }];
@@ -116,7 +116,24 @@ test("a language may ship its quests as one pack, with no suffix,, and English m
   assert.equal(fr.tag, "quests-audio-frFR/v2.0.0");
   assert.equal(fr.curseforge, null);
 
+});
+
+test("English's one pack keeps its suffix, clear of the meta addon's bare folder", () => {
   const allEn = ["quests", "en.md", { section: "quests", lang: "enUS", pack: "all",
-    curseforge: "1", release: "quests-audio-all", slug: "s", name: "n" }];
-  assert.throws(() => loadPacks(tree([allEn])), /enUS quests pack needs pack/);
+    curseforge: "1660196", release: "quests-audio", slug: "spoken-quests-audio-all",
+    name: "Spoken Quests Audio: All" }];
+  const all = findPack("quests", "enUS", "all", loadPacks(tree([allEn])));
+  assert.equal(all.folder, "SpokenQuestsAudioAll");
+  assert.equal(all.release, "quests-audio");
+  assert.equal(all.github, true);
+  assert.throws(() => loadPacks(tree([["quests", "en.md", { ...allEn[2], release: "quests-audio-all" }]])),
+    /release should be quests-audio,/);
+});
+
+test("github: false keeps a pack off GitHub, and nothing else is accepted", () => {
+  const packs = loadPacks(tree([["quests", "h.md", { ...hordeEn[2], github: "false" }], zonesEn]));
+  assert.equal(findPack("quests", "enUS", "horde", packs).github, false);
+  assert.equal(findPack("zones", "enUS", null, packs).github, true);
+  assert.throws(() => loadPacks(tree([["quests", "h.md", { ...hordeEn[2], github: "true" }]])),
+    /github may only be false/);
 });

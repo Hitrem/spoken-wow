@@ -358,7 +358,7 @@ describe("rule verification", () => {
   it("reports a dictionary that silently dropped rules, while keeping it in force", async () => {
     const { fetchImpl } = accepts("dict-abc", "ver-1", 1);
     const { lexicon, syncError } = await writeLexicon(
-      [ENTRIES[0], { ...ENTRIES[0], grapheme: "Thrall", ipa: "θɹɔl" }],
+      [ENTRIES[0], { ...ENTRIES[0], grapheme: "Orgrimmar", ipa: "ˈɔɹɡɹɪmɑɹ" }],
       null as unknown as string,
       OPTIONS(fetchImpl),
     );

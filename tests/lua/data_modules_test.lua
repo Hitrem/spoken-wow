@@ -62,6 +62,43 @@ Expect("a new-key pack can register its data", ok, true)
 VO, found = Enumerate({ Title = "Some other addon" })
 Expect("an addon carrying neither key is not a pack", found, nil)
 
+---------------------------------------------------------------- offering updates
+-- The versions the addon offers are written into it, so a pack can be newer than the addon
+-- knows. Only an older pack is offered an update; a newer one must not be sent back.
+local D = VO.DataModules
+Expect("an older pack is out of date", D:IsOlderContent("2.0.0", "2.1.0"), true)
+Expect("...by any component", D:IsOlderContent("2.1.9", "2.10.0"), true)
+Expect("the same version is not", D:IsOlderContent("2.1.0", "2.1.0"), false)
+Expect("a newer pack is not", D:IsOlderContent("2.1.0", "2.0.0"), false)
+Expect("a missing trailing part counts as zero", D:IsOlderContent("2.1", "2.1.0"), false)
+Expect("a version that is not numbers is never out of date", D:IsOlderContent("dev", "2.1.0"), false)
+Expect("...nor is a missing one", D:IsOlderContent(nil, "2.1.0"), false)
+
+--- Install one shipping pack at a version, and collect what the options offer for it.
+local function Offered(version)
+    stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
+    stub.SetAddOns({ { folder = "SpokenQuestsAudioShared",
+        meta = { Title = "Spoken Quests Audio: Shared Quests", Version = version, [NEW .. "Version"] = "1" } } })
+    local vo = stub.LoadQuests(QUESTS, SPOKEN)
+    local offered = {}
+    vo.Options = setmetatable({
+        AddAvailableDataModule = function(_, module, _, update) offered[module.AddonName] = update end,
+    }, { __index = function() return function() end end })
+    vo.DataModules:EnumerateAddons(false)
+    return offered, vo.DataModules
+end
+local known
+for _, module in VO.DataModules:GetAvailableModules() do
+    if module.AddonName == "SpokenQuestsAudioShared" then known = module.ContentVersion end
+end
+local offered = Offered("1.0.0")
+Expect("an older installed pack is offered its update", offered.SpokenQuestsAudioShared, true)
+offered = Offered(known)
+Expect("a current pack is offered nothing", offered.SpokenQuestsAudioShared, nil)
+offered = Offered("99.0.0")
+Expect("a pack newer than the addon knows is offered nothing", offered.SpokenQuestsAudioShared, nil)
+Expect("...and having a pack silences the others", offered.SpokenQuestsAudioHorde, nil)
+
 stub.ResetAddOns()
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll data module tests passed")
