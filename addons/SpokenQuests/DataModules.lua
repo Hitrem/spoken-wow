@@ -456,8 +456,13 @@ local function TextLookup(module, name)
     return module[name], module.LookupLocale or module.METADATA.Language
 end
 
+---@class GossipSpeaker
+---@field unitGUID string?
+---@field name string?
+---@field unitIsObjectOrItem boolean?
+
 --- The gossip table a speaker is filed under, and its key there.
----@param soundData { unitGUID: string?, name: string?, unitIsObjectOrItem: boolean? }
+---@param soundData GossipSpeaker
 ---@return string|nil table
 ---@return any npc
 local function GossipLookupKey(soundData)
@@ -474,10 +479,9 @@ local function GossipLookupKey(soundData)
         soundData.name and (replaceDoubleQuotes(soundData.name))
 end
 
---- Whether any pack holds gossip for this speaker, whatever the text. Asked the moment a
---- gossip dialog opens, before its text can be trusted, to decide whether to silence the
---- NPC's greeting for a line that is coming.
----@param soundData { unitGUID: string?, name: string?, unitIsObjectOrItem: boolean? }
+--- Whether any pack holds gossip for this speaker, whatever the text: asked as a gossip
+--- dialog opens, before its text can be trusted.
+---@param soundData GossipSpeaker
 ---@return boolean
 function DataModules:HasGossipFor(soundData)
     local table, npc = GossipLookupKey(soundData)

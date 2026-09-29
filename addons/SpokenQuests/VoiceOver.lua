@@ -237,22 +237,28 @@ local SPEECH_EVENTS = {
     GOSSIP_SHOW = { sound = Enums.SoundEvent.Gossip, text = function() return GetGossipText() end },
 }
 
+--- The quest dialog `event` names, as a line to look up: nil when no quest can be resolved.
+---@param event string A QUEST_EVENTS key.
+local function QuestLineProbe(event)
+    local quest = QUEST_EVENTS[event]
+    local questID = ResolveQuestID(quest.source, QuestIDFor(event),
+        GetTitleText and GetTitleText() or "", Utils:GetNPCName() or "", quest.text(), true)
+    return questID and { event = quest.sound, questID = questID }
+end
+
 --- The line the open dialog would read, resolved against the packs, or nil when no dialog
 --- is open or no pack has its line. Asked without reading anything. The second value is
 --- the client event it stands for.
 ---@return SoundData?, string?
 function Addon:GetVisibleLine()
     local event = GetVisibleDialogueEvent()
-    local quest = event and QUEST_EVENTS[event]
     local speech = event and SPEECH_EVENTS[event]
     local probe
-    if quest then
-        local questID = ResolveQuestID(quest.source, QuestIDFor(event),
-            GetTitleText and GetTitleText() or "", Utils:GetNPCName() or "", quest.text(), true)
-        if not questID then
+    if event and QUEST_EVENTS[event] then
+        probe = QuestLineProbe(event)
+        if not probe then
             return nil
         end
-        probe = { event = quest.sound, questID = questID }
     elseif speech then
         local guid, name = Utils:GetNPCGUID(), Utils:GetNPCName()
         if not guid and not name then
@@ -746,7 +752,7 @@ function Addon:OnInitialize()
             -- Through pcall because a snapshot is a fallback, and a client that refuses one
             -- of these globals must not stop the event from being recorded.
             pcall(CaptureQuestSnapshot, event)
-            pcall(self.MuteGreetingAhead, self, event)
+            pcall(self.MuteAheadForQuest, self, event)
         end
     end)
 
@@ -824,7 +830,7 @@ function Addon:OnInitialize()
     self.directEventFrame:SetScript("OnEvent", function(frame, event)
         -- Before the deferral: the greeting is already playing.
         if deferredSpeechEvents[event] then
-            pcall(self.MuteGreetingAhead, self, event)
+            pcall(self.MuteAheadForGossip, self)
         end
         SignalDirectEvent(event, "direct frame")
     end)
@@ -1123,43 +1129,37 @@ function Addon:ShouldPlayGossip(guid, text, manual)
     return true, npcKey
 end
 
---- An NPC's own greeting starts the moment its dialog opens, and the line that replaces it
---- is read off the dialog a moment later -- 0.1s for gossip, 0.4s of stable globals for a
---- quest. The player muting the game's dialogue only once that line started is what cut the
---- greeting off mid-word, so for a dialog that is going to be read the mute is taken here,
---- in the frame the dialog opened, and the greeting is not heard at all. A dialog nothing
---- will be read for keeps its greeting: that is what the lookups below are for.
----@param event string
-function Addon:MuteGreetingAhead(event)
-    if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source
-        or not Spoken.MuteGameDialogueAhead then
+-- Muting the game's dialogue as a dialog opens, so the NPC's greeting is not heard over the
+-- line read off it a moment later (see MUTE_AHEAD_SECONDS in the player). Only for a dialog
+-- that will be read: any other keeps its greeting.
+local function CanMuteAhead()
+    return Addon:IsAutoplayOn() and not Addon.dataModulesPending and Player.source
+        and Spoken.MuteGameDialogueAhead
+end
+
+--- The page text is not to be trusted yet (see the deferred read), so this asks only whether
+--- any pack voices the speaker at all.
+function Addon:MuteAheadForGossip()
+    if not CanMuteAhead() then
         return
     end
-    if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
-        -- The page text is not to be trusted yet (see the deferred read), so this asks only
-        -- whether any pack voices this speaker at all.
-        local guid = Utils:GetNPCGUID()
-        local speaker = { unitGUID = guid, name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
-        if not guid and not speaker.name then
-            return
-        end
-        if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
-            return
-        end
-    elseif QUEST_EVENTS[event] then
-        -- The quest ID can still be the previous quest's this early; the worst that costs is
-        -- one greeting muted for nothing, or one cut off as it was before.
-        local questID = QuestIDFor(event)
-        if not questID or questID == 0 then
-            return
-        end
-        if not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
-            return
-        end
-    else
+    local speaker = { unitGUID = Utils:GetNPCGUID(), name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
+    if self:ShouldPlayGossip(speaker.unitGUID, nil, false) and DataModules:HasGossipFor(speaker) then
+        Spoken:MuteGameDialogueAhead(Player.source)
+    end
+end
+
+--- The quest ID can still be the previous quest's this early; the worst that costs is one
+--- greeting muted for nothing, or one cut off as it was before.
+---@param event string A QUEST_EVENTS key.
+function Addon:MuteAheadForQuest(event)
+    if not CanMuteAhead() then
         return
     end
-    Spoken:MuteGameDialogueAhead(Player.source)
+    local probe = QuestLineProbe(event)
+    if probe and DataModules:PrepareSound(probe) then
+        Spoken:MuteGameDialogueAhead(Player.source)
+    end
 end
 
 function Addon:QUEST_GREETING(event, manual)
