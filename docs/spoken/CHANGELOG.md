@@ -1,5 +1,11 @@
 # Changelog — Spoken Player
 
+## Unreleased
+
+- **The player remembers where you put it.** Its position and width, in either layout, and
+  whether the captions are expanded now come back after `/reload` and on the next login,
+  on every character of the account. `/spoken reset` still puts it back on the default spot.
+
 ## 2.2.4 — 2026-09-29
 
 - Quest and NPC captions appear inside the player with one or two lines and

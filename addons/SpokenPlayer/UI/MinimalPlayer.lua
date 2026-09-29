@@ -82,16 +82,19 @@ function MinimalPlayer:Initialize(original)
     local frame = CreateFrame("Frame", "SpokenMinimalPlayerFrame", UIParent)
     self.frame = frame
     frame:SetSize(WIDTH, HEIGHT)
-    local point, relative, relativePoint, x, y = original:GetPoint(1)
-    frame:SetPoint(point or "BOTTOM", relative or UIParent, relativePoint or "BOTTOM", x or 0, y or 200)
+    if not Addon:RestoreLayout("Minimal", frame) then
+        local point, relative, relativePoint, x, y = original:GetPoint(1)
+        frame:SetPoint(point or "BOTTOM", relative or UIParent, relativePoint or "BOTTOM", x or 0, y or 200)
+    end
     frame:SetMovable(true)
     frame:SetResizable(true)
     frame:SetClampedToScreen(true)
-    frame:SetUserPlaced(true)
+    -- Placed from the saved layout instead; the client's cache would only fight it.
+    frame:SetUserPlaced(false)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", function() self:StartDrag() end)
-    frame:SetScript("OnDragStop", function() frame:StopMovingOrSizing() end)
+    frame:SetScript("OnDragStop", function() self:StopDrag() end)
     frame:SetScript("OnMouseUp", function(_, button)
         if button == "RightButton" then self:ToggleMenu() end
     end)
@@ -124,7 +127,7 @@ function MinimalPlayer:Initialize(original)
     self.header:RegisterForDrag("LeftButton")
     self.header:SetScript("OnClick", function() self:ToggleMenu() end)
     self.header:SetScript("OnDragStart", function() self:StartDrag() end)
-    self.header:SetScript("OnDragStop", function() frame:StopMovingOrSizing() end)
+    self.header:SetScript("OnDragStop", function() self:StopDrag() end)
     self.name = Font(self.header, 16, 1, .82, 0)
     self.name:SetAllPoints()
     content.name = self.name -- Actions' original header anchor contract.
@@ -222,7 +225,7 @@ function MinimalPlayer:Initialize(original)
     end)
     self.resizer:SetScript("OnMouseUp", function()
         frame:StopMovingOrSizing()
-        if self.sizing then Config().MinimalWidth = frame:GetWidth() + (Config().HidePortrait and 80 or 0) end
+        if self.sizing then self:SaveLayout() end
         self.sizing = false
     end)
     frame:SetScript("OnSizeChanged", function() self:LayoutQueue() end)
@@ -419,6 +422,16 @@ function MinimalPlayer:StartDrag()
     if not Config().LockFrame then self.menu:Hide(); self.frame:StartMoving() end
 end
 
+function MinimalPlayer:StopDrag()
+    self.frame:StopMovingOrSizing()
+    if not Config().LockFrame then self:SaveLayout() end
+end
+
+-- Saved as the width with the portrait, which RefreshConfig takes off when hidden.
+function MinimalPlayer:SaveLayout()
+    Addon:SaveLayout("Minimal", self.frame, self.frame:GetWidth() + (Config().HidePortrait and 80 or 0))
+end
+
 function MinimalPlayer:ConfigurePortrait()
     if Config().HidePortrait then return end
     if not StaticPortrait:Configure(self.viewport, self.clip) then Portrait:Configure(self.viewport, self.clip) end
@@ -586,7 +599,8 @@ function MinimalPlayer:RefreshConfig(original)
     frame:SetScale(cfg.FrameScale)
     frame:SetFrameStrata(cfg.FrameStrata)
     frame:SetResizeBounds(cfg.HidePortrait and 200 or 280, frame:GetHeight(), 1000, frame:GetHeight())
-    frame:SetWidth(Clamp((cfg.MinimalWidth or WIDTH) - (cfg.HidePortrait and 80 or 0), cfg.HidePortrait and 200 or 280, 1000))
+    local saved = Addon:Layout().Minimal
+    frame:SetWidth(Clamp((saved and saved.width or cfg.MinimalWidth or WIDTH) - (cfg.HidePortrait and 80 or 0), cfg.HidePortrait and 200 or 280, 1000))
     self.content:ClearAllPoints()
     self.content:SetPoint("TOPLEFT", cfg.HidePortrait and 16 or 96, -18)
     self.content:SetPoint("TOPRIGHT", -18, -18)
@@ -623,6 +637,7 @@ function MinimalPlayer:Reset()
     if not self.frame then return end
     self.frame:StopMovingOrSizing()
     Config().MinimalWidth = WIDTH
+    Addon:Layout().Minimal = nil
     self.frame:ClearAllPoints()
     self.frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 200)
     self:RefreshConfig(PlayerFrame)

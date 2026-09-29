@@ -15,7 +15,7 @@ load('Environment.lua')
 lua.execute('SpokenEnv.Version={IsAnyLegacy=false,IsLegacyVanilla=false,IsRetailVanilla=false,IsRetailOrAboveLegacyVersion=function() return true end}')
 load('Core.lua')
 lua.execute('''
-SpokenEnv.Addon.db={profile=SpokenEnv.Defaults.profile,char={IsPaused=false}}
+SpokenEnv.Addon.db={profile=SpokenEnv.Defaults.profile,char={IsPaused=false},global={}}
 SpokenEnv.Addon.db.profile.Audio.AutoToggleDialog=false
 SpokenEnv.SoundUtils={
   WhyInaudible=function() end, IsMutedByPlayer=function() return false end,
@@ -108,10 +108,17 @@ assert(not P.frame:IsShown() and E.PlayerFrame.frame:IsShown())
 assert(Spoken:GetPlayerFrame()==E.PlayerFrame.frame)
 A.db.profile.Frame.MinimalPlayer=true;E.PlayerFrame:RefreshConfig()
 assert(P.frame:IsShown() and not E.PlayerFrame.frame:IsShown())
+P.frame.left=120;P.frame:SetWidth(450);P:StartDrag();P.frame.scripts.OnDragStop(P.frame)
+local saved=A:Layout().Minimal
+near(saved.left,120);near(saved.top,P.frame:GetTop());near(saved.width,450)
+P.frame:SetWidth(380);A.db.profile.Frame.HidePortrait=true;E.PlayerFrame:RefreshConfig()
+near(P.frame:GetWidth(),370) -- the saved width, not the profile's
+A.db.profile.Frame.HidePortrait=false;E.PlayerFrame:RefreshConfig();near(P.frame:GetWidth(),450)
 A.db.profile.Frame.MinimalWidth=600;P:Reset();near(P.frame:GetWidth(),380)
+assert(A:Layout().Minimal==nil,"reset forgets the saved place")
 Q:RemoveAllSoundsFromQueue();assert(not P.wanted)
 Advance(.3);assert(not P.frame:IsShown())
-print("PASS: original-layout fallback, public frame API, reset, fade-out to hidden")
+print("PASS: original-layout fallback, public frame API, saved place and width, reset, fade-out to hidden")
 
 local held=true
 source.gates={function() if held then return "Combat" end end}

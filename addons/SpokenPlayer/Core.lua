@@ -62,7 +62,6 @@ Defaults = {
             Enabled = true,
             AutoScroll = true,
             Lines = 2,
-            Expanded = false,
             HighlightWord = true,
             FontSize = 16,
         },
@@ -92,6 +91,41 @@ function Addon:InitDB()
     end
     self.db = LibStub("AceDB-3.0"):New("SpokenPlayerDB", Defaults)
     self:Migrate()
+end
+
+--- Where each player window sits, how wide it is, and whether the captions are expanded.
+--- Account-wide, in global rather than the profile: AceDB names the profile after
+--- UnitName("player") when its file loads, and the Forever client answers "Unknown" (in
+--- the client's language) there on some logins and the name on others, so a window
+--- placed on one login came back on the default spot the next. The client's own
+--- SetUserPlaced cache fared no better, since the frames are built at PLAYER_LOGIN and
+--- anchored to their defaults straight after.
+function Addon:Layout()
+    local global = self.db.global
+    if type(global.Layout) ~= "table" then
+        local transcript = self.db.profile.Transcript
+        -- Expanded was a profile setting before; carry it over once.
+        global.Layout = { CaptionsExpanded = type(transcript) == "table" and transcript.Expanded == true }
+    end
+    return global.Layout
+end
+
+--- Record a frame's place and width under key. The top-left corner, not the anchor the
+--- client left after a drag: both players grow downwards as captions and the queue come
+--- and go, and a saved BOTTOM anchor would put the frame back at the height it had then.
+function Addon:SaveLayout(key, frame, width)
+    local left, top = frame:GetLeft(), frame:GetTop()
+    if not left or not top then return end
+    self:Layout()[key] = { left = left, top = top, width = width or frame:GetWidth() }
+end
+
+--- Put a frame back where SaveLayout left it. False when nothing was saved.
+function Addon:RestoreLayout(key, frame)
+    local saved = self:Layout()[key]
+    if type(saved) ~= "table" or not saved.left or not saved.top then return false end
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", saved.left, saved.top)
+    return true
 end
 
 local SOUND_CHANNEL_NAMES = { "Master", "SFX", "Music", "Ambience", "Dialog" }

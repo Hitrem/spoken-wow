@@ -551,5 +551,38 @@ local ok, err = pcall(function()
 end)
 Expect("the layout survives the logout's stripped settings", ok and "no error" or tostring(err), "no error")
 
+---------------------------------------------------------------- the layout outlives the login
+-- AceDB keys the profile by the name UnitName gave when its file loaded, and the Forever
+-- client answers "Unknown" there on some logins and the name on others. A place, a width or
+-- an expanded caption kept in the profile came back on one login and not the next.
+_G.SpokenPlayerDB = nil
+env = Boot()
+local frame = env.PlayerFrame.frame
+frame:SetWidth(500)
+frame.mover.hooks.OnMouseUp[1]()
+local saved = _G.SpokenPlayerDB.global.Layout.Player
+Expect("a drag saves where the player sits", saved and saved.left .. "," .. saved.top, "0,100")
+Expect("...and its width", saved and saved.width, 500)
+env.Transcript:ToggleExpanded()
+Expect("expanding the captions is saved account-wide", _G.SpokenPlayerDB.global.Layout.CaptionsExpanded, true)
+_G.SpokenPlayerDB.profiles = {}   -- the next login's profile is a different one
+env = Boot()
+frame = env.PlayerFrame.frame
+local point, relative, relativePoint, x, y = frame:GetPoint()
+Expect("the next login puts the player back", table.concat({ point, relativePoint, x, y }, " "), "TOPLEFT BOTTOMLEFT 0 100")
+Expect("...against the screen", relative, _G.UIParent)
+Expect("...at the saved width", frame:GetWidth(), 500)
+Expect("...with the captions still expanded", env.Transcript.expand:GetNormalTexture():GetTexture(),
+    [[Interface\Buttons\UI-MinusButton-Up]])
+env.PlayerFrame:Reset()
+Expect("reset forgets the saved place", _G.SpokenPlayerDB.global.Layout.Player, nil)
+-- The minimal player saves its own place beside this one: tests/minimal-classic.
+
+-- A player who expanded the captions before the setting moved keeps them expanded.
+_G.SpokenPlayerDB = { profiles = { Default = { Transcript = { Expanded = true } } } }
+env = Boot()
+Expect("the old profile setting carries over", env.Addon:Layout().CaptionsExpanded, true)
+_G.SpokenPlayerDB = nil
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll player frame tests passed")

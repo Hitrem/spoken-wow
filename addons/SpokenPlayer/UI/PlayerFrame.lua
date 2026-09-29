@@ -69,10 +69,15 @@ function PlayerFrame:InitDisplay()
         self:SetPoint("BOTTOM", 0, 200)
     end
     self.frame:Reset()
+    if Addon:RestoreLayout("Player", self.frame) then
+        -- Saved as the width with the portrait, which RefreshConfig takes off when hidden.
+        self.frame:SetWidth(Addon:Layout().Player.width or self.frame:GetWidth())
+    end
     self.frame:SetMovable(true)
     self.frame:SetResizable(true)
     self.frame:SetClampedToScreen(true)
-    self.frame:SetUserPlaced(true)
+    -- Placed from the saved layout instead; the client's cache would only fight it.
+    self.frame:SetUserPlaced(false)
     self.frame:SetFrameStrata(Addon.db.profile.Frame.FrameStrata)
     self.frame:Hide()
 
@@ -95,6 +100,7 @@ function PlayerFrame:InitDisplay()
     self.frame.resizer:HookScript("OnMouseUp", function()
         self.frame.resizer:GetHighlightTexture():Show()
         self.frame:StopMovingOrSizing()
+        self:SaveLayout()
     end)
 
     self.frame.container = CreateFrame("Frame", nil, self.frame)
@@ -258,6 +264,7 @@ function PlayerFrame:InitMover()
     self.frame.mover:HookScript("OnMouseUp", function()
         if Addon.db.profile.Frame.LockFrame then return end
         self.frame:StopMovingOrSizing()
+        self:SaveLayout()
     end)
 end
 
@@ -510,9 +517,19 @@ function PlayerFrame:Describe()
     return lines
 end
 
---- The client places the frame (SetUserPlaced), so recovering one dragged off-screen
---- means asking it to lay itself out again rather than clearing a saved coordinate.
+function PlayerFrame:SaveLayout()
+    local width = self.frame:GetWidth() + (Addon.db.profile.Frame.HidePortrait and PORTRAIT_SIZE or 0)
+    Addon:SaveLayout("Player", self.frame, width)
+end
+
+--- Back to the default spot and width, forgetting the saved ones, for a frame dragged
+--- off-screen or sized past use.
 function PlayerFrame:Reset()
     if MinimalPlayer:IsEnabled() then MinimalPlayer:Reset(); return end
-    if self.frame then self.frame:Reset() end
+    Addon:Layout().Player = nil
+    if not self.frame then return end
+    self.frame:Reset()
+    -- Reset's width has the portrait in it, and RefreshConfig only takes it off on a change.
+    if Addon.db.profile.Frame.HidePortrait then self.frame:SetWidth(self.frame:GetWidth() - PORTRAIT_SIZE) end
+    self:RefreshConfig()
 end
