@@ -456,23 +456,49 @@ local function TextLookup(module, name)
     return module[name], module.LookupLocale or module.METADATA.Language
 end
 
----@param soundData SoundData
----@return string|nil hash
-function DataModules:GetNPCGossipTextHash(soundData)
-    local table, npc
+--- The gossip table a speaker is filed under, and its key there.
+---@param soundData { unitGUID: string?, name: string?, unitIsObjectOrItem: boolean? }
+---@return string|nil table
+---@return any npc
+local function GossipLookupKey(soundData)
     if soundData.unitGUID then
         local type = Utils:GetGUIDType(soundData.unitGUID)
         if Enums.GUID:IsCreature(type) then
-            table = "GossipLookupByNPCID"
+            return "GossipLookupByNPCID", Utils:GetIDFromGUID(soundData.unitGUID)
         elseif type == Enums.GUID.GameObject then
-            table = "GossipLookupByObjectID"
-        else
-            return
+            return "GossipLookupByObjectID", Utils:GetIDFromGUID(soundData.unitGUID)
         end
-        npc = Utils:GetIDFromGUID(soundData.unitGUID)
-    else
-        table = soundData.unitIsObjectOrItem and "GossipLookupByObjectName" or "GossipLookupByNPCName"
-        npc = replaceDoubleQuotes(soundData.name)
+        return
+    end
+    return soundData.unitIsObjectOrItem and "GossipLookupByObjectName" or "GossipLookupByNPCName",
+        soundData.name and (replaceDoubleQuotes(soundData.name))
+end
+
+--- Whether any pack holds gossip for this speaker, whatever the text. Asked the moment a
+--- gossip dialog opens, before its text can be trusted, to decide whether to silence the
+--- NPC's greeting for a line that is coming.
+---@param soundData { unitGUID: string?, name: string?, unitIsObjectOrItem: boolean? }
+---@return boolean
+function DataModules:HasGossipFor(soundData)
+    local table, npc = GossipLookupKey(soundData)
+    if not table or npc == nil then
+        return false
+    end
+    for _, module in self:GetModules() do
+        local data = TextLookup(module, table)
+        if data and data[npc] then
+            return true
+        end
+    end
+    return false
+end
+
+---@param soundData SoundData
+---@return string|nil hash
+function DataModules:GetNPCGossipTextHash(soundData)
+    local table, npc = GossipLookupKey(soundData)
+    if not table then
+        return
     end
     local text = soundData.text
 

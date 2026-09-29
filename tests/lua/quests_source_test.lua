@@ -114,6 +114,78 @@ Expect("the next quest line mutes it again", world.cvars.Sound_EnableDialog, "0"
 Spoken:Skip()
 Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
 
+---------------------------------------------------------------- muting the greeting ahead
+-- The NPC's greeting starts as its dialog opens; the line is read off the dialog 0.1s (gossip)
+-- or 0.4s (quests) later. Muting only when the line started cut the greeting off mid-word, so
+-- the mute is taken in the frame the dialog opens.
+-- The dialog opening as the client delivers it: to this boot's event frames only, since
+-- every earlier boot's frames are still registered with the stub.
+local function Open(VO, event)
+    for _, frame in ipairs({ VO.Addon.questEventRecorderFrame, VO.Addon.directEventFrame }) do
+        if frame.events[event] then
+            frame.scripts.OnEvent(frame, event)
+        end
+    end
+end
+local function MuteBoot(autoToggle)
+    local VO, env, Spoken = Boot()
+    -- The player's setting: the player is what mutes.
+    env.Addon.db.profile.Audio.AutoToggleDialog = autoToggle ~= false
+    world.cvars.Sound_EnableDialog = "1"
+    return VO, env, Spoken
+end
+VO, env, Spoken = MuteBoot()
+stub.ShowGossip("Greetings, traveller.")
+Open(VO, "GOSSIP_SHOW")
+Expect("a voiced NPC's gossip opening mutes dialog at once", world.cvars.Sound_EnableDialog, "0")
+Expect("...before its line is queued", Spoken:GetQueueSize(), 0)
+stub.Advance(0.2)
+Expect("...the line is then read", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, GREETING_HASH)
+Expect("...with dialog still muted", world.cvars.Sound_EnableDialog, "0")
+stub.Advance(2)
+Expect("...past the mute's own deadline too", world.cvars.Sound_EnableDialog, "0")
+Spoken:StopAll()
+Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
+
+VO, env, Spoken = MuteBoot()
+world.npcGUID = "Creature-0-0-0-0-9999-0"
+stub.ShowGossip("Well met.")
+Open(VO, "GOSSIP_SHOW")
+Expect("an NPC no pack voices keeps its greeting", world.cvars.Sound_EnableDialog, "1")
+
+VO, env, Spoken = MuteBoot()
+VO.Addon.db.char.hasSeenGossipForNPC[world.npcGUID] = true
+stub.ShowGossip("Greetings, traveller.")
+Open(VO, "GOSSIP_SHOW")
+Expect("gossip the frequency rule will skip keeps its greeting", world.cvars.Sound_EnableDialog, "1")
+VO.Addon.db.char.hasSeenGossipForNPC = {}   -- saved too
+
+VO, env, Spoken = MuteBoot()
+VO.Addon:SetAutoplay(false)
+stub.ShowGossip("Greetings, traveller.")
+Open(VO, "GOSSIP_SHOW")
+Expect("with autoplay off nothing is muted", world.cvars.Sound_EnableDialog, "1")
+VO.Addon:SetAutoplay(true)   -- saved with the profile, which the next boot reads
+
+VO, env, Spoken = MuteBoot(false)
+stub.ShowGossip("Greetings, traveller.")
+Open(VO, "GOSSIP_SHOW")
+Expect("with the mute setting off nothing is muted", world.cvars.Sound_EnableDialog, "1")
+
+VO, env, Spoken = MuteBoot()
+world.questID = 101
+stub.ShowPanel("QuestFrameDetailPanel")
+Open(VO, "QUEST_DETAIL")
+Expect("a quest dialog opening mutes dialog at once", world.cvars.Sound_EnableDialog, "0")
+stub.Advance(1)
+Expect("...and its line is read under the mute", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
+Expect("...still muted", world.cvars.Sound_EnableDialog, "0")
+
+VO, env, Spoken = MuteBoot()
+world.questID = 999
+Open(VO, "QUEST_DETAIL")
+Expect("a quest no pack holds keeps its greeting", world.cvars.Sound_EnableDialog, "1")
+
 ---------------------------------------------------------------- disengage and abandon
 VO, env, Spoken = Boot()
 VO.Addon.db.profile.Audio.StopAudioOnDisengage = true
