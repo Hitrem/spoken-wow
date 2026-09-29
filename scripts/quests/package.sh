@@ -125,16 +125,7 @@ stage_tree() { # <staging dir> <source dir> <installed folder name>
   (cd "$2" && tar -cf - --exclude '.DS_Store' --exclude '*.bak' --exclude '*.orig' .) \
     | (cd "$dest" && tar -xf -)
 }
-# The follow-up clips pipelines/quests/tools/generate_followup_audio.py writes are a one-voice
-# stand-in for local testing: gitignored, so the uncommitted-changes guard above never sees
-# them, and never meant for players. addon.xml still loads FollowupSounds.lua, so the zip
-# carries it empty and every follow-up line falls back to the placeholder clip.
-stage_addon() {
-  stage_tree "$1" "$SRC" "$NAME"
-  rm -rf "$1/$NAME/Sounds/followup"
-  printf 'setfenv(1, VoiceOver)\n\n-- Empty in a release; see stage_addon in scripts/quests/package.sh.\nFollowupSoundLengths = nil\n' \
-    > "$1/$NAME/FollowupSounds.lua"
-}
+stage_addon() { stage_tree "$1" "$SRC" "$NAME"; }
 
 # A legacy zip carries one client's tree only: the variant .toc takes the unsuffixed name and
 # everything the other clients need is removed.

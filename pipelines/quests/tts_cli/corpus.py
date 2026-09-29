@@ -129,11 +129,16 @@ def lines_in_area(corpus: dict, map_id: int, x_range, y_range) -> list:
 
 def extract(path: str = DEFAULT_CORPUS_PATH) -> dict:
     """Query the world database and write the corpus. The only step that needs MySQL."""
+    import pandas as pd
+
     from tts_cli.sql_queries import (query_dataframe_for_all_quests_and_gossip,
-                                     query_spawns)
+                                     query_followup_dataframe, query_spawns)
     from tts_cli.tts_utils import TTSProcessor
 
-    df = query_dataframe_for_all_quests_and_gossip(0)
+    # Follow-up lines after everything else, so adding them left every existing row where it
+    # was: import-corpus records each row's place as its `ord`, and the export reproduces it.
+    df = pd.concat([query_dataframe_for_all_quests_and_gossip(0), query_followup_dataframe()],
+                   ignore_index=True)
     # preprocess_dataframe only uses self for handle_gender_options, so skip __init__ and
     # avoid requiring an ElevenLabs key just to extract text.
     df = TTSProcessor.preprocess_dataframe(TTSProcessor.__new__(TTSProcessor), df)

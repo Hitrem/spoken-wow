@@ -26,7 +26,6 @@
     <Include file="Player.lua"/>
     <Include file="VoiceOver.lua"/>
     <Include file="FollowupLines.lua"/>
-    <Include file="FollowupSounds.lua"/>
     <Include file="Followup.lua"/>
 
     <Include file="Compatibility.lua"/>

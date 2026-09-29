@@ -1,5 +1,5 @@
 /**
- * A quests line's audio path as the addon resolves it: {quests,gossip}/<fileName>.mp3.
+ * A quests line's audio path as the addon resolves it: {quests,gossip,followup}/<fileName>.mp3.
  *
  * `fileName` comes from the corpus, computed by Python. The only naming decision made on
  * this side is which subdirectory a line lives in, and it lives here alone - it is the
@@ -10,10 +10,17 @@ import { memoByLang } from "@/lib/memo";
 import type { CorpusLine } from "./corpus";
 import { corpus } from "./quests/catalogue";
 
-export const SUBFOLDERS = ["quests", "gossip"] as const;
+export const SUBFOLDERS = ["quests", "gossip", "followup"] as const;
 
-export function subfolder(line: Pick<CorpusLine, "source">): "quests" | "gossip" {
-  return line.source === "gossip" ? "gossip" : "quests";
+/**
+ * Followup has a folder of its own, not quests/: a follow-up file is named after its words and
+ * its voice (`4377-dwarf-male-standard`), and the addon resolves it by its own event
+ * (Module.lua's GetSoundPath), so the path has to be the one Python's naming gives it.
+ */
+export function subfolder(line: Pick<CorpusLine, "source">): (typeof SUBFOLDERS)[number] {
+  if (line.source === "gossip") return "gossip";
+  if (line.source === "followup") return "followup";
+  return "quests";
 }
 
 /** The addon's path, e.g. "quests/5-accept.mp3". Also the take's `file` and the /api/quests/audio/ route path. */

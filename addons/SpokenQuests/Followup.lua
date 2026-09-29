@@ -214,9 +214,10 @@ end
 -- Playing
 --------------------------------------------------------------------------------
 
--- PLACEHOLDER until follow-up clips exist: stands in one of the speaker's gossip clips, or
--- failing that the triggering quest's own accept/complete clip, so the matching can be heard
--- working in game. Replace with a lookup of the line's own recording once packs carry them.
+-- A stand-in for a line no installed pack has a recording of: one of the speaker's gossip
+-- clips, or failing that the triggering quest's own accept/complete clip, so the line is still
+-- heard. Every pack built before follow-up lines were recorded lands here for every line, as
+-- does a line the site has not voiced yet.
 local function PlaceholderClip(entry, npcID)
     local speaker = entry.line.speaker or npcID
     if speaker then
@@ -247,24 +248,38 @@ local function PlaceholderClip(entry, npcID)
     end
 end
 
--- The line's own recording, from pipelines/quests/tools/generate_followup_audio.py. That
--- output is gitignored, so FollowupSoundLengths is nil in any checkout that has not run it
--- and every line falls through to the placeholder.
-local function OwnClip(entry)
-    local id = entry.line.id
-    local length = id and FollowupSoundLengths and FollowupSoundLengths[id]
-    if length then
-        return {
-            filePath = format([[Interface\AddOns\SpokenQuests\Sounds\followup\%d.mp3]], id),
-            length = length,
-            -- SoundQueue names the addon a clip came from; there is no pack here to name.
-            module = { METADATA = { AddonName = "SpokenQuests", Title = "SpokenQuests" } },
-        }
+--- The line's own recording, from whichever pack has it. A pack's FollowupLookup names the
+--- file by speaker and broadcast text id, since one text said by two NPCs is two recordings in
+--- two voices; a pack built before follow-up lines has no FollowupLookup and finds nothing.
+---
+--- The lookup only names the file. Which pack plays it is ResolveSoundFile's decision, the
+--- one every other line goes through: the selected language before the fallback, priority
+--- within each, and the player-gendered m-/f- variant ahead of the plain one. Every pack
+--- carries the full lookup whether or not it has the audio, so the first stem is usually the
+--- only one; a second is tried only in case packs of different builds disagree.
+---@return SoundData|nil
+local function OwnClip(line, npcID)
+    local speaker = line.speaker or npcID
+    if not (line.id and speaker) then
+        return nil
+    end
+    local tried = {}
+    for _, module in DataModules:GetModules() do
+        local byLine = module.FollowupLookup and module.FollowupLookup[speaker]
+        local stem = byLine and byLine[line.id]
+        if stem and not tried[stem] then
+            tried[stem] = true
+            local probe = { event = Enums.SoundEvent.QuestFollowup, fileName = stem }
+            if DataModules:ResolveSoundFile(probe) then
+                return probe
+            end
+        end
     end
 end
 
 function Followup:Play(entry, message, sender, guid, npcID)
-    local clip = OwnClip(entry) or PlaceholderClip(entry, npcID)
+    local own = OwnClip(entry.line, npcID)
+    local clip = own or PlaceholderClip(entry, npcID)
     if not clip then
         Debug:Record("data-lookup-failed", format("No clip to play for follow-up line %d", entry.line.id or 0))
         return false
@@ -281,9 +296,10 @@ function Followup:Play(entry, message, sender, guid, npcID)
         text = message,
         unitGUID = guid,
         unitIsObjectOrItem = false,
-        -- The queue's dedup key, and this line's own rather than the clip's: a placeholder
-        -- borrows a clip that may already be queued under its own name.
-        fileName = format("followup:%d", entry.line.id or 0),
+        -- The queue's dedup key. The line's own recording goes by its file name, like any
+        -- other clip. A placeholder goes by the line instead: it borrows a clip that may
+        -- already be queued under its own name, and would be dropped as a duplicate of it.
+        fileName = own and own.fileName or format("followup:%d", entry.line.id or 0),
         filePath = clip.filePath,
         length = clip.length,
         module = clip.module,
@@ -338,7 +354,7 @@ function Followup:Simulate(input)
             local event = line.chat == "yell" and "CHAT_MSG_MONSTER_YELL" or "CHAT_MSG_MONSTER_SAY"
             local text = Render(line.male, name)
             print(format("line %d in %ds, %s: %s%s", line.id, line.delay or 0, name, text,
-                FollowupSoundLengths and FollowupSoundLengths[line.id] and "" or "  |cFFFF8040(no own clip, placeholder)|r"))
+                OwnClip(line) and "" or "  |cFFFF8040(no pack has it, placeholder)|r"))
             Addon:ScheduleTimer(function()
                 Followup:OnChat(event, text, name, guid)
             end, line.delay or 0)

@@ -50,27 +50,56 @@ for _, q in ipairs({ 300, 301, 302, 303 }) do
     lookup[q .. "-accept"] = 2; lookup[q .. "-complete"] = 2
 end
 
+-- A pack built before follow-up lines were recorded: no FollowupLookup, so every line plays
+-- a placeholder.
+local OLD_PACK = {
+    folder = "TestPack",
+    module = {
+        SoundLengthLookupByFileName = lookup,
+        GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
+        GossipLookupByNPCID = { [SPEAKER] = { ["Hail."] = GOSSIP_HASH } },
+    },
+}
+
 local queued = {}
-local function Boot(client)
+local booted
+--- Load the addon with `packs` installed (default: OLD_PACK). Each entry is
+--- { folder, language (nil = declares none), module = the data module it registers }.
+local function Boot(client, packs, locale)
+    -- The last boot's frames still hear every event this harness fires, and its Followup
+    -- would match and play the same chat through its own packs.
+    if booted and booted.Followup.frame then
+        booted.Followup.frame:UnregisterAllEvents()
+    end
     stub.SetClient(client or "11509"); stub.ResetSound(); stub.ResetTimers()
     stub.ldbObjects = {}; stub.dbIcons = {}
     world.questID = 0; stub.ShowPanel(nil); world.gossipText = nil; world.greetingText = nil
     world.playerName = "Tester"; world.unitSex = 2
     world.playerRace = "Dwarf"; world.playerClass = "Paladin"
-    stub.SetLocale("enUS")
+    stub.SetLocale(locale or "enUS")
+    packs = packs or { OLD_PACK }
+    local addons = {}
+    for _, pack in ipairs(packs) do
+        local meta = { ["X-VoiceOver-DataModule-Version"] = "1", Version = "1.2.1", Title = pack.folder }
+        if pack.language then meta["X-SpokenQuests-Language"] = pack.language end
+        table.insert(addons, { folder = pack.folder, meta = meta })
+    end
+    stub.SetAddOns(addons)
+    -- The saved variables outlive a reload in this harness, so a scenario that changed the
+    -- fallback language would otherwise hand it to the next one.
+    _G.SpokenQuestsDB = nil
     local VO, env = stub.LoadQuests(QUESTS, SPOKEN)
     VO.FollowupLines = FIXTURE
     dofile(QUESTS .. "Followup.lua")
     VO.Addon:OnInitialize()
-    VO.DataModules:Register("TestPack", {
-        SoundLengthLookupByFileName = lookup,
-        GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
-        GossipLookupByNPCID = { [SPEAKER] = { ["Hail."] = GOSSIP_HASH } },
-    })
+    for _, pack in ipairs(packs) do
+        VO.DataModules:Register(pack.folder, pack.module)
+    end
     stub.Advance(2)   -- the deferred pack load
     _G.Spoken:RegisterCallback("CLIP_QUEUED", function(clip)
         if clip.source == VO.Player.source then table.insert(queued, clip) end
     end)
+    booted = VO
     return VO, _G.Spoken
 end
 
@@ -113,7 +142,7 @@ Expect("...as a follow-up, not a quest or gossip line", clip and clip.event, VO.
 Expect("...at normal priority, so the turn-in's own gossip rule does not drop it", clip and clip.priority, "normal")
 Expect("...headed by the NPC who said it", clip and clip.present.header, "Marshal Test")
 Expect("...carrying what was said", clip and clip.text, "Thanks, Tester!")
-Expect("...on the speaker's gossip clip, standing in for the recording",
+Expect("...on the speaker's gossip clip, standing in where no pack has the recording",
     clip and clip.path:match("[^\\]+$"), GOSSIP_HASH .. ".ogg")
 Expect("...and is consumed", #VO.Followup.armed, 1)
 Say("Thanks, Tester!", SPEAKER_GUID)
@@ -197,16 +226,10 @@ Expect("...with the quest's own clip standing in where the speaker has no gossip
 -- The in-game test: arms the quest and replays its chat through the real matcher, one
 -- line per random-text group, on the script's own delays.
 Reset()
-VO.FollowupSoundLengths = { [10] = 1.5 }
 VO.Followup:Simulate("302")
 Expect("/spq followup arms the quest", #VO.Followup.armed, 3)
 stub.Advance(6)
 Expect("...and plays one line per delay, not every random alternative", Keys(), "followup:10, followup:12")
-Expect("...on the line's own recording where there is one",
-    queued[1] and queued[1].path, [[Interface\AddOns\SpokenQuests\Sounds\followup\10.mp3]])
-Expect("...and the placeholder where there is not", queued[2] and queued[2].path:match("[^\\]+$"),
-    GOSSIP_HASH .. ".ogg")
-VO.FollowupSoundLengths = nil
 
 ---------------------------------------------------------------- switched off
 Reset()
@@ -238,6 +261,112 @@ world.questID = 301; world.questText = "Go."
 _G.AcceptQuest()
 world.questID = 0
 Expect("3.3.5: AcceptQuest arms the start lines", #VO.Followup.armed, 2)
+
+---------------------------------------------------------------- the line's own recording
+-- A pack built since follow-up lines were recorded names each line's file by speaker and
+-- broadcast text id, and ships it under generated\sounds\followup\ - what its GetSoundPath
+-- answers for the QuestFollowup event.
+local FOLLOWUP_DIR = [[generated\sounds\followup\]]
+
+--- A data module in the shape build.py writes. `lookup` is FollowupLookup, `files` the lengths
+--- of what the pack actually holds: every pack carries the full lookup, not all the audio.
+local function FollowupPack(lookup, files, gossip)
+    return {
+        FollowupLookup = lookup,
+        SoundLengthLookupByFileName = files,
+        GossipLookupByNPCID = gossip,
+        GetSoundPath = function(_, fileName, event)
+            if event == VO.Enums.SoundEvent.QuestFollowup then
+                return FOLLOWUP_DIR .. fileName .. ".ogg"
+            end
+            return fileName .. ".ogg"
+        end,
+    }
+end
+
+local STEM = "1-dwarf-male-standard"
+local LOOKUP = {
+    [SPEAKER] = { [1] = STEM, [2] = "2-dwarf-male-standard", [10] = "10-dwarf-male-standard" },
+    -- Line 40 has no speaker in the export; the chat GUID's NPC is the only key there is.
+    [888] = { [40] = "40-human-male-standard" },
+}
+FIXTURE["end"][304] = { { id = 40, delay = 0, chat = "say", male = "Hm.", female = "Hm." } }
+
+for i = #queued, 1, -1 do queued[i] = nil end
+VO, Spoken = Boot(nil, { { folder = "NewPack", module = FollowupPack(LOOKUP,
+    { [STEM] = 3, ["10-dwarf-male-standard"] = 2, ["40-human-male-standard"] = 1, [GOSSIP_HASH] = 2 },
+    { [SPEAKER] = { ["Hail."] = GOSSIP_HASH } }) } })
+Reset()
+stub.FireEvent("QUEST_TURNED_IN", 300, 0, 0)
+Say("Thanks, Tester!", SPEAKER_GUID)
+Expect("a pack's FollowupLookup plays the line's own recording", Keys(), STEM)
+Expect("...from the pack's follow-up folder", queued[1] and queued[1].path,
+    [[Interface\AddOns\NewPack\]] .. FOLLOWUP_DIR .. STEM .. ".ogg")
+Expect("...with the pack's length for it", queued[1] and queued[1].length, 3)
+Say("Well done. He is a fine Dwarf Paladin.", SPEAKER_GUID)
+Expect("a line the lookup names but the pack has no audio for is a placeholder", Keys(),
+    STEM .. ", followup:2")
+
+Reset()
+stub.FireEvent("QUEST_TURNED_IN", 304, 0, 0)
+Say("Hm.", "Creature-0-0-0-0-888-0")
+Expect("a line with no speaker in the export is looked up under the chat GUID's NPC", Keys(),
+    "40-human-male-standard")
+
+Reset()
+VO.Followup:Simulate("302")
+stub.Advance(6)
+Expect("/spq followup plays the recording where a pack has one, and the placeholder where not",
+    Keys(), "10-dwarf-male-standard, followup:12")
+
+---------------------------------------------------------------- the player's gender
+-- The m-/f- variant is the same one quest lines use, and is preferred when the pack has it.
+for i = #queued, 1, -1 do queued[i] = nil end
+VO, Spoken = Boot(nil, { { folder = "NewPack", module = FollowupPack(LOOKUP,
+    { [STEM] = 3, ["m-" .. STEM] = 4 }) } })
+Reset()
+stub.FireEvent("QUEST_TURNED_IN", 300, 0, 0)
+Say("Thanks, Tester!", SPEAKER_GUID)
+Expect("a male player hears the m- variant of a line that has one", queued[1] and queued[1].path,
+    [[Interface\AddOns\NewPack\]] .. FOLLOWUP_DIR .. "m-" .. STEM .. ".ogg")
+Expect("...at its own length", queued[1] and queued[1].length, 4)
+Reset()
+world.unitSex = 3
+stub.FireEvent("QUEST_TURNED_IN", 300, 0, 0)
+Say("Thanks, Tester!", SPEAKER_GUID)
+Expect("...and a female player, with no f- variant, the plain file", queued[1] and queued[1].path,
+    [[Interface\AddOns\NewPack\]] .. FOLLOWUP_DIR .. STEM .. ".ogg")
+world.unitSex = 2
+
+---------------------------------------------------------------- the language order
+-- Line 1 is recorded in German and English, line 2 in English alone. A German player hears
+-- line 1 in German, and line 2 in English only while English is their fallback.
+local LANGUAGE_PACKS = {
+    { folder = "EnglishPack", module = FollowupPack(LOOKUP, { [STEM] = 3, ["2-dwarf-male-standard"] = 3 }) },
+    { folder = "GermanPack", language = "deDE", module = FollowupPack(LOOKUP, { [STEM] = 5, [GOSSIP_HASH] = 2 },
+        { [SPEAKER] = { ["Sei gegrüßt."] = GOSSIP_HASH } }) },
+}
+for i = #queued, 1, -1 do queued[i] = nil end
+VO, Spoken = Boot(nil, LANGUAGE_PACKS, "deDE")
+stub.FireEvent("QUEST_TURNED_IN", 300, 0, 0)
+Say("Danke, Tester!", SPEAKER_GUID)
+Expect("the selected language's pack answers first", queued[1] and queued[1].path,
+    [[Interface\AddOns\GermanPack\]] .. FOLLOWUP_DIR .. STEM .. ".ogg")
+Say("Gut gemacht.", SPEAKER_GUID)
+Expect("...and a line only the fallback language has falls back to it", queued[2] and queued[2].path,
+    [[Interface\AddOns\EnglishPack\]] .. FOLLOWUP_DIR .. "2-dwarf-male-standard.ogg")
+Expect("...recording the language it was answered in", queued[2] and queued[2].language, "enUS")
+
+for i = #queued, 1, -1 do queued[i] = nil end
+VO, Spoken = Boot(nil, LANGUAGE_PACKS, "deDE")
+VO.Addon.db.profile.Audio.FallbackLanguage = "none"
+stub.FireEvent("QUEST_TURNED_IN", 300, 0, 0)
+Say("Danke, Tester!", SPEAKER_GUID)
+Say("Gut gemacht.", SPEAKER_GUID)
+Expect("with no fallback, the English recording is not played; the German placeholder is", Keys(),
+    STEM .. ", followup:2")
+Expect("...on the German pack's gossip clip", queued[2] and queued[2].path,
+    [[Interface\AddOns\GermanPack\]] .. GOSSIP_HASH .. ".ogg")
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quest follow-up tests passed")

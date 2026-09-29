@@ -1,4 +1,4 @@
-from tts_cli.flavors import (apply_fallbacks, consensus_flavor, fallback_flavors,
+from tts_cli.flavors import (apply_fallbacks, consensus_flavor, fallback_flavors, file_key,
                              flavor_from_sound_name, voice_name)
 
 
@@ -84,3 +84,26 @@ class TestVoiceName:
 
     def test_two_parts_without_one(self):
         assert voice_name("narrator", "male", None) == "narrator-male"
+
+
+class TestFileKey:
+    def test_quest_rows_share_one_group_across_flavors(self):
+        # One file per quest, so a grim dwarf and a standard one must agree on a flavor.
+        assert file_key("accept", 5, "h", None, "dwarf-male", "grim") == \
+            file_key("accept", 5, "h", None, "dwarf-male", "standard")
+
+    def test_gossip_rows_group_by_text_hash(self):
+        assert file_key("gossip", "", "abc", None, "dwarf-male", "grim") == ("abc", "dwarf-male")
+
+    def test_followup_rows_never_group_across_flavors(self):
+        # Same words from two flavors are two files, so neither may be talked into the other's
+        # voice - the reason a follow-up file is named after its voice.
+        grim = file_key("followup", 5, "h", 4377.0, "dwarf-male", "grim")
+        standard = file_key("followup", 5, "h", 4377, "dwarf-male", "standard")
+        assert grim != standard
+        assert grim == ("4377-dwarf-male-grim", "dwarf-male")
+
+    def test_followup_rows_group_across_quests(self):
+        # The same words in the same voice after two quests are one file.
+        assert file_key("followup", 5, "h", 4377, "dwarf-male", "grim") == \
+            file_key("followup", 9, "other", 4377, "dwarf-male", "grim")

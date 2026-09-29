@@ -12,6 +12,7 @@ import pandas as pd
 from tts_cli.consts import GENDER_DICT, RACE_DICT
 from tts_cli.flavors import (apply_fallbacks, consensus_flavor, fallback_flavors,
                              flavor_from_sound_name, voice_name)
+from tts_cli.flavors import file_key as flavor_file_key
 
 REPLACE_DICT = {'$b': '\n', '$B': '\n', '$n': 'adventurer', '$N': 'Adventurer',
                 '$C': 'Adventurer', '$c': 'adventurer', '$R': 'Traveler', '$r': 'traveler'}
@@ -41,7 +42,8 @@ class TTSProcessor:
         3. Force every row sharing an audio file onto one flavor. A file is named after the
            quest or after md5(text + race + gender), so NPCs of the same race and gender
            sharing a line share an mp3 - and hundreds of gossip lines are shared across
-           flavors. One file cannot have two voices.
+           flavors. One file cannot have two voices. A follow-up line's file is named after
+           its flavor, so this pass never changes one.
         """
         race_gender = df['race'] + '-' + df['gender']
         flavors = [flavor_from_sound_name(name, rg)
@@ -49,18 +51,16 @@ class TTSProcessor:
         flavors = apply_fallbacks(race_gender, flavors,
                                   fallback_flavors(zip(race_gender, flavors)))
 
-        # The file each row will be written to, as tts_cli/naming.py derives it, paired with
-        # the race-gender. The player-gender prefix is irrelevant here: both variants of a
-        # line are the same NPC.
-        #
-        # Keyed on race-gender as well as the file because a quest given by a dwarf and a
-        # troll is one file with two voices already, and always has been. Agreeing a flavor
-        # across that pair does not make it one voice, it just hands the dwarf the troll's
-        # flavor - a dwarf-male-dark that no clips exist for.
+        # One group per audio file; flavors.file_key says why the race-gender is in the key
+        # and why a follow-up line's group is its own voice. broadcast_text_id is only a
+        # column when follow-up rows were appended (corpus.extract), which a caller reading
+        # quests and gossip alone does not do.
+        broadcasts = df['broadcast_text_id'] if 'broadcast_text_id' in df else [None] * len(df)
         file_key = [
-            (f'{quest}-{source}' if quest else text_hash, rg)
-            for quest, source, text_hash, rg
-            in zip(df['quest'], df['source'], df['templateText_race_gender_hash'], race_gender)
+            flavor_file_key(source, quest, text_hash, broadcast, rg, flavor)
+            for source, quest, text_hash, broadcast, rg, flavor
+            in zip(df['source'], df['quest'], df['templateText_race_gender_hash'], broadcasts,
+                   race_gender, flavors)
         ]
         agreed = {}
         for key, flavor in zip(file_key, flavors):

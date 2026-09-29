@@ -677,7 +677,8 @@ end
 
 --- Find the pack holding `soundData.fileName` and fill in the path, length and language.
 --- Split from PrepareSound for a caller that already knows the file it wants rather than
---- the line - Followup.lua's placeholder picks a clip by name.
+--- the line - Followup.lua, whose packs name a follow-up line's file in FollowupLookup, and
+--- whose placeholder picks a clip by name.
 ---@param soundData SoundData
 ---@return boolean found
 function DataModules:ResolveSoundFile(soundData)

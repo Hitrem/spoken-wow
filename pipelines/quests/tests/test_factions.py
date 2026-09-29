@@ -31,6 +31,26 @@ def test_gossip_is_its_own_pack_whatever_the_speaker():
     assert pack_of_line(CORPUS["lines"][3], SIDES) == "gossip"
 
 
+def test_followup_lines_split_by_the_quest_that_says_them():
+    # Words said after an Alliance quest and a Horde one are one file, a row under each quest;
+    # seen on both sides, it ships in Shared rather than in one side's pack.
+    corpus = {"lines": [
+        {"lineId": "f:10:dwarf-male-standard", "source": "followup", "questId": 5,
+         "fileName": "10-dwarf-male-standard"},
+        {"lineId": "f:11:orc-male-standard", "source": "followup", "questId": 7,
+         "fileName": "11-orc-male-standard"},
+        {"lineId": "f:12:human-male-standard", "source": "followup", "questId": 5,
+         "fileName": "12-human-male-standard"},
+        {"lineId": "f:12:human-male-standard", "source": "followup", "questId": 7,
+         "fileName": "12-human-male-standard"},
+    ]}
+    assert pack_of_line(corpus["lines"][0], SIDES) == "alliance"
+    assert pack_stems(corpus, SIDES, "alliance") == {"followup/10-dwarf-male-standard"}
+    assert pack_stems(corpus, SIDES, "horde") == {"followup/11-orc-male-standard"}
+    assert pack_stems(corpus, SIDES, "shared") == {"followup/12-human-male-standard"}
+    assert pack_stems(corpus, SIDES, "gossip") == set()
+
+
 def test_stems_are_extension_free_so_they_match_a_transcoded_store():
     assert pack_stems(CORPUS, SIDES, "alliance") == {"quests/5-accept"}
     assert pack_stems(CORPUS, SIDES, "gossip") == {"gossip/abc123"}

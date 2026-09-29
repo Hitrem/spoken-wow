@@ -18,6 +18,8 @@ import re
 from collections import Counter
 from typing import Iterable, Mapping
 
+from tts_cli.naming import FOLLOWUP, followup_stem
+
 # Wowhead and the sound files spell undead "Undead"; the corpus uses the client's internal
 # race name. Same mapping as RACE_TO_SLOT in tools/fetch_npc_lines.py, which named the
 # directories under voice/npc-lines that these flavors have to match.
@@ -142,3 +144,26 @@ def apply_fallbacks(
         flavor or fallbacks.get(race_gender)
         for race_gender, flavor in zip(race_genders, flavors)
     ]
+
+
+def file_key(source: str, quest, text_hash: str, broadcast_text_id,
+             race_gender: str, flavor: str | None) -> tuple:
+    """The group of rows that must agree on one flavor, because they share one audio file.
+
+    The file as tts_cli/naming.py derives it, paired with the race-gender. The player-gender
+    prefix is irrelevant here: both variants of a line are the same NPC.
+
+    Keyed on race-gender as well as the file because a quest given by a dwarf and a troll is
+    one file with two voices already, and always has been. Agreeing a flavor across that pair
+    does not make it one voice, it just hands the dwarf the troll's flavor - a
+    dwarf-male-dark that no clips exist for.
+
+    A follow-up line's file is named after its voice, flavor included, so its group is only
+    ever NPCs that already agree: same words, same race-gender-flavor. Keyed on the quest or
+    on the text hash instead, a dwarf-male-grim ender would be recorded in the standard
+    voice of whoever else says the line - the one thing its naming exists to prevent.
+    """
+    if source == FOLLOWUP:
+        return followup_stem(broadcast_text_id, voice_name(*race_gender.split("-", 1), flavor)), \
+            race_gender
+    return (f"{quest}-{source}" if quest else text_hash), race_gender

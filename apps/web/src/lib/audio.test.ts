@@ -19,6 +19,13 @@ describe("audio paths", () => {
     );
   });
 
+  it("puts follow-up lines under followup/, whatever quest they belong to", () => {
+    expect(audioRelPath({ source: "followup", fileName: "4377-dwarf-male-standard" })).toBe(
+      "followup/4377-dwarf-male-standard.mp3",
+    );
+    expect(subfolder({ source: "followup" })).toBe("followup");
+  });
+
   it("keeps the gender prefix Python put in the filename", () => {
     // The prefix is part of fileName, never added here.
     expect(subfolder({ source: "gossip" })).toBe("gossip");

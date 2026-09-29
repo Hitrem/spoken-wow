@@ -1073,9 +1073,17 @@ one of several texts at random, and the export lists each as its own entry, so a
 consumes every entry at that step's delay from that speaker. It has its own setting, and
 autoplay off silences it too, since these lines read themselves.
 
-There are no recordings of these lines yet. Until there are, `Followup.lua` plays one of the
-speaker's gossip clips, or the quest's own clip, in their place - marked `PLACEHOLDER` in the
-file - queued behind the turn-in's own voiceover rather than over it.
+The recordings ship in the audio packs like every other line, and are generated on the site
+like every other line. A pack's data module carries `FollowupLookup`, speaker's creature entry
+to broadcast text id to file stem (`{broadcastTextId}-{voice}`: NPCs of one race-gender-flavor saying the same text share a
+file, and a different voice gets its own), and the files sit under `generated\sounds\followup\`. The lookup only
+names the file: `DataModules:ResolveSoundFile` picks the pack, so a follow-up line gets the same
+language order, fallback and `m-`/`f-` player-gender variant as a quest line. Where no installed
+pack has the line - every pack built before follow-up lines were recorded, or a line the site
+has not voiced yet - `Followup.lua` plays one of the speaker's gossip clips, or the quest's own
+clip, in its place. Either way the clip is queued behind the turn-in's own voiceover rather than
+over it. The Report button has no address for a follow-up line: it reports what the client
+shows, and by the time the NPC speaks the quest dialog has closed.
 
 ## Tests
 

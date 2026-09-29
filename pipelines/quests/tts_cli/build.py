@@ -15,8 +15,9 @@ from tqdm import tqdm
 
 from tts_cli.ignores import ignored_files
 from tts_cli.length_table import write_sound_length_table_lua
-from tts_cli.naming import gossip_hash_from_line_id, subfolder_from_line_id
-from tts_cli.store import audio_extension, stored_files
+from tts_cli.naming import (FOLLOWUP, followup_stem_from_line_id, gossip_hash_from_line_id,
+                            subfolder_from_line_id)
+from tts_cli.store import SUBFOLDERS, audio_extension, stored_files
 from tts_cli.utils import (get_first_n_words, get_last_n_words,
                            replace_dollar_bs_with_space)
 
@@ -36,6 +37,10 @@ GUARD = "if not VoiceOver or not VoiceOver.DataModules then return end"
 #: in step with DataModules:GetQuestID in AI_VoiceOver/DataModules.lua.
 QUEST_SEARCH_WORDS = 15
 
+# The follow-up branch tests for the enum first because a pack outlives the player it was
+# built beside, in both directions: on a player from before follow-up lines QuestFollowup is
+# nil, and without the guard a nil event - a caller's bug - would resolve to a follow-up path
+# there instead of to nothing.
 MODULE_LUA = """if not VoiceOver or not VoiceOver.DataModules then return end
 
 {module} = {{}}
@@ -46,6 +51,8 @@ function {module}:GetSoundPath(fileName, event)
         return format([[generated\\sounds\\quests\\%s{extension}]], fileName)
     elseif Enums.SoundEvent:IsGossipEvent(event) then
         return format([[generated\\sounds\\gossip\\%s{extension}]], fileName)
+    elseif Enums.SoundEvent.QuestFollowup and event == Enums.SoundEvent.QuestFollowup then
+        return format([[generated\\sounds\\followup\\%s{extension}]], fileName)
     end
 end
 
@@ -150,6 +157,7 @@ def build_tables(corpus: dict, ignored=()) -> dict:
     questlog = {"creature": {}, "gameobject": {}, "item": {}}
     names = {"creature": {}, "gameobject": {}, "item": {}}
     quest_ids = {}
+    followup = {}
 
     for line in corpus["lines"]:
         if line["lineId"] in ignored:
@@ -157,6 +165,15 @@ def build_tables(corpus: dict, ignored=()) -> dict:
 
         kind = line["npcType"]
         names.setdefault(kind, {})[line["npcId"]] = line["npcName"]
+
+        # Before the quest tables, which it must stay out of: a follow-up line carries its
+        # quest, but it is said in chat rather than in the quest dialog, so matching its text
+        # there would answer the wrong question. The addon knows the speaker and the
+        # broadcast_text id from its own export, which is all this table is keyed on.
+        if line["source"] == FOLLOWUP:
+            followup.setdefault(line["npcId"], {}).setdefault(
+                int(line["lineId"].split(":")[1]), followup_stem_from_line_id(line["lineId"]))
+            continue
 
         if line["source"] == "gossip":
             if kind not in gossip_by_id:
@@ -194,6 +211,7 @@ def build_tables(corpus: dict, ignored=()) -> dict:
         "npc_name_lookups": ("NPCNameLookupByNPCID", names["creature"]),
         "object_name_lookups": ("ObjectNameLookupByObjectID", names["gameobject"]),
         "item_name_lookups": ("ItemNameLookupByItemID", names["item"]),
+        "followup_lookups": ("FollowupLookup", followup),
     }
 
 
@@ -309,7 +327,7 @@ def build_module(corpus: dict, store_dir: str, dist_dir: str = DEFAULT_DIST_DIR,
     if os.path.isdir(generated_dir):
         shutil.rmtree(generated_dir)
 
-    for sub in ("quests", "gossip"):
+    for sub in SUBFOLDERS:
         os.makedirs(os.path.join(sounds_dir, sub), exist_ok=True)
 
     extension = audio_extension(store_dir)
