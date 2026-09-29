@@ -38,7 +38,7 @@ describe("search by npc", () => {
     const result = find({ q: "dughan", filter: "npc", includeProgress: true, limit: 20_000 });
     expect(npcKeys(result.lines)).toEqual(["creature:240"]);
     expect(result.npcCount).toBe(1);
-    expect(result.total).toBe(27);
+    expect(result.total).toBe(28);
   });
 
   it("finds the same npc by id", () => {
@@ -117,13 +117,13 @@ describe("filter scoping", () => {
 describe("field filters", () => {
   it("narrows to a race", () => {
     const lines = all({ race: "tauren" });
-    expect(lines).toHaveLength(2076);
+    expect(lines).toHaveLength(2143);
     expect(lines.every((l) => l.race === "tauren")).toBe(true);
   });
 
   it("intersects rather than widening", () => {
     const both = all({ race: "tauren", gender: "female" });
-    expect(both).toHaveLength(631);
+    expect(both).toHaveLength(659);
     expect(both.length).toBeLessThan(all({ race: "tauren" }).length);
     expect(both.every((l) => l.race === "tauren" && l.gender === "female")).toBe(true);
   });
@@ -131,12 +131,12 @@ describe("field filters", () => {
   it("filters by voice, source and entity type", () => {
     // A voice is race-gender-flavor, so it narrows within the pair rather than matching it:
     // tauren-female speaks with three different voices.
-    expect(all({ voice: "tauren-female-shaman" })).toHaveLength(146);
+    expect(all({ voice: "tauren-female-shaman" })).toHaveLength(149);
     expect(all({ voice: "tauren-female-shaman" }).every((l) => l.race === "tauren")).toBe(true);
     // A flavor cuts across races - three of them have a shaman voice - so it narrows on its
     // own axis rather than standing in for a voice.
-    expect(all({ flavor: "shaman" })).toHaveLength(770);
-    expect(all({ flavor: "shaman", race: "tauren" })).toHaveLength(418);
+    expect(all({ flavor: "shaman" })).toHaveLength(774);
+    expect(all({ flavor: "shaman", race: "tauren" })).toHaveLength(422);
     expect(all({ source: "gossip" }).every((l) => l.source === "gossip")).toBe(true);
     expect(all({ npcType: "item" }).every((l) => l.npcType === "item")).toBe(true);
   });
@@ -170,15 +170,15 @@ describe("field filters", () => {
   it("hides progress text unless asked for", () => {
     // 3,140 of the corpus's 17,792 lines, and no code path will ever voice one.
     expect(asShipped().every((l) => l.source !== "progress")).toBe(true);
-    expect(asShipped()).toHaveLength(14652);
-    expect(all()).toHaveLength(17792);
+    expect(asShipped()).toHaveLength(15727);
+    expect(all()).toHaveLength(19093);
   });
 
   it("treats asking for the progress source as asking to see them", () => {
     // Otherwise picking `progress` in the source filter would return nothing at all, which
     // reads as a broken filter rather than as a default doing its job.
     const lines = asShipped({ source: "progress" });
-    expect(lines).toHaveLength(3140);
+    expect(lines).toHaveLength(3366);
     expect(lines.every((l) => l.source === "progress")).toBe(true);
   });
 });
