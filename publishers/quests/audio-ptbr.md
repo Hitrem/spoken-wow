@@ -6,7 +6,7 @@ lang: ptBR
 pack: all
 version: 0.0.2
 slug: spoken-quests-audio-ptbr
-name: Spoken Quests Audio: Portuguese
+name: Spoken Quests Audio: Portuguese (ptBR)
 summary: Quest and gossip lines for Spoken Quests, voiced in Brazilian Portuguese. One pack, both factions. Partial: few quest completions yet. Needs Spoken Quests.
 categories:
   - Audio & Video

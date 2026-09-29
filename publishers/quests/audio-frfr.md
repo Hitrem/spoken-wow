@@ -6,7 +6,7 @@ lang: frFR
 pack: all
 version: 0.0.2
 slug: spoken-quests-audio-frfr
-name: Spoken Quests Audio: French
+name: Spoken Quests Audio: French (frFR)
 summary: Every quest and gossip line for Spoken Quests, voiced in French. One pack, both factions. Needs Spoken Quests.
 categories:
   - Audio & Video
