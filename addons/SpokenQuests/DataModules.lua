@@ -111,35 +111,35 @@ DataModules =
         {
             AddonName = "SpokenQuestsAudioAll",
             Title = "Spoken Quests Audio: All",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-all",
         },
         {
             AddonName = "SpokenQuestsAudioAlliance",
             Title = "Spoken Quests Audio: Alliance",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-alliance",
         },
         {
             AddonName = "SpokenQuestsAudioHorde",
             Title = "Spoken Quests Audio: Horde",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-horde",
         },
         {
             AddonName = "SpokenQuestsAudioShared",
             Title = "Spoken Quests Audio: Shared Quests",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-shared",
         },
         {
             AddonName = "SpokenQuestsAudioGossip",
             Title = "Spoken Quests Audio: Gossip",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-gossip",
         },
@@ -306,12 +306,35 @@ function DataModules:EnumerateAddons(loadModules)
         local max = module.RelevantBelowVersion
         if (not min or Version.Interface >= min) and (not max or Version.Interface < max) then
             local present = self.presentModules[module.AddonName]
-            local update = present and present.ContentVersion ~= module.ContentVersion
+            local update = present and DataModules:IsOlderContent(present.ContentVersion, module.ContentVersion)
             if (not present and not hasAnyPack) or update then
                 Options:AddAvailableDataModule(module, order, update)
             end
         end
     end
+end
+
+--- Whether an installed pack's version is older than the one this addon knows of. Older, not
+--- different: the versions above are written into the addon, so a pack released after it --
+--- 2.1.0 packs under an addon that still says 2.0.0 -- would otherwise be told to "update" back
+--- to the version it replaced. A version that is not dotted numbers is never called out of date.
+---@param installed string?
+---@param known string?
+---@return boolean
+function DataModules:IsOlderContent(installed, known)
+    local function parts(version)
+        if type(version) ~= "string" or not version:match("^%d+[%d.]*$") then return nil end
+        local out = {}
+        for n in version:gmatch("%d+") do out[#out + 1] = tonumber(n) end
+        return out
+    end
+    local a, b = parts(installed), parts(known)
+    if not a or not b then return false end
+    for i = 1, math.max(#a, #b) do
+        local x, y = a[i] or 0, b[i] or 0
+        if x ~= y then return x < y end
+    end
+    return false
 end
 
 function DataModules:LoadPresentModules()

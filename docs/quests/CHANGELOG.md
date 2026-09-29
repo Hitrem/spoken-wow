@@ -16,12 +16,18 @@ by players with Contribute, and 1,275 of them have a voice in these packs: 464 q
   The Skybourne elves speak with voices of their own, one for each of the game's two voice
   sets per gender.
 - **Addressed reported lines.**
-- Still one format, Ogg Vorbis at 44.1 kHz, and the same four packs. Install over 2.0.0.
+- **On GitHub, one pack holds every line**, `SpokenQuestsAudioAll`, the way the other
+  languages' packs do. If you took the four packs from GitHub before, delete their folders
+  after installing it, or you keep two copies of the same lines. CurseForge keeps the same
+  four packs.
+- Still one format, Ogg Vorbis at 44.1 kHz. Install over 2.0.0.
 
 ## 2.1.3 — 2026-09-27
 
 - Queued quest and NPC dialogue now supplies captions to Spoken Player 2.2.3.
   Replaying an accepted quest uses its quest log description when available.
+- No longer tells you to update a sound pack that is newer than it knows about. Installing the
+  2.1.0 packs under an older Spoken Quests offered an "update" back to 2.0.0.
 
 ## 0.0.2 — quests-audio-deDE — 2026-09-28
 
