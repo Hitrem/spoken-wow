@@ -40,6 +40,12 @@ which is why there is one file per project here and not two.
 | `quests/audio-horde.md` | Spoken Quests Audio: Horde | 1660198 | vNAg3OKo | `spoken-quests-audio-horde` |
 | `quests/audio-shared.md` | Spoken Quests Audio: Shared Quests | 1660199 | QNlz3YKe | `spoken-quests-audio-shared` |
 | `quests/audio-gossip.md` | Spoken Quests Audio: Gossip | 1660202 | XKqA45Ky | `spoken-quests-audio-gossip` |
+| `quests/audio-frfr.md` | Spoken Quests Audio: French (frFR) | 1717800 | — | `spoken-quests-audio-frfr` |
+| `quests/audio-dede.md` | Spoken Quests Audio: German (deDE) | 1717808 | — | `spoken-quests-audio-dede` |
+| `quests/audio-esmx.md` | Spoken Quests Audio: Spanish AL (esMX) | 1717814 | — | `spoken-quests-audio-esmx` |
+| `quests/audio-eses.md` | Spoken Quests Audio: Spanish EU (esES) | 1717817 | — | `spoken-quests-audio-eses` |
+| `quests/audio-ptbr.md` | Spoken Quests Audio: Portuguese (ptBR) | 1717819 | — | `spoken-quests-audio-ptbr` |
+| `quests/audio-ruru.md` | Spoken Quests Audio: Russian (ruRU) | 1717824 | — | `spoken-quests-audio-ruru` |
 | `zones/spoken-zones.md` | Spoken Zones (was ZoneLore) | 1636521 | mNw7b5No | `spoken-zones` |
 | `zones/spoken-zones-audio.md` | Spoken Zones Audio | 1636532 | b6mvD9KP | `spoken-zones-audio` |
 | `zones/spoken-zones-audio-esmx.md` | Spoken Zones Audio: Spanish (AL) | 1711067 | — | `spoken-zones-audio-esmx` |
