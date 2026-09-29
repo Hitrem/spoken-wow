@@ -58,7 +58,7 @@ endef
         pull-history pull-live history-status sounds package package-audio \
         package-audio-complete package-meta push-complete icon \
         downloads-status \
-        factions release release-audio release-audio-dry release-wago release-curse \
+        factions followup-lines release release-audio release-audio-dry release-wago release-curse \
         release-dry import-corpus import-locale fill-locales export-corpus export-ignores export-locale-text \
         sync check-synced full-release
 
@@ -235,6 +235,13 @@ downloads-status: require-droplet ## List what the site is offering for download
 
 factions: ## Re-export pipelines/quests/corpus/factions.json from the world DB (needs MySQL)
 	@$(PYTHON) pipelines/quests/tools/export_factions.py
+
+# What NPCs say in chat after a quest is accepted or turned in, from the world DB's quest
+# scripts. Committed as addon Lua for the same reason factions.json is committed: packaging the
+# addon must never need MySQL. pipelines/quests/tools/export_followup_lines.py explains who speaks.
+
+followup-lines: ## Re-export addons/SpokenQuests/FollowupLines.lua from the world DB (needs MySQL)
+	@$(PYTHON) pipelines/quests/tools/export_followup_lines.py
 
 release-dry: ## Show what `make release` would upload to CurseForge and Wago
 	@./scripts/quests/release.sh --dry-run

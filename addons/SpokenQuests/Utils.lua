@@ -24,6 +24,21 @@ function Utils:GetIDFromGUID(guid)
     return assert(tonumber((select(5, strsplit("-", rest)))), format([[Failed to retrieve ID from GUID "%s"]], guid))
 end
 
+--- Returns the creature ID a GUID names, or nil for any other object, a GUID the helpers
+--- above reject, or a client before 2.3 where Compatibility.lua removes them. Guarded with
+--- pcall because those helpers assert, and the callers run on chat and playback events.
+function Utils:GetCreatureIDFromGUID(guid)
+    if type(guid) ~= "string" or guid == "" or not (self.GetGUIDType and self.GetIDFromGUID) then
+        return nil
+    end
+    local okType, guidType = pcall(self.GetGUIDType, self, guid)
+    if not (okType and guidType and Enums.GUID:IsCreature(guidType) and Enums.GUID:CanHaveID(guidType)) then
+        return nil
+    end
+    local okID, id = pcall(self.GetIDFromGUID, self, guid)
+    return okID and id or nil
+end
+
 --- Returns a dummy WorldObject GUID using the provided `Enums.GUID` type and ID.
 --- - Returns nil in clients before 2.3 as those don't provide `UnitGUID(unitID)` function.
 --- - Overridden for clients before 6.0 that use an older GUID format.

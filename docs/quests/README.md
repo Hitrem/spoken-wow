@@ -1052,6 +1052,31 @@ The data module names no `RequiredDeps`. It used to require `AI_VoiceOver`, whic
 `LoadAddOn` fail with `DEP_DISABLED` whenever the player was a fork under another folder name
 and the original sat disabled — three folder names into this lineage, that is the normal case. The module is `LoadOnDemand` and its `Module.lua` returns early
 unless `VoiceOver.DataModules` exists, so the dependency bought nothing and cost the fork.
+
+### What NPCs say after a quest
+
+Some quests end, or begin, with the NPC saying something in `/say` or `/yell` a few seconds
+later: the world DB's quest scripts, which the client only ever sees as
+`CHAT_MSG_MONSTER_SAY`/`_YELL`. `FollowupLines.lua` is the export of those lines
+(`pipelines/quests/tools/export_followup_lines.py`), keyed by quest under `end` and `start`,
+and `Followup.lua` reads them. That chat reaches everybody near the NPC, and in a capital the
+same turn-in happens every few seconds, so nothing is listened for until **this** player
+triggers it: `QUEST_TURNED_IN`/`QUEST_ACCEPTED` on Blizzard's clients, and on 1.12/2.4.3/3.3.5
+(which have neither event) a hook on `GetQuestReward`/`AcceptQuest`, which run while the dialog
+still says which quest it is. The quest's lines stay armed for their longest delay plus ten
+seconds. On an English client a message must then equal a line once `$n`, `$r`, `$c` and `$g…;`
+are filled in for the local player - so a line naming the player cannot match somebody
+else's turn-in - and come from the line's speaker when the chat event carries a GUID. Other
+clients show translated text, so there the speaker's NPC ID is the only evidence: the earliest
+step still armed for that NPC plays, and with no GUID nothing plays. A script step can pick
+one of several texts at random, and the export lists each as its own entry, so a match
+consumes every entry at that step's delay from that speaker. It has its own setting, and
+autoplay off silences it too, since these lines read themselves.
+
+There are no recordings of these lines yet. Until there are, `Followup.lua` plays one of the
+speaker's gossip clips, or the quest's own clip, in their place - marked `PLACEHOLDER` in the
+file - queued behind the turn-in's own voiceover rather than over it.
+
 ## Tests
 
 ```bash

@@ -115,3 +115,8 @@ superpowers/
 # The release directory the deploy workflows assemble. Built by CI; reproducible
 # locally by following the "Assemble release" step in the workflow.
 /release/
+
+# Stopgap follow-up clips from pipelines/quests/tools/generate_followup_audio.py: one voice
+# for every speaker, regenerable, and not the audio that will ship.
+/addons/SpokenQuests/Sounds/followup/
+/addons/SpokenQuests/FollowupSounds.lua

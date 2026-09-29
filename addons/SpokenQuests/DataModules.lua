@@ -667,6 +667,20 @@ function DataModules:PrepareSound(soundData)
         return false
     end
 
+    if self:ResolveSoundFile(soundData) then
+        return true
+    end
+
+    -- No pack holds the line - but an easter egg for it ships with the player itself.
+    return EasterEggs:Apply(soundData)
+end
+
+--- Find the pack holding `soundData.fileName` and fill in the path, length and language.
+--- Split from PrepareSound for a caller that already knows the file it wants rather than
+--- the line - Followup.lua's placeholder picks a clip by name.
+---@param soundData SoundData
+---@return boolean found
+function DataModules:ResolveSoundFile(soundData)
     -- Language before priority. A pack that holds the line in the language the player
     -- asked for answers it even if a higher-priority pack holds the same line in another
     -- language; only when no pack in the selected language has it does the fallback
@@ -705,9 +719,7 @@ function DataModules:PrepareSound(soundData)
             end
         end
     end
-
-    -- No pack holds the line - but an easter egg for it ships with the player itself.
-    return EasterEggs:Apply(soundData)
+    return false
 end
 
 function DataModules:AddPlayerGenderToFilename(fileName)
