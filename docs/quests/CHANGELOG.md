@@ -6,6 +6,18 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 2.2.0 — sound packs
+
+**The Forever quests are voiced.** About 1,550 lines are new since 2.0.0, all of them sent in
+by players with Contribute, and 1,275 of them have a voice in these packs: 464 quest offers,
+491 turn-ins and 320 NPC greetings.
+
+- **Most of the quests new to the Forever client** speak now: 946 lines across 505 of them.
+  The Skybourne elves speak with voices of their own, one for each of the game's two voice
+  sets per gender.
+- **About 50 older lines re-recorded** where the take had something wrong with it.
+- Still one format, Ogg Vorbis at 44.1 kHz, and the same four packs. Install over 2.0.0.
+
 ## 2.1.3 — 2026-09-27
 
 - Queued quest and NPC dialogue now supplies captions to Spoken Player 2.2.3.
