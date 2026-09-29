@@ -15,8 +15,7 @@ by players with Contribute, and 1,275 of them have a voice in these packs: 464 q
 - **Most of the quests new to the Forever client** speak now: 946 lines across 505 of them.
   The Skybourne elves speak with voices of their own, one for each of the game's two voice
   sets per gender.
-- **59 lines re-recorded** since 2.0.0 was built, which until now played their old take in game
-  even though the site had the new one.
+- **Addressed reported lines.**
 - Still one format, Ogg Vorbis at 44.1 kHz, and the same four packs. Install over 2.0.0.
 
 ## 2.1.3 — 2026-09-27
