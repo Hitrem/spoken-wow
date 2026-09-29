@@ -1099,7 +1099,12 @@ nothing plays: a borrowed gossip or quest clip would say other words under this 
 The debug log records `followup-no-recording` with the line's id, and `/spq followup` marks
 such a line "no recording yet — silent". A clip that does play is queued behind the turn-in's
 own voiceover rather than over it. The Report button has no address for a follow-up line: it reports what the client
-shows, and by the time the NPC speaks the quest dialog has closed.
+shows, and by the time the NPC speaks the quest dialog has closed. On the site the explorer
+files one under the speaker's `npc/{id}` address with the line's id, the way it files gossip -
+`quest/{id}/complete` would name the turn-in text instead. The explorer marks these rows with an
+amber speech bubble and "after quest {id}", and the source filter calls them "follow-up"; it
+cannot say whether the line follows the accept or the turn-in, since the corpus row keeps only
+the quest.
 
 ## Tests
 

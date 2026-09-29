@@ -43,7 +43,7 @@ export type LineDetail = {
  * nothing else, because that is all the addon has to build a link from.
  *
  * Only quests can answer null. Its addresses are built from what a client can see, and a
- * line neither a quest nor a gossip address can name would arrive in triage unresolvable.
+ * line neither a quest nor an NPC address can name would arrive in triage unresolvable.
  */
 const TARGETS: Record<Source, (line: SourceLine) => string | null> = {
   quests: (line) => targetForLine(line as QuestLine),

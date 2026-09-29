@@ -16,3 +16,17 @@ export const NPC_TYPES = ["creature", "gameobject", "item"] as const;
 
 export type Source = (typeof SOURCES)[number];
 export type NpcType = (typeof NPC_TYPES)[number];
+
+/**
+ * What the source filter shows for each value. The first four are words a reader already
+ * knows and label themselves; "followup" is a frozen identifier (it names the corpus rows
+ * and the followup/ folder) and reads as a typo in a dropdown, so it gets the spelling a
+ * person would write. The URL keeps carrying the value, never the label.
+ */
+export const SOURCE_LABELS: Record<Source, string> = {
+  accept: "accept",
+  progress: "progress",
+  complete: "complete",
+  gossip: "gossip",
+  followup: "follow-up",
+};

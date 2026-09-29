@@ -11,6 +11,7 @@ import {
   EyeOffIcon,
   FlagIcon,
   MessageSquareIcon,
+  MessageSquareQuoteIcon,
   PencilIcon,
   PlayIcon,
 } from "lucide-react";
@@ -55,7 +56,31 @@ const QUEST_MARKS: Record<string, { glyph: string; label: string }> = {
   progress: { glyph: "−", label: "quest in progress" },
 };
 
+/**
+ * What a follow-up line is, in words, for the mark's tooltip and the quest column.
+ *
+ * "Accepted or turned in" rather than whichever one it was: the corpus row keeps the quest
+ * but not which of its two scripts says the line, and one line can be said by both. The
+ * addon's FollowupLines.lua still has start/end, so a row could say which if that ever
+ * reaches the corpus.
+ */
+const FOLLOWUP_LABEL = "said in chat after the quest is accepted or turned in";
+
 function SourceMark({ source }: { source: string }) {
+  // Gossip's bubble, because this is an NPC talking rather than a quest dialog, but in the
+  // quest marks' amber: it only happens because of a quest, and the row names which.
+  if (source === "followup") {
+    return (
+      <span
+        title={FOLLOWUP_LABEL}
+        aria-label="follow-up"
+        className="mt-1 flex w-3.5 shrink-0 justify-center"
+      >
+        <MessageSquareQuoteIcon className="size-3.5 text-amber-400" />
+      </span>
+    );
+  }
+
   if (source === "gossip") {
     return (
       <span title="gossip" aria-label="gossip" className="mt-1 flex w-3.5 shrink-0 justify-center">
@@ -234,8 +259,16 @@ export default function LineRow({
                 onClick={() => onRename(line, "quest")}
               />
             )}
+            {/* "after quest" on a follow-up line: the title alone would read as though the
+                line were part of the quest's dialog, when it is what the NPC says once that
+                dialog has closed. */}
             <span className="text-muted-foreground block truncate text-xs">
-              quest {line.questId} <WowheadLink href={wowheadQuestUrl(line.questId)} />
+              {line.source === "followup" ? (
+                <span title={FOLLOWUP_LABEL}>after quest</span>
+              ) : (
+                "quest"
+              )}{" "}
+              {line.questId} <WowheadLink href={wowheadQuestUrl(line.questId)} />
             </span>
           </>
         )}

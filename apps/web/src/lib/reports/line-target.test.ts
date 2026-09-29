@@ -17,6 +17,13 @@ const gossip = {
   npcId: 68,
 } as Parameters<typeof targetForLine>[0];
 
+const followup = {
+  lineId: "f:1242:human-male-official",
+  source: "followup",
+  questId: 54,
+  npcId: 197,
+} as Parameters<typeof targetForLine>[0];
+
 const progress = { ...quest, lineId: "q:7:progress", source: "progress", questId: 7 } as typeof quest;
 
 describe("targetForLine", () => {
@@ -29,10 +36,16 @@ describe("targetForLine", () => {
     expect(targetForLine(gossip)).toBe("npc/68");
   });
 
+  it("addresses a follow-up line by its speaker, not by the quest it follows", () => {
+    // quest/54/complete would resolve to Marshal McBride's turn-in text, which is not the
+    // line being reported; his NPC address resolves to every line he has, this one included.
+    expect(targetForLine(followup)).toBe("npc/197");
+  });
+
   it("produces addresses the report page can parse", () => {
     // The whole point of reusing the addon's address format: a report filed from the site and
     // one filed from the game land on the same target string, so triage sees one kind of row.
-    for (const line of [quest, progress, gossip]) {
+    for (const line of [quest, progress, gossip, followup]) {
       const address = targetForLine(line);
       expect(address).not.toBeNull();
       expect(parseTarget(address!.split("/"))).not.toBeNull();

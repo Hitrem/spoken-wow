@@ -183,6 +183,32 @@ describe("field filters", () => {
   });
 });
 
+describe("follow-up lines", () => {
+  it("are in the default view, which hides only progress text", () => {
+    const lines = asShipped().filter((l) => l.source === "followup");
+    expect(lines.length).toBeGreaterThan(0);
+  });
+
+  it("narrow by source, and are voiceable lines with a quest and a speaker", () => {
+    const lines = asShipped({ source: "followup" });
+    expect(lines).toHaveLength(corpus.lines.filter((l) => l.source === "followup").length);
+    expect(lines.every((l) => l.source === "followup")).toBe(true);
+    // What the row draws: the quest it follows and the NPC who says it. A null quest would
+    // leave the quest column a dash and the row with no context at all.
+    expect(lines.every((l) => l.questId !== null && l.npcId > 0)).toBe(true);
+    expect(lines.every((l) => l.lineId.startsWith("f:"))).toBe(true);
+  });
+
+  it("come back when narrowing to the quest they follow", () => {
+    // Narrowing a row to its quest is a quest-id search; a follow-up line belongs in that
+    // answer beside the quest's own dialog.
+    const sample = asShipped({ source: "followup" })[0];
+    const lines = asShipped({ q: String(sample.questId), filter: "quest" });
+    expect(lines.some((l) => l.source === "followup")).toBe(true);
+    expect(lines.some((l) => l.source !== "followup")).toBe(true);
+  });
+});
+
 describe("gaps", () => {
   it("ignores lines the generator never voices", () => {
     // Progress text is deliberately never synthesized, so its absence is not a gap.

@@ -14,8 +14,8 @@ export default async function Page() {
     <main className="mx-auto max-w-6xl px-5 pt-6 pb-36">
       <h1 className="text-xl font-semibold">Quest dialogue</h1>
       <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        Browse and play every quest and gossip voiceline, or search by NPC, quest, or what
-        the line says. Read-only: nothing here writes to the corpus, the audio store, or your
+        Browse and play every quest and gossip voiceline, and what NPCs say after a quest,
+        or search by NPC, quest, or what the line says. Read-only: nothing here writes to the corpus, the audio store, or your
         game install.
       </p>
       <Suspense>
