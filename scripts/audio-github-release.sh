@@ -22,9 +22,11 @@
 # deliberately outside the prefixes release-addons.yaml watches (spoken/, quests/, zones/):
 # that workflow would try to build an addon from a pack tag and fail the tag.
 #
-# The meta addon has no release here on purpose. SpokenQuestsAudio is a few kilobytes that
-# declares the four packs as dependencies, which only an addon manager resolves; downloaded by
-# hand it is an empty folder, so the four packs are what this offers.
+# English quests go out as ONE pack here, SpokenQuestsAudioAll, the way each language's do: one
+# download is one answer to "which do I install". CurseForge keeps the four split packs, which
+# its uploads can take and its dependencies can assemble, so their pages say github: false and
+# this lists only what may come here (scripts/lib/packs.mjs). The meta addon, SpokenQuestsAudio,
+# never comes here at all: downloaded by hand it is an empty folder.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -61,7 +63,7 @@ SECTIONS_ALL="quests zones books"
 section="${args[0]:-}"; lang="${args[1]:-enUS}"
 targets=()   # "section lang pack"
 for s in ${section:-$SECTIONS_ALL}; do
-  list_output="$(node "$REPO/scripts/lib/packs.mjs" list "$s" "$lang")" || exit 1
+  list_output="$(node "$REPO/scripts/lib/packs.mjs" list "$s" "$lang" github)" || exit 1
   while IFS= read -r p; do [[ -n "$p" ]] && targets+=("$s $lang $p"); done <<<"$list_output"
 done
 field() { node "$REPO/scripts/lib/packs.mjs" get "$1" "$2" "$3" "$4"; }

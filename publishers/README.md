@@ -125,6 +125,16 @@ makes the Wago copy of every page linking that pack point at the GitHub releases
 instead of at a Wago project holding no files. The link is the releases query rather than a
 tag, so it survives the next audio build.
 
+**English quests are one pack on GitHub and four on CurseForge.** GitHub takes a file up to
+2 GB, so there, as for every language, one download holds every line: `SpokenQuestsAudioAll`,
+tagged `quests-audio/vX.Y.Z`. CurseForge cannot take that file, so it keeps the four split packs
+and the meta addon that pulls them in. `quests/audio-all.md` is therefore both: the meta addon's
+project page, and the registry entry for the one-folder pack (`pack: all`, `release:
+quests-audio`). The four split pages say `github: false`, which is what keeps them out of
+`scripts/audio-github-release.sh`. The one-folder pack keeps its `All` suffix because the bare
+`SpokenQuestsAudio` is the meta addon's folder, and a player with both would have one overwrite
+the other.
+
 **These are pasted by hand and the site is the live copy.** There is no API for descriptions —
 `release.sh` uploads files and nothing else, deliberately, because a script that rewrote project
 pages each release could quietly undo an edit made in the web UI. So these files are the source

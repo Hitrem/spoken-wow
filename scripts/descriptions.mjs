@@ -64,11 +64,16 @@ const WAGO_ADDON_URL = "https://addons.wago.io/addons/";
 const GITHUB_RELEASES_URL = "https://github.com/rusty-key/spoken-wow/releases?q=";
 
 // slug -> the URL the Wago copy should use, for pages whose frontmatter names a `release:`
-// tag prefix. Everything else is rewritten to the Wago page of the same slug.
+// tag prefix. Everything else is rewritten to the Wago page of the same slug. A pack kept off
+// GitHub (`github: false`, English's four split quests packs) has no releases there to find,
+// so its link stays on CurseForge, the one place that has it.
 function wagoUrls(pages) {
   const urls = new Map();
   for (const page of pages) {
-    if (page.meta.release) urls.set(page.meta.slug, GITHUB_RELEASES_URL + page.meta.release);
+    if (!page.meta.release) continue;
+    urls.set(page.meta.slug, page.meta.github === "false"
+      ? CURSEFORGE_ADDON_URL + page.meta.slug
+      : GITHUB_RELEASES_URL + page.meta.release);
   }
   return urls;
 }

@@ -64,11 +64,12 @@ MODULE="${MODULE:-SpokenQuestsAudio}"
 VERSION="${VERSION:-2.0.0}"
 # Which packs to build; each becomes MODULE plus the suffix tts_cli/factions.py gives it.
 #
-# The four that ship. 'all' - one folder holding every line - is deliberately not among them:
-# it cannot be uploaded (577 MB is a Cloudflare 413), and on CurseForge that project ships the
-# meta addon from scripts/package-meta.sh instead. Build it with PACKS=all when you want the
-# whole thing in one folder locally, which is also the fast way to try an encode change.
-PACKS="${PACKS:-alliance horde shared gossip}"
+# All five that ship. The four split packs go to CurseForge; 'all', one folder holding every
+# line, goes to GitHub alone -- CurseForge cannot take it (577 MB is a Cloudflare 413), and its
+# All project ships the meta addon from scripts/package-meta.sh instead. One run builds them
+# all from one transcode. PACKS=all builds just the one, which is also the fast way to try an
+# encode change.
+PACKS="${PACKS:-alliance horde shared gossip all}"
 ENCODE="${ENCODE:-ogg-q0-44k}"
 ZIP="${ZIP:-1}"
 # Distinguishes the zips of two profiles built from the same module name, so one profile's
