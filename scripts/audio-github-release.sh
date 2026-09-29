@@ -22,10 +22,11 @@
 # deliberately outside the prefixes release-addons.yaml watches (spoken/, quests/, zones/):
 # that workflow would try to build an addon from a pack tag and fail the tag.
 #
-# English quests go out as ONE pack here, SpokenQuestsAudioAll, the way each language's do: one
-# download is one answer to "which do I install". CurseForge keeps the four split packs, which
-# its uploads can take and its dependencies can assemble, so their pages say github: false and
-# this lists only what may come here (scripts/lib/packs.mjs). The meta addon, SpokenQuestsAudio,
+# English quests go out as ONE download here, the way each language's do: one answer to "which do
+# I install". It is a bundle, SpokenQuestsAudioAll-<version>.zip, holding the four split packs'
+# own folders -- the ones CurseForge installs -- so the two channels overwrite each other rather
+# than doubling every line. The four split pages say github: false and this lists only what may
+# come here (scripts/lib/packs.mjs). The meta addon, SpokenQuestsAudio,
 # never comes here at all: downloaded by hand it is an empty folder.
 set -euo pipefail
 
@@ -68,6 +69,22 @@ for s in ${section:-$SECTIONS_ALL}; do
 done
 field() { node "$REPO/scripts/lib/packs.mjs" get "$1" "$2" "$3" "$4"; }
 
+# An English pack's version, read back out of what was built: a pack has no committed .toc, the
+# build generates one. A bundle (English quests' `all`, the four split packs in one zip) has no
+# folder of its own, so it is its folders' version -- empty unless all of them were built at the
+# same one, since a zip mixing two builds is not a release of either.
+english_version() {
+  local section="$1" pack="$2" folder="$3" bundles toc v version=""
+  bundles="$(field "$section" enUS "$pack" bundles)"
+  for f in ${bundles:-$folder}; do
+    if [[ "$section" == quests ]]; then toc="$DIST/$f/$f.toc"; else toc="$REPO/addons/$f/$f.toc"; fi
+    v="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" 2>/dev/null | head -1 | tr -d '\r')"
+    [[ -n "$v" && ( -z "$version" || "$v" == "$version" ) ]] || { echo ""; return; }
+    version="$v"
+  done
+  echo "$version"
+}
+
 # The section of the pack's CHANGELOG for the version being released, so the notes on the
 # release and the notes in the repository cannot drift apart. English matches by kind (and
 # steps over a language pack's heading that happens to share its version number); a language
@@ -103,12 +120,7 @@ for t in ${targets[@]+"${targets[@]}"}; do
   read -r t_section t_lang t_pack <<<"$t"
   t_folder="$(field "$t_section" "$t_lang" "$t_pack" folder)"
   if [[ "$t_lang" == enUS ]]; then
-    if [[ "$t_section" == quests ]]; then
-      t_toc="$DIST/$t_folder/$t_folder.toc"
-    else
-      t_toc="$REPO/addons/$t_folder/$t_folder.toc"
-    fi
-    t_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$t_toc" 2>/dev/null | head -1 | tr -d '\r')"
+    t_version="$(english_version "$t_section" "$t_pack" "$t_folder")"
   else
     t_version="$(field "$t_section" "$t_lang" "$t_pack" version)"
   fi
@@ -145,15 +157,10 @@ release_target() {
     # A pack has no committed .toc: the build generates one and package-audio.sh passes the
     # version in, so English reads it back out of the built module. Releasing a pack nobody
     # built therefore fails here rather than uploading whatever stale zip is lying about.
-    local toc
-    if [[ "$section" == quests ]]; then
-      toc="$DIST/$folder/$folder.toc"
-    else
-      toc="$REPO/addons/$folder/$folder.toc"
-    fi
-    version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" 2>/dev/null | head -1 | tr -d '\r')"
+    version="$(english_version "$section" "$pack" "$folder")"
     if [[ -z "$version" ]]; then
-      echo "error: no version for '$release' -- the pack has not been built on this machine." >&2
+      echo "error: no version for '$release' -- the pack has not been built on this machine," >&2
+      echo "       or a bundle's folders were built at different versions." >&2
       echo "       Run make <group>-package-audio first; a pack's version comes from the" >&2
       echo "       module it produces, not from a committed .toc." >&2
       return 1

@@ -125,15 +125,18 @@ makes the Wago copy of every page linking that pack point at the GitHub releases
 instead of at a Wago project holding no files. The link is the releases query rather than a
 tag, so it survives the next audio build.
 
-**English quests are one pack on GitHub and four on CurseForge.** GitHub takes a file up to
-2 GB, so there, as for every language, one download holds every line: `SpokenQuestsAudioAll`,
-tagged `quests-audio/vX.Y.Z`. CurseForge cannot take that file, so it keeps the four split packs
-and the meta addon that pulls them in. `quests/audio-all.md` is therefore both: the meta addon's
-project page, and the registry entry for the one-folder pack (`pack: all`, `release:
-quests-audio`). The four split pages say `github: false`, which is what keeps them out of
-`scripts/audio-github-release.sh`. The one-folder pack keeps its `All` suffix because the bare
-`SpokenQuestsAudio` is the meta addon's folder, and a player with both would have one overwrite
-the other.
+**English quests are one download on GitHub and four on CurseForge -- the same four folders
+either way.** GitHub takes a file up to 2 GB, so there, as for every language, one download is
+the whole answer: `SpokenQuestsAudioAll-<version>.zip`, tagged `quests-audio/vX.Y.Z`. It is a
+bundle rather than a fifth pack: inside are `SpokenQuestsAudioAlliance`, `...Horde`, `...Shared`
+and `...Gossip`, exactly as CurseForge installs them, so a player who moves between the stores
+overwrites the same folders instead of holding every line twice. CurseForge cannot take that
+file, so it keeps the four split packs and the meta addon that pulls them in.
+`quests/audio-all.md` is therefore both: the meta addon's project page, and the registry entry
+for the bundle (`pack: all`, `release: quests-audio`; `scripts/lib/packs.mjs` names its folders
+under `bundles`). The four split pages say `github: false`, which keeps them out of
+`scripts/audio-github-release.sh`. The zip is not called `SpokenQuestsAudio-<version>.zip`
+because that is the meta addon's.
 
 **These are pasted by hand and the site is the live copy.** There is no API for descriptions —
 `release.sh` uploads files and nothing else, deliberately, because a script that rewrote project

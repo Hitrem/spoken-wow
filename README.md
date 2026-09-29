@@ -15,7 +15,7 @@ several addons.
 The addons are on both stores under the same slugs. **The sound packs are not on Wago**: each
 is 280–452 MB and that upload endpoint refuses a file this size, so a pack comes from
 CurseForge or from a GitHub release — one tag per pack, `<pack>/vX.Y.Z` (English quests are the
-four split packs on CurseForge and one `quests-audio` pack on GitHub), cut by
+four split packs on CurseForge, and the same four in one `quests-audio` zip on GitHub), cut by
 `scripts/audio-github-release.sh` from the machine that built the audio, since the audio is
 outside git and no runner can rebuild it.
 

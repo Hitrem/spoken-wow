@@ -19,7 +19,7 @@ license: MIT
 **Install this and get the lot.** It holds no audio itself — it is a few kilobytes that pulls in all four sound packs as dependencies, so your addon manager fetches them for you.
 <!-- /only -->
 <!-- only:wago -->
-**This project does nothing on Wago.** It is a few kilobytes that names the four sound packs as required dependencies, which only CurseForge resolves — Wago's uploads carry no dependency list, so nothing is fetched for you here. Take the whole thing as one download from [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) instead: every quest and gossip line in one folder, `SpokenQuestsAudioAll`, unzipped into `Interface/AddOns`. It is over a gigabyte, which is why it is not here.
+**This project does nothing on Wago.** It is a few kilobytes that names the four sound packs as required dependencies, which only CurseForge resolves — Wago's uploads carry no dependency list, so nothing is fetched for you here. Take all four as one download from [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) instead, and unzip it into `Interface/AddOns`: it holds the same four folders CurseForge installs. It is over a gigabyte, which is why it is not here.
 <!-- /only -->
 
 You still need the player: [Spoken Quests](https://www.curseforge.com/wow/addons/spoken-quests). That addon speaks the lines, the packs are the lines, and neither does anything alone.
@@ -32,7 +32,7 @@ You still need the player: [Spoken Quests](https://www.curseforge.com/wow/addons
 | **All** | installs the four below | **this page** |
 <!-- /only -->
 <!-- only:wago -->
-| **All** | every line in one folder, from [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) | |
+| **All** | the four below in one download, from [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) | |
 <!-- /only -->
 | [Alliance](https://www.curseforge.com/wow/addons/spoken-quests-audio-alliance) | Alliance-only quests | |
 | [Horde](https://www.curseforge.com/wow/addons/spoken-quests-audio-horde) | Horde-only quests | |
