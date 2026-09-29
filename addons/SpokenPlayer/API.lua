@@ -227,9 +227,8 @@ function Spoken:MuteChannel(channel, muted)
     SoundUtils:MuteChannel(channel, muted)
 end
 
---- The source is about to queue a line: silence the game's NPC dialogue now rather than
---- when the line starts, so an NPC's greeting is never heard instead of being cut short.
---- Honours the player's "mute game dialogue" setting, and lifts itself if nothing comes.
+--- The source is about to queue a line: mute the game's NPC dialogue now, not when it
+--- starts. Honours the "mute game dialogue" setting; lifts itself if no line speaks.
 function Spoken:MuteGameDialogueAhead(source)
     SoundQueue:MuteGameDialogueAhead(source:GetChannel())
 end

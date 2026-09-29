@@ -194,10 +194,24 @@ local function LeftFor(source)
     end
 end
 
+-- The channel a line about to be queued will speak on, while a mute taken ahead of it holds.
+local muteAheadChannel
+
+--- The one place the game's dialogue is muted or let back: muted while a line of ours is
+--- audibly speaking or one is expected, let back otherwise. A line merely queued -- paused,
+--- or held by a gate -- does not count, and must not keep the game silent until it speaks.
+local function SyncDialogMute()
+    local speakingOn = muteAheadChannel
+    if SoundQueue:IsPlaying() then
+        speakingOn = SoundQueue:GetCurrentSound().source:GetChannel()
+    end
+    SoundQueue:MuteGameDialogue(speakingOn)
+end
+
 local function AfterRemoval()
+    SyncDialogMute()
     if SoundQueue:IsEmpty() then
         StopRetryTicker()
-        SoundQueue:MuteGameDialogue(nil)
         Callbacks:Fire("QUEUE_EMPTY")
     end
 end
@@ -313,55 +327,48 @@ end
 ---
 --- Never the channel we are speaking on: muting that would mute the line. On 1.12 there is
 --- no Dialog channel to mute, and what the client can do is cut a bark already playing, so
---- the effects channel is toggled off and straight back on as the line starts.
+--- the effects channel is toggled off and straight back on as speech begins -- once, since
+--- the cut stops every sound, ours included.
 ---@param speakingOn string|nil
 function SoundQueue:MuteGameDialogue(speakingOn)
     if not Addon.db.profile.Audio.AutoToggleDialog then
         return
     end
     if Version.IsLegacyVanilla then
-        if speakingOn then
+        if speakingOn and not self.vanillaCut then
             SetCVar("MasterSoundEffects", 0)
             SetCVar("MasterSoundEffects", 1)
         end
+        self.vanillaCut = speakingOn ~= nil
         return
     end
     SoundUtils:MuteChannel("Dialog", speakingOn ~= nil and speakingOn ~= "Dialog")
 end
 
--- How long a mute taken ahead of a line holds with nothing queued. Quest lines are read
--- once the dialog's globals have held still for 0.4s, gossip 0.1s after its event; past
--- this nothing is coming, and the next NPC's greeting should be heard.
+-- How long a mute taken ahead of a line holds before the line speaks. The client starts an
+-- NPC's greeting as its dialog opens, and the line is read off the dialog a moment later
+-- (0.1s for gossip, 0.4s of stable globals for a quest), so muting only once the line
+-- started cut the greeting off mid-word. Taken in the frame the dialog opens, the greeting
+-- is never heard. Past this nothing is coming, and the game gets its dialogue back.
 local MUTE_AHEAD_SECONDS = 1.5
 local muteAheadTimer
 
---- Mute the game's dialogue now, for a line that will be queued shortly. The client
---- starts an NPC's greeting as the dialog opens, and a line needs a moment to be read off
---- the dialog after that: muting only once the line starts cut the greeting off mid-word.
---- Muted in the same frame the dialog opened, the greeting is never heard at all.
----@param speakingOn string The channel the coming line will play on.
+--- Mute the game's dialogue now for a line about to be queued on `speakingOn`.
+---@param speakingOn string
 function SoundQueue:MuteGameDialogueAhead(speakingOn)
-    -- Paused, the line will only queue: nothing of ours is going to speak over the greeting.
-    if self:IsPaused() then
+    -- Paused, the line will only queue: nothing of ours will speak over the greeting.
+    if self:IsPaused() or not Addon.db.profile.Audio.AutoToggleDialog or speakingOn == "Dialog" then
         return
     end
-    -- On 1.12 muting is cutting every sound, which would cut a line already speaking.
-    if Version.IsLegacyVanilla and not self:IsEmpty() then
-        return
-    end
-    self:MuteGameDialogue(speakingOn)
+    muteAheadChannel = speakingOn
+    SyncDialogMute()
     if muteAheadTimer then
         Addon:CancelTimer(muteAheadTimer)
     end
     muteAheadTimer = Addon:ScheduleTimer(function()
         muteAheadTimer = nil
-        -- A line speaking lifts the mute itself when the queue drains. One merely queued --
-        -- held by a gate, or paused since -- may not speak for a long while, and must not
-        -- keep the game's dialogue silent until it does.
-        local head = self:GetCurrentSound()
-        if not (head and head.nextSoundTimer) then
-            self:MuteGameDialogue(nil)
-        end
+        muteAheadChannel = nil
+        SyncDialogMute()
     end, MUTE_AHEAD_SECONDS)
 end
 
@@ -380,8 +387,6 @@ function SoundQueue:PlaySound(clip)
         return
     end
 
-    self:MuteGameDialogue(channel)
-
     if clip.startCallback then
         clip.startCallback(clip)
     end
@@ -392,6 +397,8 @@ function SoundQueue:PlaySound(clip)
     clip.nextSoundTimer = Addon:ScheduleTimer(function()
         self:RemoveSoundFromQueue(clip, true)
     end, (clip.delay or 0) + clip.length + clip.source.interClipGap)
+    -- After the timer: that is what makes the line count as speaking.
+    SyncDialogMute()
 end
 
 --- Start something if nothing is speaking and something may. Safe to call at any time;
@@ -602,8 +609,7 @@ function SoundQueue:PauseQueue()
             head.nextSoundTimer = nil
         end
     end
-    -- Nothing of ours is speaking, so the game may. Resuming plays the line, which mutes again.
-    self:MuteGameDialogue(nil)
+    SyncDialogMute()
 
     StopRetryTicker()
     Callbacks:Fire("AUDIO_CHANGED")
