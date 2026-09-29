@@ -23,30 +23,48 @@ local GOSSIP_HASH = "0123456789abcdef0123456789abcdef"
 local FIXTURE = {
     ["end"] = {
         [300] = {
-            { id = 1, speaker = SPEAKER, delay = 2, chat = "say", male = "Thanks, $n!", female = "Thanks, $n!" },
-            { id = 2, speaker = SPEAKER, delay = 6, chat = "say",
+            { id = 1, step = 1, speaker = SPEAKER, delay = 2, chat = "say", male = "Thanks, $n!", female = "Thanks, $n!" },
+            { id = 2, step = 2, speaker = SPEAKER, delay = 6, chat = "say",
                 male = "Well done.  $GHe : She; is a fine $r $c.", female = "Well done.  $GHe : She; is a fine $r $c." },
         },
-        -- A script step picking one of several texts at random: siblings at one delay.
+        -- A script step picking one of several texts at random: siblings of one step.
         [302] = {
-            { id = 10, speaker = SPEAKER, delay = 2, chat = "say", male = "Onward!", female = "Onward!" },
-            { id = 11, speaker = SPEAKER, delay = 2, chat = "say", male = "Forward!", female = "Forward!" },
-            { id = 12, speaker = SPEAKER, delay = 5, chat = "yell", male = "Victory!", female = "Victory!" },
+            { id = 10, step = 1, speaker = SPEAKER, delay = 2, chat = "say", male = "Onward!", female = "Onward!" },
+            { id = 11, step = 1, speaker = SPEAKER, delay = 2, chat = "say", male = "Forward!", female = "Forward!" },
+            { id = 12, step = 2, speaker = SPEAKER, delay = 5, chat = "yell", male = "Victory!", female = "Victory!" },
+        },
+        -- Scarlet Subterfuge's shape: one creature entry, several of its spawns each saying
+        -- their own line in the same second. Separate steps, so every one of them plays.
+        [305] = {
+            { id = 50, step = 1, speaker = SPEAKER, delay = 0, chat = "say", male = "Sir?", female = "Sir?" },
+            { id = 51, step = 2, speaker = SPEAKER, delay = 0, chat = "say", male = "What the...", female = "What the..." },
+            { id = 52, step = 3, speaker = SPEAKER, delay = 6, chat = "say", male = "Do something!", female = "Do something!" },
+        },
+        -- An export from before steps: random siblings are told by speaker and delay alone.
+        [306] = {
+            { id = 60, speaker = SPEAKER, delay = 2, chat = "say", male = "Onward!", female = "Onward!" },
+            { id = 61, speaker = SPEAKER, delay = 2, chat = "say", male = "Forward!", female = "Forward!" },
+            { id = 62, speaker = SPEAKER, delay = 5, chat = "yell", male = "Victory!", female = "Victory!" },
         },
         -- A speaker with no gossip of its own, for the placeholder's second choice.
         [303] = {
-            { id = 20, speaker = 777, delay = 0, chat = "say", male = "Done.", female = "Done." },
+            { id = 20, step = 1, speaker = 777, delay = 0, chat = "say", male = "Done.", female = "Done." },
         },
     },
     ["start"] = {
         [301] = {
-            { id = 30, speaker = SPEAKER, delay = 1, chat = "say", male = "Go, $n.", female = "Go, $n." },
+            { id = 30, step = 1, speaker = SPEAKER, delay = 1, chat = "say", male = "Go, $n.", female = "Go, $n." },
+        },
+        -- Lucius's shape: the giver whispers the player a reminder.
+        [307] = {
+            { id = 70, step = 1, speaker = SPEAKER, delay = 1, chat = "whisper",
+                male = "Take the tools, $n.", female = "Take the tools, $n." },
         },
     },
 }
 
 local lookup = { [GOSSIP_HASH] = 2 }
-for _, q in ipairs({ 300, 301, 302, 303 }) do
+for _, q in ipairs({ 300, 301, 302, 303, 305, 306, 307 }) do
     lookup[q .. "-accept"] = 2; lookup[q .. "-complete"] = 2
 end
 
@@ -210,6 +228,52 @@ Expect("a translated client with no speaker to go on plays nothing", Keys(), "")
 Say("Vorwärts!", "Creature-0-0-0-0-999-0")
 Expect("...nor from a different NPC", Keys(), "")
 
+---------------------------------------------------------------- one speaker, several steps at once
+Reset()
+stub.FireEvent("QUEST_TURNED_IN", 305, 0, 0)
+Say("What the...", SPEAKER_GUID)
+Say("Sir?", SPEAKER_GUID)
+Expect("two lines from one speaker at one delay are separate steps, and both play", Keys(),
+    "followup:51, followup:50")
+Expect("...leaving the step after them", VO.Followup.armed[1] and VO.Followup.armed[1].line.id, 52)
+
+Reset()
+stub.SetLocale("deDE")
+stub.FireEvent("QUEST_TURNED_IN", 305, 0, 0)
+Say("Herr?", SPEAKER_GUID)
+Say("Was zum...", SPEAKER_GUID)
+Say("Tut etwas!", SPEAKER_GUID)
+Expect("a translated client takes them step by step, not one line per delay", Keys(),
+    "followup:50, followup:51, followup:52")
+
+---------------------------------------------------------------- whispers
+Reset()
+stub.FireEvent("CHAT_MSG_MONSTER_WHISPER", "Take the tools, Tester.", "Marshal Test", "", "", "", "", 0, 0, "",
+    0, 1, SPEAKER_GUID)
+Expect("a whisper nobody armed is ignored, though it was addressed to us", Keys(), "")
+stub.FireEvent("QUEST_ACCEPTED", 307)
+Say("Take the tools, Tester.", SPEAKER_GUID, nil, "CHAT_MSG_MONSTER_WHISPER")
+Expect("an armed whisper matches and plays", Keys(), "followup:70")
+Expect("...and is consumed", #VO.Followup.armed, 0)
+
+Reset()
+stub.FireEvent("QUEST_ACCEPTED", 307)
+Say("Take the tools, Tester.", SPEAKER_GUID, nil, "CHAT_MSG_RAID_BOSS_WHISPER")
+Expect("...and so does a boss whisper", Keys(), "followup:70")
+
+Reset()
+VO.Followup:Simulate("307 start")
+stub.Advance(1)
+Expect("/spq followup replays a whisper as a whisper", Keys(), "followup:70")
+
+---------------------------------------------------------------- an export from before steps
+Reset()
+stub.FireEvent("QUEST_TURNED_IN", 306, 0, 0)
+Say("Forward!", SPEAKER_GUID)
+Expect("with no steps, one random text plays", Keys(), "followup:61")
+Expect("...and its siblings are told by speaker and delay", #VO.Followup.armed, 1)
+Expect("...leaving the next line", VO.Followup.armed[1] and VO.Followup.armed[1].line.id, 62)
+
 ---------------------------------------------------------------- queueing
 Reset()
 world.questID = 303; world.title = "Test Quest"; world.rewardText = "Done."
@@ -229,7 +293,12 @@ Reset()
 VO.Followup:Simulate("302")
 Expect("/spq followup arms the quest", #VO.Followup.armed, 3)
 stub.Advance(6)
-Expect("...and plays one line per delay, not every random alternative", Keys(), "followup:10, followup:12")
+Expect("...and plays one line per step, not every random alternative", Keys(), "followup:10, followup:12")
+
+Reset()
+VO.Followup:Simulate("305")
+stub.Advance(6)
+Expect("...and every step of one speaker's at one delay", Keys(), "followup:50, followup:51, followup:52")
 
 ---------------------------------------------------------------- switched off
 Reset()

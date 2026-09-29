@@ -48,6 +48,8 @@ def render(result):
         "-- The world DB's quest start/end scripts make NPCs speak in chat after a quest is",
         "-- accepted or turned in. The client never sees those lines as quest text, so this is",
         "-- how the addon recognises them. speaker is a creature entry, absent when unresolved.",
+        "-- step is the script step a line is one outcome of: once one is heard, the rest of",
+        "-- its step never will be.",
         "FollowupLines = {",
     ]
     for event in ("end", "start"):
@@ -56,7 +58,7 @@ def render(result):
             comment = " ".join((title or "").split())
             out.append(f"        [{quest}] = {{ -- {comment}")
             for line in lines:
-                fields = [f"id = {line['id']}"]
+                fields = [f"id = {line['id']}", f"step = {line['step']}"]
                 if line["speaker"] is not None:
                     fields.append(f"speaker = {line['speaker']}")
                 fields += [f"delay = {line['delay']}", f"chat = {lua_string(line['chat'])}",

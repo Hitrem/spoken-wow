@@ -1,6 +1,6 @@
 setfenv(1, VoiceOver)
 
--- What an NPC says in /say or /yell after a quest is accepted or turned in. The world DB's
+-- What an NPC says in /say, /yell or a whisper after a quest is accepted or turned in. The world DB's
 -- quest scripts send those lines as chat, never as quest text, so the dialog handlers never
 -- see them; FollowupLines.lua is the export that recognises them.
 --
@@ -136,6 +136,28 @@ function Followup:Prune()
     end
 end
 
+--- Whether line `a` comes before line `b` in its script. Steps are numbered in the order
+--- they are said, so they break a tie between two lines at one delay; an export from before
+--- steps has only the delay.
+local function Earlier(a, b)
+    local delayA, delayB = a.delay or 0, b.delay or 0
+    if delayA ~= delayB then
+        return delayA < delayB
+    end
+    return (a.step or 0) < (b.step or 0)
+end
+
+--- Whether two lines are outcomes of one script step, so hearing one means the other will
+--- never be said. The export names the step. Without it - a FollowupLines.lua from before
+--- steps - the same speaker at the same delay is the best guess, which is wrong where one
+--- entry is several NPCs each saying their own line at once (Scarlet Subterfuge's cavaliers).
+local function SameStep(a, b)
+    if a.step and b.step then
+        return a.step == b.step
+    end
+    return a.speaker == b.speaker and a.delay == b.delay
+end
+
 --- The armed entry this chat message is, or nil.
 function Followup:Match(message, sender, npcID)
     if ClientSpeaksExportLanguage() then
@@ -156,14 +178,14 @@ function Followup:Match(message, sender, npcID)
     end
 
     -- The text is translated and cannot be compared, so the speaker is all there is: the
-    -- earliest line still armed for that NPC. No speaker on either side is no evidence at
+    -- earliest step still armed for that NPC. No speaker on either side is no evidence at
     -- all, and a line played on no evidence is the busy-zone problem again.
     if not npcID then
         return nil
     end
     local best
     for _, entry in ipairs(self.armed) do
-        if entry.line.speaker == npcID and (not best or (entry.line.delay or 0) < (best.line.delay or 0)) then
+        if entry.line.speaker == npcID and (not best or Earlier(entry.line, best.line)) then
             best = entry
         end
     end
@@ -171,14 +193,14 @@ function Followup:Match(message, sender, npcID)
 end
 
 --- Consume a matched entry and its siblings. A script step can pick one of up to four texts
---- at random, and the export lists each as its own entry at the same delay from the same
---- speaker; once one of them has been said, the others never will be, and left armed they
---- would let the speaker-only match play the next line of the script one step early.
+--- at random, and the export lists each as its own entry of the same step; once one of them
+--- has been said, the others never will be, and left armed they would let the speaker-only
+--- match play the next line of the script one step early.
 function Followup:Consume(matched)
     for index = getn(self.armed), 1, -1 do
         local entry = self.armed[index]
         if entry.kind == matched.kind and entry.questID == matched.questID
-            and entry.line.speaker == matched.line.speaker and entry.line.delay == matched.line.delay then
+            and SameStep(entry.line, matched.line) then
             table.remove(self.armed, index)
         end
     end
@@ -318,8 +340,15 @@ local function TitleFor(questID)
     return title or (GetTitleText and GetTitleText()) or nil
 end
 
+-- The event each exported chat label arrives as, for /spq followup to replay it through.
+local CHAT_EVENTS = {
+    say = "CHAT_MSG_MONSTER_SAY",
+    yell = "CHAT_MSG_MONSTER_YELL",
+    whisper = "CHAT_MSG_MONSTER_WHISPER",
+}
+
 --- `/spq followup <questID> [start]`: arm the quest as if it had just been turned in (or
---- accepted) and replay its script's chat on its own delays, one line per random-text group.
+--- accepted) and replay its script's chat on its own delays, one line per script step.
 --- The lines only reach this client, never the server, but go through the same arm, match
 --- and play path as the real chat - so a line that is not heard here would not be heard in
 --- the world either, without walking a character to the NPC to find out.
@@ -346,12 +375,13 @@ function Followup:Simulate(input)
     self:Arm(kind, questID, TitleFor(questID))
     local seen = {}
     for _, line in ipairs(lines) do
-        local group = format("%d:%d", line.delay or 0, line.speaker or 0)
+        -- An export from before steps groups by speaker and delay, as Consume does.
+        local group = line.step and tostring(line.step) or format("%d:%d", line.delay or 0, line.speaker or 0)
         if not seen[group] then
             seen[group] = true
             local name = line.speaker and DataModules:GetObjectName(Enums.GUID.Creature, line.speaker) or "NPC"
             local guid = line.speaker and Utils:MakeGUID(Enums.GUID.Creature, line.speaker) or nil
-            local event = line.chat == "yell" and "CHAT_MSG_MONSTER_YELL" or "CHAT_MSG_MONSTER_SAY"
+            local event = CHAT_EVENTS[line.chat] or "CHAT_MSG_MONSTER_SAY"
             local text = Render(line.male, name)
             print(format("line %d in %ds, %s: %s%s", line.id, line.delay or 0, name, text,
                 OwnClip(line) and "" or "  |cFFFF8040(no pack has it, placeholder)|r"))
@@ -368,7 +398,14 @@ function Followup:Setup()
     end
     local frame = CreateFrame("Frame")
     self.frame = frame
-    local events = { "CHAT_MSG_MONSTER_SAY", "CHAT_MSG_MONSTER_YELL" }
+    -- A whisper is addressed to this player alone, but is still only matched while armed:
+    -- an NPC whispers the same words to everybody who takes the quest, and one armed by
+    -- nothing is no evidence of which quest it followed. CHAT_MSG_RAID_BOSS_WHISPER is the
+    -- server's boss whisper; the 1.12 client has no such event, and the pcall below lets it
+    -- fail there. Both carry the same payload as a /say: text, sender, and the GUID in arg12
+    -- where the client sends one.
+    local events = { "CHAT_MSG_MONSTER_SAY", "CHAT_MSG_MONSTER_YELL", "CHAT_MSG_MONSTER_WHISPER",
+        "CHAT_MSG_RAID_BOSS_WHISPER" }
     if not Version.IsAnyLegacy then
         table.insert(events, "QUEST_TURNED_IN")
         table.insert(events, "QUEST_ACCEPTED")

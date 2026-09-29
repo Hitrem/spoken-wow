@@ -1055,11 +1055,14 @@ unless `VoiceOver.DataModules` exists, so the dependency bought nothing and cost
 
 ### What NPCs say after a quest
 
-Some quests end, or begin, with the NPC saying something in `/say` or `/yell` a few seconds
+Some quests end, or begin, with the NPC saying something in `/say`, `/yell` or a whisper a few seconds
 later: the world DB's quest scripts, which the client only ever sees as
-`CHAT_MSG_MONSTER_SAY`/`_YELL`. `FollowupLines.lua` is the export of those lines
+`CHAT_MSG_MONSTER_SAY`/`_YELL`/`_WHISPER`. `FollowupLines.lua` is the export of those lines
 (`pipelines/quests/tools/export_followup_lines.py`), keyed by quest under `end` and `start`,
-and `Followup.lua` reads them. That chat reaches everybody near the NPC, and in a capital the
+and `Followup.lua` reads them. A quest script that hands off to a `generic_scripts` script
+(START_SCRIPT) has that script's lines exported as its own, at the hand-off's delay plus theirs
+and spoken by whoever the hand-off ran it as - Thrall after For The Horde!, the Scarlet
+Cavaliers after Scarlet Subterfuge; `pipelines/quests/tts_cli/followup.py` has the rules. That chat reaches everybody near the NPC, and in a capital the
 same turn-in happens every few seconds, so nothing is listened for until **this** player
 triggers it: `QUEST_TURNED_IN`/`QUEST_ACCEPTED` on Blizzard's clients, and on 1.12/2.4.3/3.3.5
 (which have neither event) a hook on `GetQuestReward`/`AcceptQuest`, which run while the dialog
@@ -1069,8 +1072,14 @@ are filled in for the local player - so a line naming the player cannot match so
 else's turn-in - and come from the line's speaker when the chat event carries a GUID. Other
 clients show translated text, so there the speaker's NPC ID is the only evidence: the earliest
 step still armed for that NPC plays, and with no GUID nothing plays. A script step can pick
-one of several texts at random, and the export lists each as its own entry, so a match
-consumes every entry at that step's delay from that speaker. It has its own setting, and
+one of several texts at random, and the export lists each as its own entry under one `step`,
+so a match consumes every entry of that step. The step is exported rather than inferred from
+speaker and delay because several NPCs of one entry can each say their own line in the same
+second - Scarlet Subterfuge's cavaliers - and on a translated client the speaker-only match
+advances step by step. Say, yell, zone yell and whisper lines are exported (a zone yell
+arrives as `CHAT_MSG_MONSTER_YELL`, a whisper as `CHAT_MSG_MONSTER_WHISPER` or
+`CHAT_MSG_RAID_BOSS_WHISPER`); emotes are not, having no voice. A whisper is addressed to this
+player, but is still heard only while armed. It has its own setting, and
 autoplay off silences it too, since these lines read themselves.
 
 The recordings ship in the audio packs like every other line, and are generated on the site
