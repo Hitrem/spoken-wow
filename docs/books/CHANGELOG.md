@@ -3,13 +3,19 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
-## 2.1.1 — 2026-09-27
+## 2.1.1 — 2026-09-29
 
 - Book narration now supplies captions to Spoken Player 2.2.3. English text
   is included for every page, including unopened pages queued for narration.
 - Future sound pack exports include caption text in the voice language. Older
   translated packs can caption pages you have opened during this session.
 - Existing English sound packs work without downloading the audio again.
+- **A language's sound pack finds its pages on a client in that language.** Pages are found
+  by their title and text, which a translated client shows in its own language, and only
+  English tables shipped, so a Spanish pack on a Spanish client found no page at all. The
+  packs carry their own tables, and the reader asks them first.
+- The language choice's follow-the-game entry is **Auto (<language>)**, the same words as
+  in Spoken Quests and Spoken Zones, and error messages follow the game client's language.
 
 ## 2.0.0 — books-audio-deDE — 2026-09-27
 
