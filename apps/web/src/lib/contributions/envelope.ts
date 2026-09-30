@@ -13,8 +13,12 @@
 /** Large enough for a long quest, small enough that a pasted log is refused rather than stored. */
 export const MAX_BYTES = 64 * 1024;
 
-const SOURCES = ["quests", "zones", "books"] as const;
+export const SOURCES = ["quests", "zones", "books"] as const;
 export type EnvelopeSource = (typeof SOURCES)[number];
+
+export function isEnvelopeSource(value: unknown): value is EnvelopeSource {
+  return typeof value === "string" && (SOURCES as readonly string[]).includes(value);
+}
 
 export type Envelope = {
   source: EnvelopeSource;

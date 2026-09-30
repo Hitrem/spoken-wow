@@ -40,7 +40,16 @@ import {
 } from "@/lib/contributions/contributions";
 import { CLIENT_FAMILIES, CLIENT_FAMILY_LABELS, type ClientSummary } from "@/lib/contributions/client";
 import { flavorOptionsFor, summaryFromResolution, type FlavorScope } from "@/lib/contributions/speaker";
-import { contributionsHref, MISSING, NEEDS_DECISION, type ClientFilter, type SpeakerFilter } from "@/lib/contributions/query";
+import {
+  contributionsHref,
+  MISSING,
+  NEEDS_DECISION,
+  type ClientFilter,
+  type FilterChange,
+  type SourceFilter,
+  type SpeakerFilter,
+} from "@/lib/contributions/query";
+import { SOURCES } from "@/lib/contributions/envelope";
 import type { Contribution } from "@/lib/contributions/store";
 // Both are computed server-side (npcSummaryFrom pulls in corpus.ts's flavorsFor) -- `import
 // type` erases the whole thing at compile time, so none of that follows the type in here. The
@@ -79,6 +88,11 @@ const SOURCE_LABELS: Record<Contribution["source"], string> = {
   zones: "Zones",
   books: "Books",
 };
+
+const SOURCE_CHIP_OPTIONS: ChipOption[] = SOURCES.map((option) => ({
+  value: option,
+  label: SOURCE_LABELS[option],
+}));
 
 const STATUS_LABELS: Record<ContributionStatus, string> = {
   new: "New",
@@ -136,6 +150,7 @@ export default function ContributionTable({
   status,
   provenance,
   client,
+  source,
   existing,
   flavorScopes,
   canAnswerNpc,
@@ -149,6 +164,7 @@ export default function ContributionTable({
   status: ContributionStatus | "all";
   provenance: SpeakerFilter;
   client: ClientFilter;
+  source: SourceFilter;
   /** id -> corpus text, present only where the row's key resolves to something on file. */
   existing: Record<number, string>;
   /** facets().flavorScopes -- what lets that state's flavor select narrow to whatever race-gender was just chosen, without a round trip. */
@@ -425,11 +441,8 @@ export default function ContributionTable({
    * ReportTable.tsx's own `go`; the mapping itself is contributionsHref, pulled out to
    * lib/contributions/query.ts so it can be tested without rendering FilterChip or this table.
    */
-  function go(
-    next: { status?: ContributionStatus | "all"; provenance?: SpeakerFilter; client?: ClientFilter },
-    toPage = 1,
-  ) {
-    push(localeHref(lang, contributionsHref({ status, provenance, client }, next, toPage)));
+  function go(next: FilterChange, toPage = 1) {
+    push(localeHref(lang, contributionsHref({ status, provenance, client, source }, next, toPage)));
   }
 
   return (
@@ -455,6 +468,12 @@ export default function ContributionTable({
           value={client === "all" ? undefined : client}
           options={CLIENT_CHIP_OPTIONS}
           onChange={(next) => go({ client: next as ClientFilter | undefined })}
+        />
+        <FilterChip
+          label="source"
+          value={source === "all" ? undefined : source}
+          options={SOURCE_CHIP_OPTIONS}
+          onChange={(next) => go({ source: next as SourceFilter | undefined })}
         />
         {pending && <Refreshing />}
       </nav>
