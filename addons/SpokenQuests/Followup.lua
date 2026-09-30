@@ -236,40 +236,6 @@ end
 -- Playing
 --------------------------------------------------------------------------------
 
--- A stand-in for a line no installed pack has a recording of: one of the speaker's gossip
--- clips, or failing that the triggering quest's own accept/complete clip, so the line is still
--- heard. Every pack built before follow-up lines were recorded lands here for every line, as
--- does a line the site has not voiced yet.
-local function PlaceholderClip(entry, npcID)
-    local speaker = entry.line.speaker or npcID
-    if speaker then
-        local hashes = {}
-        for _, module in DataModules:GetModules() do
-            local gossip = module.GossipLookupByNPCID and module.GossipLookupByNPCID[speaker]
-            if gossip then
-                for _, hash in pairs(gossip) do
-                    table.insert(hashes, hash)
-                end
-            end
-        end
-        while hashes[1] do
-            local pick = math.random(getn(hashes))
-            local probe = { event = Enums.SoundEvent.Gossip, fileName = hashes[pick] }
-            if DataModules:ResolveSoundFile(probe) then
-                return probe
-            end
-            table.remove(hashes, pick)
-        end
-    end
-    local probe = {
-        event = entry.kind == "start" and Enums.SoundEvent.QuestAccept or Enums.SoundEvent.QuestComplete,
-        questID = entry.questID,
-    }
-    if DataModules:PrepareSound(probe) then
-        return probe
-    end
-end
-
 --- The line's own recording, from whichever pack has it. A pack's FollowupLookup names the
 --- file by speaker and broadcast text id, since one text said by two NPCs is two recordings in
 --- two voices; a pack built before follow-up lines has no FollowupLookup and finds nothing.
@@ -300,10 +266,13 @@ local function OwnClip(line, npcID)
 end
 
 function Followup:Play(entry, message, sender, guid, npcID)
-    local own = OwnClip(entry.line, npcID)
-    local clip = own or PlaceholderClip(entry, npcID)
+    -- Only the line's own recording plays. A borrowed clip - the speaker's gossip, the
+    -- quest's accept or complete - says other words in the NPC's voice while the chat shows
+    -- this line, which is worse than the silence of a line nobody has voiced yet.
+    local clip = OwnClip(entry.line, npcID)
     if not clip then
-        Debug:Record("data-lookup-failed", format("No clip to play for follow-up line %d", entry.line.id or 0))
+        Debug:Record("followup-no-recording", format("No installed pack has a recording of follow-up line %d (NPC %s)",
+            entry.line.id or 0, tostring(entry.line.speaker or npcID or "unknown")))
         return false
     end
     local speaker = entry.line.speaker or npcID
@@ -318,10 +287,8 @@ function Followup:Play(entry, message, sender, guid, npcID)
         text = message,
         unitGUID = guid,
         unitIsObjectOrItem = false,
-        -- The queue's dedup key. The line's own recording goes by its file name, like any
-        -- other clip. A placeholder goes by the line instead: it borrows a clip that may
-        -- already be queued under its own name, and would be dropped as a duplicate of it.
-        fileName = own and own.fileName or format("followup:%d", entry.line.id or 0),
+        -- The queue's dedup key: the resolved file name, like any other clip.
+        fileName = clip.fileName,
         filePath = clip.filePath,
         length = clip.length,
         module = clip.module,
@@ -384,7 +351,7 @@ function Followup:Simulate(input)
             local event = CHAT_EVENTS[line.chat] or "CHAT_MSG_MONSTER_SAY"
             local text = Render(line.male, name)
             print(format("line %d in %ds, %s: %s%s", line.id, line.delay or 0, name, text,
-                OwnClip(line) and "" or "  |cFFFF8040(no pack has it, placeholder)|r"))
+                OwnClip(line) and "" or "  |cFFFF8040(no recording yet — silent)|r"))
             Addon:ScheduleTimer(function()
                 Followup:OnChat(event, text, name, guid)
             end, line.delay or 0)
