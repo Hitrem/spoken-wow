@@ -341,28 +341,45 @@ function SpokenZones:GetAudioPacks(lang)
 	return packs
 end
 
--- The pack narration plays from, or nil when no pack is installed at all.
+-- The pack the player chose for the language being read, or nil for Auto.
 --
 -- The stored preference is a folder name rather than an index: a player who
 -- uninstalls the high-quality pack should fall back to whatever is left instead
 -- of pointing at whichever pack happens to occupy that slot afterwards. It is
 -- kept per content language, so picking the English pack while reading German
 -- does not overrule the German pack once one is installed and German is no
--- longer what is being read.
+-- longer what is being read. Reading the stored shape lives here alone, because
+-- the fallback chain and the picker's own caption both need the same answer and
+-- none of them should be guessing at it.
+function SpokenZones:GetPreferredAudioPack()
+	local stored = self:Get("audioPack")
+	local preferred = type(stored) == "table" and stored[self:GetLanguage()] or nil
+	if not preferred then
+		return nil
+	end
+	for _, pack in ipairs(self:GetAudioPacks()) do
+		if pack.addon == preferred then
+			return pack
+		end
+	end
+	-- Stored but uninstalled. Not an error: the pack is still what the player asked for,
+	-- and the fallback to the best available below is what plays.
+	return nil
+end
+
+-- The pack narration plays from, or nil when no pack is installed at all. No stored
+-- preference, or a preference whose pack has gone: the best installed pack wins, which the
+-- sort in GetAudioPacks has already put in the language being read first, then the client's
+-- locale.
 function SpokenZones:GetActiveAudioPack()
 	local packs = self:GetAudioPacks()
 	if #packs == 0 then
 		return nil
 	end
 
-	local stored = self:Get("audioPack")
-	local preferred = type(stored) == "table" and stored[self:GetLanguage()] or nil
-	if type(preferred) == "string" then
-		for i = 1, #packs do
-			if packs[i].addon == preferred then
-				return packs[i]
-			end
-		end
+	local preferred = self:GetPreferredAudioPack()
+	if preferred then
+		return preferred
 	end
 
 	-- No preference, or the preferred pack is gone: best available wins -- the
@@ -371,42 +388,51 @@ function SpokenZones:GetActiveAudioPack()
 	return packs[1]
 end
 
--- Switches packs. Returns false when the name is not an installed pack, so the
--- caller can say so rather than storing a preference that resolves to nothing.
+-- Switches packs. `nil` hands the choice back, so the picker has somewhere to return to:
+-- the preference is stored per content language, and clearing one leaves the others as
+-- they are. Returns false when the name is not an installed pack, so the caller can say
+-- so rather than storing a preference that resolves to nothing.
 function SpokenZones:SetActiveAudioPack(name)
-	local packs = self:GetAudioPacks()
-	for i = 1, #packs do
-		if packs[i].addon == name then
-			local stored = self:Get("audioPack")
-			if type(stored) ~= "table" then
-				stored = {}
-			end
-			stored[self:GetLanguage()] = name
-			self:Set("audioPack", stored)
-			self:StopLore()
-			self:NotifyAudioChanged()
-			return true
-		end
+	local stored = self:Get("audioPack")
+	if type(stored) ~= "table" then
+		stored = {}
 	end
-	return false
+	if name == nil then
+		stored[self:GetLanguage()] = nil
+	else
+		local installed = false
+		for _, pack in ipairs(self:GetAudioPacks()) do
+			if pack.addon == name then
+				installed = true
+			end
+		end
+		if not installed then
+			return false
+		end
+		stored[self:GetLanguage()] = name
+	end
+	self:Set("audioPack", stored)
+	self:StopLore()
+	self:NotifyAudioChanged()
+	return true
 end
 
 -- "Deutsch" -- for the options dropdown and /spz audio. A pack is named by the
 -- language it narrates, the one being read included: there is one pack per language,
 -- so that is what tells them apart. Bitrate is added only when two installed packs
 -- share a language, which now means someone kept the retired 64 kbps pack beside the
--- current one. A pack in a language this client cannot draw keeps its ASCII code,
--- which every client can draw, instead of boxes.
+-- current one.
+--
+-- Always the endonym. A dropdown of pack names lists Français beside Español, and a
+-- Russian pack reading "ruRU" in the middle of them names nothing: a code is a
+-- folder, and a folder is not something a player reads. The endonym is the name of
+-- the thing they installed.
 function SpokenZones:GetAudioPackLabel(pack)
 	if not pack then
 		return "none"
 	end
 	local language = pack.language
-	local label = language
-	if self:CanRenderLanguage(language) then
-		local info = self:GetLocaleInfo(language)
-		label = (info and info.native) or language
-	end
+	local label = self:GetLanguageName(language)
 	if pack.bitrate and pack.bitrate > 0 then
 		for _, other in ipairs(self:GetAudioPacks(language)) do
 			if other ~= pack and other.language == language then
@@ -415,6 +441,67 @@ function SpokenZones:GetAudioPackLabel(pack)
 		end
 	end
 	return label
+end
+
+--------------------------------------------------------------------------------
+-- The fallback voice
+--------------------------------------------------------------------------------
+
+-- What the picker stores for "no fallback", and what GetFallbackLanguage answers with.
+-- The same sentinel SpokenQuests and SpokenBooks use, so a player who has set all three
+-- addons to no fallback has typed it three times, not three different things.
+local FALLBACK_NONE = "none"
+
+--- The language narration falls back to when the pack the player chose has not narrated an
+--- entry. English by default, which is what this did before it was a setting and is the only
+--- answer that works for every pack published so far: each is English or a translation of
+--- the English corpus, so an entry missing from one is missing from English too unless
+--- somebody recorded it by hand.
+function SpokenZones:GetFallbackLanguage()
+	local stored = self:Get("fallbackLanguage")
+	if stored == nil then
+		return self.BASE_LANGUAGE
+	end
+	return stored
+end
+
+function SpokenZones:SetFallbackLanguage(code)
+	self:Set("fallbackLanguage", code)
+	-- As when the pack itself changes: whatever is playing was chosen under the old rule,
+	-- and letting it finish is not what the player asked for by changing the rule.
+	self:StopLore()
+	self:NotifyAudioChanged()
+end
+
+--- The entries the fallback picker offers: None, then every language an installed pack
+--- speaks, in LOCALES order, then the language the player has stored if it is not one of
+--- those.
+---
+--- A language with no pack is a setting that cannot be kept -- choosing it falls back to
+--- silence as surely as None does, and for one more reason: no pack would ever be asked --
+--- so listing it offers a choice whose only result is the silence the player just declined.
+--- The stored value stays listed anyway, because a picker that cannot show what it is set to
+--- is a control in an unknown state. The pack list is where a player reads that the pack
+--- behind it is gone.
+---
+--- None is this function's own entry rather than the caller's: this is the one picker it
+--- feeds, and the voice picker beside it offers packs rather than languages.
+function SpokenZones:GetOfferedFallbackLanguages(stored)
+	local spoken = {}
+	for _, pack in ipairs(self:GetAudioPacks()) do
+		spoken[pack.language] = true
+	end
+	local offered, seen = { FALLBACK_NONE }, { [FALLBACK_NONE] = true }
+	for _, locale in ipairs(self.LOCALES) do
+		if spoken[locale.code] then
+			table.insert(offered, locale.code)
+			seen[locale.code] = true
+		end
+	end
+	if stored and not seen[stored] then
+		table.insert(offered, stored)
+	end
+	return offered
 end
 
 --------------------------------------------------------------------------------
@@ -440,13 +527,15 @@ function SpokenZones:GetAudioClip(mapID, areaKey)
 		return nil, nil
 	end
 
-	-- The active pack, then English, entry by entry: a German pack that has not narrated an
-	-- area yet leaves it to the English one rather than to silence, the way a quest line falls
-	-- back. The entry keys are the same in every language, so any pack names the area alike.
-	-- No other language is tried: a player reading German does not want French.
+	-- The active pack, then the fallback language's, entry by entry: a German pack that
+	-- has not narrated an area yet leaves it to the fallback pack rather than to silence,
+	-- the way a quest line falls back. The entry keys are the same in every language, so
+	-- any pack names the area alike. No language beyond the one the player chose as a
+	-- fallback is tried: a player reading German does not want French.
 	local candidates = { active }
-	if active.language ~= "enUS" then
-		for _, pack in ipairs(self:GetAudioPacks("enUS")) do
+	local fallback = self:GetFallbackLanguage()
+	if fallback ~= FALLBACK_NONE and fallback ~= active.language then
+		for _, pack in ipairs(self:GetAudioPacks(fallback)) do
 			table.insert(candidates, pack)
 		end
 	end

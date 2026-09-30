@@ -22,11 +22,12 @@ local FRAME_STRATAS =
     "DIALOG",
 }
 
---- The language dropdowns' choices: every language, after one entry of the dropdown's own.
-local function LanguageValues(firstKey, firstLabel)
+--- The language dropdowns' choices: the languages an installed pack speaks, after one entry
+--- of the dropdown's own.
+local function LanguageValues(firstKey, firstLabel, stored)
     local values = { [firstKey] = firstLabel }
-    for _, locale in ipairs(Language.LOCALES) do
-        values[locale.code] = Language:GetNativeName(locale.code)
+    for _, code in ipairs(DataModules:GetOfferedLanguages(firstKey, stored)) do
+        values[code] = Language:GetNativeName(code)
     end
     return values
 end
@@ -100,7 +101,8 @@ local GeneralTab =
                     desc = L.OPT_VOICE_LANGUAGE_TIP,
                     values = function()
                         return LanguageValues(Language.AUTO,
-                            format(L.OPT_LANG_AUTO_FMT, Language:GetNativeName(Language:GetClientLanguage())))
+                            format(L.OPT_LANG_AUTO_FMT, Language:GetNativeName(Language:GetClientLanguage())),
+                            Addon.db.profile.Audio.VoiceLanguage)
                     end,
                     get = function(info) return Addon.db.profile.Audio.VoiceLanguage end,
                     set = function(info, value)
@@ -113,7 +115,10 @@ local GeneralTab =
                     order = 10,
                     name = L.OPT_FALLBACK_LANGUAGE,
                     desc = L.OPT_FALLBACK_LANGUAGE_TIP,
-                    values = function() return LanguageValues("none", L.OPT_FALLBACK_NONE) end,
+                    values = function()
+                        return LanguageValues("none", L.OPT_FALLBACK_NONE,
+                            Addon.db.profile.Audio.FallbackLanguage)
+                    end,
                     get = function(info) return Addon.db.profile.Audio.FallbackLanguage end,
                     set = function(info, value)
                         Addon.db.profile.Audio.FallbackLanguage = value
@@ -306,7 +311,7 @@ function Options:AddDataModule(module, order)
                 order,
                 reason and RED_FONT_COLOR_CODE or isLoaded and HIGHLIGHT_FONT_COLOR_CODE or GRAY_FONT_COLOR_CODE,
                 string.gsub(module.Title, "VoiceOver Data %- ", ""),
-                isLoaded and "" or L.OPT_NOT_LOADED_SUFFIX)
+                DataModules:GetModuleStatus(module.AddonName) or "")
         end,
         type = "group",
         order = order,

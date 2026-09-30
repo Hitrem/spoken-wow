@@ -36,6 +36,28 @@ Expect("...under its own name", stub.settingsCategories[1] and stub.settingsCate
 -- The rows live in the scroller's content frame, not on the panel: the settings canvas
 -- neither scrolls nor clips, so a panel with more rows than fit draws over the world.
 local content = B.optionsPanel.content
+
+---------------------------------------------------------------- the language choices
+-- No pack is installed in this suite, so each picker offers nothing but its own entry: a
+-- language with no pack is a setting that can only read silence, so offering it would be
+-- offering nothing. This is what a player who has not installed a pack yet sees.
+local function Dropdown(label)
+    for _, child in ipairs(content.children) do
+        if child.dropdownInit and child.layoutLabel and child.layoutLabel.text == label then return child end
+    end
+end
+local function Entries(dropdown)
+    local texts = {}
+    for _, entry in ipairs(stub.OpenDropdown(dropdown)) do table.insert(texts, entry.text) end
+    return table.concat(texts, "|")
+end
+Expect("the voice picker offers Auto and no language at all",
+    Entries(Dropdown("Voice language")), "Auto (English)")
+-- The fallback defaults to English whether or not an English pack is installed, and a
+-- picker that cannot show what it is set to reads as empty, so English stays on it.
+Expect("the fallback picker offers None and the English it defaults to",
+    Entries(Dropdown("Fallback language")), "None (stay silent)|English")
+
 local headings, checkboxes, buttons = {}, {}, {}
 for _, child in ipairs(content.children) do
     if child.layoutHeading then
@@ -51,7 +73,7 @@ for _, child in ipairs(content.children) do
 end
 
 Expect("every section is there", table.concat(headings, "|"),
-    "Reading|Language|What this character has read")
+    "Reading|Language|Sound packs|What this character has read")
 Expect("every switch has a row", table.getn(checkboxes), 3)
 Expect("...and the record has its button", table.getn(buttons), 1)
 
@@ -99,6 +121,37 @@ buttons[1].scripts.OnClick(buttons[1])
 local left = 0
 for _ in pairs(SpokenBooksCharDB.read) do left = left + 1 end
 Expect("pressing it clears this character's record", left, 0)
+
+---------------------------------------------------------------- the sound packs list shows name and version
+-- A row a pack, name and version, the shape all three addons share. The panel is built
+-- once per session, so a fresh boot with a pack installed stands in for a player who has
+-- one -- and the pack carries no packVersion field, because the released pack predates it
+-- and gets its version from the .toc instead. That is the case that matters: books packs
+-- are kept across addon updates, so a check that read blank for one would not be a check.
+stub.SetAddOns({
+    { folder = "SpokenBooksAudio", meta = { Version = "2.1.0" } },
+})
+_G.SpokenBooksAudioPacks = {
+    SpokenBooksAudio = { version = 1, addon = "SpokenBooksAudio",
+        quality = "high", bitrate = 128, language = "enUS", pages = {} },
+}
+local B2 = {}
+for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader", "Audio", "Playlist",
+    "UI/Layout", "UI/Options", "Events", "Commands" }) do
+    assert(loadfile(BOOKS .. file .. ".lua"))("SpokenBooks", B2)
+end
+B2:InitDB()
+B2:SetupOptions()
+local content2 = B2.optionsPanel.content
+local packRow
+for _, child in ipairs(content2.children) do
+    if type(child.text) == "string" and string.find(child.text, "English  |cff888888", 1, true) then
+        packRow = child
+    end
+end
+Expect("the sound packs section names the pack with its version",
+    packRow and packRow.text, "English  |cff8888882.1.0|r")
+stub.ResetAddOns()
 
 -- Derived from the layout rather than written down, so adding a row cannot leave a section
 -- below the reach of the scrollbar.

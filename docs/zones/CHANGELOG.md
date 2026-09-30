@@ -9,6 +9,28 @@ is the pack's, and `scripts/zones/release.sh` matches on the kind as well as the
 section with no kind in its heading is the addon's. A language's pack numbers itself too, from
 2.0.0 in step with the English pack (Spanish (AL) shipped first, as 1.0.0), and its sections are headed by its release tag: `## <version> — zones-audio-esMX`.
 
+## 2.2.2 — 2026-09-29
+
+- **Every translated language is in the Language dropdown, on every client.** Russian,
+  Korean, Simplified Chinese and Traditional Chinese were being hidden from anyone whose
+  game was not in that language, because the addon assumed a client can only read what
+  its own language is written in. It can read more than that: the game tells an addon
+  nothing about which glyphs its fonts carry, so the check was a guess, and it was wrong.
+- The sound pack dropdown names each pack in its own language, so a Russian pack reads
+  `Русский` where it read `ruRU`.
+- **The language options are now exactly the ones Spoken Quests and Spoken Books have, in
+  the same order.** The Language section holds Voice language and Fallback language and
+  nothing else. Voice language replaces "Sound pack" and gains an **Auto** entry, which is
+  what a player had no way back to once they had chosen a pack. The lore-language
+  dropdown is gone: `/spz lang` chooses that, and with nothing stored the client decides.
+- **Fallback language is a setting rather than a hard-coded English.** It defaults to
+  English, so nothing changes unless you ask; **None** leaves an unnarrated entry silent
+  instead. Both voice pickers offer a language only when you have a sound pack installed
+  for it.
+- **Installed sound packs are listed with name and version**, as Spoken Quests lists
+  theirs. The note under the voice picker is gone: its jobs — "nothing is installed",
+  "which pack is this" — are the section's now.
+
 ## 2.2.1 — 2026-09-27
 
 - Zone and subzone narration now supplies captions to Spoken Player 2.2.3.

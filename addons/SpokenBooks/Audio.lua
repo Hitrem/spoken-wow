@@ -27,6 +27,14 @@ function SpokenBooks:GetAudioPacks()
 	for name, pack in pairs(_G.SpokenBooksAudioPacks or {}) do
 		if type(pack) == "table" and pack.version == PACK_FORMAT and type(pack.pages) == "table" then
 			pack.addon = pack.addon or name
+			-- The version a pack released before the field was added does not carry. The
+			-- .toc always has one, so it fills the gap: the pack list is a check -- "is my
+			-- audio installed, and which version" -- and a check that reads blank for a
+			-- pack the player has not updated is not a check.
+			if not pack.packVersion then
+				local meta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+				pack.packVersion = meta and meta(pack.addon, "Version") or "dev"
+			end
 			table.insert(packs, pack)
 		end
 	end

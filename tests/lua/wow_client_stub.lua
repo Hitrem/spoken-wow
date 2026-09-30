@@ -851,9 +851,20 @@ function _G.GetAddOnMetadata(addon, key)
     return entry and entry.meta and entry.meta[key] or ""
 end
 function _G.IsAddOnLoadOnDemand() return false end
+--- Whether the client has run an addon's Lua. An entry may say so with loaded = true to
+--- stand in for a pack the client loaded by itself: one without LoadOnDemand is loaded
+--- like any other addon, and its Lua registering is a separate question from that.
+function _G.IsAddOnLoaded(addon)
+    local entry = AddOnAt(addon)
+    return (entry and entry.loaded) and true or false
+end
 function _G.GetAddOnEnableState() return 2 end
 function _G.DisableAddOn(addon) table.insert(M.disabledAddOns, addon) end
-function _G.LoadAddOn() return true end
+function _G.LoadAddOn(addon)
+    local entry = AddOnAt(addon)
+    if entry then entry.loaded = true end
+    return true
+end
 
 local libs = {}
 M.ldbObjects = {}

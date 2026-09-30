@@ -56,10 +56,9 @@ function SpokenBooks:GetLanguageName(code)
 	if not locale then
 		return tostring(code)
 	end
-	-- The endonym, so every language names itself: a picker lists all of them at
+	-- The endonym, so every language names itself: a picker lists them all at
 	-- once, and translated exonyms would need a table per interface language for
-	-- what one field already says. Latin-script endonyms draw on every client;
-	-- the others stay ASCII transliterations for the same reason.
+	-- what one field already says.
 	return locale.native or locale.name
 end
 
@@ -103,6 +102,36 @@ end
 --- The language a pack is recorded in.
 function SpokenBooks:PackLanguage(pack)
 	return self:NormalizeLanguage(pack and pack.language)
+end
+
+--- The entries a voice picker offers: its own, then every language an installed pack
+--- speaks, in LOCALES order, then the language the player has stored if it is not one of
+--- those.
+---
+--- A language with no pack is a setting that cannot be kept -- choosing it reads every page
+--- in silence -- so listing it offers a choice whose only result is no sound. The stored
+--- value stays listed anyway, because a picker that cannot show what it is set to is a
+--- control in an unknown state. The pack list is where a player reads that the pack behind
+--- it is gone.
+---@param first string The dropdown's own entry -- Auto, or None
+---@param stored string|nil What the player has chosen
+---@return string[] codes
+function SpokenBooks:GetOfferedLanguages(first, stored)
+	local installed = {}
+	for _, pack in ipairs(self:GetAudioPacks()) do
+		installed[self:PackLanguage(pack)] = true
+	end
+	local offered, seen = { first }, { [first] = true }
+	for _, locale in ipairs(self.LOCALES) do
+		if installed[locale.code] then
+			table.insert(offered, locale.code)
+			seen[locale.code] = true
+		end
+	end
+	if stored and not seen[stored] then
+		table.insert(offered, stored)
+	end
+	return offered
 end
 
 --- The language the player's packs speak to them: the first in LanguageOrder that an

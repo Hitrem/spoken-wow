@@ -24,26 +24,6 @@ local _, SpokenZones = ...
 
 local L = {}
 
---------------------------------------------------------------------------------
--- Playback controls
---------------------------------------------------------------------------------
-
-L.PLAY = "Play"
-L.PAUSE = "Pause"
-
-L.PLAY_TOOLTIP = "Starts this lore again from the beginning."
-L.PAUSE_TOOLTIP =
-	"The game cannot resume a sound part-way through, so playing again starts from the beginning."
-
---------------------------------------------------------------------------------
--- Queue
---------------------------------------------------------------------------------
-
-L.QUEUE_TITLE = "Up next"
-L.QUEUE_COUNT = "%1$d waiting"
-L.QUEUE_REMOVE_TOOLTIP = "Click to take this out of the queue."
-L.QUEUE_DRAG_HINT = "Drag this list to move it."
-
 -- Why a discovery is queued but silent. Without these, narration waiting out a
 -- pull looks exactly like narration that failed.
 L.QUEUE_HELD_COMBAT = "Waiting for combat to end."
@@ -113,17 +93,14 @@ L.OPT_AUTOPLAY_SUB_TIP = "Most discoveries are subzones -- a walk across Elwynn 
 L.OPT_AUTOPLAY_EXPLORED = "Also narrate areas you explored before installing"
 L.OPT_AUTOPLAY_EXPLORED_TIP = "The game announces a discovery once per character, ever -- so a character who already explored Azeroth is never narrated anything. Tick this and Spoken Zones keeps its own record instead, still one clip per area per character. /spz forget clears it."
 L.OPT_PACK_NONE = "Nothing is narrated. Install Spoken Zones Audio to hear the lore read aloud."
-L.OPT_PACK_MULTI_FMT = "%1$s. %2$d installed; the one in the language you are reading plays unless you choose another."
-L.OPT_SOUND_PACK = "Sound pack"
-L.OPT_SOUND_PACK_TIP = "Which installed pack narrates the lore."
+L.OPT_SECTION_PACKS = "Sound packs"
 L.OPT_SECTION_LANGUAGE = "Language"
-L.OPT_LANG_ONLY_ENGLISH = "The lore is only written in English so far."
-L.OPT_LANG_RELOAD = "Reload to start reading it: type /reload."
-L.OPT_LANG_COUNT_FMT = "%1$d languages available. Switching takes effect after /reload."
-L.OPT_LANGUAGE = "Language"
-L.OPT_LANGUAGE_TIP = "Which language the lore is read and shown in. Auto follows your game's language (English until it is translated); a language picked here stays whatever language the game runs in."
+L.OPT_VOICE_LANGUAGE = "Voice language"
+L.OPT_VOICE_LANGUAGE_TIP = "Which language's sound pack narrates the lore. Auto uses the language you are reading, or your game's own. A language is only heard if a sound pack recorded in it is installed."
+L.OPT_FALLBACK_LANGUAGE = "Fallback language"
+L.OPT_FALLBACK_LANGUAGE_TIP = "What to play when no pack in your chosen language has the entry. None leaves that entry silent rather than narrating it in a language you did not ask for."
+L.OPT_FALLBACK_NONE = "None (stay silent)"
 L.OPT_LANG_AUTO_FMT = "Auto (%1$s)"
-L.OPT_LANG_SET_FMT = "language set to %1$s -- |cffffcc00/reload to apply|r"
 L.OPT_SECTION_TROUBLE = "Troubleshooting"
 L.OPT_DEBUG_MAP_CLICK = "Report area names when clicking the map"
 L.OPT_DEBUG_MAP_CLICK_TIP = "Prints the raw area name the client reports, the key it normalises to, and whether lore was found. Use this to spot a subzone needing an alias."
@@ -157,15 +134,5 @@ L.SUBZONE_COUNT_FMT = "%1$d subzones"
 L.LORE_WINDOW_EMPTY = "Pick a zone on the left. Zones with subzones show a count; click one to expand it."
 L.MAP_LORE_FOR_FMT = "lore for %1$s"
 L.MAP_SUBZONE_MORE = "click a subzone on the map for more"
-
---------------------------------------------------------------------------------
--- Language names
---
--- How each content language is named in lists: the options dropdown, /spz lang,
--- pack labels. A picker lists every language at once, so these are exonyms in
--- the interface language rather than each language's own endonym.
---------------------------------------------------------------------------------
-
-L.OPT_PACK_NONE_INSTALLED = "none installed"
 
 SpokenZones:RegisterStrings("enUS", L)

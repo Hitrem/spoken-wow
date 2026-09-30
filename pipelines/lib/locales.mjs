@@ -13,8 +13,9 @@
 
 export const BASE_LOCALE = "enUS";
 
-// `script` is what a client's fonts must be able to draw -- the addon uses it to
-// hide a language a player's client would render as boxes.
+// `name` is the language's English name, ASCII, for a pack folder or a log line. The
+// endonym a player reads is `native` in the addon's own list, which is hand-written
+// beside this one and not derived from it.
 //
 // `elevenLabs` is the language_code sent with a synthesis request: ISO 639-1, which
 // is what the multilingual models take. It names the language, not the region, so
@@ -29,16 +30,16 @@ export const BASE_LOCALE = "enUS";
 // Portuguese, which 1.12 never shipped and the Classic Era client does -- a fresh dump has no
 // *_loc9 column, and pipelines/quests/tools/fill_locales_from_tdb.py adds and fills it.
 export const LOCALES = [
-  { code: "enUS", name: "English", script: "latin", elevenLabs: "en", bcp47: "en-US", vmangos: 0 },
-  { code: "deDE", name: "German", script: "latin", elevenLabs: "de", bcp47: "de-DE", vmangos: 3 },
-  { code: "esES", name: "Spanish (EU)", script: "latin", elevenLabs: "es", bcp47: "es-ES", vmangos: 6 },
-  { code: "esMX", name: "Spanish (AL)", script: "latin", elevenLabs: "es", bcp47: "es-MX", vmangos: 7 },
-  { code: "frFR", name: "French", script: "latin", elevenLabs: "fr", bcp47: "fr-FR", vmangos: 2 },
-  { code: "ptBR", name: "Portuguese", script: "latin", elevenLabs: "pt", bcp47: "pt-BR", vmangos: 9 },
-  { code: "ruRU", name: "Russian", script: "cyrillic", elevenLabs: "ru", bcp47: "ru-RU", vmangos: 8 },
-  { code: "koKR", name: "Korean", script: "korean", elevenLabs: "ko", bcp47: "ko-KR", vmangos: 1 },
-  { code: "zhCN", name: "Chinese (S)", script: "simplifiedchinese", elevenLabs: "zh", bcp47: "zh-CN", vmangos: 4 },
-  { code: "zhTW", name: "Chinese (T)", script: "traditionalchinese", elevenLabs: "zh", bcp47: "zh-TW", vmangos: 5 },
+  { code: "enUS", name: "English", elevenLabs: "en", bcp47: "en-US", vmangos: 0 },
+  { code: "deDE", name: "German", elevenLabs: "de", bcp47: "de-DE", vmangos: 3 },
+  { code: "esES", name: "Spanish (EU)", elevenLabs: "es", bcp47: "es-ES", vmangos: 6 },
+  { code: "esMX", name: "Spanish (AL)", elevenLabs: "es", bcp47: "es-MX", vmangos: 7 },
+  { code: "frFR", name: "French", elevenLabs: "fr", bcp47: "fr-FR", vmangos: 2 },
+  { code: "ptBR", name: "Portuguese", elevenLabs: "pt", bcp47: "pt-BR", vmangos: 9 },
+  { code: "ruRU", name: "Russian", elevenLabs: "ru", bcp47: "ru-RU", vmangos: 8 },
+  { code: "koKR", name: "Korean", elevenLabs: "ko", bcp47: "ko-KR", vmangos: 1 },
+  { code: "zhCN", name: "Chinese (S)", elevenLabs: "zh", bcp47: "zh-CN", vmangos: 4 },
+  { code: "zhTW", name: "Chinese (T)", elevenLabs: "zh", bcp47: "zh-TW", vmangos: 5 },
 ];
 
 export const CODES = LOCALES.map((l) => l.code);

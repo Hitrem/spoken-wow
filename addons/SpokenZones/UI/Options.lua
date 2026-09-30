@@ -130,90 +130,94 @@ function SpokenZones:SetupOptions()
 		L.OPT_AUTOPLAY_EXPLORED_TIP,
 		Get("autoplayExplored"), Set("autoplayExplored"))
 	layout:Outdent()
+
+	-- The picker's own Auto entry. A table rather than a code because the values beside it
+	-- are packs, not languages, and there is no language code that means "let the addon
+	-- decide"; the stored absence of a preference is what Auto means.
+	local AUTO = {}
+
+	-- Voice language then fallback language, which is the whole of this section and the
+	-- whole of the Language section in SpokenQuests and SpokenBooks. A player who sets a
+	-- voice language in one addon looks for it in the same place in the others.
+	layout:Section(L.OPT_SECTION_LANGUAGE)
 	-- The list is read when the menu opens rather than captured here: packs cannot be
 	-- installed mid-session, but a player who disables one in the AddOns list and reloads
 	-- should not find this offering it.
-	local packNote
 	local function PackLabel(pack)
-		return pack and SpokenZones:GetAudioPackLabel(pack) or L.OPT_PACK_NONE_INSTALLED
-	end
-	local function DescribePacks()
-		local packs = SpokenZones:GetAudioPacks()
+		if pack ~= AUTO then
+			return SpokenZones:GetAudioPackLabel(pack)
+		end
+		-- Named with the language Auto would actually play, which is the one being read
+		-- whenever a pack in it is installed and the client's own when none is.
 		local active = SpokenZones:GetActiveAudioPack()
-		if #packs == 0 then
-			packNote:SetText(L.OPT_PACK_NONE)
-		elseif #packs > 1 then
-			packNote:SetText(string.format(L.OPT_PACK_MULTI_FMT, active.addon, #packs))
-		else
-			packNote:SetText(active.addon)
-		end
+		return string.format(L.OPT_LANG_AUTO_FMT,
+			SpokenZones:GetLanguageName(active and active.language or SpokenZones:GetLanguage()))
 	end
-	layout:Dropdown(L.OPT_SOUND_PACK, L.OPT_SOUND_PACK_TIP,
-		function() return SpokenZones:GetAudioPacks() end,
-		function() return SpokenZones:GetActiveAudioPack() end,
-		function(pack) SpokenZones:SetActiveAudioPack(pack.addon) end,
-		function() DescribePacks() end,
-		PackLabel)
-	packNote = layout:Note("", 460, 32)
-	DescribePacks()
-
-	layout:Section(L.OPT_SECTION_LANGUAGE)
-	-- Only finished languages are offered. A player choosing from a list has no way to
-	-- know that half a translation is missing, and would report the English that shows
-	-- through as a bug; /spz lang <code> force is how an unfinished one gets looked at.
-	local langNote
-	-- Auto stores no language at all, so it keeps following the client: switch the
-	-- game to French and it reads French. Every other entry pins its language.
-	local AUTO = {}
-	local function DescribeLanguage()
-		local available = SpokenZones:GetSelectableLanguages()
-		-- The chosen language, which is not always the one on screen: a switch only takes
-		-- effect on the next load.
-		local chosen = SpokenZones:GetLanguagePreference() or SpokenZones:GetAutoLanguage()
-		if #available < 2 then
-			langNote:SetText(L.OPT_LANG_ONLY_ENGLISH)
-		elseif chosen ~= SpokenZones:GetLanguage() then
-			langNote:SetText(L.OPT_LANG_RELOAD)
-		else
-			langNote:SetText(string.format(L.OPT_LANG_COUNT_FMT, #available))
-		end
-	end
-	layout:Dropdown(L.OPT_LANGUAGE, L.OPT_LANGUAGE_TIP,
+	layout:Dropdown(L.OPT_VOICE_LANGUAGE, L.OPT_VOICE_LANGUAGE_TIP,
 		function()
 			local values = { AUTO }
-			for _, locale in ipairs(SpokenZones:GetSelectableLanguages()) do
-				table.insert(values, locale)
+			for _, pack in ipairs(SpokenZones:GetAudioPacks()) do
+				table.insert(values, pack)
 			end
 			return values
 		end,
+		-- No stored preference is Auto, which is what makes Auto the entry a player comes
+		-- back to: until now, having once chosen a pack, there was no way to hand it back.
+		function() return SpokenZones:GetPreferredAudioPack() or AUTO end,
+		function(pack)
+			SpokenZones:SetActiveAudioPack(pack == AUTO and nil or pack.addon)
+		end,
+		nil,
+		PackLabel)
+
+	-- Only the languages an installed pack speaks: a language with no pack is a setting
+	-- that can only narrate silence, so offering it would be offering nothing. None is the
+	-- first entry because it is a choice in its own right, and the one a player who wants
+	-- only their own language makes.
+	layout:Dropdown(L.OPT_FALLBACK_LANGUAGE, L.OPT_FALLBACK_LANGUAGE_TIP,
 		function()
-			local chosen = SpokenZones:GetLanguagePreference()
-			for _, locale in ipairs(SpokenZones:GetSelectableLanguages()) do
-				if locale.code == chosen then
-					return locale
-				end
-			end
-			return AUTO
+			return SpokenZones:GetOfferedFallbackLanguages(SpokenZones:GetFallbackLanguage())
 		end,
-		function(locale)
-			local code = locale ~= AUTO and locale.code or nil
-			if SpokenZones:SetLanguage(code) then
-				-- Said before the reload rather than after: the failure to avoid is a
-				-- player switching, seeing English, and concluding it did not work.
-				SpokenZones:Print(string.format(L.OPT_LANG_SET_FMT,
-					SpokenZones:GetLanguageName(code or SpokenZones:GetAutoLanguage())))
-			end
-		end,
-		function() DescribeLanguage() end,
-		function(locale)
-			-- Named with what it reads now, since that changes with the client.
-			if locale == AUTO then
-				return string.format(L.OPT_LANG_AUTO_FMT, SpokenZones:GetLanguageName(SpokenZones:GetAutoLanguage()))
-			end
-			return locale and SpokenZones:GetLanguageName(locale.code) or SpokenZones:GetLanguageName(nil)
+		function() return SpokenZones:GetFallbackLanguage() end,
+		function(code) SpokenZones:SetFallbackLanguage(code) end,
+		nil,
+		function(code)
+			return code == "none" and L.OPT_FALLBACK_NONE or SpokenZones:GetLanguageName(code)
 		end)
-	langNote = layout:Note("", 460, 32)
-	DescribeLanguage()
+
+	-- The packs, in their own section. "Which pack is this" used to be a note under the
+	-- voice picker; a list that answers "is my audio installed, and which version" does
+	-- the job, and it is where SpokenQuests puts the same answer -- name and version a
+	-- row, so a player can check an install without reading a second window.
+	layout:Section(L.OPT_SECTION_PACKS)
+	local packRows = {}
+	local function DescribePacks()
+		local packs = SpokenZones:GetAudioPacks()
+		for index, pack in ipairs(packs) do
+			local row = packRows[index]
+			if row then
+				row.note:SetText(("%s  |cff888888%s|r"):format(
+					SpokenZones:GetAudioPackLabel(pack), pack.packVersion or ""))
+				row.note:Show()
+			end
+		end
+		for index = #packs + 1, table.getn(packRows) do
+			packRows[index].note:Hide()
+		end
+		if #packs == 0 and packRows[1] then
+			packRows[1].note:SetText(L.OPT_PACK_NONE)
+			packRows[1].note:Show()
+		end
+	end
+	-- A row apiece, built once: the set of installed packs cannot change mid-session, and
+	-- the panel is built after they have all loaded. One row even with none, so the
+	-- "install one" note has somewhere to live.
+	local packCount = #SpokenZones:GetAudioPacks()
+	for index = 1, math.max(packCount, 1) do
+		packRows[index] = { note = layout:Note("", 460, 16) }
+	end
+	DescribePacks()
+	content:SetScript("OnShow", DescribePacks)
 
 	layout:Section(L.OPT_SECTION_TROUBLE)
 	layout:Checkbox(L.OPT_DEBUG_MAP_CLICK,

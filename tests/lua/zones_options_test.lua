@@ -32,12 +32,57 @@ for _, child in ipairs(content.children) do
     end
 end
 
-Expect("every section is there", table.getn(headings), 6)
+Expect("every section is there", table.getn(headings), 7)
 local names = {}
 for _, heading in ipairs(headings) do table.insert(names, heading.text) end
 Expect("...in order", table.concat(names, "|"),
-    "World map|Minimap|Narration|Language|Troubleshooting|Feedback")
+    "World map|Minimap|Narration|Language|Sound packs|Troubleshooting|Feedback")
 Expect("and every setting", table.getn(rows) >= 13, true)
+
+---------------------------------------------------------------- the two language pickers
+-- Voice language and Fallback language, which is the whole of the Language section here and
+-- the whole of it in SpokenQuests and SpokenBooks: a player who sets a voice language in one
+-- addon looks for it in the same place in the others. The language the lore text itself is
+-- read in has no row -- /spz lang is how that is changed, and Auto follows the client either
+-- way -- so the section holds nothing a player of the other two addons cannot find.
+local labels = {}
+for _, child in ipairs(content.children) do
+    if child.dropdownInit and child.layoutLabel then table.insert(labels, child.layoutLabel.text) end
+end
+Expect("the language pickers are the two all three addons name alike",
+    table.concat(labels, "|"), "Voice language|Fallback language")
+
+-- The fallback picker, with no pack installed. A language with no pack is a setting that can
+-- only narrate silence, so offering it would be offering nothing: English is on the picker
+-- only because it is what the setting already holds, which is the one exception the rule
+-- makes everywhere -- a picker that cannot show what it is set to is a control in an
+-- unknown state. This is what a player who has not installed a pack yet sees.
+local function Picker(label)
+    for _, child in ipairs(content.children) do
+        if child.dropdownInit and child.layoutLabel and child.layoutLabel.text == label then
+            return child
+        end
+    end
+end
+local function Entries(dropdown)
+    local texts = {}
+    for _, entry in ipairs(stub.OpenDropdown(dropdown)) do table.insert(texts, entry.text) end
+    return table.concat(texts, "|")
+end
+local fallback = Picker("Fallback language")
+Expect("the fallback picker is on the panel", fallback ~= nil, true)
+Expect("...offering None, and no language a pack could speak", Entries(fallback),
+    "None (stay silent)|English")
+Expect("...reading as the English a fresh install holds", fallback.dropdownText, "English")
+Expect("switching it off is possible", stub.PickDropdown(fallback, "None (stay silent)"), true)
+Expect("...and stores what the audio path reads", Z:GetFallbackLanguage(), "none")
+Expect("...so nothing is left to fall back to", Entries(fallback), "None (stay silent)")
+
+-- The voice picker, likewise with no pack: Auto alone, named with the lore language that
+-- would be played -- there being no pack to name another.
+local voice = Picker("Voice language")
+Expect("the voice picker is on the panel", voice ~= nil, true)
+Expect("...offering Auto and no pack at all", Entries(voice), "Auto (English)")
 
 local function Distinct(values)
     local seen, count = {}, 0

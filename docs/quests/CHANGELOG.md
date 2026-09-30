@@ -6,6 +6,24 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 2.1.4 — 2026-09-29
+
+- **The voice and fallback language pickers list only the languages you have a sound pack
+  for.** They offered all ten, so choosing one without a pack installed was a setting that
+  could only narrate silence. A language stays listed after its pack is removed, so the
+  picker can still show what it is set to.
+- **An installed sound pack is no longer reported as not loaded.** A pack the game loads by
+  itself was recorded as a failure before the addon ever asked whether the client had it,
+  so a pack that was installed and working showed as "not loaded" in the options panel. The
+  two faults are now told apart, and a pack that genuinely cannot answer says which one it
+  is — the same code `/spq diagnostics` prints, so a bug report can quote it.
+- **The options panel's Sound packs section now reads the same as the other two addons':
+  name and version a row, and nothing else.** The "(not loaded)" marker is no longer on the
+  list — the panel was answering a fault question a player had not asked — and the "Not
+  installed" downloader is gone from the panel with it. The fault print stays in
+  `/spq diagnostics`, and missing packs are still listed with their addresses in the
+  options window's pack manager, so neither capability is lost, just off the settings panel.
+
 ## 2.1.3 — 2026-09-27
 
 - Queued quest and NPC dialogue now supplies captions to Spoken Player 2.2.3.

@@ -170,22 +170,49 @@ Expect("...and switching is possible", stub.PickDropdown(profile, "Default"), tr
 
 ---------------------------------------------------------------- the language choices
 -- On the panel, as in SpokenBooks, rather than only in the /spq window; Auto is named with
--- the language it follows, the same way all three addons name it.
-local function Dropdown(label)
-    for _, child in ipairs(SettingsPanel.panel.content.children) do
+-- the language it follows, the same way all three addons name it. Each picker lists the
+-- languages an installed pack speaks: a language with no pack is a setting that can only
+-- narrate silence, so offering it is offering nothing.
+local function Dropdown(panel, label)
+    for _, child in ipairs(panel.panel.content.children) do
         if child.dropdownInit and child.layoutLabel and child.layoutLabel.text == label then return child end
     end
 end
-local voice, fallback = Dropdown("Voice language"), Dropdown("Fallback language")
+local function Entries(dropdown)
+    local texts = {}
+    for _, entry in ipairs(stub.OpenDropdown(dropdown)) do table.insert(texts, entry.text) end
+    return table.concat(texts, "|")
+end
+
+local voice = Dropdown(SettingsPanel, "Voice language")
+local fallback = Dropdown(SettingsPanel, "Fallback language")
 Expect("the voice language is chosen on the panel", voice ~= nil, true)
 Expect("...Auto by default, named with the client's language", voice and voice.dropdownText, "Auto (English)")
-Expect("...and a language can be picked", stub.PickDropdown(voice, "Deutsch"), true)
-Expect("...which is stored", VO.Addon.db.profile.Audio.VoiceLanguage, "deDE")
-Expect("...and going back to Auto is possible", stub.PickDropdown(voice, "Auto (English)"), true)
-Expect("...storing Auto, not a language", VO.Addon.db.profile.Audio.VoiceLanguage, "auto")
+Expect("...offering only the languages an installed pack speaks", Entries(voice),
+    "Auto (English)|English")
 Expect("the fallback language is chosen on the panel", fallback and fallback.dropdownText, "English")
+Expect("...with none on it as well", Entries(fallback), "None (stay silent)|English")
 Expect("...and can be switched off", stub.PickDropdown(fallback, "None (stay silent)"), true)
 Expect("...which is stored", VO.Addon.db.profile.Audio.FallbackLanguage, "none")
+
+-- A second pack in a second language puts that language on both pickers, which is what
+-- makes the picker worth having: the languages it lists are the ones that can speak.
+stub.SetAddOns({
+    { folder = "SpokenQuestsAudio", meta = { ["X-SpokenQuests-DataModule-Version"] = "1",
+        Version = "1.2.1", Title = "Spoken Quests Audio" } },
+    { folder = "SpokenQuestsAudio_deDE", meta = { ["X-SpokenQuests-DataModule-Version"] = "1",
+        Version = "1.2.1", Title = "Spoken Quests Audio: German",
+        ["X-SpokenQuests-Language"] = "deDE" } },
+})
+local twoPacks, twoPackPanel = Boot()
+local twoVoices = Dropdown(twoPackPanel, "Voice language")
+Expect("a German pack puts German on the voice picker", Entries(twoVoices),
+    "Auto (English)|English|Deutsch")
+Expect("...and it can be picked", stub.PickDropdown(twoVoices, "Deutsch"), true)
+Expect("...which is stored", twoPacks.Addon.db.profile.Audio.VoiceLanguage, "deDE")
+Expect("...and going back to Auto is possible", stub.PickDropdown(twoVoices, "Auto (English)"), true)
+Expect("...storing Auto, not a language", twoPacks.Addon.db.profile.Audio.VoiceLanguage, "auto")
+stub.ResetAddOns()
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quests options tests passed")

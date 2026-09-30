@@ -407,10 +407,14 @@ fallback.
 how much of the lore and how many interface strings exist and whether an alias
 table is present. `ready` is lore complete plus an alias table; interface strings
 are counted but not required, since they fall back to English per key and an
-English options panel over a German corpus is worth shipping. The switcher only
-offers languages that are ready **and** whose script the client can draw — `UI/TextView.lua` takes
-its font from `GameFontHighlight`, which is the client's font, so Chinese lore on
-a German client is a screen of boxes.
+English options panel over a German corpus is worth shipping. Readiness is the
+only gate on the switcher. There used to be a second one, a font check that
+refused any language whose script differed from the client's, and it was wrong:
+the client exposes no way to ask which glyphs its fonts carry, so the check
+inferred it from the locale and hid Russian, Korean and both Chineses from
+clients that draw every one of them. A language a player cannot read is theirs to
+try and to report; a language they can never pick is a language they can never
+report as missing.
 
 A player who never chose reads their client's language the day it becomes ready;
 one who picked English keeps English. That is why the stored preference is absent
@@ -434,7 +438,9 @@ read shows nothing, exactly as a zone with no lore at all does — the panel is 
 rather than wrong, which is the same rule Outland already follows. Falling back would
 put English prose under a translated heading, which reads as a translation done badly
 rather than one not done yet, and the readiness gate means a language on offer has no
-holes to fall through anyway.
+holes to fall through anyway. Audio is the other matter and does have one, because
+an entry the pack has not narrated yet is a different thing from a translation nobody
+has written — see "Two languages and a fallback".
 
 Interface strings are the exception and do fall back to English. A missing string is an
 unlabelled button, and an English label beats an empty one; a missing line of lore has
@@ -666,6 +672,29 @@ quest audio about the League of Arathor over Elwynn Forest, Dun Morogh and Felwo
 and reported the lore as wrong. Silence is honest about what is missing; a
 convincing substitute is not. If the playback controls ever need exercising without
 a pack again, that is a debug flag, not a file every player ships.
+
+### Two languages and a fallback
+
+`GetAudioClip` asks the active pack first and then the **Fallback language**'s packs,
+and the entry keys are the same in every language, so any pack names an area alike.
+Only those two are ever asked: a player reading German does not want French.
+
+The fallback is a setting and its default is English, which is exactly what the code
+did before it was one — every published pack is English or a translation of the
+English corpus, so an entry missing from a German pack is missing from English too
+unless somebody recorded it by hand. `None` is the other end of it, and it is what a
+player who wants only their own language chooses; silence is a choice, not a starting
+point, so it is stored rather than defaulted to.
+
+This is the one place a missing line is covered rather than reported, and it is
+deliberately narrow: a *translation* of the line in a language the player did not
+ask for is not a placeholder, it is the same information said in another tongue.
+`DescribeMissingAudio` still reports the gap against the active pack, because that
+is the pack somebody could contribute a line to.
+
+The lore text gets no such setting — see "A language is hidden until its lore is
+finished" for why putting English prose under a translated heading reads as a
+translation done badly.
 
 ### The beta disclaimer, and the files that carry it
 
@@ -1138,16 +1167,21 @@ ZoneLoreAudioPacks[ADDON_NAME] = pack
 ```
 
 ...keyed by folder name, so two installed tiers both appear instead of the second
-clobbering the first. The pack reads its own folder name, quality and bitrate out
-of its `.toc` through `GetAddOnMetadata` at load time, which is what lets a single
+clobbering the first. The pack reads its own folder name, quality, bitrate and version
+out of its `.toc` through `GetAddOnMetadata` at load time, which is what lets a single
 generated `Data/Sounds.lua` serve every tier — `package-audio.sh` rewrites three
-`.toc` lines per tier and changes nothing else. Adding a 32kbps tier later is a
-line in that script.
+`.toc` lines per tier and changes nothing else, and the version the settings panel
+shows under the pack's name is the same `## Version` value read back this way. Adding
+a 32kbps tier later is a line in that script.
 
 ZoneLore picks the highest bitrate installed unless the player has chosen
 otherwise, and stores that choice as a folder name rather than an index: someone
 who uninstalls the higher-bitrate pack should fall back to what remains, not to whichever
-pack happens to occupy that slot afterwards.
+pack happens to occupy that slot afterwards. The choice is stored per content
+language, so reading German and reading English each keep their own answer — a
+player who wants a German pack for German lore and an English one for English lore
+sets it twice and gets both. Auto is the absence of a choice, which is what makes
+it the entry a player can come back to: picking a pack used to be a one-way door.
 
 `pack.version` is the compatibility contract, checked against `PACK_FORMAT` in
 `Audio.lua`. A pack whose format this build does not know is skipped with a
@@ -1374,9 +1408,43 @@ used.
 
 Exposed: map panel on/off, panel side, panel width, font size, hover preview
 on/off, minimap button on/off, narration on/off, autoplay on/off, autoplay for
-subzones on/off, the playback controls on/off, the narration sound channel, and the
-debug area-name reporting. Everything applies immediately -- no reload -- via
+subzones on/off, the playback controls on/off, the narration sound channel, a list of
+the installed sound packs with their versions, and the debug area-name reporting.
+Everything applies immediately -- no reload -- via
 `ZoneLore:ApplyPanelOptions()`.
+
+### The two language pickers are the same two in every addon
+
+**Language** holds Voice language and Fallback language, and nothing else.
+SpokenQuests and SpokenBooks open the same section with the same two, so a player
+who sets a voice language in one addon looks for it in the same place in the others.
+
+The language the lore text itself is read in is not on the panel. `/spz lang` lists
+what is finished and `/spz lang <code>` picks one, and with nothing stored the client
+decides — which is what a player whose game is in German wants and what a player
+whose game is in English and reads German has to type. It was a dropdown until
+2.2.2, and removing it is what makes this section identical across the three addons:
+the row was the only thing in it the other two could not offer, because they have no
+lore text to choose a language for.
+
+Both voice pickers offer a language only when a pack for it is installed. A language
+with no pack is a setting that can only produce silence, so listing it would be
+offering nothing — and a player who cannot choose the language they read has no way
+to say so. The stored value stays listed whatever happens, because a picker that
+cannot show what it is set to is a control in an unknown state; the Sound packs
+section below is where a pack that has gone missing gets reported.
+
+Voice language lists *packs* rather than languages, and is the one row where the two
+addons differ: two packs can share a language (the retired 64kbps tier and the current
+one are both English), and a player who uninstalls the good pack should fall back to
+what remains rather than to whichever pack happens to occupy that slot afterwards.
+The label is the endonym either way, so the list reads the same as the other two
+addons', and Auto names the language that would actually play.
+
+**Sound packs** lists what is installed, one row apiece, exactly as SpokenQuests does:
+the pack's name — the same endonym the voice picker shows — and the version from its
+`.toc`. With none installed the row says so and points at the download, which was the
+note under the voice picker until the section took over its job.
 
 Widget templates were chosen from what addons already running on this client use
 rather than from memory: `UICheckButtonTemplate` (`Syndicator/Options`) and

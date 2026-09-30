@@ -77,12 +77,12 @@ function SpokenBooks:SetupOptions()
 		Get("readOnce"), Set("readOnce"))
 
 	layout:Section(L.OPT_SECTION_LANGUAGE)
-	local voices = { SpokenBooks.AUTO_LANGUAGE }
-	local fallbacks = { "none" }
-	for _, locale in ipairs(SpokenBooks.LOCALES) do
-		table.insert(voices, locale.code)
-		table.insert(fallbacks, locale.code)
-	end
+	-- Only the languages an installed pack speaks: a language with no pack is a setting
+	-- that can only read silence, so offering it is offering nothing.
+	local voices = SpokenBooks:GetOfferedLanguages(SpokenBooks.AUTO_LANGUAGE,
+		SpokenBooksDB and SpokenBooksDB.voiceLanguage)
+	local fallbacks = SpokenBooks:GetOfferedLanguages("none",
+		SpokenBooksDB and SpokenBooksDB.fallbackLanguage)
 	layout:Dropdown(L.OPT_VOICE_LANGUAGE, L.OPT_VOICE_LANGUAGE_TIP,
 		voices, Get("voiceLanguage"), Set("voiceLanguage"), nil, function(code)
 			if code == SpokenBooks.AUTO_LANGUAGE then
@@ -95,6 +95,40 @@ function SpokenBooks:SetupOptions()
 		fallbacks, Get("fallbackLanguage"), Set("fallbackLanguage"), nil, function(code)
 			return code == "none" and L.OPT_FALLBACK_NONE or SpokenBooks:GetLanguageName(code)
 		end)
+
+	-- The packs, in their own section, as SpokenQuests and Spoken Zones list theirs:
+	-- name and version a row, so a player can check an install without reading a second
+	-- window.
+	layout:Section(L.OPT_SECTION_PACKS)
+	local packRows = {}
+	local function DescribePacks()
+		local packs = SpokenBooks:GetAudioPacks()
+		for index, pack in ipairs(packs) do
+			local row = packRows[index]
+			if row then
+				row.note:SetText(("%s  |cff888888%s|r"):format(
+					SpokenBooks:GetLanguageName(SpokenBooks:PackLanguage(pack)),
+					pack.packVersion or ""))
+				row.note:Show()
+			end
+		end
+		for index = #packs + 1, table.getn(packRows) do
+			packRows[index].note:Hide()
+		end
+		if #packs == 0 and packRows[1] then
+			packRows[1].note:SetText(L.OPT_NO_PACK_INSTALLED)
+			packRows[1].note:Show()
+		end
+	end
+	-- A row apiece, built once: the set of installed packs cannot change mid-session, and
+	-- the panel is built after they have all loaded. One row even with none, so the
+	-- "install one" note has somewhere to live.
+	local packCount = #SpokenBooks:GetAudioPacks()
+	for index = 1, math.max(packCount, 1) do
+		packRows[index] = { note = layout:Note("", 460, 16) }
+	end
+	DescribePacks()
+	content:SetScript("OnShow", DescribePacks)
 
 	layout:Section(L.OPT_SECTION_READ)
 	layout:Button(L.OPT_FORGET, 200, function()

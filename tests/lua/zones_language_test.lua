@@ -62,6 +62,98 @@ Z = Install({ ENGLISH, FRENCH })
 Z:SetActiveAudioPack("SpokenZonesAudio")
 Expect("A. an English pack falls back to nothing else", Z:GetAudioClip(MAP, "durotar coast"), nil)
 
+---------------------------------------------------------------- A1. the voice preference, and Auto
+-- The voice picker lists packs and has an Auto entry, so it needs to tell "nothing stored"
+-- from "a pack stored that is no longer installed". Both are Auto to the player, and only
+-- one of them is a choice.
+Z = Install({ ENGLISH, GERMAN, FRENCH })
+Expect("A1. nothing stored is Auto", Z:GetPreferredAudioPack(), nil)
+Z:SetActiveAudioPack("SpokenZonesAudio_frFR")
+Expect("A1. a chosen pack is the preference",
+    (Z:GetPreferredAudioPack() or {}).addon, "SpokenZonesAudio_frFR")
+Expect("A1. ...and is what plays, whatever the sort would have preferred",
+    (Z:GetActiveAudioPack() or {}).addon, "SpokenZonesAudio_frFR")
+Expect("A1. a name that is not an installed pack is refused",
+    Z:SetActiveAudioPack("SpokenZonesAudio_nope"), false)
+Expect("A1. ...leaving the preference alone",
+    (Z:GetPreferredAudioPack() or {}).addon, "SpokenZonesAudio_frFR")
+-- Handing the choice back, which there was no way to do before: choosing a pack stored a
+-- folder name and nothing stored it as absent again.
+Expect("A1. Auto hands the choice back", Z:SetActiveAudioPack(nil), true)
+Expect("A1. ...so the preference is gone", Z:GetPreferredAudioPack(), nil)
+Expect("A1. ...and the best installed pack takes over",
+    (Z:GetActiveAudioPack() or {}).addon, "SpokenZonesAudio")
+-- Stored but uninstalled: the pack the player asked for is not there, and the pack that
+-- plays is not what they asked for either. It reads as Auto in the picker, which is the
+-- only honest caption -- but the note under it lists what is installed, so the gap shows.
+Z:SetActiveAudioPack("SpokenZonesAudio_frFR")
+Z = Install({ ENGLISH, GERMAN })
+Expect("A1. a pack that has been uninstalled is not a preference",
+    Z:GetPreferredAudioPack(), nil)
+Expect("A1. ...and the best remaining pack plays",
+    (Z:GetActiveAudioPack() or {}).addon, "SpokenZonesAudio")
+
+---------------------------------------------------------------- A2. the fallback is a setting
+-- It was always English, and English is still the default, because every published pack is
+-- English or a translation of the English corpus. What changed is that the player can now
+-- say otherwise -- and can say nothing at all.
+Z = Install({ ENGLISH, GERMAN, FRENCH })
+Z:SetActiveAudioPack("SpokenZonesAudio_deDE")
+Expect("A2. English is the fallback until the player says otherwise",
+    Z:GetFallbackLanguage(), "enUS")
+_, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)
+Expect("A2. ...so an entry only the English pack has still plays", pack and pack.addon, "SpokenZonesAudio")
+Z:SetFallbackLanguage("frFR")
+_, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)
+Expect("A2. a French fallback is used instead of English", pack and pack.addon, "SpokenZonesAudio_frFR")
+Z:SetFallbackLanguage("none")
+Expect("A2. ...and None plays nothing rather than English", Z:GetAudioClip(MAP, ONLY_ENGLISH), nil)
+Expect("A2. the pack the player chose is still preferred over the fallback",
+    (select(3, Z:GetAudioClip(MAP, BOTH))).addon, "SpokenZonesAudio_deDE")
+-- A fallback naming the pack's own language changes nothing: it is the same pack asked
+-- twice, and asking twice would let a stale entry shadow a good one.
+Z:SetFallbackLanguage("deDE")
+_, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)
+Expect("A2. a fallback in the pack's own language is not asked twice", pack and pack.addon, nil)
+
+Z = Install({ ENGLISH, GERMAN, FRENCH })
+Z:SetActiveAudioPack("SpokenZonesAudio_deDE")
+Z:SetFallbackLanguage("ruRU")
+_, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)
+Expect("A2. a fallback with no pack installed falls through to silence",
+    pack and pack.addon, nil)
+
+--- What the fallback picker offers: None, then every language an installed pack speaks.
+Z = Install({ ENGLISH, GERMAN })
+Expect("A2. the picker offers None and the languages a pack speaks",
+    table.concat(Z:GetOfferedFallbackLanguages(nil), ","), "none,enUS,deDE")
+Expect("A2. ...in the language list's order, not the order they installed",
+    table.concat(Z:GetOfferedFallbackLanguages("deDE"), ","), "none,enUS,deDE")
+-- A pack published before languages existed carries no language, and is English.
+local LEGACY = Install({ ENGLISH, Pack("SpokenZonesAudioLegacy", nil, {}) })
+Expect("A2. a pack declaring no language counts as English",
+    table.concat(LEGACY:GetOfferedFallbackLanguages(nil), ","), "none,enUS")
+Z = Install({ ENGLISH, GERMAN })
+-- A language the player chose and then uninstalled: still listed, or the control cannot
+-- show what it is set to and the dropdown reads as empty.
+Expect("A2. a language with no pack is not offered",
+    table.concat(Z:GetOfferedFallbackLanguages(nil), ","), "none,enUS,deDE")
+Expect("A2. ...except the one the player has stored, which must stay visible",
+    table.concat(Z:GetOfferedFallbackLanguages("koKR"), ","), "none,enUS,deDE,koKR")
+Expect("A2. ...and a stored language that is still installed is not listed twice",
+    table.concat(Z:GetOfferedFallbackLanguages("enUS"), ","), "none,enUS,deDE")
+Expect("A2. ...nor None, which is the picker's own entry",
+    table.concat(Z:GetOfferedFallbackLanguages("none"), ","), "none,enUS,deDE")
+Expect("A2. a player with no packs is offered nothing but None",
+    table.concat(Install({}):GetOfferedFallbackLanguages(nil), ","), "none")
+-- A pack installed but switched off is still a pack the player has, so its language stays
+-- offered; the pack list is where that fault gets reported.
+local disabled = Pack("SpokenZonesAudio_deDE", "deDE", {})
+disabled.enabled = false
+Z = Install({ ENGLISH, disabled })
+Expect("A2. an installed pack is offered however it turned out",
+    table.concat(Z:GetOfferedFallbackLanguages(nil), ","), "none,enUS,deDE")
+
 ---------------------------------------------------------------- B. the language narration plays in
 Z = Install({ ENGLISH, GERMAN })
 Z:SetActiveAudioPack("SpokenZonesAudio_deDE")
@@ -96,6 +188,14 @@ Z = Install({ ENGLISH, RETIRED, GERMAN })
 Expect("E. two packs in one language are told apart by bitrate", Z:GetAudioPackLabel(ENGLISH), "English (128 kbps)")
 Expect("E. ...both of them", Z:GetAudioPackLabel(RETIRED), "English (64 kbps)")
 Expect("E. a language with one pack still needs no bitrate", Z:GetAudioPackLabel(GERMAN), "Deutsch")
+-- Every pack is named in its own language. A dropdown lists Français beside Español, and
+-- one entry reading "ruRU" is the entry the player cannot read -- standing for the pack
+-- they installed. A code is a folder; the endonym is the name of the thing they bought.
+local RUSSIAN = Pack("SpokenZonesAudio_ruRU", "ruRU", {})
+Z = Install({ ENGLISH, GERMAN, RUSSIAN })
+Expect("E. a pack is named in its own language, not by its code",
+    Z:GetAudioPackLabel(RUSSIAN), "Русский")
+Expect("E. ...like every other language in the list", Z:GetAudioPackLabel(GERMAN), "Deutsch")
 
 ---------------------------------------------------------------- F. Auto follows the client, a pick does not
 -- One SavedVariables file read by the same install switched between game languages. Auto
@@ -132,5 +232,57 @@ Expect("F. going back to Auto follows the client again", Z:GetLanguage(), "frFR"
 
 stub.SetLocale("enUS")
 
+---------------------------------------------------------------- G. every finished language is offered
+-- There was a font gate here once: it refused any language whose script differed from
+-- the client's, on an inference from the client locale, because the client exposes no
+-- way to ask which glyphs its fonts carry. It hid Russian, Korean and both Chineses
+-- from clients that draw every one of them. A language a player can read is theirs to
+-- try; a language they can never pick is one they can never report as missing.
+local ALL_READY = {}
+for _, code in ipairs({ "enUS", "deDE", "esES", "esMX", "frFR", "ptBR", "ruRU", "koKR", "zhCN", "zhTW" }) do
+    table.insert(ALL_READY, { code = code, ready = true })
+end
+local function InstallEverywhere(locale, languages)
+    stub.SetLocale(locale)
+    _G.SpokenZonesDB = {}
+    _G.SpokenZonesAudioPacks = {}
+    return H.LoadZones(ZONES, { Languages = languages or ALL_READY })
+end
+
+local function codes(list)
+    local out = {}
+    for _, locale in ipairs(list) do table.insert(out, locale.code) end
+    return table.concat(out, ",")
+end
+
+Z = InstallEverywhere("esES")
+Expect("G. a Latin client is offered Russian", Z:IsLanguageSelectable("ruRU"), true)
+Expect("G. ...and Korean", Z:IsLanguageSelectable("koKR"), true)
+Expect("G. ...and Simplified Chinese", Z:IsLanguageSelectable("zhCN"), true)
+Expect("G. ...and Traditional Chinese", Z:IsLanguageSelectable("zhTW"), true)
+Expect("G. ...and every language, not just the ones near the client's own",
+    codes(Z:GetSelectableLanguages()),
+    "enUS,deDE,esES,esMX,frFR,ptBR,ruRU,koKR,zhCN,zhTW")
+
+-- The same list on a client whose own language is finished: the gate that used to
+-- depend on the client locale is gone, so nothing changes for anyone.
+Z = InstallEverywhere("ruRU")
+Expect("G. a Russian client is offered the same ten", codes(Z:GetSelectableLanguages()),
+    "enUS,deDE,esES,esMX,frFR,ptBR,ruRU,koKR,zhCN,zhTW")
+Expect("G. ...and reads Russian without being asked", Z:GetLanguage(), "ruRU")
+
+-- Readiness is still the only gate, which is the point: an unfinished language is
+-- not offered, and /spz lang <code> force is how it gets looked at.
+local PARTIAL = {}
+for _, entry in ipairs(ALL_READY) do
+    if entry.code ~= "zhTW" then table.insert(PARTIAL, entry) end
+end
+Z = InstallEverywhere("esES", PARTIAL)
+Expect("G. an unfinished language is not offered", Z:IsLanguageSelectable("zhTW"), false)
+Expect("G. ...and the others still are", codes(Z:GetSelectableLanguages()),
+    "enUS,deDE,esES,esMX,frFR,ptBR,ruRU,koKR,zhCN")
+
+stub.SetLocale("enUS")
+stub.ResetAddOns()
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones language tests passed")

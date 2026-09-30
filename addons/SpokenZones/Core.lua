@@ -48,6 +48,11 @@ local defaults = {
 	-- Off, so a player cannot end up reading an unfinished translation without
 	-- having asked for one. See Language.lua.
 	languagePreview = false,
+	-- English, and a default rather than nil: the fallback was English before it was a
+	-- setting, so a player who has never touched it keeps the answer they already had.
+	-- `none` is the other end of it, and is stored rather than defaulted to -- silence
+	-- is a choice, not a starting point.
+	fallbackLanguage = "enUS",
 	-- `audioPack` likewise: nil means "the best pack installed", which is a rule
 	-- rather than a folder name, and naming a default here would pin the player to
 	-- a pack they may never install. See Audio.lua.
@@ -799,9 +804,9 @@ local function CmdLanguage(arg)
 		end
 
 		-- Preview relaxes the readiness check inside SetLanguage, so it has to be
-		-- on before the attempt -- but it must not survive a refusal, or the one
-		-- remaining refusal (no fonts) leaves the override stuck on and every
-		-- login printing the preview warning for a switch that never happened.
+		-- on before the attempt -- but it must not survive a refusal, or a language
+		-- that is not finished leaves the override stuck on and every login printing
+		-- the preview warning for a switch that never happened.
 		local wasPreviewing = SpokenZones:IsPreviewingLanguage()
 		if modifier == "force" then
 			SpokenZones:SetLanguagePreview(true)
@@ -811,17 +816,10 @@ local function CmdLanguage(arg)
 			if modifier == "force" then
 				SpokenZones:SetLanguagePreview(wasPreviewing)
 			end
-			if not SpokenZones:CanRenderLanguage(locale.code) then
-				SpokenZones:Print(
-					"|cffffcc00this client has no fonts for %s|r -- it would draw as boxes",
-					locale.code
-				)
-			else
-				SpokenZones:Print(
-					"|cffffcc00%s is not finished yet|r -- /spz lang %s force to preview it anyway",
-					SpokenZones:GetLanguageName(locale.code), locale.code
-				)
-			end
+			SpokenZones:Print(
+				"|cffffcc00%s is not finished yet|r -- /spz lang %s force to preview it anyway",
+				SpokenZones:GetLanguageName(locale.code), locale.code
+			)
 			return
 		end
 

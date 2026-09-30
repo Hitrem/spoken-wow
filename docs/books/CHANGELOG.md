@@ -3,6 +3,18 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
+## 2.1.2 — 2026-09-29
+
+- **The voice and fallback language pickers list only the languages you have a sound pack
+  for.** They offered all ten, so choosing one without a pack installed was a setting that
+  could only read silence. A language stays listed after its pack is removed, so the picker
+  can still show what it is set to.
+- **The settings panel lists your installed sound pack with name and version**, as Spoken
+  Quests lists theirs. With none installed the row says so. The sound pack now records its
+  own version from its `.toc` at load, the way Spoken Zones Audio does — and packs released
+  before that field get their version read from the `.toc` directly, so the list never
+  reads blank for them.
+
 ## 2.1.1 — 2026-09-27
 
 - Book narration now supplies captions to Spoken Player 2.2.3. English text

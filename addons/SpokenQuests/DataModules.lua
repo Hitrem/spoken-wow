@@ -218,6 +218,36 @@ local PACK_LABELS = {
     SpokenQuestsAudioGossip = "OPT_PACK_GOSSIP",
 }
 
+--- The entries a voice picker offers: its own, then every language an installed pack is
+--- recorded in, in LOCALES order, then the language the player has stored if it is not one
+--- of those.
+---
+--- A language with no pack is a setting that cannot be kept -- choosing it narrates in
+--- silence -- so listing it is offering a choice whose only result is no sound. The stored
+--- value stays listed anyway, because a picker that cannot show what it is set to is a
+--- control in an unknown state: the options tree renders it as an empty dropdown. The pack
+--- list is where a player reads that the pack behind it is gone.
+---@param first string The dropdown's own entry -- Auto, or None
+---@param stored string|nil What the player has chosen
+---@return string[] codes
+function DataModules:GetOfferedLanguages(first, stored)
+    local installed = {}
+    for _, module in self:GetPresentModules() do
+        installed[module.Language] = true
+    end
+    local offered, seen = { first }, { [first] = true }
+    for _, locale in ipairs(Language.LOCALES) do
+        if installed[locale.code] then
+            table.insert(offered, locale.code)
+            seen[locale.code] = true
+        end
+    end
+    if stored and not seen[stored] then
+        table.insert(offered, stored)
+    end
+    return offered
+end
+
 ---@param module DataModuleMetadata
 function DataModules:GetPackLabel(module)
     local key = module and PACK_LABELS[module.AddonName]
@@ -314,9 +344,14 @@ function DataModules:EnumerateAddons(loadModules)
     end
 end
 
+-- Loads what can be loaded, and records what cannot. Every present pack that has not
+-- registered is put through LoadModule rather than only the LoadOnDemand ones, because
+-- a pack the client loads by itself is exactly the one whose state nothing else records:
+-- asking it costs nothing (it is already loaded, or is one this cannot load either way)
+-- and the answer is what the pack list reports.
 function DataModules:LoadPresentModules()
     for _, module in self:GetPresentModules() do
-        if LOAD_ALL_MODULES and module.LoadOnDemand and not self:GetModule(module.AddonName) then
+        if LOAD_ALL_MODULES and not self:GetModule(module.AddonName) then
             self:LoadModule(module)
         end
     end
@@ -365,16 +400,24 @@ end
 
 ---@param module DataModuleMetadata
 function DataModules:LoadModule(module)
-    if not module.LoadOnDemand then
-        self.loadErrors[module.AddonName] = "NOT_LOAD_ON_DEMAND"
-        return false, self.loadErrors[module.AddonName]
-    end
     if self:GetModule(module.AddonName) then
         self.loadErrors[module.AddonName] = nil
         return true
     end
+    -- Asked before the LoadOnDemand test, and not after it, because the order decides
+    -- which of two unrelated faults a pack is blamed for. A pack without LoadOnDemand
+    -- is loaded by the client like any other addon, so on a healthy install this test
+    -- fired first and recorded a failure against a pack that was working. And a pack
+    -- the client did load cannot be loaded again -- LoadAddOn refuses it, and its Lua
+    -- will not run a second time -- so the only honest thing left is to say so. That
+    -- is the state a player reads as a lie, their pack plainly loaded and the panel
+    -- saying otherwise, and it is the one worth naming.
     if IsAddOnLoaded(module.AddonName) then
         self.loadErrors[module.AddonName] = "LOADED_BUT_NOT_REGISTERED"
+        return false, self.loadErrors[module.AddonName]
+    end
+    if not module.LoadOnDemand then
+        self.loadErrors[module.AddonName] = "NOT_LOAD_ON_DEMAND"
         return false, self.loadErrors[module.AddonName]
     end
 
@@ -400,6 +443,25 @@ end
 
 function DataModules:GetModuleLoadError(name)
     return self.loadErrors[name]
+end
+
+--- Why a detected pack is not answering, for a list the player reads: nil once it has
+--- registered, and otherwise the reason LoadModule recorded.
+---
+--- A bare "not loaded" is a dead end, because the cases behind it need opposite fixes:
+--- a pack the client refused (out of date, switched off, no TOC) is something the
+--- player has to change, and one the client has loaded but that never registered is
+--- something only the pack can fix. The reason is the addon's own token, untranslated
+--- on purpose -- it is the same word /spq diagnostics prints and the word a bug report
+--- needs, and a translated wrapper around an English token reads as a half-translation.
+---@param name string Addon name
+---@return string|nil
+function DataModules:GetModuleStatus(name)
+    if self:GetModule(name) then
+        return nil
+    end
+    local reason = self.loadErrors[name]
+    return reason and (" (" .. reason .. ")") or L.OPT_NOT_LOADED_SUFFIX
 end
 
 function DataModules:GetModuleAddOnInfo(module)

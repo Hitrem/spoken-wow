@@ -122,14 +122,41 @@ function M.NewZoneLore()
     -- What UI/Options.lua asks the rest of the addon. The panel is the one part that
     -- reports what is installed, so the answers live here rather than in each test.
     Z.SITE_URL = "https://spoken.test"
+    -- No pack is installed here, so the panel tests are about layout and about what a
+    -- player who has not installed one sees. zones_language_test.lua loads the real
+    -- Audio.lua and tests what a pack actually does.
     function Z:GetAudioPacks() return {} end
     function Z:GetActiveAudioPack() return nil end
     function Z:GetAudioPackLabel() return "none" end
+    function Z:GetPreferredAudioPack() return nil end
+    function Z:SetActiveAudioPack() Z.stopped = true end
+    function Z:NotifyAudioChanged() Z.audioChanged = (Z.audioChanged or 0) + 1 end
+    -- The fallback picker asks the same questions as the voice picker above it, plus the
+    -- setting behind it. English by default, as it is in the addon's own defaults, and no
+    -- pack is installed here, so English is on the picker only as the stored choice: the
+    -- real GetOfferedFallbackLanguages in Audio.lua is what decides that, and
+    -- zones_language_test.lua tests it there.
+    cfg.fallbackLanguage = "enUS"
+    function Z:GetFallbackLanguage() return cfg.fallbackLanguage end
+    function Z:SetFallbackLanguage(code) cfg.fallbackLanguage = code end
+    -- None is the picker's own entry, so it is never also the stale stored choice; that is
+    -- the one rule the fake has to reproduce, since a picker showing None twice is exactly
+    -- the bug the rule exists to prevent.
+    function Z:GetOfferedFallbackLanguages(stored)
+        if not stored or stored == "none" then return { "none" } end
+        return { "none", stored }
+    end
     function Z:GetSelectableLanguages() return { { code = "enUS", name = "English" } } end
     function Z:GetLanguagePreference() return nil end
     function Z:GetAutoLanguage() return "enUS" end
-    function Z:GetLocaleInfo() return { name = "English" } end
-    function Z:GetLanguageName(code) return code and Z.L["LANG_" .. code] or "Automatic" end
+    function Z:GetLocaleInfo(code)
+        local names = { enUS = { name = "English", native = "English" },
+            deDE = { name = "German", native = "Deutsch" } }
+        return names[code]
+    end
+    -- The endonym, as Language.lua gives it: a picker lists languages at once, and one
+    -- reading "enUS" names nothing. The two above are all this suite offers.
+    function Z:GetLanguageName(code) return (Z:GetLocaleInfo(code) or {}).native end
     function Z:RedrawPanel() end
     return Z
 end

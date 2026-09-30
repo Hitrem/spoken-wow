@@ -102,13 +102,12 @@ function SettingsPanel:Setup()
         function(value) audio().OGThrall = value end)
 
     -- The same two choices, labelled the same way, as SpokenBooks' panel: a player who
-    -- sets the voice language in one looks for it in the same place in the other.
+    -- sets the voice language in one looks for it in the same place in the other. Each
+    -- lists the languages an installed pack speaks, since a language with no pack is a
+    -- setting that can only narrate silence.
     layout:Section(L.OPT_SECTION_LANGUAGE)
-    local voices, fallbacks = { Language.AUTO }, { "none" }
-    for _, locale in ipairs(Language.LOCALES) do
-        table.insert(voices, locale.code)
-        table.insert(fallbacks, locale.code)
-    end
+    local voices = DataModules:GetOfferedLanguages(Language.AUTO, audio().VoiceLanguage)
+    local fallbacks = DataModules:GetOfferedLanguages("none", audio().FallbackLanguage)
     layout:Dropdown(L.OPT_VOICE_LANGUAGE, L.OPT_VOICE_LANGUAGE_TIP,
         voices,
         function() return audio().VoiceLanguage or Language.AUTO end,
@@ -131,17 +130,36 @@ function SettingsPanel:Setup()
     -- which is two clicks and a second window to answer "is my audio installed".
     layout:Section(L.OPT_SECTION_PACKS)
     local packRows = {}
+    -- A row reads like the other two addons': the pack's language, named for itself. The
+    -- English "Spanish (EU)" a pack's Title carries is what its download page is called,
+    -- not how the player picks its language, which is why the same pack reads Español
+    -- (España) in Spoken Zones and Spoken Books. The English pack ships in five pieces,
+    -- though -- a row that just read "English" for all five tells nobody which is which --
+    -- so when a language is installed more than once, the piece's name sets the rows
+    -- apart, the way Spoken Zones suffixes a bitrate to a language recorded at more than
+    -- one.
+    local function PackRowLabel(module)
+        local share = 0
+        for _, other in DataModules:GetPresentModules() do
+            if other.Language == module.Language then
+                share = share + 1
+            end
+        end
+        local label = Language:GetNativeName(module.Language)
+        if share > 1 then
+            label = ("%s (%s)"):format(label,
+                (string.gsub(module.Title, "Spoken Quests Audio: ", "")))
+        end
+        return label
+    end
     local function DescribePacks()
         local present = 0
         for _, module in DataModules:GetPresentModules() do
             present = present + 1
             local row = packRows[present]
             if row then
-                local loaded = DataModules:GetModule(module.AddonName)
-                row.note:SetText(format("%s  |cff888888%s%s|r",
-                    (string.gsub(module.Title, "Spoken Quests Audio: ", "")),
-                    module.ContentVersion or "",
-                    loaded and "" or (" " .. L.OPT_NOT_LOADED_SUFFIX)))
+                row.note:SetText(format("%s  |cff888888%s|r",
+                    PackRowLabel(module), module.ContentVersion or ""))
                 row.note:Show()
             end
         end
@@ -164,21 +182,6 @@ function SettingsPanel:Setup()
     end
     DescribePacks()
     content:SetScript("OnShow", DescribePacks)
-
-    -- What is not installed, with the address to get it. The game cannot open a link, so
-    -- the button hands over one to copy.
-    local offered = 0
-    for _, module in DataModules:GetAvailableModules() do
-        if not DataModules.presentModules[module.AddonName] then
-            offered = offered + 1
-            if offered == 1 then
-                layout:Note(L.OPT_NOT_INSTALLED, 460, 16)
-            end
-            layout:Button(DataModules:GetPackLabel(module), 220,
-                function() ReportButton:ShowAddress(module.URL) end,
-                format(L.OPT_COPY_ADDRESS_FMT, module.URL))
-        end
-    end
 
     layout:Section(L.OPT_SECTION_TROUBLE)
     layout:Checkbox(L.OPT_PANEL_DEBUG,

@@ -10,7 +10,7 @@
 ## Notes-koKR: Spoken 플레이어로 책, 편지, 메모를 소리내어 읽습니다.
 ## Notes-zhCN: 通过 Spoken 播放器朗读书籍、信件和笔记。
 ## Notes-zhTW: 透過 Spoken 播放器朗讀書籍、信件和筆記。
-## Version: 2.1.1
+## Version: 2.1.2
 ## Author: rusty
 ## SavedVariables: SpokenBooksDB
 ## SavedVariablesPerCharacter: SpokenBooksCharDB

@@ -34,28 +34,29 @@ local ADDON_NAME, SpokenZones = ...
 -- language", not a list of languages that have content -- readiness is a
 -- separate question, answered by Data/Languages.lua.
 --
--- `script` is what the client's fonts must be able to draw. `name` is ASCII so
--- it survives being printed on a client whose fonts cannot draw `native`.
--- `native` is the endonym shown wherever a language is listed -- Latin-script
--- endonyms draw on every client, and anything else is only ever listed where
--- CanRenderLanguage already passed, so no list can show boxes.
+-- `name` is ASCII, for a pack folder or a chat line. `native` is the endonym a
+-- language is listed under everywhere in the UI: a player reads the endonym, and
+-- the endonym is what they installed a sound pack for.
 --
 -- Must stay in step with LOCALES in tools/lib/locales.mjs; tools/validate.mjs
 -- fails the build if the two lists drift.
 SpokenZones.LOCALES = {
-	{ code = "enUS", name = "English", native = "English", script = "latin" },
-	{ code = "deDE", name = "German", native = "Deutsch", script = "latin" },
-	{ code = "esES", name = "Spanish (EU)", native = "Español (España)", script = "latin" },
-	{ code = "esMX", name = "Spanish (AL)", native = "Español (América Latina)", script = "latin" },
-	{ code = "frFR", name = "French", native = "Français", script = "latin" },
-	{ code = "ptBR", name = "Portuguese", native = "Português", script = "latin" },
-	{ code = "ruRU", name = "Russian", native = "Русский", script = "cyrillic" },
-	{ code = "koKR", name = "Korean", native = "한국어", script = "korean" },
-	{ code = "zhCN", name = "Chinese (S)", native = "简体中文", script = "simplifiedchinese" },
-	{ code = "zhTW", name = "Chinese (T)", native = "繁體中文", script = "traditionalchinese" },
+	{ code = "enUS", name = "English", native = "English" },
+	{ code = "deDE", name = "German", native = "Deutsch" },
+	{ code = "esES", name = "Spanish (EU)", native = "Español (España)" },
+	{ code = "esMX", name = "Spanish (AL)", native = "Español (América Latina)" },
+	{ code = "frFR", name = "French", native = "Français" },
+	{ code = "ptBR", name = "Portuguese", native = "Português" },
+	{ code = "ruRU", name = "Russian", native = "Русский" },
+	{ code = "koKR", name = "Korean", native = "한국어" },
+	{ code = "zhCN", name = "Chinese (S)", native = "简体中文" },
+	{ code = "zhTW", name = "Chinese (T)", native = "繁體中文" },
 }
 
 local BASE = "enUS"
+-- Named for the other two addons' `BASE_LANGUAGE`, and for Audio.lua: the fallback voice
+-- defaults to this, because every published pack is English or a translation of one.
+SpokenZones.BASE_LANGUAGE = BASE
 
 local byCode = {}
 for i = 1, #SpokenZones.LOCALES do
@@ -100,28 +101,15 @@ function SpokenZones:IsLanguageReady(code)
 	return (entry and entry.ready) and true or false
 end
 
--- Whether this client's fonts can draw this language. The lore panel takes its
--- font from GameFontHighlight (see UI/TextView.lua), which is the *client's*
--- font, so Chinese lore on a German client is a screen of boxes -- a bug report
--- that looks like corrupted data. English is always allowed: it is what the addon
--- falls back to when nothing else can be selected, and every client can draw it.
-function SpokenZones:CanRenderLanguage(code)
-	if code == BASE then
-		return true
-	end
-	local locale = byCode[code]
-	if not locale then
-		return false
-	end
-	if locale.script == "latin" then
-		return true
-	end
-	local client = byCode[self.clientLocale]
-	return client ~= nil and client.script == locale.script
-end
-
 --------------------------------------------------------------------------------
 -- Selection
+--
+-- Readiness is the only gate, and there used to be a font gate beside it. The game
+-- tells an addon nothing about which glyphs its fonts carry, so that gate inferred
+-- it from the client's locale and refused any language written in another script --
+-- hiding Russian, Korean and both Chineses from clients that draw all four without
+-- trouble. A language a player can read is theirs to try and to report on; one they
+-- can never pick is one they can never report as missing.
 --------------------------------------------------------------------------------
 
 -- The stored preference, or nil for "follow the client". The two are not the
@@ -137,13 +125,9 @@ function SpokenZones:IsPreviewingLanguage()
 end
 
 -- Whether a language may be selected at all. Preview mode relaxes readiness so
--- an unfinished translation can be looked at, but never relaxes the font check:
--- previewing boxes tells you nothing.
+-- an unfinished translation can be looked at, and nothing else.
 function SpokenZones:IsLanguageSelectable(code)
 	if not byCode[code] then
-		return false
-	end
-	if not self:CanRenderLanguage(code) then
 		return false
 	end
 	return self:IsLanguageReady(code) or self:IsPreviewingLanguage()
@@ -154,7 +138,7 @@ end
 -- without having to pick it -- and picking it would pin them to it.
 function SpokenZones:GetAutoLanguage()
 	local client = self.clientLocale
-	if byCode[client] and self:IsLanguageReady(client) and self:CanRenderLanguage(client) then
+	if byCode[client] and self:IsLanguageReady(client) then
 		return client
 	end
 	return BASE
@@ -193,10 +177,10 @@ function SpokenZones:GetLocaleInfo(code)
 	return byCode[code]
 end
 
--- Display name of a language: its own endonym. Only call it where the name is
--- drawable -- the dropdown, the language list and the pack label all list
--- renderable languages only. Anywhere else (the no-fonts warning) uses the code,
--- which is ASCII on every client.
+-- Display name of a language: its own endonym, or the name in English for a code
+-- LOCALES does not list. The endonym is right wherever a language is named to a
+-- player -- a picker, a pack label, a list of what is installed -- because a list
+-- puts Français beside Русский and the reader of either one reads both.
 function SpokenZones:GetLanguageName(code)
 	local locale = byCode[code or BASE]
 	if not locale then
@@ -298,7 +282,6 @@ end
 -- The lore browser still uses only the selected language.
 function SpokenZones:ShouldLoadLanguage(code)
 	if code == self.language or code == BASE then return true end
-	if not self:CanRenderLanguage(code) then return false end
 	-- Packs can load after the lore tables. Their metadata is available before
 	-- their Lua, and keeps switching voices possible without retaining every language.
 	local count = (C_AddOns and C_AddOns.GetNumAddOns) or GetNumAddOns

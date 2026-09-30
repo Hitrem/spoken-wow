@@ -11,11 +11,17 @@
 
 local ADDON_NAME = ...
 
+-- C_AddOns is the modern home of GetAddOnMetadata and the global is the older
+-- one. A pack that reads only through C_AddOns errors at load on any client
+-- that predates it, and a shipped pack cannot be fixed retroactively.
+local GetAddOnMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+
 local pack = {
 	version = 1,
 	addon = ADDON_NAME,
 	quality = "high",
 	bitrate = 128,
+	packVersion = GetAddOnMeta(ADDON_NAME, "Version") or "dev",
 	language = "enUS",
 	pages = {
 		[15] = { file = "15", len = 20.924 },

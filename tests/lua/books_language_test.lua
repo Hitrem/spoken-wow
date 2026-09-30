@@ -115,6 +115,34 @@ Expect("E. ...as does one with no language", B:ReportURL(PAGE), "https://spoken.
 Expect("E. a German report goes to the German page", B:ReportURL(PAGE, "deDE"),
     "https://spoken.rusty.one/deDE/books/r/15")
 
+---------------------------------------------------------------- F. what the voice pickers offer
+-- A language with no pack is a setting that can only read silence, so the pickers list the
+-- languages the installed packs speak. Two packs, two languages, and a language nobody
+-- installed: it must not be offered.
+local function offered(B, first, stored)
+    return table.concat(B:GetOfferedLanguages(first, stored), ",")
+end
+
+B = Install({ ENGLISH, GERMAN }, "enUS")
+Expect("F. the pickers offer the languages an installed pack speaks",
+    offered(B, "auto"), "auto,enUS,deDE")
+Expect("F. ...in the order the language list gives, not the order they installed",
+    offered(B, "auto", "deDE"), "auto,enUS,deDE")
+Expect("F. a pack that declares no language counts as English",
+    offered(Install({ ENGLISH }), "auto"), "auto,enUS")
+
+-- A language the player chose and then uninstalled: still listed, or the control cannot
+-- show what it is set to and the dropdown reads as empty.
+B = Install({ ENGLISH }, "enUS")
+Expect("F. a language with no pack is not offered", offered(B, "auto"), "auto,enUS")
+Expect("F. ...except the one the player has stored, which must stay visible",
+    offered(B, "auto", "koKR"), "auto,enUS,koKR")
+Expect("F. ...and a stored language that is still installed is not listed twice",
+    offered(B, "auto", "enUS"), "auto,enUS")
+Expect("F. ...nor the dropdown's own entry, which is not a language",
+    offered(B, "none", "none"), "none,enUS")
+Expect("F. a player with no packs is offered no language", offered(Install({}), "auto"), "auto")
+
 ---------------------------------------------------------------- in step with SpokenZones
 local booksCodes = {}
 for _, locale in ipairs(B.LOCALES) do table.insert(booksCodes, locale.code) end
