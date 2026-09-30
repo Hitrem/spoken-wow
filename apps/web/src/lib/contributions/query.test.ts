@@ -3,26 +3,31 @@ import { describe, expect, it } from "vitest";
 import { MISSING, NEEDS_DECISION, contributionsHref, matchesSpeaker, nextContributionFilters, pageOf } from "./query";
 
 describe("nextContributionFilters", () => {
-  const current = { status: "new", provenance: "all", client: "all" } as const;
+  const current = { status: "new", provenance: "all", client: "all", source: "all" } as const;
 
   it("changes the dimension named in `next` and keeps the other", () => {
     expect(nextContributionFilters(current, { provenance: "corpus" })).toEqual({
       status: "new",
       provenance: "corpus",
       client: "all",
+      source: "all",
     });
   });
 
   it("resets a dimension to 'all' when `next` names it with no value", () => {
     // FilterChip's reset button calls onChange(undefined) -- the key is present, the value
     // isn't, and that must read as "clear this filter", not "leave it alone".
-    expect(nextContributionFilters({ status: "accepted", provenance: "moderator", client: "forever" }, { provenance: undefined })).toEqual(
-      { status: "accepted", provenance: "all", client: "forever" },
+    expect(nextContributionFilters({ status: "accepted", provenance: "moderator", client: "forever", source: "books" }, { provenance: undefined })).toEqual(
+      { status: "accepted", provenance: "all", client: "forever", source: "books" },
     );
   });
 
   it("changes the client dimension alone", () => {
     expect(nextContributionFilters(current, { client: "private" })).toEqual({ ...current, client: "private" });
+  });
+
+  it("changes the source dimension alone", () => {
+    expect(nextContributionFilters(current, { source: "zones" })).toEqual({ ...current, source: "zones" });
   });
 
   it("leaves every dimension alone when `next` names none", () => {
@@ -32,8 +37,8 @@ describe("nextContributionFilters", () => {
 
 describe("contributionsHref", () => {
   it("builds a query string carrying every dimension", () => {
-    expect(contributionsHref({ status: "new", provenance: "all", client: "era" }, { status: "rejected" })).toBe(
-      "/contributions?status=rejected&provenance=all&client=era",
+    expect(contributionsHref({ status: "new", provenance: "all", client: "era", source: "all" }, { status: "rejected" })).toBe(
+      "/contributions?status=rejected&provenance=all&client=era&source=all",
     );
   });
 
@@ -41,18 +46,18 @@ describe("contributionsHref", () => {
   // encoding, just the same string page.tsx's own parsing compares rawProvenance against.
   it("round-trips the NEEDS_DECISION sentinel through the href", () => {
     expect(
-      contributionsHref({ status: "all", provenance: "all", client: "all" }, { provenance: NEEDS_DECISION }),
-    ).toBe(`/contributions?status=all&provenance=${NEEDS_DECISION}&client=all`);
+      contributionsHref({ status: "all", provenance: "all", client: "all", source: "all" }, { provenance: NEEDS_DECISION }),
+    ).toBe(`/contributions?status=all&provenance=${NEEDS_DECISION}&client=all&source=all`);
   });
 });
 
 describe("paging", () => {
   it("carries a page past the first, and leaves the first page bare", () => {
-    const filters = { status: "new", provenance: "all", client: "all" } as const;
-    expect(contributionsHref(filters, {}, 3)).toBe("/contributions?status=new&provenance=all&client=all&page=3");
-    expect(contributionsHref(filters, {}, 1)).toBe("/contributions?status=new&provenance=all&client=all");
+    const filters = { status: "new", provenance: "all", client: "all", source: "all" } as const;
+    expect(contributionsHref(filters, {}, 3)).toBe("/contributions?status=new&provenance=all&client=all&source=all&page=3");
+    expect(contributionsHref(filters, {}, 1)).toBe("/contributions?status=new&provenance=all&client=all&source=all");
     // A filter change starts again from the first page.
-    expect(contributionsHref(filters, { status: "accepted" })).toBe("/contributions?status=accepted&provenance=all&client=all");
+    expect(contributionsHref(filters, { status: "accepted" })).toBe("/contributions?status=accepted&provenance=all&client=all&source=all");
   });
 
   it("reads anything that is not a positive integer as the first page", () => {
