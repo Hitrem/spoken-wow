@@ -24,6 +24,26 @@ local _, SpokenZones = ...
 
 local L = {}
 
+--------------------------------------------------------------------------------
+-- Playback controls
+--------------------------------------------------------------------------------
+
+L.PLAY = "Play"
+L.PAUSE = "Pause"
+
+L.PLAY_TOOLTIP = "Starts this lore again from the beginning."
+L.PAUSE_TOOLTIP =
+	"The game cannot resume a sound part-way through, so playing again starts from the beginning."
+
+--------------------------------------------------------------------------------
+-- Queue
+--------------------------------------------------------------------------------
+
+L.QUEUE_TITLE = "Up next"
+L.QUEUE_COUNT = "%1$d waiting"
+L.QUEUE_REMOVE_TOOLTIP = "Click to take this out of the queue."
+L.QUEUE_DRAG_HINT = "Drag this list to move it."
+
 -- Why a discovery is queued but silent. Without these, narration waiting out a
 -- pull looks exactly like narration that failed.
 L.QUEUE_HELD_COMBAT = "Waiting for combat to end."
