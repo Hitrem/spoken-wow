@@ -173,7 +173,7 @@ icon: ## Rebuild the addons' icon.tga and the minimap BLP from pipelines/quests/
 package: ## Zip the player addon into dist/: one Blizzard zip, one per legacy client
 	@./scripts/quests/package.sh
 
-package-audio: check-synced export-corpus export-ignores $(if $(filter-out enUS,$(LOCALE)),export-locale-text) sounds ## Transcode, build and zip the five sound packs into dist/ (VERSION=1.4.0)
+package-audio: check-synced export-corpus export-ignores $(if $(filter-out enUS,$(LOCALE)),export-locale-text) sounds ## Transcode, build and zip the four split packs, and bundle them into one zip for GitHub, into dist/ (VERSION=1.4.0)
 	@VERSION=$(VERSION) ENCODE=$(if $(ENCODE),$(ENCODE),ogg-q0-44k) MODULE=SpokenQuestsAudio \
 	  LANGUAGE="$(or $(LOCALE),enUS)" JOBS=$(JOBS) ./scripts/quests/package-audio.sh
 
@@ -270,11 +270,12 @@ endif
 # a `## <VERSION>` pack section in docs/quests/CHANGELOG.md, which both uploads quote. A
 # language's version comes from its page under publishers/quests/ instead, so LOCALE needs none.
 #
-# The packs go to CurseForge only -- Wago answers 413 to a file this size (scripts/lib/wago.sh)
-# -- and to GitHub, which is where a Wago player gets them. English's meta addon is kilobytes and
-# goes to both stores; a language has none. The complete pack for the site is not built here: it
-# is another 1.3 GB, and `make quests-package-audio-complete push-complete` is the step if it is
-# wanted.
+# The packs never go to Wago, which answers 413 to a file this size (scripts/lib/wago.sh), and
+# GitHub is where a Wago player gets them. English's four split packs go to CurseForge, and the
+# same four bundled into one zip to GitHub; a language's one pack goes to GitHub, and to
+# CurseForge once it has a project. English's meta addon is kilobytes and goes to both stores; a
+# language has none. The complete pack for the site is not built here: it is another 1.3 GB, and
+# `make quests-package-audio-complete push-complete` is the step if it is wanted.
 ifneq ($(filter-out enUS,$(LOCALE)),)
 full-release: require-droplet ## Sync, pull live takes, build and upload the packs (VERSION=2.1.0; LOCALE=xx for a language's)
 	@$(MAKE) --no-print-directory -f make/quests.mk sync

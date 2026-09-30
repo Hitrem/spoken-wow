@@ -28,6 +28,13 @@ carries that version. The heading says which.
 
 - Queued quest and NPC dialogue now supplies captions to Spoken Player 2.2.3.
   Replaying an accepted quest uses its quest log description when available.
+- **A Language section in the settings panel**, as Spoken Books has: voice language and
+  fallback, with **Auto (<language>)** following the game client. Until now it was only in the
+  `/spq` window.
+- Play, Stop, the greeting setting and the AddOns-list description follow the game client's
+  language.
+- No longer tells you to update a sound pack that is newer than it knows about. Installing the
+  2.1.0 packs under an older Spoken Quests offered an "update" back to 2.0.0.
 
 ## 0.0.2 — quests-audio-deDE — 2026-09-28
 

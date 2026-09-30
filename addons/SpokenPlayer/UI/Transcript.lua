@@ -15,8 +15,12 @@ end
 local function Config()
     return Addon.db and Addon.db.profile.Transcript or Defaults.profile.Transcript
 end
+-- In the account-wide layout with the players' places, not the profile: see Addon:Layout.
+local function Expanded()
+    return Addon.db and Addon:Layout().CaptionsExpanded or false
+end
 local function LineCount()
-    if Config().Expanded then return EXPANDED_LINES end
+    if Expanded() then return EXPANDED_LINES end
     return Config().Lines == 1 and 1 or 2
 end
 local function CharacterCount(text)
@@ -234,7 +238,7 @@ end
 function Transcript:ToggleExpanded()
     -- Keep a manually chosen passage in view when the page size changes.
     local firstLine = ((self.page or 1) - 1) * LineCount() + 1
-    Config().Expanded = not Config().Expanded
+    Addon:Layout().CaptionsExpanded = not Expanded()
     self.page = math.floor((firstLine - 1) / LineCount()) + 1
     self:RefreshConfig()
 end
@@ -288,7 +292,7 @@ end
 function Transcript:Reset()
     local cfg = Config()
     cfg.Lines, cfg.FontSize, cfg.AutoScroll, cfg.HighlightWord = 2, 16, true, true
-    cfg.Expanded = false
+    Addon:Layout().CaptionsExpanded = false
     self.manualScroll = false
     self:RefreshConfig()
 end
@@ -302,7 +306,7 @@ end
 function Transcript:RefreshConfig()
     if not self.frame then return end
     local size = Config().FontSize or 16
-    local glyph = [[Interface\Buttons\UI-]] .. (Config().Expanded and "Minus" or "Plus")
+    local glyph = [[Interface\Buttons\UI-]] .. (Expanded() and "Minus" or "Plus")
     self.expand:SetNormalTexture(glyph .. "Button-Up")
     self.expand:SetPushedTexture(glyph .. "Button-Down")
     self.measure:SetFont(GameFontNormal:GetFont(), size, "")
@@ -365,7 +369,7 @@ function Transcript:Initialize()
     end)
     self.expand:SetScript("OnEnter", function(button)
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-        GameTooltip:SetText(Config().Expanded and L.TRANSCRIPT_COLLAPSE or L.TRANSCRIPT_EXPAND)
+        GameTooltip:SetText(Expanded() and L.TRANSCRIPT_COLLAPSE or L.TRANSCRIPT_EXPAND)
         GameTooltip:Show()
     end)
     local function HideExpandTooltip()

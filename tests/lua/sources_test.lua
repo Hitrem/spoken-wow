@@ -134,5 +134,62 @@ env.Addon.db.profile.Audio.AutoToggleDialog = false
 quests:Enqueue(H.Clip())
 Expect("turned off, nothing is muted", GetCVar("Sound_EnableDialog"), "1")
 
+---------------------------------------------------------------- muting ahead of a line
+-- A source about to queue a line mutes the game's dialogue first, so a greeting that starts
+-- with the dialog is never heard rather than cut short when the line starts.
+env, quests, zones = H.Fresh(stub, SPOKEN)
+env.Addon.db.profile.Audio.AutoToggleDialog = true
+env.Addon.db.profile.Audio.SoundChannel = "Master"
+_G.Spoken:MuteGameDialogueAhead(quests)
+Expect("muting ahead mutes dialog at once", GetCVar("Sound_EnableDialog"), "0")
+stub.Advance(1.6)
+Expect("...and lifts itself when nothing is queued", GetCVar("Sound_EnableDialog"), "1")
+
+_G.Spoken:MuteGameDialogueAhead(quests)
+quests:Enqueue(H.Clip({ length = 5 }))
+stub.Advance(1.6)
+Expect("a line queued under it keeps dialog muted past the deadline", GetCVar("Sound_EnableDialog"), "0")
+_G.Spoken:StopAll()
+Expect("...until the queue drains", GetCVar("Sound_EnableDialog"), "1")
+
+-- Paused, a line queues and does not speak: the greeting has nothing to make way for.
+env, quests, zones = H.Fresh(stub, SPOKEN)
+env.Addon.db.profile.Audio.AutoToggleDialog = true
+env.Addon.db.profile.Audio.SoundChannel = "Master"
+_G.Spoken:Pause()
+_G.Spoken:MuteGameDialogueAhead(quests)
+Expect("paused, muting ahead does nothing", GetCVar("Sound_EnableDialog"), "1")
+_G.Spoken:Resume()
+
+-- Pausing a line gives the game its dialogue back; resuming takes it again.
+quests:Enqueue(H.Clip({ length = 5 }))
+Expect("a speaking line mutes dialog", GetCVar("Sound_EnableDialog"), "0")
+_G.Spoken:Pause()
+Expect("...pausing it lifts the mute", GetCVar("Sound_EnableDialog"), "1")
+_G.Spoken:Resume()
+Expect("...resuming mutes again", GetCVar("Sound_EnableDialog"), "0")
+_G.Spoken:StopAll()
+
+-- A line queued under the mute but held by a gate is not speaking; it must not keep the
+-- game's dialogue silent for as long as it is held.
+local holding = true
+_G.Spoken:AddGate(function() if holding then return "held" end end)
+_G.Spoken:MuteGameDialogueAhead(quests)
+quests:Enqueue(H.Clip({ length = 5 }))
+stub.Advance(1.6)
+Expect("a held line does not keep the mute past the deadline", GetCVar("Sound_EnableDialog"), "1")
+holding = false
+
+env, quests, zones = H.Fresh(stub, SPOKEN)
+env.Addon.db.profile.Audio.AutoToggleDialog = true
+env.Addon.db.profile.Audio.SoundChannel = "Dialog"
+_G.Spoken:MuteGameDialogueAhead(quests)
+Expect("a line coming on Dialog does not mute Dialog", GetCVar("Sound_EnableDialog"), "1")
+
+env, quests, zones = H.Fresh(stub, SPOKEN)
+env.Addon.db.profile.Audio.AutoToggleDialog = false
+_G.Spoken:MuteGameDialogueAhead(quests)
+Expect("turned off, muting ahead does nothing", GetCVar("Sound_EnableDialog"), "1")
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll sources tests passed")

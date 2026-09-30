@@ -965,6 +965,17 @@ at least as high as what is already there. A submission carrying less informatio
 erase one carrying more — the case that matters is a player on an older addon, whose envelope
 has no model at all, submitting for an NPC somebody else already resolved.
 
+`corpus` means an *extracted* speaker: `npcVoiceFromCorpus` skips the speakers accepted
+contributions wrote. Those carry the NPC's own resolution at the time it was accepted, often a
+`client` guess, and reading one back as `corpus` confirmed the guess and let it outrank the game's
+own appearance data. Migration 0058 demoted the 71 rows that had been confirmed that way.
+
+`apps/web/scripts/import-wowhead-npcs.mts` resolves NPCs from a Wowhead gathering rather than from
+players: each quest's start and end NPC, with the appearance ids, model and sex Wowhead shows, go
+through `resolveNpc` as an envelope would, so the rank above is what keeps it from touching a
+corpus or moderator answer. It does not re-voice lines already accepted; it ends by listing
+the speaker rows whose voice no longer matches, for a person to requeue.
+
 `/contributions` shows the result with its provenance and says plainly which rows are guesses;
 the override there writes `moderator` and is collaborator-only, like everything else that
 changes a row. A new race or voice set is added to the roster in

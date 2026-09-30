@@ -111,35 +111,35 @@ DataModules =
         {
             AddonName = "SpokenQuestsAudioAll",
             Title = "Spoken Quests Audio: All",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-all",
         },
         {
             AddonName = "SpokenQuestsAudioAlliance",
             Title = "Spoken Quests Audio: Alliance",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-alliance",
         },
         {
             AddonName = "SpokenQuestsAudioHorde",
             Title = "Spoken Quests Audio: Horde",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-horde",
         },
         {
             AddonName = "SpokenQuestsAudioShared",
             Title = "Spoken Quests Audio: Shared Quests",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-shared",
         },
         {
             AddonName = "SpokenQuestsAudioGossip",
             Title = "Spoken Quests Audio: Gossip",
-            ContentVersion = "2.0.0",
+            ContentVersion = "2.1.0",
             RelevantAboveVersion = 0,
             URL = "https://www.curseforge.com/wow/addons/spoken-quests-audio-gossip",
         },
@@ -336,7 +336,7 @@ function DataModules:EnumerateAddons(loadModules)
         local max = module.RelevantBelowVersion
         if (not min or Version.Interface >= min) and (not max or Version.Interface < max) then
             local present = self.presentModules[module.AddonName]
-            local update = present and present.ContentVersion ~= module.ContentVersion
+            local update = present and DataModules:IsOlderContent(present.ContentVersion, module.ContentVersion)
             if (not present and not hasAnyPack) or update then
                 Options:AddAvailableDataModule(module, order, update)
             end
@@ -495,23 +495,49 @@ local function TextLookup(module, name)
     return module[name], module.LookupLocale or module.METADATA.Language
 end
 
----@param soundData SoundData
----@return string|nil hash
-function DataModules:GetNPCGossipTextHash(soundData)
-    local table, npc
+--- The gossip table a speaker is filed under, and its key there.
+---@param soundData { unitGUID: string?, name: string?, unitIsObjectOrItem: boolean? }
+---@return string|nil table
+---@return any npc
+local function GossipLookupKey(soundData)
     if soundData.unitGUID then
         local type = Utils:GetGUIDType(soundData.unitGUID)
         if Enums.GUID:IsCreature(type) then
-            table = "GossipLookupByNPCID"
+            return "GossipLookupByNPCID", Utils:GetIDFromGUID(soundData.unitGUID)
         elseif type == Enums.GUID.GameObject then
-            table = "GossipLookupByObjectID"
-        else
-            return
+            return "GossipLookupByObjectID", Utils:GetIDFromGUID(soundData.unitGUID)
         end
-        npc = Utils:GetIDFromGUID(soundData.unitGUID)
-    else
-        table = soundData.unitIsObjectOrItem and "GossipLookupByObjectName" or "GossipLookupByNPCName"
-        npc = replaceDoubleQuotes(soundData.name)
+        return
+    end
+    return soundData.unitIsObjectOrItem and "GossipLookupByObjectName" or "GossipLookupByNPCName",
+        soundData.name and (replaceDoubleQuotes(soundData.name))
+end
+
+--- Whether any pack holds gossip for this speaker, whatever the text. Asked the moment a
+--- gossip dialog opens, before its text can be trusted, to decide whether to silence the
+--- NPC's greeting for a line that is coming.
+---@param soundData { unitGUID: string?, name: string?, unitIsObjectOrItem: boolean? }
+---@return boolean
+function DataModules:HasGossipFor(soundData)
+    local table, npc = GossipLookupKey(soundData)
+    if not table or npc == nil then
+        return false
+    end
+    for _, module in self:GetModules() do
+        local data = TextLookup(module, table)
+        if data and data[npc] then
+            return true
+        end
+    end
+    return false
+end
+
+---@param soundData SoundData
+---@return string|nil hash
+function DataModules:GetNPCGossipTextHash(soundData)
+    local table, npc = GossipLookupKey(soundData)
+    if not table then
+        return
     end
     local text = soundData.text
 

@@ -69,11 +69,15 @@ async function name(kind: string, entityId: string | number, value: string) {
   );
 }
 
+// Each case reads the whole corpus twice, English and the language over it: under 3 s here,
+// past vitest's 5 s default on a CI runner once the corpus passed 19k lines.
+const WHOLE_CORPUS = { timeout: 20_000 };
+
 function rowOf(lines: CorpusLine[]): CorpusLine {
   return lines.find((candidate) => candidate.lineId === line.lineId)!;
 }
 
-describe("a language read over the English lines", () => {
+describe("a language read over the English lines", WHOLE_CORPUS, () => {
   it("has every English line, and says which it has not translated", async () => {
     const [english, italian] = await Promise.all([corpus(), corpus(LANG)]);
     // Every English row but a second variant's: see "a line with two English variants".
@@ -107,7 +111,7 @@ describe("a language read over the English lines", () => {
   });
 });
 
-describe("a line with two English variants", () => {
+describe("a line with two English variants", WHOLE_CORPUS, () => {
   // Quest 4265 has a quest_template row per content patch, so the English carries both:
   // complete as one text under two titles, accept as two texts. One file either way.
   const LINE = "q:4265:complete";

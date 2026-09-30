@@ -64,10 +64,12 @@ MODULE="${MODULE:-SpokenQuestsAudio}"
 VERSION="${VERSION:-2.0.0}"
 # Which packs to build; each becomes MODULE plus the suffix tts_cli/factions.py gives it.
 #
-# The four that ship. 'all' - one folder holding every line - is deliberately not among them:
-# it cannot be uploaded (577 MB is a Cloudflare 413), and on CurseForge that project ships the
-# meta addon from scripts/package-meta.sh instead. Build it with PACKS=all when you want the
-# whole thing in one folder locally, which is also the fast way to try an encode change.
+# The four that ship. 'all' - one folder holding every line - is not among them: CurseForge
+# cannot take it (577 MB is a Cloudflare 413) and ships the meta addon from
+# scripts/package-meta.sh under that project instead, and GitHub gets the four folders bundled
+# into one zip (below), so a player who moves between the two overwrites the same folders. Build
+# it with PACKS=all when you want the whole thing in one folder locally, which is also the fast
+# way to try an encode change.
 PACKS="${PACKS:-alliance horde shared gossip}"
 ENCODE="${ENCODE:-ogg-q0-44k}"
 ZIP="${ZIP:-1}"
@@ -328,3 +330,23 @@ for pack in $PACKS; do
   (cd "$DIST" && zip -r -q -X "$zip_path" "$module" -x '*.DS_Store' '*.part')
   echo "  ==> $zip_path ($(du -h "$zip_path" | cut -f1))"
 done
+
+# THE GITHUB BUNDLE. English quests go to GitHub as one download, but one holding the four split
+# packs' own folders rather than a fifth folder with every line: the same folders CurseForge
+# installs, so a player who takes one channel and then the other overwrites them instead of
+# installing every line twice. Made from the folders this run just built, so it is only made
+# when the run built all four; scripts/lib/packs.mjs names the zip and the folders in it.
+if [ "$ZIP" = 1 ] && [ "$LANGUAGE" = enUS ] && [ -z "$MODULE_NAME" ] && [ -z "$LABEL" ]; then
+  bundled="$(node "$REPO/scripts/lib/packs.mjs" get quests enUS all bundles)"
+  built=1
+  for pack in alliance horde shared gossip; do [[ " $PACKS " == *" $pack "* ]] || built=0; done
+  if [ "$built" = 1 ] && [ "$MODULE" = SpokenQuestsAudio ]; then
+    bundle_path="$(cd "$DIST" && pwd)/$(node "$REPO/scripts/lib/packs.mjs" get quests enUS all folder)-$VERSION.zip"
+    rm -f "$bundle_path"
+    echo
+    echo "bundling $bundled into $(basename "$bundle_path")..."
+    # shellcheck disable=SC2086 -- bundled is a list of folder names
+    (cd "$DIST" && zip -r -q -X "$bundle_path" $bundled -x '*.DS_Store' '*.part')
+    echo "  ==> $bundle_path ($(du -h "$bundle_path" | cut -f1))"
+  fi
+fi

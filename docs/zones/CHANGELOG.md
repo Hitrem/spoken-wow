@@ -35,6 +35,9 @@ section with no kind in its heading is the addon's. A language's pack numbers it
 
 - Zone and subzone narration now supplies captions to Spoken Player 2.2.3.
   Captions follow the voice language, including English fallback clips.
+- **Auto in the language choice, and the default.** Picking a language used to
+  stick for good, with no way back to following the game. **Auto (<language>)** now comes
+  first and reads whatever language the game runs in; any other pick still stays.
 
 ## 2.2.0 — 2026-09-26
 

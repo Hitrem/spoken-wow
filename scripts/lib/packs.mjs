@@ -8,7 +8,7 @@
 // which is what a case block per script per language turned into the moment there was a second
 // language.
 //
-//   node scripts/lib/packs.mjs list <section> <lang>                     pack keys, or "-"
+//   node scripts/lib/packs.mjs list <section> <lang> [github]            pack keys, or "-"
 //   node scripts/lib/packs.mjs get <section> <lang> <pack|-> <field>     one field
 //   node scripts/lib/packs.mjs changelog <file> <version> <release>      a pack's notes
 //
@@ -28,9 +28,17 @@ export const PUBLISHERS_DIR = join(ROOT, "publishers");
 
 export const SECTIONS = ["quests", "zones", "books"];
 
-// tts_cli/factions.py PACK_SUFFIXES, for the four that ship. English's `all` is the meta addon,
-// which is not a pack: its page carries no section.
+// tts_cli/factions.py PACK_SUFFIXES, for the four that ship to CurseForge.
 const QUESTS_PACKS = { alliance: "Alliance", horde: "Horde", shared: "Shared", gossip: "Gossip" };
+// English's `all` is a BUNDLE, released on GitHub alone: one zip holding the four split packs'
+// own folders, exactly as CurseForge installs them. CurseForge will not take a file that size,
+// and its All project is the meta addon that pulls in the four instead, so the one page
+// describes both and each store gets what it can carry. Being the same folders, the two channels
+// overwrite each other rather than installing every line twice, and the player needs to know no
+// fifth pack. Its `folder` names the zip only (SpokenQuestsAudioAll-<version>.zip): no folder of
+// that name is ever built, and the bare SpokenQuestsAudio-<version>.zip is the meta addon's.
+const ENGLISH_QUESTS_PACKS = { ...QUESTS_PACKS, all: "All" };
+const ENGLISH_QUESTS_BUNDLE = Object.values(QUESTS_PACKS).map((suffix) => "SpokenQuestsAudio" + suffix);
 // A language may instead ship its quests as one pack holding every line: one folder is one answer
 // to "which do I install", and a GitHub release takes a file up to 2 GB. CurseForge does not take
 // one that size, so a language that goes there later is split into the four. Being the only pack,
@@ -40,6 +48,11 @@ const LANGUAGE_QUESTS_PACKS = { ...QUESTS_PACKS, all: "" };
 function englishFolder(section, pack) {
   if (section === "zones") return "SpokenZonesAudio";
   if (section === "books") return "SpokenBooksAudio";
+  return "SpokenQuestsAudio" + ENGLISH_QUESTS_PACKS[pack];
+}
+
+function languageFolder(section, pack) {
+  if (section !== "quests") return englishFolder(section, pack);
   return "SpokenQuestsAudio" + LANGUAGE_QUESTS_PACKS[pack];
 }
 
@@ -70,7 +83,7 @@ function toPack(page, meta) {
 
   const english = lang === BASE_LOCALE;
   const pack = meta.pack ?? null;
-  const allowed = english ? QUESTS_PACKS : LANGUAGE_QUESTS_PACKS;
+  const allowed = english ? ENGLISH_QUESTS_PACKS : LANGUAGE_QUESTS_PACKS;
   if (section === "quests" && !(pack in allowed)) {
     fail(`a ${lang} quests pack needs pack: one of ${Object.keys(allowed).join(", ")}`);
   }
@@ -88,10 +101,16 @@ function toPack(page, meta) {
   // No `curseforge` until the project exists: a pack can go out on GitHub before it has one.
   for (const key of ["slug", "name"]) if (!meta[key]) fail(`missing '${key}'`);
 
-  const folder = englishFolder(section, pack) + (english ? "" : `_${lang}`);
+  // `github: false` keeps a pack off GitHub: English's four split packs, since the single `all`
+  // pack is what GitHub offers. Everything else goes there, where the ceiling is 2 GB a file.
+  if (meta.github !== undefined && meta.github !== "false") fail(`github may only be false`);
+  const github = meta.github !== "false";
+
+  const folder = english ? englishFolder(section, pack) : `${languageFolder(section, pack)}_${lang}`;
   return {
-    page, section, lang, pack, version,
+    page, section, lang, pack, version, github,
     curseforge: meta.curseforge ?? null, wago: meta.wago ?? null, release,
+    bundles: english && section === "quests" && pack === "all" ? ENGLISH_QUESTS_BUNDLE : null,
     slug: meta.slug, name: meta.name, folder,
     zip: english ? null : `${folder}-${version}.zip`,
     tag: english ? null : `${release}/v${version}`,
@@ -148,20 +167,22 @@ export function changelogSection(text, version, release) {
 
 function main([command, ...args]) {
   if (command === "list") {
-    const [section, lang] = args;
-    const packs = packsFor(section, lang);
-    if (packs.length === 0) throw new Error(`no ${section} packs registered for ${lang}`);
+    const [section, lang, only] = args;
+    if (only !== undefined && only !== "github") throw new Error(`list filters by 'github' only, not '${only}'`);
+    const packs = packsFor(section, lang).filter((p) => only !== "github" || p.github);
+    if (packs.length === 0) throw new Error(`no ${section} packs registered for ${lang}${only ? ` on ${only}` : ""}`);
     for (const p of packs) console.log(p.pack ?? "-");
   } else if (command === "get") {
     const [section, lang, pack, field] = args;
     const found = findPack(section, lang, pack === "-" ? null : pack);
     if (!(field in found)) throw new Error(`no field '${field}'`);
-    console.log(found[field] ?? "");
+    const value = found[field];
+    console.log(Array.isArray(value) ? value.join(" ") : value ?? "");
   } else if (command === "changelog") {
     const [file, version, release] = args;
     process.stdout.write(changelogSection(readFileSync(file, "utf8"), version, release));
   } else {
-    throw new Error("usage: packs.mjs list <section> <lang> | get <section> <lang> <pack|-> <field> | changelog <file> <version> <release>");
+    throw new Error("usage: packs.mjs list <section> <lang> [github] | get <section> <lang> <pack|-> <field> | changelog <file> <version> <release>");
   }
 }
 

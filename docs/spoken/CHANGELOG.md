@@ -1,18 +1,31 @@
 # Changelog — Spoken Player
 
-## 2.2.4 — 2026-09-28
+## Unreleased
 
-- Caption settings and tooltips now follow the game client language in German,
-  Spanish (EU and Latin America), French, Brazilian Portuguese, Russian, Korean,
-  Simplified Chinese and Traditional Chinese. This includes expand and collapse.
+- **The player remembers where you put it.** Its position and width, in either layout, and
+  whether the captions are expanded now come back after `/reload` and on the next login,
+  on every character of the account. `/spoken reset` still puts it back on the default spot.
 
-## 2.2.3 — 2026-09-27
+## 2.2.4 — 2026-09-29
 
 - Quest and NPC captions appear inside the player with one or two lines and
   two-word highlighting. Timing is approximate. Change the settings under
   `/spoken options`; scroll to read and click the text to follow again.
 - Zone lore and book pages use the same captions. A small plus/minus button
   switches between compact captions and an eight-line reading area in either layout.
+- Caption settings and tooltips follow the game client language in German,
+  Spanish (EU and Latin America), French, Brazilian Portuguese, Russian, Korean,
+  Simplified Chinese and Traditional Chinese. This includes expand and collapse.
+- **Missing lines are gathered by default.** Every quest, conversation and page Spoken has
+  no voice for is kept for you to send in one go; nothing leaves the game unless you upload
+  the file yourself. Turn it off with **Gather missing lines automatically** in the Spoken
+  Player settings, now the one place the switch lives.
+- **Spoken in the addon compartment.** On the clients that have Blizzard's addon compartment,
+  the Spoken button shows there too, and opens the settings on the first click. **Show Spoken
+  in the addon compartment** switches it.
+- **Quest lines play with sound effects switched off.** Spoken Quests checks each line exists
+  before queueing it, and that check ran on the sound effects channel, so with effects off
+  every quest line was dropped as missing. It now checks on the channel the line plays on.
 
 ## 2.2.2 — 2026-09-26
 

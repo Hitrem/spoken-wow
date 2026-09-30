@@ -81,6 +81,15 @@ describe("npcVoiceFromCorpus", () => {
   it("is null for an npc the corpus has never carried", async () => {
     expect(await npcVoiceFromCorpus("creature", 999_999_999)).toBe(null);
   });
+
+  it("ignores speakers written by accepted contributions", async () => {
+    // Their voice came from the NPC's own resolution, so reading it back would confirm a guess.
+    const lines = (await catalogue()).lines;
+    const extracted = new Set(lines.filter((l) => l.contributionId === null).map(npcKey));
+    const contributedOnly = lines.find((l) => l.contributionId !== null && !extracted.has(npcKey(l)));
+    if (!contributedOnly) return; // a database with no accepted contributions has nothing to check
+    expect(await npcVoiceFromCorpus(contributedOnly.npcType, contributedOnly.npcId)).toBe(null);
+  });
 });
 
 describe("defaultFlavorFor", () => {

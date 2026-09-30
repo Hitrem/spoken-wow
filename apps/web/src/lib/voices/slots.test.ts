@@ -16,11 +16,12 @@ describe("slots", () => {
   });
 
   it("offers a voice the corpus does not speak yet, so it can be cloned first", async () => {
-    // The corpus picks up a voice as contributions are accepted -- both male sets and one
-    // female set speak since the first Skybourne lines landed -- so this names the one set no
-    // line has reached. Move it to another silent set when this one starts speaking.
-    const slot = (await slots()).find((s) => s.name === "skybourneelf-female-3774");
-    expect(slot).toEqual({ name: "skybourneelf-female-3774", lineCount: 0, npcCount: 0 });
+    // The corpus picks up a voice as contributions are accepted -- all four Skybourne sets
+    // speak since the 2.1.0 packs -- so this names the one roster voice no line has reached.
+    // Move it to another silent voice when this one starts speaking.
+    const slot = (await slots()).find((s) => s.name === "bloodelf-male");
+    expect(slot).toEqual({ name: "bloodelf-male", lineCount: 0, npcCount: 0 });
+    // A race-gender with flavors is offered by its flavors, never bare.
     expect((await slots()).map((s) => s.name)).not.toContain("skybourneelf-female");
   });
 

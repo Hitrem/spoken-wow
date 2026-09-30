@@ -329,6 +329,42 @@ function SoundQueue:MuteGameDialogue(speakingOn)
     SoundUtils:MuteChannel("Dialog", speakingOn ~= nil and speakingOn ~= "Dialog")
 end
 
+-- How long a mute taken ahead of a line holds with nothing queued. Quest lines are read
+-- once the dialog's globals have held still for 0.4s, gossip 0.1s after its event; past
+-- this nothing is coming, and the next NPC's greeting should be heard.
+local MUTE_AHEAD_SECONDS = 1.5
+local muteAheadTimer
+
+--- Mute the game's dialogue now, for a line that will be queued shortly. The client
+--- starts an NPC's greeting as the dialog opens, and a line needs a moment to be read off
+--- the dialog after that: muting only once the line starts cut the greeting off mid-word.
+--- Muted in the same frame the dialog opened, the greeting is never heard at all.
+---@param speakingOn string The channel the coming line will play on.
+function SoundQueue:MuteGameDialogueAhead(speakingOn)
+    -- Paused, the line will only queue: nothing of ours is going to speak over the greeting.
+    if self:IsPaused() then
+        return
+    end
+    -- On 1.12 muting is cutting every sound, which would cut a line already speaking.
+    if Version.IsLegacyVanilla and not self:IsEmpty() then
+        return
+    end
+    self:MuteGameDialogue(speakingOn)
+    if muteAheadTimer then
+        Addon:CancelTimer(muteAheadTimer)
+    end
+    muteAheadTimer = Addon:ScheduleTimer(function()
+        muteAheadTimer = nil
+        -- A line speaking lifts the mute itself when the queue drains. One merely queued --
+        -- held by a gate, or paused since -- may not speak for a long while, and must not
+        -- keep the game's dialogue silent until it does.
+        local head = self:GetCurrentSound()
+        if not (head and head.nextSoundTimer) then
+            self:MuteGameDialogue(nil)
+        end
+    end, MUTE_AHEAD_SECONDS)
+end
+
 ---@param clip SpokenClip
 function SoundQueue:PlaySound(clip)
     local channel = clip.source:GetChannel()
@@ -566,6 +602,8 @@ function SoundQueue:PauseQueue()
             head.nextSoundTimer = nil
         end
     end
+    -- Nothing of ours is speaking, so the game may. Resuming plays the line, which mutes again.
+    self:MuteGameDialogue(nil)
 
     StopRetryTicker()
     Callbacks:Fire("AUDIO_CHANGED")

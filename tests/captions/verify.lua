@@ -93,7 +93,7 @@ local function HighlightCount()
 end
 local function CheckLayout()
     local _,count=Captions()
-    Check(count<=(cfg.Expanded and 8 or cfg.Lines),'only the requested number of lines is visible')
+    Check(count<=(E.Addon:Layout().CaptionsExpanded and 8 or cfg.Lines),'only the requested number of lines is visible')
     for _,label in ipairs(T.labels) do
         if label:IsShown() then
             Check(not label.wordWrap and not label:GetText():find('\n'),'each caption label is exactly one non-wrapping line')
@@ -176,7 +176,7 @@ Check(cfg.Lines==2 and T.frame:GetHeight()==twoLineHeight,'two-line command rest
 Check(M.frame.bounds[2]==M.frame.bounds[4],'vertical resize is locked to the number of lines')
 local compactTop, compactWord, compactElapsed = M.frame:GetTop(), T.activeWord, T:GetElapsed()
 T.expand:Fire('OnClick')
-Check(cfg.Expanded and select(2,Captions())==8,'the plus button opens eight caption lines')
+Check(E.Addon:Layout().CaptionsExpanded and select(2,Captions())==8,'the plus button opens eight caption lines')
 Check(T.frame:GetHeight()==twoLineHeight*4,'expanded captions grow inside the player')
 Check(math.abs(M.frame:GetTop()-compactTop)<.001,'expanding leaves the portrait in place')
 Check(T.activeWord==compactWord and T:GetElapsed()==compactElapsed,'expanding does not restart playback or its highlight')
@@ -185,7 +185,7 @@ CheckLayout()
 T:TurnPage(1)
 local firstVisible=(T.page-1)*8+1
 T.expand:Fire('OnClick')
-Check(not cfg.Expanded and cfg.Lines==2 and T.frame:GetHeight()==twoLineHeight,'minus restores the compact preference')
+Check(not E.Addon:Layout().CaptionsExpanded and cfg.Lines==2 and T.frame:GetHeight()==twoLineHeight,'minus restores the compact preference')
 Check(T.manualScroll and T.page==math.floor((firstVisible-1)/2)+1,'collapsing keeps the manually selected passage visible')
 T:Follow()
 cfg.HighlightWord=false; T:RefreshConfig()
@@ -315,7 +315,7 @@ source:Enqueue(Clip('unicode',multilingual,120))
 for _,size in ipairs({12,26}) do
     for _,width in ipairs({300,900}) do
         for _,count in ipairs({1,2,8}) do
-            cfg.FontSize,cfg.Lines,cfg.Expanded=size,count==1 and 1 or 2,count==8
+            cfg.FontSize,cfg.Lines,E.Addon:Layout().CaptionsExpanded=size,count==1 and 1 or 2,count==8
             M.frame:SetWidth(width); T:RefreshConfig()
             T.manualScroll,T.page=true,1
             local displayed={}
@@ -330,7 +330,7 @@ for _,size in ipairs({12,26}) do
     end
 end
 -- Sample playback through split UTF-8 words and page boundaries in one-line mode.
-cfg.Expanded=false; cfg.Lines=1; T:RefreshConfig()
+E.Addon:Layout().CaptionsExpanded=false; cfg.Lines=1; T:RefreshConfig()
 T:Follow()
 for sample=1,100 do
     Advance(1)
