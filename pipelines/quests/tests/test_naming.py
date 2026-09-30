@@ -54,6 +54,17 @@ def test_followup_is_named_after_its_words_and_voice_not_its_quest():
     assert line_id_for_row(FOLLOWUP_F) == "f:4377:dwarf-male-standard:f"
 
 
+def test_followup_in_a_model_voice():
+    # tts_cli.flavors.model_voice: a speaker with no humanoid display is voiced by its model.
+    row = {**FOLLOWUP, "broadcast_text_id": 3475.0, "voice_name": "model-29"}
+    assert line_id_for_row(row) == "f:3475:model-29"
+    assert filename_for_row(row) == "3475-model-29"
+    assert filename_for_row({**row, "player_gender": "m"}) == "m-3475-model-29"
+    assert filename_from_line_id("f:3475:model-29:f") == "f-3475-model-29"
+    assert followup_stem_from_line_id("f:3475:model-29:f") == "3475-model-29"
+    assert subfolder_from_line_id("f:3475:model-29") == "followup"
+
+
 def test_followup_voice_without_a_flavor():
     row = {**FOLLOWUP, "voice_name": "bloodelf-male"}
     assert line_id_for_row(row) == "f:4377:bloodelf-male"

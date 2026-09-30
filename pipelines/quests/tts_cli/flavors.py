@@ -125,12 +125,39 @@ def consensus_flavor(flavors: Iterable[str | None]) -> str | None:
     return min(tally.items(), key=lambda kv: (-kv[1], kv[0]))[0]
 
 
+#: A voice keyed by the creature's model rather than by a humanoid race: `model-{ModelID}`.
+MODEL_VOICE = re.compile(r"^model-\d+$")
+
+
+def model_voice(model_id) -> str:
+    """The voice slot of a creature with no humanoid display, e.g. 'model-29'.
+
+    A creature whose display has no CreatureDisplayInfoExtra has no race or sex to pick a
+    voice by - Kum'isha is a Broken, the OOX robots are robots - so the model it is drawn with
+    names the voice instead, and every NPC on one model shares it. The slot is carried as the
+    row's *race* with no flavor, and voice_name answers the race alone for it, so the corpus's
+    race-gender-flavor columns need no new one and the voice comes out bare: the file is
+    `{broadcastTextID}-model-29` (tts_cli/naming.py), frozen once shipped like every other.
+
+    int() because the id reaches here from a DataFrame column that is NaN on every other row.
+    """
+    return f"model-{int(model_id)}"
+
+
+def is_model_voice(name: str | None) -> bool:
+    return bool(name) and MODEL_VOICE.match(name) is not None
+
+
 def voice_name(race: str, gender: str, flavor: str | None) -> str:
     """The ElevenLabs voice name for a race, gender and flavor.
 
     Two parts when there is no flavor: narrator-male is a pseudo-race for gameobjects, and
-    races outside vanilla (a bloodelf model used for Sylvanas) have no NPC voice sets.
+    races outside vanilla (a bloodelf model used for Sylvanas) have no NPC voice sets. One
+    part for a model slot (model_voice): its gender is a placeholder the schema needs, not
+    something the game said, so it stays out of the name.
     """
+    if is_model_voice(race):
+        return race
     return f"{race}-{gender}-{flavor}" if flavor else f"{race}-{gender}"
 
 
@@ -164,6 +191,7 @@ def file_key(source: str, quest, text_hash: str, broadcast_text_id,
     voice of whoever else says the line - the one thing its naming exists to prevent.
     """
     if source == FOLLOWUP:
-        return followup_stem(broadcast_text_id, voice_name(*race_gender.split("-", 1), flavor)), \
+        # rsplit: a model slot's race has a dash of its own (model-29-male).
+        return followup_stem(broadcast_text_id, voice_name(*race_gender.rsplit("-", 1), flavor)), \
             race_gender
     return (f"{quest}-{source}" if quest else text_hash), race_gender

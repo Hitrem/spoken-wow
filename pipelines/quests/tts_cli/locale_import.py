@@ -73,7 +73,8 @@ def extracted_lines(rows) -> list:
         if key in seen:
             continue
         text = clean_localized(localized, row.get("player_gender"))
-        reason = _skip_reason({"source": row["source"], "cleanedText": text})
+        reason = _skip_reason({"source": row["source"], "cleanedText": text,
+                               "voice_name": row.get("voice_name")})
         seen[key] = {
             "lineId": key[0],
             "originalText": key[1],

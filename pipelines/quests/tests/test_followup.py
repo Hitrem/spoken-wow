@@ -1,5 +1,5 @@
-from tts_cli.followup import (GENERIC_SCRIPTS, corpus_rows, number_steps, script_lines,
-                              speaker_entries)
+from tts_cli.followup import (GENERIC_SCRIPTS, corpus_rows, creature_voices, number_steps,
+                              script_lines, speaker_entries)
 
 
 def _line(broadcast, speakers, male="Well done.", female=None, delay=0):
@@ -50,7 +50,8 @@ def test_the_speakers_sex_picks_the_text():
 
 
 def test_a_speaker_with_no_voice_facts_is_left_out():
-    # No humanoid display, so no race - and no quest row either.
+    # Not in the voice facts at all: its display is missing from the dump, so there is not
+    # even a model to voice it by.
     result = {"end": {10: ("A", [_line(500, [99]), _line(501, [])])}}
 
     assert corpus_rows(result, CREATURES) == []
@@ -278,3 +279,72 @@ def test_the_scripts_one_roll_picks_between_share_a_step_at_each_delay():
 
     assert [(line["id"], line["step"]) for line in _lines(scripts)] == \
         [(1, 1), (3, 1), (2, 2), (4, 2)]
+
+
+def _model(name, model):
+    # What query_creature_voices answers for a creature with no humanoid display.
+    return {"name": name, "DisplayRaceID": None, "DisplaySexID": 0, "npc_sound_name": None,
+            "ModelID": model}
+
+
+def test_a_speaker_with_no_humanoid_display_is_kept_and_carries_its_model():
+    # Kum'isha is a Broken: no race or sex to voice her by, so her model names the voice.
+    creatures = {7363: [_model("Kum'isha the Collector", 29)]}
+    result = {"end": {10: ("A", [_line(3475, [7363], male="The rift opens.",
+                                       female="The rift opens, dear.")])}}
+
+    [row] = corpus_rows(result, creatures)
+
+    assert (row["ModelID"], row["DisplayRaceID"], row["DisplaySexID"]) == (29, None, 0)
+    # Read as male: the display has no sex, and male is what broadcast_text writes first.
+    assert row["text"] == "The rift opens."
+
+
+def test_a_humanoid_speakers_row_has_no_model():
+    [row] = corpus_rows({"end": {10: ("A", [_line(500, [1])])}}, CREATURES)
+
+    assert row["ModelID"] is None
+
+
+def test_two_npcs_on_one_model_are_a_row_each():
+    # One voice slot, but each NPC is still its own speaker of the line.
+    creatures = {2546: [_model("Fleet Master Firallon", 127)],
+                 2610: [_model("Shakes O'Breen", 127)]}
+    rows = corpus_rows({"end": {10: ("A", [_line(500, [2546, 2610])])}}, creatures)
+
+    assert [(r["name"], r["ModelID"]) for r in rows] == [
+        ("Fleet Master Firallon", 127), ("Shakes O'Breen", 127)]
+
+
+def test_a_model_voiced_line_is_gathered_but_not_generated():
+    from tts_cli.corpus import NO_VOICE, _skip_reason
+
+    row = {"source": "followup", "cleanedText": "The rift opens.", "voice_name": "model-29"}
+    assert _skip_reason(row) == NO_VOICE
+    # No rewrite of the text can lift it, so it wins over invalid-chars.
+    assert _skip_reason({**row, "cleanedText": "Hi $N."}) == NO_VOICE
+    assert _skip_reason({**row, "voice_name": "broken-male"}) is None
+
+
+def test_creature_voices_keep_a_model_only_where_no_humanoid_display_exists():
+    rows = [
+        # entry, name, DisplayRaceID, DisplaySexID, npc_sound_name, ModelID
+        (7363, "Kum'isha the Collector", None, None, None, 29),
+        # Two sound names for one model are one model voice.
+        (7806, "Homing Robot OOX-09/HL", None, None, "RobotGreetings", 111),
+        (7806, "Homing Robot OOX-09/HL", None, None, None, 111),
+        # A patch variant with a humanoid display wins: its quest rows use that one.
+        (1, "Belgrum", None, None, None, 50),
+        (1, "Belgrum", 3, 0, "DwarfMaleStandardNPCGreetings", 51),
+        # And two humanoid models of one race are still one voice, as before ModelID was read.
+        (1, "Belgrum", 3, 0, "DwarfMaleStandardNPCGreetings", 52),
+    ]
+
+    voices = creature_voices(rows)
+
+    assert voices == {
+        1: [{"name": "Belgrum", "DisplayRaceID": 3, "DisplaySexID": 0,
+             "npc_sound_name": "DwarfMaleStandardNPCGreetings", "ModelID": None}],
+        7363: [_model("Kum'isha the Collector", 29)],
+        7806: [_model("Homing Robot OOX-09/HL", 111)],
+    }

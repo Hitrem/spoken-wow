@@ -589,36 +589,38 @@ FROM ALL_DATA
 
 
 def query_creature_voices(connection, entries) -> dict:
-    """{entry: [{name, DisplayRaceID, DisplaySexID, npc_sound_name}, ...]} for `entries`.
+    """{entry: [{name, DisplayRaceID, DisplaySexID, npc_sound_name, ModelID}, ...]} for `entries`.
 
     The same joins a creature quest row is built from in query_dataframe_for_all_quests_and_gossip,
-    inner joins included: a creature whose display has no CreatureDisplayInfoExtra has no race
-    to voice it in and gets no quest row, so it gets no entry here either. More than one entry
-    is a creature whose display changed between content patches, which is a row apiece there
-    too.
+    and for a creature with a humanoid display the same answer, with ModelID None. More than
+    one entry is a creature whose display changed between content patches, which is a row
+    apiece there too.
+
+    Where that query's inner join to CreatureDisplayInfoExtra drops a creature - no humanoid
+    race to voice it in - this one keeps it, with DisplayRaceID None and its display's ModelID,
+    because follow-up lines are voiced by model there (followup.corpus_rows), and only for a
+    creature with no humanoid variant at all (followup.creature_voices). A creature whose
+    display is not in db_CreatureDisplayInfo still has no entry.
     """
     if not entries:
         return {}
     placeholders = ", ".join(["%s"] * len(entries))
     sql = f'''
 WITH {CREATURE_SOUNDS}
-SELECT DISTINCT ct.entry, ct.name, cdie.DisplayRaceID, cdie.DisplaySexID, cs.npc_sound_name
+SELECT DISTINCT ct.entry, ct.name, cdie.DisplayRaceID, cdie.DisplaySexID, cs.npc_sound_name,
+       cdi.ModelID
 FROM creature_template ct
 JOIN db_CreatureDisplayInfo cdi ON ct.display_id1 = cdi.ID
-JOIN db_CreatureDisplayInfoExtra cdie ON cdi.ExtendedDisplayInfoID = cdie.ID
+LEFT JOIN db_CreatureDisplayInfoExtra cdie ON cdi.ExtendedDisplayInfoID = cdie.ID
 LEFT JOIN creature_sounds cs ON cs.entry = ct.entry
 WHERE ct.entry IN ({placeholders})
-ORDER BY ct.entry, cdie.DisplayRaceID, cdie.DisplaySexID, ct.name, cs.npc_sound_name
+ORDER BY ct.entry, cdie.DisplayRaceID, cdie.DisplaySexID, ct.name, cs.npc_sound_name, cdi.ModelID
 '''
-    voices = {}
+    from tts_cli.followup import creature_voices
+
     with connection.cursor() as cursor:
         cursor.execute(sql, sorted(entries))
-        for entry, name, race, sex, sound in cursor.fetchall():
-            voices.setdefault(int(entry), []).append({
-                "name": name, "DisplayRaceID": int(race), "DisplaySexID": int(sex),
-                "npc_sound_name": sound,
-            })
-    return voices
+        return creature_voices(cursor.fetchall())
 
 
 def query_followup_dataframe(lang: int = 0, raw: bool = False):
@@ -647,7 +649,8 @@ def query_followup_dataframe(lang: int = 0, raw: bool = False):
         db.close()
 
     columns = ["source", "quest", "quest_title", "text", "DisplayRaceID", "DisplaySexID",
-               "npc_sound_name", "name", "type", "id", "original_text", "broadcast_text_id"]
+               "npc_sound_name", "name", "type", "id", "original_text", "broadcast_text_id",
+               "ModelID"]
     if raw:
         columns += ["loc_title", "loc_text", "loc_name"]
     return pd.DataFrame(rows, columns=columns)

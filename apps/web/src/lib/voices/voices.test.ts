@@ -2,7 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import { corpus } from "@/lib/quests/catalogue";
 
-import { flavorsOf, GENDERS, gendersOf, isVoice, RACES, VOICE_NAMES, VOICES, voiceName } from "./voices";
+import {
+  flavorsOf,
+  GENDERS,
+  gendersOf,
+  isModelVoice,
+  isVoice,
+  RACES,
+  VOICE_NAMES,
+  VOICES,
+  voiceName,
+} from "./voices";
 
 describe("VOICES", () => {
   // The roster is what /voices, the filters and the triage selects offer, so a corpus line
@@ -34,6 +44,17 @@ describe("VOICES", () => {
       const flavors = VOICES.filter((v) => v.race === race && v.gender === gender).map((v) => v.flavor);
       expect(flavors.includes(null) && flavors.length > 1, `${race}-${gender}`).toBe(false);
     }
+  });
+
+  it("accepts a model slot by its shape and keeps it off the roster", () => {
+    expect(isVoice("model-29")).toBe(true);
+    expect(isModelVoice("model-29")).toBe(true);
+    // Only digits after the prefix: the name becomes a path segment.
+    for (const name of ["model-", "model-29-male", "model-../x", "orc-model-29"]) {
+      expect(isVoice(name), name).toBe(false);
+    }
+    expect(VOICE_NAMES.some(isModelVoice)).toBe(false);
+    expect(voiceName({ race: "model-29", gender: "male", flavor: null })).toBe("model-29");
   });
 
   it("derives races, genders and flavors from the roster", () => {

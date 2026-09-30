@@ -1087,11 +1087,18 @@ like every other line. A pack's data module carries `FollowupLookup`, speaker's 
 to broadcast text id to file stem (`{broadcastTextId}-{voice}`: NPCs of one race-gender-flavor saying the same text share a
 file, and a different voice gets its own), and the files sit under `generated\sounds\followup\`. The lookup only
 names the file: `DataModules:ResolveSoundFile` picks the pack, so a follow-up line gets the same
-language order, fallback and `m-`/`f-` player-gender variant as a quest line. Where no installed
-pack has the line - every pack built before follow-up lines were recorded, or a line the site
-has not voiced yet - `Followup.lua` plays one of the speaker's gossip clips, or the quest's own
-clip, in its place. Either way the clip is queued behind the turn-in's own voiceover rather than
-over it. The Report button has no address for a follow-up line: it reports what the client
+language order, fallback and `m-`/`f-` player-gender variant as a quest line. A speaker with
+no humanoid display - Kum'isha, a Broken, or the OOX robots - has no race or sex to voice it
+by, so it is voiced by its model: the voice is `model-{ModelID}`, shared by every NPC drawn with
+that model (`f:3475:model-29`, `followup/3475-model-29`). Those lines are in the corpus but
+marked `no-voice`, and the site will not generate them until a voice is chosen for the model.
+Where no installed
+pack has the line - every pack built before follow-up lines were recorded, a line the site has
+not voiced yet, or a line only the fallback language has with the fallback set to none -
+nothing plays: a borrowed gossip or quest clip would say other words under this line's text.
+The debug log records `followup-no-recording` with the line's id, and `/spq followup` marks
+such a line "no recording yet — silent". A clip that does play is queued behind the turn-in's
+own voiceover rather than over it. The Report button has no address for a follow-up line: it reports what the client
 shows, and by the time the NPC speaks the quest dialog has closed.
 
 ## Tests

@@ -22,6 +22,7 @@ import { readIgnores } from "@/lib/quests/ignores";
 import { readOverrides } from "@/lib/quests/overrides";
 import { commitTake } from "@/lib/takes/commit";
 import { INVALID_CHARS, isVoiceable } from "@/lib/text-gate";
+import { isModelVoice } from "@/lib/voices/voices";
 
 import { sentText } from "./files";
 import { canonicalNpcId, seedFor } from "./seed";
@@ -120,7 +121,9 @@ export async function regenerateLine(
         ? "progress text is deliberately skipped"
         : line.skipReason === "untranslated"
           ? `it has no ${lang} text yet`
-          : `its text still holds one of ${INVALID_CHARS} - rewrite it to voice it`;
+          : isModelVoice(line.voice)
+            ? `no voice has been chosen for ${line.voice} yet`
+            : `its text still holds one of ${INVALID_CHARS} - rewrite it to voice it`;
     return {
       ok: false,
       failure: {

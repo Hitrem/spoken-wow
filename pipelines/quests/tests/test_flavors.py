@@ -1,5 +1,5 @@
 from tts_cli.flavors import (apply_fallbacks, consensus_flavor, fallback_flavors, file_key,
-                             flavor_from_sound_name, voice_name)
+                             flavor_from_sound_name, is_model_voice, model_voice, voice_name)
 
 
 class TestFlavorFromSoundName:
@@ -85,6 +85,16 @@ class TestVoiceName:
     def test_two_parts_without_one(self):
         assert voice_name("narrator", "male", None) == "narrator-male"
 
+    def test_a_model_slot_is_its_own_name(self):
+        # The gender is a placeholder for a creature with no humanoid display.
+        assert voice_name(model_voice(29.0), "male", None) == "model-29"
+
+    def test_model_voices_are_recognised_by_shape(self):
+        assert is_model_voice("model-29")
+        assert not is_model_voice("model-29-male")
+        assert not is_model_voice("narrator-male")
+        assert not is_model_voice(None)
+
 
 class TestFileKey:
     def test_quest_rows_share_one_group_across_flavors(self):
@@ -102,6 +112,10 @@ class TestFileKey:
         standard = file_key("followup", 5, "h", 4377, "dwarf-male", "standard")
         assert grim != standard
         assert grim == ("4377-dwarf-male-grim", "dwarf-male")
+
+    def test_a_model_voiced_followup_is_keyed_on_its_model(self):
+        assert file_key("followup", 5, "h", 3475, "model-29-male", None) == \
+            ("3475-model-29", "model-29-male")
 
     def test_followup_rows_group_across_quests(self):
         # The same words in the same voice after two quests are one file.

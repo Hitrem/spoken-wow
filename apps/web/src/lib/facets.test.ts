@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { corpus as catalogue } from "./quests/catalogue";
 import { facets as readFacets } from "./facets";
-import { RACES, VOICE_NAMES, VOICES } from "./voices/voices";
+import { isModelVoice, RACES, VOICE_NAMES, VOICES } from "./voices/voices";
 
 const corpus = await catalogue();
 const facets = await readFacets();
@@ -10,7 +10,10 @@ const facets = await readFacets();
 describe("facets", () => {
   it("offers every value the corpus actually uses", () => {
     // voices.test.ts keeps the corpus inside the roster; this is the filter bar's side of it.
+    // Except a model slot's lines: no voice is chosen for one yet, so it is left off the
+    // roster and out of the filters on purpose (voices.ts isModelVoice).
     for (const line of corpus.lines) {
+      if (isModelVoice(line.voice)) continue;
       expect(facets.races).toContain(line.race);
       expect(facets.genders).toContain(line.gender);
       expect(facets.voices).toContain(line.voice);

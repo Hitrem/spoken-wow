@@ -11,7 +11,7 @@ import pandas as pd
 
 from tts_cli.consts import GENDER_DICT, RACE_DICT
 from tts_cli.flavors import (apply_fallbacks, consensus_flavor, fallback_flavors,
-                             flavor_from_sound_name, voice_name)
+                             flavor_from_sound_name, model_voice, voice_name)
 from tts_cli.flavors import file_key as flavor_file_key
 
 REPLACE_DICT = {'$b': '\n', '$B': '\n', '$n': 'adventurer', '$N': 'Adventurer',
@@ -72,6 +72,12 @@ class TTSProcessor:
     def preprocess_dataframe(self, df):
         df = df.copy() # prevent mutation on original df for safety
         df['race'] = df['DisplayRaceID'].map(RACE_DICT)
+        # A follow-up speaker with no humanoid display is voiced by its model instead
+        # (flavors.model_voice), which rides in the race column. Only follow-up rows carry
+        # ModelID, and only once corpus.extract has appended them.
+        if 'ModelID' in df:
+            df['race'] = [model_voice(model) if pd.notna(model) else race
+                          for model, race in zip(df['ModelID'], df['race'])]
         df['gender'] = df['DisplaySexID'].map(GENDER_DICT)
 
         df['templateText_race_gender'] = df['original_text'] + df['race'] + df['gender']

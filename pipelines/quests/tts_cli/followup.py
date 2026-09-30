@@ -257,14 +257,51 @@ def speaker_entries(result) -> set:
             for line in lines for speaker in line["speakers"]}
 
 
+def creature_voices(rows) -> dict:
+    """sql_queries.query_creature_voices' answer from its rows, which are (entry, name,
+    DisplayRaceID, DisplaySexID, npc_sound_name, ModelID) with the race and sex NULL where the
+    display has no CreatureDisplayInfoExtra. Here rather than there so it can be tested
+    without a database driver.
+
+    A model row is kept only for a creature with no humanoid row at all: one that has both,
+    patch variants of one NPC, keeps its humanoid rows alone, as its quest rows do, so a line
+    never gains a second voice for one NPC.
+
+    Folded after DISTINCT, which saw ModelID: two patch variants of a humanoid on two models
+    of one race are one voice, as they were before the model was selected, and a model voice
+    drops the sound name - it is not read from SoundEntries - so two of those can meet too.
+    """
+    humanoid, by_model = {}, {}
+    for entry, name, race, sex, sound, model in rows:
+        if race is None:
+            voices, voice = by_model, {"name": name, "DisplayRaceID": None, "DisplaySexID": 0,
+                                       "npc_sound_name": None, "ModelID": int(model)}
+        else:
+            voices, voice = humanoid, {"name": name, "DisplayRaceID": int(race),
+                                       "DisplaySexID": int(sex), "npc_sound_name": sound,
+                                       "ModelID": None}
+        if voice not in voices.setdefault(int(entry), []):
+            voices[int(entry)].append(voice)
+    for entry, voices in by_model.items():
+        humanoid.setdefault(entry, voices)
+    return dict(sorted(humanoid.items()))
+
+
 def corpus_rows(result, creatures) -> list:
     """The extraction's dataframe rows for follow-up lines: one per line, quest and speaker.
 
-    `creatures` is {entry: [{name, DisplayRaceID, DisplaySexID, npc_sound_name}, ...]}, the
-    voice facts creature quest rows are built from (sql_queries.query_creature_voices). A
-    creature missing from it - no humanoid display, so no race to voice it in - gets no row,
-    exactly as it gets no quest row. Several entries for one creature are its patch variants
-    and each is a row, again as for quest rows.
+    `creatures` is {entry: [{name, DisplayRaceID, DisplaySexID, npc_sound_name, ModelID}, ...]},
+    the voice facts creature quest rows are built from (sql_queries.query_creature_voices).
+    Several entries for one creature are its patch variants and each is a row, as for quest
+    rows. A creature missing from it - its display is not in the dump at all - gets no row.
+
+    Unlike quest rows, a creature with no humanoid display is kept: DisplayRaceID is None and
+    ModelID names the voice instead (flavors.model_voice), since a follow-up line is often the
+    only thing a Broken, a robot or a ghost says and leaving it out left the addon with nothing
+    to play. Such a row reads as male - DisplaySexID 0, the male text - because the display
+    has no sex to read and male is what broadcast_text writes first; the gender is only what
+    the corpus schema needs, the model is the voice. corpus._skip_reason keeps these rows from
+    being generated until a voice is chosen for the model.
 
     A row per quest rather than per line, even where several quests say the same words:
     tts_cli/factions.py picks a line's pack by its quest, so a line said on both sides has to
@@ -286,7 +323,8 @@ def corpus_rows(result, creatures) -> list:
             for creature in creatures.get(speaker, ()):
                 text = line["male"] if creature["DisplaySexID"] == 0 else line["female"]
                 key = (quest, line["id"], speaker, creature["DisplayRaceID"],
-                       creature["DisplaySexID"], creature["npc_sound_name"], creature["name"])
+                       creature["DisplaySexID"], creature["npc_sound_name"], creature["name"],
+                       creature.get("ModelID"))
                 # The start and end scripts of one quest can say the same words, and so can
                 # two alternatives of one row; either is one line, not two.
                 if key in seen:
@@ -305,5 +343,6 @@ def corpus_rows(result, creatures) -> list:
                     "id": speaker,
                     "original_text": text,
                     "broadcast_text_id": line["id"],
+                    "ModelID": creature.get("ModelID"),
                 })
     return rows
