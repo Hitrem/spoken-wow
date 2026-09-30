@@ -12,7 +12,7 @@
 import { corpus } from "@/lib/quests/catalogue";
 import { hasNarration, NARRATOR_VOICE } from "@/lib/generation/narration";
 
-import { isVoice, VOICE_NAMES } from "./voices";
+import { VOICE_NAMES } from "./voices";
 
 export type VoiceSlot = {
   /** e.g. "orc-male-shady" — the ElevenLabs voice name this project resolves by. */
@@ -84,5 +84,8 @@ export async function slots(): Promise<VoiceSlot[]> {
  * in the ElevenLabs account, in series.
  */
 export async function isVoiceSlot(name: string): Promise<boolean> {
-  return isVoice(name);
+  // The roster alone, not isVoice: a model slot (voices.ts isModelVoice) names the voice some
+  // lines are in, but nothing may be cloned, cut or uploaded for one until which voice each
+  // model gets has been decided.
+  return VOICE_NAMES.includes(name);
 }

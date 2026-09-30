@@ -1052,6 +1052,60 @@ The data module names no `RequiredDeps`. It used to require `AI_VoiceOver`, whic
 `LoadAddOn` fail with `DEP_DISABLED` whenever the player was a fork under another folder name
 and the original sat disabled — three folder names into this lineage, that is the normal case. The module is `LoadOnDemand` and its `Module.lua` returns early
 unless `VoiceOver.DataModules` exists, so the dependency bought nothing and cost the fork.
+
+### What NPCs say after a quest
+
+Some quests end, or begin, with the NPC saying something in `/say`, `/yell` or a whisper a few seconds
+later: the world DB's quest scripts, which the client only ever sees as
+`CHAT_MSG_MONSTER_SAY`/`_YELL`/`_WHISPER`. `FollowupLines.lua` is the export of those lines
+(`pipelines/quests/tools/export_followup_lines.py`), keyed by quest under `end` and `start`,
+and `Followup.lua` reads them. A quest script that hands off to a `generic_scripts` script
+(START_SCRIPT) has that script's lines exported as its own, at the hand-off's delay plus theirs
+and spoken by whoever the hand-off ran it as - Thrall after For The Horde!, the Scarlet
+Cavaliers after Scarlet Subterfuge; `pipelines/quests/tts_cli/followup.py` has the rules. That chat reaches everybody near the NPC, and in a capital the
+same turn-in happens every few seconds, so nothing is listened for until **this** player
+triggers it: `QUEST_TURNED_IN`/`QUEST_ACCEPTED` on Blizzard's clients, and on 1.12/2.4.3/3.3.5
+(which have neither event) a hook on `GetQuestReward`/`AcceptQuest`, which run while the dialog
+still says which quest it is. The quest's lines stay armed for their longest delay plus ten
+seconds. On an English client a message must then equal a line once `$n`, `$r`, `$c` and `$g…;`
+are filled in for the local player - so a line naming the player cannot match somebody
+else's turn-in - and come from the line's speaker when the chat event carries a GUID. Other
+clients show translated text, so there the speaker's NPC ID is the only evidence: the earliest
+step still armed for that NPC plays, and with no GUID nothing plays. A script step can pick
+one of several texts at random, and the export lists each as its own entry under one `step`,
+so a match consumes every entry of that step. The step is exported rather than inferred from
+speaker and delay because several NPCs of one entry can each say their own line in the same
+second - Scarlet Subterfuge's cavaliers - and on a translated client the speaker-only match
+advances step by step. Say, yell, zone yell and whisper lines are exported (a zone yell
+arrives as `CHAT_MSG_MONSTER_YELL`, a whisper as `CHAT_MSG_MONSTER_WHISPER` or
+`CHAT_MSG_RAID_BOSS_WHISPER`); emotes are not, having no voice. A whisper is addressed to this
+player, but is still heard only while armed. It has its own setting, and
+autoplay off silences it too, since these lines read themselves.
+
+The recordings ship in the audio packs like every other line, and are generated on the site
+like every other line. A pack's data module carries `FollowupLookup`, speaker's creature entry
+to broadcast text id to file stem (`{broadcastTextId}-{voice}`: NPCs of one race-gender-flavor saying the same text share a
+file, and a different voice gets its own), and the files sit under `generated\sounds\followup\`. The lookup only
+names the file: `DataModules:ResolveSoundFile` picks the pack, so a follow-up line gets the same
+language order, fallback and `m-`/`f-` player-gender variant as a quest line. A speaker with
+no humanoid display - Kum'isha, a Broken, or the OOX robots - has no race or sex to voice it
+by, so it is voiced by its model: the voice is `model-{ModelID}`, shared by every NPC drawn with
+that model (`f:3475:model-29`, `followup/3475-model-29`). Those lines are in the corpus but
+marked `no-voice`, and the site will not generate them until a voice is chosen for the model.
+Where no installed
+pack has the line - every pack built before follow-up lines were recorded, a line the site has
+not voiced yet, or a line only the fallback language has with the fallback set to none -
+nothing plays: a borrowed gossip or quest clip would say other words under this line's text.
+The debug log records `followup-no-recording` with the line's id, and `/spq followup` marks
+such a line "no recording yet — silent". A clip that does play is queued behind the turn-in's
+own voiceover rather than over it. The Report button has no address for a follow-up line: it reports what the client
+shows, and by the time the NPC speaks the quest dialog has closed. On the site the explorer
+files one under the speaker's `npc/{id}` address with the line's id, the way it files gossip -
+`quest/{id}/complete` would name the turn-in text instead. The explorer marks these rows with an
+amber speech bubble and "after quest {id}", and the source filter calls them "follow-up"; it
+cannot say whether the line follows the accept or the turn-in, since the corpus row keeps only
+the quest.
+
 ## Tests
 
 ```bash

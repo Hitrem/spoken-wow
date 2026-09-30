@@ -18,11 +18,14 @@ import json
 import os
 from datetime import datetime, timezone
 
+from tts_cli.flavors import is_model_voice
 from tts_cli.naming import filename_for_row, line_id_for_row
 
 SCHEMA_VERSION = 2
 DEFAULT_CORPUS_PATH = "corpus/corpus.json.gz"
 INVALID_CHARS = "$<>"
+#: The skipReason of a line whose voice is a model slot nobody has chosen a voice for yet.
+NO_VOICE = "no-voice"
 
 
 def spawn_key(entity_type: str, entity_id) -> str:
@@ -40,9 +43,17 @@ def _skip_reason(row):
 
     Mirrors TTSProcessor.process_row (tts_cli/tts_utils.py:175-187): progress text is
     deliberately never voiced, and unresolved template tokens would be read aloud.
+
+    A line in a model voice (flavors.model_voice) has nobody to speak it yet: which voice a
+    model gets is still to be chosen, so the line is gathered - it has a line id, a file name
+    and a place in the explorer - but not generated. Ahead of invalid-chars because it is the
+    reason no rewrite of the text can lift; the site asks the voice, not this, for the same
+    answer (apps/web/src/lib/text-gate.ts).
     """
     if row["source"] == "progress":
         return "progress"
+    if is_model_voice(row.get("voice_name")):
+        return NO_VOICE
     if any(c in row["cleanedText"] for c in INVALID_CHARS):
         return "invalid-chars"
     return None
@@ -129,11 +140,16 @@ def lines_in_area(corpus: dict, map_id: int, x_range, y_range) -> list:
 
 def extract(path: str = DEFAULT_CORPUS_PATH) -> dict:
     """Query the world database and write the corpus. The only step that needs MySQL."""
+    import pandas as pd
+
     from tts_cli.sql_queries import (query_dataframe_for_all_quests_and_gossip,
-                                     query_spawns)
+                                     query_followup_dataframe, query_spawns)
     from tts_cli.tts_utils import TTSProcessor
 
-    df = query_dataframe_for_all_quests_and_gossip(0)
+    # Follow-up lines after everything else, so adding them left every existing row where it
+    # was: import-corpus records each row's place as its `ord`, and the export reproduces it.
+    df = pd.concat([query_dataframe_for_all_quests_and_gossip(0), query_followup_dataframe()],
+                   ignore_index=True)
     # preprocess_dataframe only uses self for handle_gender_options, so skip __init__ and
     # avoid requiring an ElevenLabs key just to extract text.
     df = TTSProcessor.preprocess_dataframe(TTSProcessor.__new__(TTSProcessor), df)

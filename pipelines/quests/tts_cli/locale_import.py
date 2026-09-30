@@ -73,7 +73,8 @@ def extracted_lines(rows) -> list:
         if key in seen:
             continue
         text = clean_localized(localized, row.get("player_gender"))
-        reason = _skip_reason({"source": row["source"], "cleanedText": text})
+        reason = _skip_reason({"source": row["source"], "cleanedText": text,
+                               "voice_name": row.get("voice_name")})
         seen[key] = {
             "lineId": key[0],
             "originalText": key[1],
@@ -241,13 +242,20 @@ def import_locale(conn, lang: str, lines: list, names: dict) -> Counter:
 def extract_and_import(lang: str) -> Counter:
     """The dump's `lang` columns -> Postgres. Needs MySQL and DATABASE_URL."""
     from tts_cli.corpus_db import connect
-    from tts_cli.sql_queries import query_dataframe_for_all_quests_and_gossip
+    import pandas as pd
+
+    from tts_cli.sql_queries import (query_dataframe_for_all_quests_and_gossip,
+                                     query_followup_dataframe)
     from tts_cli.tts_utils import TTSProcessor
     from tts_cli.utils import language_code_to_language_number
 
     print(f"  reading {lang} from the vmangos dump...", file=sys.stderr, flush=True)
-    df = query_dataframe_for_all_quests_and_gossip(
-        language_code_to_language_number(lang), raw=True)
+    number = language_code_to_language_number(lang)
+    # Follow-up lines too, the way extract appends them: the English rows are what a
+    # translated line is anchored to, and without them every follow-up translation would be
+    # counted as a line without an English line.
+    df = pd.concat([query_dataframe_for_all_quests_and_gossip(number, raw=True),
+                    query_followup_dataframe(number, raw=True)], ignore_index=True)
     rows = TTSProcessor.preprocess_dataframe(TTSProcessor.__new__(TTSProcessor), df)
     records = rows.to_dict("records")
     print("  reading what Postgres already has...", file=sys.stderr, flush=True)

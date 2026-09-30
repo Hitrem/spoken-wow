@@ -95,6 +95,15 @@ local function QuestIDFor(event)
     return GetQuestID and GetQuestID() or 0
 end
 
+--- The quest on the open dialog `event` names, falling back on its title, NPC and text where
+--- the client has no ID for it. For callers outside the dialog events, which have no snapshot:
+--- Followup.lua's accept and turn-in hooks on the private-server clients.
+function Addon:DialogQuestID(event)
+    local quest = QUEST_EVENTS[event]
+    return ResolveQuestID(quest.source, QuestIDFor(event), GetTitleText and GetTitleText() or "",
+        Utils:GetNPCName() or "", quest.text(), true) or 0
+end
+
 local function CaptureQuestSnapshot(event)
     local quest = QUEST_EVENTS[event]
     if not quest then
@@ -305,6 +314,9 @@ local defaults = {
             -- /spq read is typed. GossipFrequency then has nothing to decide.
             Autoplay = true,
             OGThrall = false,
+            -- What NPCs say in chat after this player accepts or turns in a quest
+            -- (Followup.lua). Autoplay off silences these too: they read themselves.
+            FollowupLines = true,
             -- Follow the client, and fall back on English. Every pack that exists today
             -- is English and declares no language, so an English-speaking player with the
             -- packs they already have resolves enUS on the first pass and hears exactly
@@ -487,6 +499,17 @@ function Addon:OnInitialize()
     end)
     if not dialogPlayButtonReady then
         Debug:Record("dialog-play-button-error", tostring(dialogPlayButtonError))
+    end
+
+    -- The lines NPCs say after a quest. Guarded the same way: a failed hook here must not
+    -- take quest narration down with it.
+    local followupReady, followupError = pcall(function()
+        if Followup and Followup.Setup then
+            Followup:Setup()
+        end
+    end)
+    if not followupReady then
+        Debug:Record("followup-error", tostring(followupError))
     end
 
     -- Discover data packs now, but load their multi-megabyte generated Lua

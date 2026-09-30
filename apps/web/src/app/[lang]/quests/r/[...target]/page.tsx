@@ -59,9 +59,15 @@ export default async function ReportPage({
       throw error;
     },
   );
+  // One per lineId, which is what the reporter chooses between and what the report stores. A
+  // follow-up line said after several of the speaker's quests is a corpus row per quest with
+  // one id and one file, and listing each would offer the same words twice (and give React
+  // two children with one key).
+  const choices = [...new Map(lines.map((candidate) => [candidate.lineId, candidate])).values()];
   // One candidate needs no choosing; several mean the reporter picked one from the list below.
   const line =
-    lines.find((candidate) => candidate.lineId === chosen) ?? (lines.length === 1 ? lines[0] : null);
+    choices.find((candidate) => candidate.lineId === chosen) ??
+    (choices.length === 1 ? choices[0] : null);
   // Which take is live, to bust the audio cache: without it someone returning to hear a fix
   // hears the browser's copy of the very clip they complained about, and reports it again.
   const version = line ? await liveVersion("quests", audioRelPath(line), lang) : null;
@@ -91,14 +97,14 @@ export default async function ReportPage({
         </section>
       ) : null}
 
-      {lines.length > 1 && !line ? (
+      {choices.length > 1 && !line ? (
         <section className="mb-6 rounded border p-4">
-          <h2 className="font-medium">{lines[0].npcName}</h2>
+          <h2 className="font-medium">{choices[0].npcName}</h2>
           <p className="text-muted-foreground mt-1 mb-2 text-sm">
             This character has more than one line. Which one sounded wrong?
           </p>
           <ul className="flex flex-col gap-2 text-sm">
-            {lines.map((candidate) => (
+            {choices.map((candidate) => (
               <li key={candidate.lineId}>
                 <Link
                   href={`/quests/r/${formatTarget(target)}?line=${encodeURIComponent(candidate.lineId)}`}

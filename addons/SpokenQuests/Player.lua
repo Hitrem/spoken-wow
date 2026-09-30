@@ -18,6 +18,7 @@ local BULLETS = {
     [Enums.SoundEvent.QuestComplete] = "quest-complete",
     [Enums.SoundEvent.QuestGreeting] = "gossip",
     [Enums.SoundEvent.Gossip]        = "gossip",
+    [Enums.SoundEvent.QuestFollowup] = "quest-complete",
 }
 
 --------------------------------------------------------------------------------
@@ -80,14 +81,7 @@ local function CreatureFor(soundData)
     end
     local guid = soundData.unitGUID
     if guid and Utils.GetGUIDType and Utils.GetIDFromGUID then
-        local okType, guidType = pcall(Utils.GetGUIDType, Utils, guid)
-        if okType and guidType and Enums.GUID:IsCreature(guidType) and Enums.GUID:CanHaveID(guidType) then
-            local okID, id = pcall(Utils.GetIDFromGUID, Utils, guid)
-            if okID then
-                return id
-            end
-        end
-        return nil
+        return Utils:GetCreatureIDFromGUID(guid)
     end
     -- 1.12 has no GUIDs; the pooled model shows the "npc" unit and this is only what
     -- tells one clip's portrait from the next.
@@ -225,6 +219,18 @@ function Player:Enqueue(soundData)
             Enums.SoundEvent:GetName(soundData.event) or tostring(soundData.event),
             tostring(soundData.questID or "none"), soundData.title or soundData.name or "",
             table.concat(Language:ResolutionOrder(), " then ")))
+        return false
+    end
+
+    return self:EnqueuePrepared(soundData)
+end
+
+--- Hand the player a line whose file DataModules has already resolved.
+---@param soundData SoundData
+---@return boolean queued
+function Player:EnqueuePrepared(soundData)
+    if not self.source then
+        Debug:Record("player-missing", "The Spoken player addon is not installed")
         return false
     end
 

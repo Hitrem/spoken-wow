@@ -39,6 +39,7 @@ import { useClearDirty } from "@/lib/generation/use-clear-dirty";
 import { useCan } from "@/components/useCan";
 import { canConfigureGeneration } from "@/lib/permissions";
 import { isVoiceable } from "@/lib/text-gate";
+import { isModelVoice } from "@/lib/voices/voices";
 import type { Filter, LineFilters, ResultLine, SearchResult } from "@/lib/search";
 import { type Pending, receive, target, write } from "@/lib/url-echo";
 
@@ -443,6 +444,9 @@ export default function Explorer({ facets }: { facets: Facets }) {
         return `Ignored: ${line.ignored}`;
       }
       if (!line.voiceable) {
+        // Named from the voice: a translation's row carries its own skipReason, which knows
+        // nothing of the model slot that is why it is refused (text-gate.ts).
+        if (isModelVoice(line.voice)) return `No voice chosen for ${line.voice} yet`;
         return `Never voiced: ${line.skipReason}`;
       }
       // Before the voice checks: with no key the roster is empty, so every line would

@@ -146,3 +146,30 @@ def test_area_filter_matches_when_any_spawn_is_inside():
 def test_area_filter_respects_the_map():
     corpus = build_corpus(pd.DataFrame(ROWS), SPAWNS)
     assert lines_in_area(corpus, map_id=1, x_range=(-10000, 0), y_range=(-10000, 10000)) == []
+
+
+def test_a_follow_up_speaker_with_no_humanoid_display_is_voiced_by_its_model():
+    """Kum'isha (a Broken, model 29) beside a quest row that has no ModelID column value:
+    preprocess puts the slot in the race column, and naming and the skip rule follow."""
+    from tts_cli.tts_utils import TTSProcessor
+
+    base = {"quest_title": "To Serve Kum'isha", "type": "creature", "npc_sound_name": None}
+    quest = {**base, "source": "complete", "quest": 3481, "text": "Well done.",
+             "original_text": "Well done.", "DisplayRaceID": 1, "DisplaySexID": 0,
+             "name": "Human", "id": 1}
+    followup = pd.DataFrame([{**base, "source": "followup", "quest": 3481,
+                              "text": "The rift opens.", "original_text": "The rift opens.",
+                              "DisplayRaceID": None, "DisplaySexID": 0, "ModelID": 29,
+                              "name": "Kum'isha the Collector", "id": 7363,
+                              "broadcast_text_id": 3475}])
+    df = pd.concat([pd.DataFrame([quest]), followup], ignore_index=True)
+    df = TTSProcessor.preprocess_dataframe(TTSProcessor.__new__(TTSProcessor), df)
+
+    corpus = build_corpus(df, [])
+    line = corpus["lines"][1]
+    assert {k: line[k] for k in ("lineId", "race", "gender", "flavor", "voice", "fileName",
+                                 "generatable", "skipReason")} == {
+        "lineId": "f:3475:model-29", "race": "model-29", "gender": "male", "flavor": None,
+        "voice": "model-29", "fileName": "3475-model-29", "generatable": False,
+        "skipReason": "no-voice"}
+    assert corpus["lines"][0]["race"] == "human"

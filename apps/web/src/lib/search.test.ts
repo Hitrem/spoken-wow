@@ -117,13 +117,13 @@ describe("filter scoping", () => {
 describe("field filters", () => {
   it("narrows to a race", () => {
     const lines = all({ race: "tauren" });
-    expect(lines).toHaveLength(2143);
+    expect(lines).toHaveLength(2163);
     expect(lines.every((l) => l.race === "tauren")).toBe(true);
   });
 
   it("intersects rather than widening", () => {
     const both = all({ race: "tauren", gender: "female" });
-    expect(both).toHaveLength(659);
+    expect(both).toHaveLength(666);
     expect(both.length).toBeLessThan(all({ race: "tauren" }).length);
     expect(both.every((l) => l.race === "tauren" && l.gender === "female")).toBe(true);
   });
@@ -135,8 +135,8 @@ describe("field filters", () => {
     expect(all({ voice: "tauren-female-shaman" }).every((l) => l.race === "tauren")).toBe(true);
     // A flavor cuts across races - three of them have a shaman voice - so it narrows on its
     // own axis rather than standing in for a voice.
-    expect(all({ flavor: "shaman" })).toHaveLength(774);
-    expect(all({ flavor: "shaman", race: "tauren" })).toHaveLength(422);
+    expect(all({ flavor: "shaman" })).toHaveLength(808);
+    expect(all({ flavor: "shaman", race: "tauren" })).toHaveLength(431);
     expect(all({ source: "gossip" }).every((l) => l.source === "gossip")).toBe(true);
     expect(all({ npcType: "item" }).every((l) => l.npcType === "item")).toBe(true);
   });
@@ -170,8 +170,8 @@ describe("field filters", () => {
   it("hides progress text unless asked for", () => {
     // 3,140 of the corpus's 17,792 lines, and no code path will ever voice one.
     expect(asShipped().every((l) => l.source !== "progress")).toBe(true);
-    expect(asShipped()).toHaveLength(15727);
-    expect(all()).toHaveLength(19093);
+    expect(asShipped()).toHaveLength(16250);
+    expect(all()).toHaveLength(19616);
   });
 
   it("treats asking for the progress source as asking to see them", () => {
@@ -180,6 +180,32 @@ describe("field filters", () => {
     const lines = asShipped({ source: "progress" });
     expect(lines).toHaveLength(3366);
     expect(lines.every((l) => l.source === "progress")).toBe(true);
+  });
+});
+
+describe("follow-up lines", () => {
+  it("are in the default view, which hides only progress text", () => {
+    const lines = asShipped().filter((l) => l.source === "followup");
+    expect(lines.length).toBeGreaterThan(0);
+  });
+
+  it("narrow by source, and are voiceable lines with a quest and a speaker", () => {
+    const lines = asShipped({ source: "followup" });
+    expect(lines).toHaveLength(corpus.lines.filter((l) => l.source === "followup").length);
+    expect(lines.every((l) => l.source === "followup")).toBe(true);
+    // What the row draws: the quest it follows and the NPC who says it. A null quest would
+    // leave the quest column a dash and the row with no context at all.
+    expect(lines.every((l) => l.questId !== null && l.npcId > 0)).toBe(true);
+    expect(lines.every((l) => l.lineId.startsWith("f:"))).toBe(true);
+  });
+
+  it("come back when narrowing to the quest they follow", () => {
+    // Narrowing a row to its quest is a quest-id search; a follow-up line belongs in that
+    // answer beside the quest's own dialog.
+    const sample = asShipped({ source: "followup" })[0];
+    const lines = asShipped({ q: String(sample.questId), filter: "quest" });
+    expect(lines.some((l) => l.source === "followup")).toBe(true);
+    expect(lines.some((l) => l.source !== "followup")).toBe(true);
   });
 });
 

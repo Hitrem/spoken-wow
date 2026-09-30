@@ -10,8 +10,23 @@
  * decided by the extractor, and a value outside them means the corpus is malformed rather
  * than that the game has something new in it.
  */
-export const SOURCES = ["accept", "progress", "complete", "gossip"] as const;
+/** "followup" is what an NPC says in chat after a quest is accepted or turned in. */
+export const SOURCES = ["accept", "progress", "complete", "gossip", "followup"] as const;
 export const NPC_TYPES = ["creature", "gameobject", "item"] as const;
 
 export type Source = (typeof SOURCES)[number];
 export type NpcType = (typeof NPC_TYPES)[number];
+
+/**
+ * What the source filter shows for each value. The first four are words a reader already
+ * knows and label themselves; "followup" is a frozen identifier (it names the corpus rows
+ * and the followup/ folder) and reads as a typo in a dropdown, so it gets the spelling a
+ * person would write. The URL keeps carrying the value, never the label.
+ */
+export const SOURCE_LABELS: Record<Source, string> = {
+  accept: "accept",
+  progress: "progress",
+  complete: "complete",
+  gossip: "gossip",
+  followup: "follow-up",
+};

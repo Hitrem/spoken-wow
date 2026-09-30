@@ -12,7 +12,13 @@
  */
 import type { CorpusLine } from "@/lib/corpus";
 
-/** The three sources a quest address can name; gossip travels as an NPC address instead. */
+/**
+ * The three sources a quest address can name. Gossip and follow-up lines travel as an NPC
+ * address instead: gossip has no quest, and a follow-up line is neither of a quest's two
+ * dialogs - quest/{id}/complete would resolve to the turn-in text, not to what the NPC said
+ * afterwards. Its speaker's address does resolve to it (target.ts matches every line of that
+ * NPC), and the lineId the row sends along picks it out of the others.
+ */
 const QUEST_EVENTS = new Set(["accept", "progress", "complete"]);
 
 export function targetForLine(
@@ -23,5 +29,5 @@ export function targetForLine(
     // would resolve to nothing while looking like a real report, so it is worth refusing.
     return line.questId === null ? null : `quest/${line.questId}/${line.source}`;
   }
-  return line.source === "gossip" ? `npc/${line.npcId}` : null;
+  return line.source === "gossip" || line.source === "followup" ? `npc/${line.npcId}` : null;
 }

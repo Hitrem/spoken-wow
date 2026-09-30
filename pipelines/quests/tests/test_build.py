@@ -1,6 +1,6 @@
 import os
 
-from tts_cli.build import (build_tables, escape_lua_string, module_toc,
+from tts_cli.build import (MODULE_LUA, build_tables, escape_lua_string, module_toc,
                            prune_quest_id_table, quest_search_text)
 
 CORPUS = {
@@ -36,6 +36,15 @@ CORPUS = {
          "questTitle": "The Note", "npcId": 700, "npcName": "Crumpled Note",
          "npcType": "item", "fileName": "11-accept",
          "originalText": "Read me.", "generatable": True},
+        # what the questgiver says in chat after quest 5 is turned in, split by $g
+        {"lineId": "f:4377:human-male-standard:m", "source": "followup", "questId": 5,
+         "questTitle": "Growling Gut", "npcId": 288, "npcName": "Jitters",
+         "npcType": "creature", "fileName": "m-4377-human-male-standard",
+         "originalText": "Thank you, $gsir:madam;.", "generatable": True},
+        {"lineId": "f:4377:human-male-standard:f", "source": "followup", "questId": 5,
+         "questTitle": "Growling Gut", "npcId": 288, "npcName": "Jitters",
+         "npcType": "creature", "fileName": "f-4377-human-male-standard",
+         "originalText": "Thank you, $gsir:madam;.", "generatable": True},
     ],
 }
 
@@ -90,6 +99,32 @@ def test_quest_id_lookup_is_keyed_by_source_then_title():
 def test_quest_id_lookup_omits_progress():
     """Progress text is never voiced, so an entry for it would resolve to silence."""
     assert "progress" not in _tables()["quest_id_lookups"]
+
+
+def test_followup_lookup_maps_speaker_and_broadcast_id_to_the_bare_stem():
+    # Unprefixed, like a gossip hash: the addon adds the player's m-/f- when it resolves.
+    assert _tables()["followup_lookups"] == {288: {4377: "4377-human-male-standard"}}
+
+
+def test_followup_lines_stay_out_of_the_quest_tables():
+    # Said in chat, not in the quest dialog: matching its text there would find quest 5 for
+    # words its dialog never shows, and a "followup" branch would be a source nothing asks for.
+    tables = _tables()
+    assert "followup" not in tables["quest_id_lookups"]
+    assert tables["quest_id_lookups"]["complete"]["Growling Gut"] == 5
+    assert tables["questlog_npc_lookups"] == {5: 288}
+
+
+def test_followup_lookup_honours_ignores():
+    ignored = {"f:4377:human-male-standard:m", "f:4377:human-male-standard:f"}
+    tables = {name: data for name, (_, data) in build_tables(CORPUS, ignored).items()}
+    assert tables["followup_lookups"] == {}
+
+
+def test_module_resolves_followup_sounds_only_where_the_player_knows_the_event():
+    lua = MODULE_LUA.format(module="Mod", extension=".ogg")
+    assert ("elseif Enums.SoundEvent.QuestFollowup and event == Enums.SoundEvent.QuestFollowup "
+            "then\n        return format([[generated\\sounds\\followup\\%s.ogg]], fileName)") in lua
 
 
 def test_prune_collapses_unambiguous_titles_to_a_bare_id():

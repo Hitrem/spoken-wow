@@ -33,8 +33,8 @@ back to a Makefile, an nginx comment or a runbook is a regression, not a
 convenience. The two pre-merge deployments are gone; `legacy-freeze` is the tag
 that still has them.
 
-**Filenames and line ids are frozen.** `q:33:accept`, `g:{md5}`, `z:{mapID}`,
-`s:{mapID}:{key}`, `b:{pageTextID}` and their paths on disk do not change. Renaming one means
+**Filenames and line ids are frozen.** `q:33:accept`, `g:{md5}`, `f:{broadcastTextID}:{voice}`,
+`z:{mapID}`, `s:{mapID}:{key}`, `b:{pageTextID}` and their paths on disk do not change. Renaming one means
 re-shipping a sound pack every user has already downloaded and invalidating
 the take history that records what produced each file.
 

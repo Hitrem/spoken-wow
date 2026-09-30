@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Facets } from "@/lib/facets";
 import { AUDIO_STATE_OPTIONS } from "@/lib/audio-state";
-import { NPC_TYPES, SOURCES } from "@/lib/line-fields";
+import { NPC_TYPES, SOURCE_LABELS, SOURCES } from "@/lib/line-fields";
 import { activeFilterCount } from "@/lib/active-filters";
 import type { Filter, LineFilters } from "@/lib/search";
 
@@ -33,6 +33,12 @@ type Props = {
 function plainOptions(values: readonly string[]): ChipOption[] {
   return values.map((value) => ({ value, label: value }));
 }
+
+/** The sources in corpus order, each under the name SOURCE_LABELS gives it. */
+const SOURCE_OPTIONS: ChipOption[] = SOURCES.map((value) => ({
+  value,
+  label: SOURCE_LABELS[value],
+}));
 
 /** Where the free-text query is matched. "any" is the idle state, so it is not an option. */
 const SCOPE_OPTIONS: ChipOption[] = [
@@ -127,7 +133,7 @@ const SearchBar = forwardRef<HTMLInputElement, Props>(function SearchBar(
         <FilterChip
           label="source"
           value={filters.source}
-          options={plainOptions(SOURCES)}
+          options={SOURCE_OPTIONS}
           onChange={(source) => onFilters({ source: source as LineFilters["source"] })}
         />
         <FilterChip

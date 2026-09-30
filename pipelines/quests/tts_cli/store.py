@@ -1,4 +1,4 @@
-"""The folder a sound pack is built from: audio/{quests,gossip}/*.mp3, gitignored.
+"""The folder a sound pack is built from: audio/{quests,gossip,followup}/*.mp3, gitignored.
 
 Not a record of anything. Every take lives in the site's archive, and this folder is
 assembled from the live ones right before a build (scripts/audio/sounds.mjs), under the
@@ -8,7 +8,10 @@ import os
 
 
 DEFAULT_STORE_DIR = "audio"
-SUBFOLDERS = ("quests", "gossip")
+#: One per lineId kind, as tts_cli/naming.py:subfolder_from_line_id names them. A kind missing
+#: here is audio every walk below skips: the pack would ship its lookup entries and none of
+#: its files.
+SUBFOLDERS = ("quests", "gossip", "followup")
 #: What counts as audio when walking a directory. The folder itself is always mp3 - the
 #: masters, as ElevenLabs made them - but scripts/package-audio.sh stages a transcoded copy
 #: and hands it to `build --store`, and that copy is ogg for the packs this project ships.

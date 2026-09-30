@@ -24,4 +24,15 @@ describe("filtersFromParams", () => {
     expect((await filtersFromParams(new URLSearchParams("fb=open"))).reports).toBe("open");
     expect((await filtersFromParams(new URLSearchParams("fb=closed"))).reports).toBeUndefined();
   });
+
+  it("reads the follow-up source by its value, not by the label the dropdown shows", async () => {
+    // SOURCE_LABELS spells it "follow-up" for people; the URL carries the corpus value, and a
+    // hyphenated one would fall outside SOURCES and silently unfilter the search.
+    expect((await filtersFromParams(new URLSearchParams("source=followup"))).source).toBe(
+      "followup",
+    );
+    expect(
+      (await filtersFromParams(new URLSearchParams("source=follow-up"))).source,
+    ).toBeUndefined();
+  });
 });

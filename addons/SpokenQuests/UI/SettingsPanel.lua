@@ -96,6 +96,10 @@ function SettingsPanel:Setup()
         L.OPT_PANEL_STOP_ON_CLOSE_TIP,
         function() return audio().StopAudioOnDisengage end,
         function(value) audio().StopAudioOnDisengage = value end)
+    layout:Checkbox(L.OPT_PANEL_FOLLOWUP,
+        L.OPT_PANEL_FOLLOWUP_TIP,
+        function() return audio().FollowupLines ~= false end,
+        function(value) audio().FollowupLines = value end)
     layout:Checkbox(L.OPT_OG_THRALL,
         L.OPT_OG_THRALL_TIP,
         function() return audio().OGThrall end,

@@ -14,6 +14,7 @@ import {
 import { OverrideError, validateOverride } from "@/lib/quests/override";
 import { hasInvalidChars, INVALID_CHARS } from "@/lib/text-gate";
 import type { ResultLine } from "@/lib/search";
+import { isModelVoice } from "@/lib/voices/voices";
 
 type Props = {
   /** The line being rewritten, or null when the dialog is closed. */
@@ -54,7 +55,9 @@ export default function OverrideDialog({ line, onSaved, onCancel }: Props) {
   // Whether this rewrite is what makes the line voiceable, asked of its live state rather
   // than the corpus's baked flag - otherwise a narrated line, which is already voiceable,
   // would claim every edit rescued it.
-  const rescues = !line.voiceable && line.skipReason !== "progress" && !hasInvalidChars(draft);
+  // No rewrite rescues a line in a model slot, which is refused for its voice, not its text.
+  const rescues =
+    !line.voiceable && line.skipReason !== "progress" && !isModelVoice(line.voice) && !hasInvalidChars(draft);
 
   async function send(method: "PUT" | "DELETE") {
     if (!line) return;

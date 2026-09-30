@@ -25,6 +25,8 @@
     <Include file="DataModules.lua"/>
     <Include file="Player.lua"/>
     <Include file="VoiceOver.lua"/>
+    <Include file="FollowupLines.lua"/>
+    <Include file="Followup.lua"/>
 
     <Include file="Compatibility.lua"/>
 </Ui>

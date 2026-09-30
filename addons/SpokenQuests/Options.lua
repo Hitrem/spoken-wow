@@ -88,6 +88,19 @@ local GeneralTab =
                         Addon.db.profile.Audio.StopAudioOnDisengage = value
                     end,
                 },
+                ToggleFollowupLines = {
+                    type = "toggle",
+                    order = 6.5,
+                    width = 2,
+                    name = L.OPT_FOLLOWUP,
+                    desc = L.OPT_FOLLOWUP_TIP,
+                    -- Follow-up lines read themselves, so autoplay off leaves this nothing to do.
+                    disabled = function(info) return not Addon:IsAutoplayOn() end,
+                    get = function(info) return Addon.db.profile.Audio.FollowupLines ~= false end,
+                    set = function(info, value)
+                        Addon.db.profile.Audio.FollowupLines = value
+                    end,
+                },
                 LineBreak3 = { type = "description", name = "", order = 7 },
                 -- Its own row: the two selects are one decision, and beside OGThrall they wrap
                 -- unevenly on a narrow options frame.
@@ -246,6 +259,16 @@ local SlashCommands = {
             desc = L.OPT_CMD_TEST_DESC,
             dropdownHidden = true,
             func = function() Options:RunSelfTest() end
+        },
+        Followup = {
+            type = "input",
+            order = 85,
+            name = L.OPT_CMD_FOLLOWUP,
+            desc = L.OPT_CMD_FOLLOWUP_DESC,
+            dropdownHidden = true,
+            guiHidden = true,
+            get = function() return "" end,
+            set = function(info, value) Followup:Simulate(value) end
         },
         Diagnostics = {
             type = "execute",
