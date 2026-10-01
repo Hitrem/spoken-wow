@@ -1,8 +1,8 @@
 ---
 curseforge: 1721569
 slug: spoken
-name: Spoken: All (English)
-summary: Everything Spoken voices, in English: quests, gossip, zone lore and books. One install pulls in every addon and every sound pack it needs.
+name: Spoken Everything: Quests, Zones, Books AI Voiceover
+summary: Meta package for when you want everything voiced over and don't care about disk space: Quests, Zones, Books narrated for you
 categories:
   - Audio & Video
   - Roleplay

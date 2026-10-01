@@ -25,7 +25,7 @@ NAME="${NAME:-SpokenAll}"
 DIST="${DIST:-$REPO/dist}"
 VERSION="${VERSION:-1.0.0}"
 ZIP="${ZIP:-1}"
-TITLE="${TITLE:-Spoken: All (English)}"
+TITLE="${TITLE:-Spoken Everything: Quests, Zones, Books AI Voiceover}"
 
 module_dir="$DIST/$NAME"
 rm -rf "$module_dir"

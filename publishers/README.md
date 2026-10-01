@@ -34,7 +34,7 @@ which is why there is one file per project here and not two.
 | File | Project | CurseForge id | Wago id | Slug |
 | --- | --- | --- | --- | --- |
 | `spoken/spoken.md` | Spoken Player | 1700375 | QN53yXKB | `spoken-player` |
-| `spoken/all.md` | Spoken: All (English) | 1721569 | — | `spoken` |
+| `spoken/all.md` | Spoken Everything: Quests, Zones, Books AI Voiceover | 1721569 | — | `spoken` |
 | `quests/player.md` | Spoken Quests (was VoiceOver Redux) | 1655859 | aN0XPlNj | `spoken-quests` |
 | `quests/audio-all.md` | Spoken Quests Audio: All | 1660196 | ANzkpD64 | `spoken-quests-audio-all` |
 | `quests/audio-alliance.md` | Spoken Quests Audio: Alliance | 1660197 | 5NR8mJK3 | `spoken-quests-audio-alliance` |

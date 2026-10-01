@@ -1,4 +1,4 @@
-# Changelog — Spoken: All (English)
+# Changelog — Spoken Everything: Quests, Zones, Books AI Voiceover
 
 The meta addon: no audio and no code, only required dependencies. Versioned on its own, apart
 from the player whose changelog is CHANGELOG.md beside this one.
