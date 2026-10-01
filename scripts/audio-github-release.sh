@@ -181,7 +181,7 @@ release_target() {
   size="$(du -h "$zip_path" | cut -f1)"
   if [[ "$lang" == enUS ]]; then
     case "$section" in
-      quests) kind="pack";;
+      quests) kind="pack|audio";;
       zones)  kind="audio";;
       books)  kind="";;
     esac

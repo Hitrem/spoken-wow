@@ -12,10 +12,10 @@ carries that version. The heading says which.
 - The NPC's greeting is muted as the dialog opens, instead of cut off mid-word. Needs Spoken Player 2.3.0.
 - Quests played from the quest log name the giver in your client's language.
 
-## 2.2.0 — sound packs
+## 2.2.0 — Spoken Quests Audio
 
-- 439 quest follow-up lines voiced. Needs Spoken Quests 2.2.0.
-- 59 new contributed lines: 50 greetings, 9 quest lines.
+- Hundreds of quest follow-up lines voiced. Needs Spoken Quests 2.2.0.
+- About 60 new contributed lines, mostly NPC greetings.
 
 ## 2.1.0 — sound packs
 

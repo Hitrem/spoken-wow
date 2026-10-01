@@ -3,9 +3,9 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
-## 2.1.2 — sound pack — 2026-10-01
+## 2.1.2 — Spoken Books Audio — 2026-10-01
 
-- 307 pages re-recorded.
+- About 300 pages re-recorded.
 
 ## 2.1.1 — 2026-09-29
 
