@@ -32,6 +32,17 @@ function SoundUtils:IsMutedByPlayer(channel)
     return mutedByPlayer[channel] or false
 end
 
+-- The CVar is saved with the client's settings and the record of muting it is not: a
+-- logout or /reload mid-line left Dialog off in every later session, with nothing in
+-- the new one knowing to lift it. PLAYER_LOGOUT fires on /reload too.
+local restoreFrame = CreateFrame("Frame")
+restoreFrame:RegisterEvent("PLAYER_LOGOUT")
+restoreFrame:SetScript("OnEvent", function()
+    for channel in pairs(mutedByPlayer) do
+        SoundUtils:MuteChannel(channel, false)
+    end
+end)
+
 --- Why sound on the given channel cannot be heard right now, or nil when it can.
 --- PlaySoundFile returns false both for a missing file and for a muted channel, so
 --- without asking first those two are indistinguishable -- and they want opposite
