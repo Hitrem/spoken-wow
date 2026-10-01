@@ -28,7 +28,7 @@ import { sentText } from "./files";
 import { canonicalNpcId, seedFor } from "./seed";
 import { spokenHash } from "./spoken-hash";
 import { currentConfig } from "./settings";
-import { NARRATOR_VOICE, segments, type Segment } from "./narration";
+import { directionFor, NARRATOR_VOICE, segments, type Segment } from "./narration";
 import type { Speaker } from "./speakers/speaker";
 import { BUSY, withTakeLock } from "./lock";
 import { busy, failure, type Failure } from "./errors";
@@ -165,7 +165,7 @@ export async function regenerateLine(
     // language is spoken with its own lexicon, which the speaker applies, and nothing else.
     const spokenText = SHAPE[speaker.provider](
       sentText(source, lang, line.playerGender),
-      config.raceTags[line.race],
+      directionFor(line.voice, config.raceTags),
       config.raceTags,
     );
     // Lowest npcId in the group, so a file shared by many NPCs regenerates the same way

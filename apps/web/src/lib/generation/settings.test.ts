@@ -54,6 +54,27 @@ describe("validateConfig", () => {
       );
     });
 
+    it("refuses a tag that is only brackets", () => {
+      expect(() => validateConfig({ ...VALID, raceTags: { dwarf: "[ ]" } })).toThrow(/empty/);
+    });
+
+    // Stored bracketed, as people used to type them: a tag typed bare must be stored exactly as
+    // the bracketed one was, or every take made with it would read as stale.
+    it("brackets a tag typed bare, storing what the bracketed form stored", () => {
+      expect(validateRaceTags({ dwarf: " Scottish accent " })).toEqual(
+        validateRaceTags({ dwarf: "[Scottish accent]" }),
+      );
+      expect(validateRaceTags({ dwarf: "Scottish accent" })).toEqual({ dwarf: "[Scottish accent]" });
+    });
+
+    it("keeps a tag already in brackets as it is, so a whole-map save leaves the others alone", () => {
+      expect(validateRaceTags({ goblin: "[fast] [nasal]" })).toEqual({ goblin: "[fast] [nasal]" });
+    });
+
+    it("refuses a bare tag with a stray square bracket", () => {
+      expect(() => validateRaceTags({ dwarf: "Scottish] accent" })).toThrow(/square bracket/);
+    });
+
     it("trims a tag", () => {
       expect(validateConfig({ ...VALID, raceTags: { dwarf: " [Scottish accent] " } })).toEqual({
         ...VALID,

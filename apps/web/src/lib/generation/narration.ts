@@ -71,6 +71,32 @@ function raceOf(voice: string): string {
   return voice.split("-")[0];
 }
 
+/**
+ * The direction a slot is spoken with: its race's, then its own.
+ *
+ * The map is keyed by race (`gnome`) or by slot (`gnome-male-young`). A race's direction is
+ * the accent every voice of it shares; a slot's is what one voice needs on top - the young
+ * gnome whose neutral clips eleven_v3 reads as a woman. Both rather than the slot's alone, so
+ * giving one dwarf flavor a direction does not quietly drop its brogue.
+ */
+export function directionFor(voice: string, tags: Record<string, string>): string | undefined {
+  const race = raceOf(voice);
+  const own = [tags[race], voice === race ? undefined : tags[voice]].filter(Boolean);
+  return own.length > 0 ? own.join(" ") : undefined;
+}
+
+/**
+ * A stored direction as it is typed: its words, without the square brackets around them.
+ *
+ * Stored bracketed, because that is the form eleven_v3 performs and the form every take so far
+ * was hashed with - settings.ts adds them on save. Leaves a value that is not one bracketed
+ * span as it is, so it round-trips through the form unchanged.
+ */
+export function bareDirection(tag: string): string {
+  const match = tag.trim().match(/^\[([^[\]]*)\]$/);
+  return match ? match[1].trim() : tag.trim();
+}
+
 /** A lowercase bracketed span: a sound the NPC makes, not the game narrating. */
 const SOUND = /<([a-z][^<>]*)>/g;
 
@@ -92,7 +118,7 @@ export function audioTags(text: string): string {
 }
 
 /**
- * The accent direction for a race, prefixed to the words the NPC says.
+ * The direction for a slot (see directionFor), prefixed to the words the NPC says.
  *
  * Dwarves are the reason this exists: they are meant to have a strong Scottish brogue, and
  * an instant clone read by eleven_v3 returns something closer to RP. The model has no other
@@ -123,9 +149,9 @@ export function accentTagged(
         current = marked;
         return piece;
       }
-      // A marked stretch takes its own race's direction, not the line's: Wizbang is a goblin
+      // A marked stretch takes its own slot's direction, not the line's: Wizbang is a goblin
       // whoever gave the quest.
-      const own = current ? raceTags[raceOf(current)] : tag;
+      const own = current ? directionFor(current, raceTags) : tag;
       return DIRECTION.test(piece) || !piece.trim() || !own
         ? piece
         : piece.replace(/^(\s*)/, `$1${own} `);
