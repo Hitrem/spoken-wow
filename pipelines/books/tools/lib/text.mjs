@@ -57,3 +57,33 @@ export function isGeneratable(text) {
   if (SUBSTITUTION.test(spoken)) return { generatable: false, skipReason: "substitution" };
   return { generatable: true, skipReason: null };
 }
+
+/** Where a title already closes a sentence, and a second stop would be read as a pause. */
+const SENTENCE_END = /[.!?…。！？]$/;
+
+/** Letters and digits only, for asking whether a page opens with its own title. */
+function wordsOf(text) {
+  return spokenText(text).toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+/**
+ * A book's first page as a narrator reads it: the title, a full stop and a line break, then
+ * the page -- in spoken form, so the result is what is sent and not something to flatten.
+ *
+ * The client shows the title above every page and never says it, so a book that does not
+ * name itself in its own words starts mid-thought. Only the narration takes it -- the page's
+ * stored text, and the checksum the addon finds it by, are of the words on the page alone.
+ *
+ * The break is the one newline spoken text keeps. A full stop alone runs the title into the
+ * first sentence; the newline is a longer pause on ElevenLabs, and on fish.audio a silence of
+ * its own, because SHAPE.fish splits the line there rather than sending the break.
+ *
+ * A page that already opens with its title (a gravestone's name, a treatise's <H1>) is left
+ * as it is: prepending would read the same words twice in a row.
+ */
+export function spokenWithTitle(title, text) {
+  const heading = spokenText(title);
+  const page = spokenText(text);
+  if (wordsOf(page).startsWith(wordsOf(heading))) return page;
+  return `${heading}${SENTENCE_END.test(heading) ? "" : "."}\n${page}`;
+}

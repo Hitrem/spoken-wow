@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { lineIdFor, fileFor, pageChecksum, textHash } from "./naming.mjs";
+import { lineIdFor, fileFor, pageChecksum, textHash, spokenHash } from "./naming.mjs";
 
 test("the line id is the frozen b:{pageTextID}", () => {
   assert.equal(lineIdFor(1381), "b:1381");
@@ -38,4 +38,9 @@ test("the checksum walks UTF-8 bytes, as Lua's string.byte does", () => {
   let expected = bytes.length % 2147483647;
   for (const byte of bytes) expected = (expected * 31 + byte) % 2147483647;
   assert.equal(pageChecksum("Voil\u00e0, l'\u00e9p\u00e9e."), expected);
+});
+
+test("spokenHash keeps the break textHash would flatten", () => {
+  assert.equal(spokenHash("Title. Page"), textHash("Title.\nPage"));
+  assert.notEqual(spokenHash("Title.\nPage"), textHash("Title.\nPage"));
 });
