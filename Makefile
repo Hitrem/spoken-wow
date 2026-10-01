@@ -20,6 +20,7 @@
 LUA ?= $(shell command -v luajit || command -v lua5.1)
 
 .PHONY: help test test-player contribute-fixtures lint package-all \
+        package-spoken-all release-spoken-all release-spoken-all-dry \
         descriptions descriptions-check descriptions-published \
         character-models \
         audio-release audio-release-dry
@@ -165,3 +166,16 @@ package-all: ## Build every addon zip: the player, quests, zones
 	@./scripts/spoken/package.sh
 	@$(MAKE) --no-print-directory -f make/quests.mk package
 	@$(MAKE) --no-print-directory -f make/zones.mk  package
+
+# Spoken Everything: Quests, Zones, Books AI Voiceover, CurseForge project `spoken`: a few kilobytes naming every Spoken addon
+# and English sound pack as required dependencies, so the CurseForge app installs the lot.
+# scripts/spoken/package-meta.sh explains it; the upload is release.sh's spoken-all target, and
+# its notes come from docs/spoken/CHANGELOG-ALL.md. VERSION defaults to the script's own.
+package-spoken-all: ## Zip the English meta addon that pulls in every Spoken addon and pack
+	@VERSION=$(VERSION) ./scripts/spoken/package-meta.sh
+
+release-spoken-all-dry: ## Show what uploading the English meta addon would send
+	@./scripts/quests/release.sh --dry-run --store=curseforge spoken-all
+
+release-spoken-all: ## Upload the English meta addon to CurseForge (never Wago)
+	@./scripts/quests/release.sh --store=curseforge spoken-all

@@ -5,6 +5,7 @@
 #   ./scripts/quests/release.sh              # every project, both stores
 #   ./scripts/quests/release.sh player       # just the player addon
 #   ./scripts/quests/release.sh audio-horde  # just one sound pack
+#   ./scripts/quests/release.sh spoken-all   # the English meta addon; never part of a bare run
 #   ./scripts/quests/release.sh --lang=esMX audio-horde # that language's Horde pack instead
 #   ./scripts/quests/release.sh --store=wago # one store only; --store=curseforge for the other
 #
@@ -99,6 +100,7 @@ target_curseforge() { case "$1" in
   spoken)         echo "${SPOKEN_PROJECT_ID:-1700375}";;
   player)         echo "1655859";;
   audio-all)      echo "1660196";;
+  spoken-all)     echo "1721569";;
   audio-alliance|audio-horde|audio-shared|audio-gossip) pack_field "$1" curseforge;;
 esac; }
 # The Wago project id for the same project: eight alphanumeric characters, from the project's
@@ -108,6 +110,7 @@ esac; }
 # A sound pack is never uploaded to Wago, whatever its page says: Wago answers 413 to a file
 # that size (scripts/lib/wago.sh). The page keeps its `wago:` id for the description pasted
 # there, which sends players to the GitHub release.
+# Nor is spoken-all: it is nothing but dependencies, which Wago cannot carry.
 target_wago() { case "$1" in
   spoken)         echo "QN53yXKB";;
   player)         echo "aN0XPlNj";;
@@ -119,6 +122,7 @@ target_slug() { case "$1" in
   spoken)         echo "spoken-player";;
   player)         echo "spoken-quests";;
   audio-all)      echo "spoken-quests-audio-all";;
+  spoken-all)     echo "spoken";;
   audio-alliance|audio-horde|audio-shared|audio-gossip) pack_field "$1" slug;;
 esac; }
 
@@ -137,6 +141,7 @@ target_zip_name() { case "$1" in
   spoken)         echo "SpokenPlayer";;
   player)         echo "SpokenQuests";;
   audio-all)      echo "SpokenQuestsAudio";;
+  spoken-all)     echo "SpokenAll";;
   audio-alliance|audio-horde|audio-shared|audio-gossip) pack_field "$1" folder;;
 esac; }
 
@@ -168,6 +173,13 @@ target_dependencies() { case "$1" in
   player)    echo "spoken-player";;
   audio-all) echo "spoken-quests spoken-quests-audio-alliance spoken-quests-audio-horde \
                    spoken-quests-audio-shared spoken-quests-audio-gossip";;
+  # Everything English, for one-click installs (scripts/spoken/package-meta.sh). The four quest
+  # packs are named here as well as through audio-all, so a manager that does not follow a
+  # dependency's own dependencies still installs them.
+  spoken-all) echo "spoken-player spoken-quests spoken-quests-audio-all \
+                    spoken-quests-audio-alliance spoken-quests-audio-horde \
+                    spoken-quests-audio-shared spoken-quests-audio-gossip \
+                    spoken-zones spoken-zones-audio spoken-books spoken-books-audio";;
   audio-*)   echo "spoken-quests";;
 esac; }
 
@@ -176,6 +188,9 @@ esac; }
 # being approved, above all - is truest after they have just been uploaded. It costs nothing to
 # order it this way and it removes a class of first-release surprise.
 ALL_TARGETS="spoken player audio-alliance audio-horde audio-shared audio-gossip audio-all"
+# Accepted by name, never in a bare run: it depends on the zones and books projects too, which
+# this script does not release, and its version moves on its own schedule.
+EXTRA_TARGETS="spoken-all"
 
 dry_run=""
 stores="curseforge wago"
@@ -187,8 +202,8 @@ for arg in "$@"; do
     --store=wago)       stores="wago";;
     --dry-run|-n) dry_run=1;;
     --lang=*) LANG_CODE="${arg#--lang=}";;
-    spoken|player|audio-all|audio-alliance|audio-horde|audio-shared|audio-gossip) targets+=("$arg");;
-    *) echo "error: unknown argument '$arg' (expected: $ALL_TARGETS, --lang=..., --store=..., --dry-run)" >&2; exit 1;;
+    spoken|player|audio-all|audio-alliance|audio-horde|audio-shared|audio-gossip|spoken-all) targets+=("$arg");;
+    *) echo "error: unknown argument '$arg' (expected: $ALL_TARGETS $EXTRA_TARGETS, --lang=..., --store=..., --dry-run)" >&2; exit 1;;
   esac
 done
 
@@ -311,6 +326,7 @@ fi
 changelog_for() {
   local file="$REPO/docs/quests/CHANGELOG.md"
   [ "$2" = spoken ] && file="$REPO/docs/spoken/CHANGELOG.md"
+  [ "$2" = spoken-all ] && file="$REPO/docs/spoken/CHANGELOG-ALL.md"
   node -e '
     const { readFileSync } = require("fs");
     const [path, version, kind] = process.argv.slice(1);
@@ -319,7 +335,7 @@ changelog_for() {
     // string and cannot import it -- keep the two in step.
     const language = /^## \S+ — [a-z]+(?:-[a-z]+)+-[a-z]{2}[A-Z]{2}(?:\s|$)/;
     const matches = (l) => l.startsWith(`## ${version}`) && !language.test(l) &&
-      (kind === "spoken" ? true : kind === "player" ? /player/i.test(l) : /pack|audio/i.test(l));
+      (kind === "spoken" || kind === "spoken-all" ? true : kind === "player" ? /player/i.test(l) : /pack|audio/i.test(l));
     const start = lines.findIndex(matches);
     if (start === -1) {
       console.error(`no "## ${version} ... ${kind}" section in CHANGELOG.md`);
@@ -384,7 +400,7 @@ upload_target() {
   if [[ "$target" == audio-* ]] && ! english; then
     changelog="$(node "$REPO/scripts/lib/packs.mjs" changelog "$REPO/docs/quests/CHANGELOG.md" "$version" "$(pack_field "$target" release)")" || return 1
   else
-    case "$target" in player|spoken) kind=$target;; *) kind=pack;; esac
+    case "$target" in player|spoken|spoken-all) kind=$target;; *) kind=pack;; esac
     changelog="$(changelog_for "$version" "$kind")" || return 1
   fi
   size="$(du -h "$zip_path" | cut -f1)"
