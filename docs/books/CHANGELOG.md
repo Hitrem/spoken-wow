@@ -3,6 +3,12 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
+## 2.1.2 — sound pack — 2026-10-01
+
+- **307 pages re-recorded**, with names and words of the world said the way the game says
+  them. The text of every page is unchanged.
+- The sound pack only; Spoken Books stays at 2.1.1. Install over 2.1.0.
+
 ## 2.1.1 — 2026-09-29
 
 - Book narration now supplies captions to Spoken Player 2.2.3. English text

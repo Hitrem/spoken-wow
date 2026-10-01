@@ -22,6 +22,16 @@ carries that version. The heading says which.
   even when you have not met them. Names the game itself leaves untranslated stay in English.
 - Offers the 2.2.0 sound packs as the update for older ones.
 
+## 2.2.0 — sound packs
+
+- **Follow-up lines are voiced**: 439 of the 486 lines NPCs say or yell after you accept or
+  turn in a quest, each in the speaker's own voice. They play with Spoken Quests 2.2.0, which
+  is the version that knows to look for them.
+- **59 more lines** sent in by players with Contribute: 50 NPC greetings and 9 quest offers
+  and turn-ins.
+- Still Ogg Vorbis at 44.1 kHz, and still one download on GitHub holding all four packs,
+  `SpokenQuestsAudioAll-2.2.0.zip`. Install over 2.1.0.
+
 ## 2.1.0 — sound packs
 
 **The Forever quests are voiced.** About 1,550 lines are new since 2.0.0, all of them sent in
