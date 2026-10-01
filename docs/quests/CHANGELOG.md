@@ -6,11 +6,21 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
-## Unreleased — player
+## 2.2.0 — player
 
+- **NPCs speak what they say after your quest.** Many quest givers say or yell a line in chat
+  once you accept or turn in a quest — Thrall after *For The Horde!*, the Scarlet Cavaliers
+  after *Scarlet Subterfuge*. Spoken Quests now reads those aloud with the 2.2.0 sound packs.
+  Only lines your own quest set off are read, never another player's. **Experimental**: on by
+  default, and switched off with **Experimental: enable quest follow-ups** in the settings. A
+  line no installed pack has recorded yet stays silent.
+- **No more half a greeting before the line.** The NPC's own greeting is muted as its dialog
+  opens rather than cut off mid-word when Spoken starts reading, and only when Spoken has a
+  line for it. Needs Spoken Player 2.3.0.
 - **A quest played from the quest log names its giver in your client's language**, as the
-  quest dialog does, rather than in English. Names the game itself leaves untranslated
-  stay in English.
+  quest dialog does, rather than in English, and the minimal player shows the giver's face
+  even when you have not met them. Names the game itself leaves untranslated stay in English.
+- Offers the 2.2.0 sound packs as the update for older ones.
 
 ## 2.1.0 — sound packs
 

@@ -1,12 +1,19 @@
 # Changelog — Spoken Player
 
-## Unreleased
+## 2.3.0 — 2026-10-01
 
-- **Quests played from the quest log show the giver's face** in the minimal player, even when
-  you have not met them this session. It used to show the book.
 - **The player remembers where you put it.** Its position and width, in either layout, and
   whether the captions are expanded now come back after `/reload` and on the next login,
   on every character of the account. `/spoken reset` still puts it back on the default spot.
+- **Quests played from the quest log show the giver's face** in the minimal player, even when
+  you have not met them this session. It used to show the book.
+- **No more half a greeting before the line.** An NPC's own greeting used to start as its
+  dialog opened and be cut off mid-word when Spoken's line began. The game's dialogue is now
+  muted as the dialog opens, and only for a dialog Spoken is about to read; every other NPC
+  keeps its greeting. Pausing gives the game its dialogue back. Needs Spoken Quests 2.2.0.
+- **Game dialogue is no longer left muted after a logout or `/reload`.** Doing either while a
+  line was speaking kept NPC dialogue switched off in the next session
+  ([#167](https://github.com/rusty-key/spoken-wow/issues/167)).
 
 ## 2.2.4 — 2026-09-29
 
