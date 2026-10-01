@@ -16,7 +16,7 @@ import { nameStamp, versionStamp } from "@/lib/stamp";
 import { loadDirtyContext, NO_DIRT, type DirtyContext } from "@/lib/generation/dirty";
 
 import { ownerEntityKind, type OwnerKind } from "./filters";
-import { spokenText, textHash, fileFor, isGeneratable, titledText } from "./tools";
+import { spokenText, spokenHash, textHash, fileFor, isGeneratable, spokenWithTitle } from "./tools";
 import { speakPlayerTokens } from "@/lib/player-words";
 import { madeByOf, type MadeBy } from "@/lib/takes/made-by";
 import { liveTakes } from "@/lib/takes/store";
@@ -178,13 +178,11 @@ async function stampOf(lang: Lang): Promise<string> {
  * extract's rule, so asking it again changes nothing else.
  */
 function voiced(text: string, lang: Lang, title?: string) {
-  const said = speakPlayerTokens(title ? titledText(title, text) : text, lang);
-  return {
-    spoken: spokenText(said),
-    hash: textHash(said),
-    // The page alone: a title in front of an empty page or a "Missing Text" is not a page.
-    ...isGeneratable(speakPlayerTokens(text, lang)),
-  };
+  const said = speakPlayerTokens(text, lang);
+  const spoken = title ? spokenWithTitle(speakPlayerTokens(title, lang), said) : spokenText(said);
+  // Hashed as sent: the title's line break is the one newline spoken text keeps. Without a
+  // title this is textHash(said), so no other page's take moves.
+  return { spoken, hash: spokenHash(spoken), ...isGeneratable(said) };
 }
 
 /**

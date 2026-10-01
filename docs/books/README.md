@@ -47,9 +47,11 @@ and "traveler", or the page's language's own words, and takes `$G`'s first branc
 flattened, hashed and judged). The extract's stored `substitution` label is left as it was;
 the catalogue re-judges every page from its text.
 
-A book's first page is narrated with its title ahead of it — "Letter to Ello. The letters on
-this note…" — because the client shows the title and never says it (`titledText` in
-`tools/lib/text.mjs`). The narration only: the stored text and the addon's checksum stay the
+A book's first page is narrated with its title ahead of it — "Letter to Ello.", a line
+break, then "The letters on this note…" — because the client shows the title and never says
+it (`spokenWithTitle` in `tools/lib/text.mjs`). The break is the one newline spoken text
+keeps, for the pause: fish.audio is sent the title as a request of its own, and the page is
+hashed with `spokenHash`, which does not flatten it. The narration only: the stored text and the addon's checksum stay the
 page's own words, so nothing in the addon changes. The 33 first pages that already open with
 their title (gravestones, a treatise's `<H1>`) are left alone rather than read it twice. In
 another language the title is said only where it is translated, and whether a page can be

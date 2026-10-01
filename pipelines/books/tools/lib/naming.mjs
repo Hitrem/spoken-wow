@@ -47,5 +47,14 @@ export function pageChecksum(text) {
 
 /** sha1 of what would be spoken. Compared against a take's hash to spot stale audio. */
 export function textHash(text) {
-  return createHash("sha1").update(spokenText(text)).digest("hex");
+  return spokenHash(spokenText(text));
+}
+
+/**
+ * sha1 of text already in spoken form, exactly as it is. For a first page read with its
+ * title, whose one newline is put there after flattening and has to count: textHash would
+ * flatten it again, and a take made without the break would still read as current.
+ */
+export function spokenHash(spoken) {
+  return createHash("sha1").update(spoken).digest("hex");
 }
