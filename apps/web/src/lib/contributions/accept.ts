@@ -2,9 +2,9 @@
  * Resolving a contribution -- the route's whole verb, now that accepting a quests row can also
  * write a line.
  *
- * Everything except quests-accept is the plain status flip setContributionStatus always did:
- * books and zones already have their own path from a contribution to a corpus entry
- * (existing.ts), and a moderator moving any row to "new" or "rejected" changes nothing else.
+ * Everything except quests-accept and books-accept in another language is the plain status
+ * flip setContributionStatus always did: a moderator moving any row to "new" or "rejected"
+ * changes nothing else. Books-accept writes that language's page (acceptBookTranslation).
  * Quests-accept is different because the accepted line must appear in the explorer, and the
  * explorer reads the quest tables (lib/quests/catalogue.ts) -- so accepting writes into them:
  * a `quest_line` row with origin "contributed" and a `quest_line_speaker` row carrying the
@@ -40,6 +40,8 @@ import {
 } from "@/lib/npc/store";
 import { BASE_LANG, isLang, type Lang } from "@/lib/lang";
 import type { CorpusLine } from "@/lib/corpus";
+import { isGeneratable } from "@/lib/books/tools";
+import { speakPlayerTokens } from "@/lib/player-words";
 import { corpus } from "@/lib/quests/catalogue";
 import { isVoice } from "@/lib/voices/voices";
 
@@ -61,6 +63,7 @@ const CONTRIBUTED_ORD_FLOOR = 1_000_000;
 export type ResolveRefusal =
   | { ok: false; reason: "not-found" }
   | { ok: false; reason: "needs-speaker"; message: string }
+  | { ok: false; reason: "needs-page"; message: string }
   | { ok: false; reason: "one-way"; message: string }
   | { ok: false; reason: "malformed"; message: string };
 
@@ -475,6 +478,138 @@ async function acceptTranslation(
   return null;
 }
 
+/** The note a written row carries, which is also how it is found again. */
+function noteFor(contributionId: number): string {
+  return `contribution #${contributionId}`;
+}
+
+/** Whether a books contribution has written a page -- the books side of contributedSpeakerExists. */
+async function contributedPageExists(contributionId: number, client: PoolClient): Promise<boolean> {
+  const { rowCount } = await client.query(
+    `select 1 from "book_line" where "origin" = 'contributed' and "note" = $1`,
+    [noteFor(contributionId)],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
+/**
+ * A books contribution sent from a client in another language: that language's text of a
+ * page the English corpus has, written as its first version.
+ *
+ * Which page is book_page_match's answer (migration 0059): the contribution's key is the
+ * checksum of the translated text, which names no page by itself. A key nobody has matched
+ * is refused rather than guessed at -- a title and a page number do not identify a page
+ * (AGENTS.md), and a translation filed under the wrong page is read aloud over the wrong one.
+ *
+ * Structure comes from the English page, as saveBookText takes it for a first translation;
+ * the title is the one the client showed. A page this language already has is left alone,
+ * as acceptTranslation leaves a quest line: an import or a translator got there first. The
+ * owner's name in this language is written the same way, only where it has none, since the
+ * catalogue titles a translated page from entity_name rather than from the row.
+ */
+async function acceptBookTranslation(
+  client: PoolClient,
+  contribution: Contribution,
+  userId: string | null,
+): Promise<ResolveRefusal | null> {
+  const text = contribution.text?.trim();
+  if (!text) return { ok: false, reason: "malformed", message: "contribution has no text to voice" };
+
+  const lang = contribution.locale as Lang;
+  const { rows: matches } = await client.query<{ pageId: number }>(
+    `select "pageId" from "book_page_match" where "lang" = $1 and "key" = $2 order by "pageId"`,
+    [lang, contribution.key],
+  );
+  if (matches.length === 0) {
+    return {
+      ok: false,
+      reason: "needs-page",
+      message: "Nobody has matched this text to an English page yet, so there is no page to put it on.",
+    };
+  }
+
+  const title = contribution.meta.book?.trim() || null;
+  const { generatable, skipReason } = isGeneratable(speakPlayerTokens(text, lang));
+  const note = noteFor(contribution.id);
+  for (const { pageId } of matches) {
+    // Conflict-free rather than locked: two rows of a batch may write the same page, or name
+    // the same owner, and whichever lands first is the one kept.
+    const { rows: written } = await client.query<{ ownerKind: string; ownerIds: number[] }>(
+      `insert into "book_line"
+         ("lineId", "lang", "version", "isCurrent", "origin", "pageId", "bookId",
+          "pageNumber", "pageCount", "title", "ownerKind", "ownerIds", "material",
+          "text", "generatable", "skipReason", "editedBy", "note")
+       select e."lineId", $2, 1, true, 'contributed', e."pageId", e."bookId",
+              e."pageNumber", e."pageCount", coalesce($3, e."title"), e."ownerKind",
+              e."ownerIds", e."material", $4, $5, $6, $7, $8
+         from "book_line" e
+        where e."pageId" = $1 and e."lang" = $9 and e."isCurrent"
+          and not exists (select 1 from "book_line" t
+                           where t."lineId" = e."lineId" and t."lang" = $2)
+       on conflict do nothing
+       returning "ownerKind", "ownerIds"`,
+      [pageId, lang, title, text, generatable, skipReason, userId, note, BASE_LANG],
+    );
+    if (!title) continue;
+    for (const { ownerKind, ownerIds } of written) {
+      for (const owner of ownerIds) {
+        await client.query(
+          `insert into "entity_name"
+             ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name", "editedBy", "note")
+           select $1, $2, $3,
+                  (select coalesce(max("version"), 0) + 1 from "entity_name"
+                    where "kind" = $1 and "entityId" = $2 and "lang" = $3),
+                  true, 'edited', $4, $5, $6
+            where not exists (select 1 from "entity_name"
+                               where "kind" = $1 and "entityId" = $2 and "lang" = $3 and "isCurrent")
+           on conflict do nothing`,
+          [ownerKind === "object" ? "gameobject" : "item", String(owner), lang, title, userId, note],
+        );
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Write the page of a books contribution accepted before accepting wrote one, in its own
+ * transaction and without logging a second resolve: the moderator already did that. What
+ * scripts/backfill-book-contributions.mts runs per row. Answers the refusal, or null once the
+ * page is written (or was already).
+ */
+export async function writeAcceptedBookTranslation(id: number): Promise<ResolveRefusal | null> {
+  const client = await db().connect();
+  try {
+    await client.query("begin");
+    const { rows } = await client.query<Contribution>(
+      `select ${COLUMNS} from "contribution" where "id" = $1 for update`,
+      [id],
+    );
+    const contribution = rows[0];
+    if (!contribution) {
+      await client.query("rollback");
+      return { ok: false, reason: "not-found" };
+    }
+    if (
+      contribution.source !== "books" ||
+      contribution.status !== "accepted" ||
+      contribution.locale === BASE_LANG ||
+      !isLang(contribution.locale)
+    ) {
+      await client.query("rollback");
+      return { ok: false, reason: "malformed", message: "not an accepted books translation" };
+    }
+    const refused = await acceptBookTranslation(client, contribution, contribution.resolvedBy);
+    await client.query(refused ? "rollback" : "commit");
+    return refused;
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 /**
  * Change a contribution's status, writing its line into the quest tables first when the target
  * is "accepted" for a fresh quests row.
@@ -516,7 +651,10 @@ export async function resolveContribution(
       };
     }
 
-    const written = await contributedSpeakerExists(id, client);
+    const written =
+      contribution.source === "books"
+        ? await contributedPageExists(id, client)
+        : await contributedSpeakerExists(id, client);
 
     // One-way once written. Audio may already have been generated for the line, and the
     // explorer's own line-ignore is how an editor backs out of a line they no longer want.
@@ -530,6 +668,16 @@ export async function resolveContribution(
     }
 
     if (
+      status === "accepted" &&
+      contribution.source === "books" &&
+      contribution.locale !== BASE_LANG
+    ) {
+      const refused = await acceptBookTranslation(client, contribution, userId);
+      if (refused) {
+        await client.query("rollback");
+        return refused;
+      }
+    } else if (
       status === "accepted" &&
       contribution.source === "quests" &&
       contribution.locale !== BASE_LANG

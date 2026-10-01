@@ -29,7 +29,7 @@ import type { ResultLine } from "@/lib/books/search";
 type Version = {
   version: number;
   isCurrent: boolean;
-  origin: "extracted" | "edited";
+  origin: "extracted" | "edited" | "contributed";
   text: string;
   note: string | null;
   createdAt: string;
