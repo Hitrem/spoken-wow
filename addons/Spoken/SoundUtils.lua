@@ -137,6 +137,19 @@ function SoundUtils:PlaySound(clip, channel)
     return willPlay, handle
 end
 
+--- The game's own quest-log-close sound, played between two items in the queue. A kit
+--- sound rather than a file we ship: it is one every player already reads as "done".
+--- The private-server clients have no SOUNDKIT and take the sound's name instead, and
+--- no channel -- they play it on effects.
+---@param channel string
+function SoundUtils:PlayCue(channel)
+    if SOUNDKIT and SOUNDKIT.IG_QUEST_LOG_CLOSE then
+        PlaySound(SOUNDKIT.IG_QUEST_LOG_CLOSE, channel)
+    else
+        PlaySound("igQuestLogClose")
+    end
+end
+
 ---@param clip { handle: number? }
 --- `fadeMs`, where given, fades the voice out over that many milliseconds rather than cutting
 --- it: the client's StopSound takes one. The legacy clients stop their own way (Compat.lua),
