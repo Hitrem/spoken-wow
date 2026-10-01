@@ -4,7 +4,7 @@
 #   ./scripts/quests/package.sh                 # dist/SpokenQuests-<version>.zip + one per legacy client
 #   ALLOW_DIRTY=1 ./scripts/quests/package.sh   # build from an uncommitted tree
 #
-# ONE ZIP FOR BLIZZARD'S CLIENTS, ONE APIECE FOR THE PRIVATE-SERVER ONES. Blizzard's clients
+# ONE ZIP FOR BLIZZARD'S CLIENTS, ONE APIECE FOR THE LEGACY ONES. Blizzard's clients
 # pick their .toc by flavor suffix - _Vanilla, _TBC, _Wrath, _Mainline - so a single archive
 # serves Classic Era through retail and the client decides. The 1.12, 2.4.3 and 3.3.5 clients
 # predate suffix support: each reads SpokenQuests.toc and nothing else, and each wants a

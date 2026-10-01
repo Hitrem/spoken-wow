@@ -372,7 +372,7 @@ stub.Advance(6)
 Expect("/spq followup plays nothing for a line with no recording", Keys(), "")
 Expect("...and says so beside it", said[1] and said[1]:find("(no recording yet — silent)", 1, true) ~= nil, true)
 
----------------------------------------------------------------- a private-server client
+---------------------------------------------------------------- a legacy client
 -- No QUEST_TURNED_IN there: the turn-in is the GetQuestReward call, made while the reward
 -- dialog still says which quest it is.
 _G.GetQuestReward = function() end

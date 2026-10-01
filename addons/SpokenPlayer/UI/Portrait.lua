@@ -91,7 +91,7 @@ end
 --- Whether a model frame has something to draw.
 ---
 --- Model:GetModel returned a path and was removed from the current clients, which answer
---- GetModelFileID instead; Compat.lua supplies GetModelFileID on the private-server ones
+--- GetModelFileID instead; Compat.lua supplies GetModelFileID on the legacy ones
 --- from their GetModel. Asking for the method this client does not have is an error, not
 --- a nil, and one raised here abandons the whole frame update -- the portrait is drawn
 --- before the rows, so the queue reads as empty.

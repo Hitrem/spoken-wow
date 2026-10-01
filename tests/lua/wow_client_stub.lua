@@ -302,7 +302,7 @@ end
 local _G = _G
 
 -- A current Blizzard client by default, which is where the 10 Hz watcher runs at all.
--- SetClient() swaps in a private-server client: those have no WOW_PROJECT_ID, and 1.12
+-- SetClient() swaps in a legacy client: those have no WOW_PROJECT_ID, and 1.12
 -- reports no interface version at all, which is exactly what Version.lua keys on.
 local CLIENTS = {
     ["20506"] = { "2.5.6", "60000", 20506, 5 },
@@ -320,9 +320,9 @@ function M.SetClient(label)
     _G.WOW_PROJECT_ID = c[4]
     if c[4] == nil then _G.Settings = nil else _G.Settings = M.modernSettings end
     _G.C_GossipInfo = c[4] ~= nil and M.gossipAPI or nil
-    -- The private-server clients have no context-menu API worth using either, which is
+    -- The legacy clients have no context-menu API worth using either, which is
     -- what makes the player draw its own menu there.
-    -- Model frames answered GetModel on the private-server clients and answer
+    -- Model frames answered GetModel on the legacy clients and answer
     -- GetModelFileID on the current ones. Neither client has both.
     M.absentAPI.GetModel = c[4] ~= nil or nil
     M.absentAPI.GetModelFileID = c[4] == nil or nil
@@ -718,7 +718,7 @@ _G.DropDownList1 = Frame("DropDownList1")
 _G.DropDownList1:Hide()
 local menuAPI = {}
 
---- Present the context-menu API, or take it away as a private-server client does.
+--- Present the context-menu API, or take it away as a legacy client does.
 function M.SetMenuAPI(present)
     for name, fn in pairs(menuAPI) do
         _G[name] = present and fn or nil

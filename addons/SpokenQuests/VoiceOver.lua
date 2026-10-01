@@ -84,7 +84,7 @@ local QUEST_EVENTS = {
         text = function() return GetRewardText and GetRewardText() or "" end },
 }
 
---- GetQuestID for the dialog `event` names. On a private-server client GetQuestID is
+--- GetQuestID for the dialog `event` names. On a legacy client GetQuestID is
 --- Compatibility.lua's substitute, which resolves the quest from the text of the dialog it
 --- is told about; telling it here, just before asking, means no event order is relied on.
 local function QuestIDFor(event)
@@ -97,7 +97,7 @@ end
 
 --- The quest on the open dialog `event` names, falling back on its title, NPC and text where
 --- the client has no ID for it. For callers outside the dialog events, which have no snapshot:
---- Followup.lua's accept and turn-in hooks on the private-server clients.
+--- Followup.lua's accept and turn-in hooks on the legacy clients.
 function Addon:DialogQuestID(event)
     local quest = QUEST_EVENTS[event]
     return ResolveQuestID(quest.source, QuestIDFor(event), GetTitleText and GetTitleText() or "",
@@ -695,7 +695,7 @@ function Addon:OnInitialize()
         end
     end
 
-    -- The watcher cannot work on a private-server client and must not be installed there.
+    -- The watcher cannot work on a legacy client and must not be installed there.
     -- GetQuestID does not exist before 3.3.0, so Compatibility.lua substitutes one that
     -- resolves a quest fuzzily from text captured by the QUEST_DETAIL/PROGRESS/COMPLETE
     -- handlers - which the poll below is trying to decide whether to call. It would poll a
@@ -738,7 +738,7 @@ function Addon:OnInitialize()
     -- change, replaying the previous quest. The stabilized 10 Hz watcher above is their single
     -- automatic dispatcher.
     --
-    -- On a private-server client the race does not exist, the watcher does not run, and these
+    -- On a legacy client the race does not exist, the watcher does not run, and these
     -- events are the only route to quest audio - they are also what sets the text
     -- Compatibility.lua's GetQuestID substitute reads, so nothing resolves until one fires.
     local directEvents = {

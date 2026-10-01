@@ -8,12 +8,12 @@ setfenv(1, VoiceOver)
 -- dialog has settled, and the Spoken player frame is where it is stopped.
 --
 -- A TEXT button, not an icon, for PlayButton.lua's reason: an icon path cannot be verified
--- without launching the client, and a texture missing on a private-server client draws
+-- without launching the client, and a texture missing on a legacy client draws
 -- nothing at all.
 --
 -- IN THE CORNER UI/ContributeButton.lua uses, under the close button, on whichever of the two
 -- frames is up. The two buttons never want it at once: Contribute is shown only for a line the
--- packs do not have, and this only for one they do. Contribute.xml is not loaded on the private-server clients, so the placement is
+-- packs do not have, and this only for one they do. Contribute.xml is not loaded on the legacy clients, so the placement is
 -- copied here rather than borrowed from it.
 --
 -- Not drawn under a replacement dialog addon: DialogueUI hides QuestFrame and GossipFrame, and

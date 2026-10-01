@@ -1,4 +1,4 @@
--- Contributing is off on the private-server clients (1.12, 2.4.3, 3.3.5): their .toc files
+-- Contributing is off on the legacy clients (1.12, 2.4.3, 3.3.5): their .toc files
 -- must not list Contribute.xml, and every Blizzard-client .toc must. The 1.12 client's Lua 5.0
 -- cannot even parse the contribute files, so this is load-bearing, not cosmetic, and nothing
 -- else runs a 5.0 parser to catch it. Run with `make test-player`.

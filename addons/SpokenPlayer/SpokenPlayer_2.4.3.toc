@@ -1,6 +1,6 @@
 ## Interface: 20400
 ## Title: Spoken Player
-## Notes: The voice player every Spoken addon speaks through, for 2.4.3 servers.
+## Notes: The voice player every Spoken addon speaks through, for the 2.4.3 client.
 ## Notes-deDE: Der Voice-Player, über den jedes Spoken-Addon spricht, für 2.4.3-Server.
 ## Notes-esES: El reproductor de voz a través del cual habla cada addon Spoken, para servidores 2.4.3.
 ## Notes-esMX: El reproductor de voz a través del cual habla cada addon Spoken, para servidores 2.4.3.

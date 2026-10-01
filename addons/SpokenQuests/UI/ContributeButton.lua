@@ -14,7 +14,7 @@ setfenv(1, VoiceOver)
 -- ReportButton's own copy-link popup for exactly this reason, is the game's own frame.
 --
 -- A TEXT button, not an icon, for PlayButton.lua's reason, unchanged: an icon path cannot be
--- verified without launching the client, and a texture missing on a private-server client
+-- verified without launching the client, and a texture missing on a legacy client
 -- draws nothing at all -- an invisible button is a worse failure than a plain one.
 --
 -- Hidden rather than disabled when there is nothing to send, for PlayButton.lua's reason,

@@ -11,7 +11,7 @@ categories:
 license: MIT
 ---
 
-**Formerly VoiceOver Redux.** A rework of the original VoiceOver addon, which makes NPCs speak their quest text — now one of the Spoken addons, sharing the [Spoken Player](https://www.curseforge.com/wow/addons/spoken-player) with Spoken Zones.
+**Formerly VoiceOver Redux.** A rework of the original [AI VoiceOver](https://github.com/mrthinger/wow-voiceover) addon, which makes NPCs speak their quest text — now one of the Spoken addons, sharing the [Spoken Player](https://www.curseforge.com/wow/addons/spoken-player) with Spoken Zones.
 
 Main changes:
 

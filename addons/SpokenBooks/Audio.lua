@@ -44,7 +44,7 @@ local ACTIONS = {
 	{
 		id = "report",
 		-- An icon in the corner rather than a word beside the line, as the zones action is.
-		-- The bug icon postdates the three private-server clients, where the texture is
+		-- The bug icon postdates the three legacy clients, where the texture is
 		-- simply missing and the button would be a blank square; `text` is what those draw
 		-- instead.
 		icon = [[Interface\HelpFrame\HelpIcon-Bug]],

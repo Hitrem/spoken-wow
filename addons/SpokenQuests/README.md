@@ -1,6 +1,6 @@
-# AI VoiceOver Redux
+# Spoken Quests
 
-This is a separate repaired player addon based on AI VoiceOver 1.4.3. It reuses the existing `AI_VoiceOverData_Vanilla` sound pack; no audio data is duplicated.
+Began as a repaired fork of AI VoiceOver 1.4.3. It reuses the existing `AI_VoiceOverData_Vanilla` sound pack; no audio data is duplicated.
 
 ## What broke
 
@@ -78,4 +78,4 @@ NPC greeting repetition is controlled by **NPC Greeting Playback Frequency**. Th
 equal in my eyes" speech, taken byte for byte from the `AI_VoiceOverData_Vanilla` sound pack. The
 "OG Thrall" option under Audio plays it in place of this project's own take on that line.
 
-The upstream projects identify their code as MIT-licensed. This folder retains their original structure and credits.
+The code in this folder is MIT-licensed, like the rest of the repository (see `LICENSE`).

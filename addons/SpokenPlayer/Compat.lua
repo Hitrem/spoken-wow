@@ -2,7 +2,7 @@ setfenv(1, SpokenEnv)
 
 --------------------------------------------------------------------------- polyfills
 --
--- What the private-server clients lack of the Lua the rest of this addon is written in.
+-- What the legacy clients lack of the Lua the rest of this addon is written in.
 -- Lifted from the quests addon. Written into the environment, never into _G, so other
 -- addons on those clients see their own Lua and not ours.
 --

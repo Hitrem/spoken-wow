@@ -13,7 +13,7 @@ setfenv(1, SpokenEnv)
 -- The table itself is SpokenContributionsDB, declared by the SpokenContributions folder the
 -- player ships beside itself, so the file is SavedVariables/SpokenContributions.lua and holds
 -- nothing but this: a file named after the player would carry its settings along too.
--- Loaded from Contribute.xml alone: the private-server clients, where contributing is off,
+-- Loaded from Contribute.xml alone: the legacy clients, where contributing is off,
 -- never have a Gather table, so nothing is gathered there either.
 --
 -- Keyed by what the line IS (quest, stage and speaker; page checksum), not by the envelope's

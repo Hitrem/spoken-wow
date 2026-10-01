@@ -65,7 +65,7 @@ end
 -- addon uses, and it brings its own background, its highlight under the cursor, its
 -- closing on a click elsewhere and its toggling, none of which is worth reimplementing.
 --
--- The three private-server clients do not have it in a shape worth using -- EasyMenu does
+-- The three legacy clients do not have it in a shape worth using -- EasyMenu does
 -- not exist on 1.12 at all, and the initializer differs on the other two -- so there the
 -- player draws its own list of buttons and supplies those four behaviours by hand. That
 -- code exists for those clients only, and is below.
@@ -175,7 +175,7 @@ local function ShowMenu(anchor)
         -- A menu is closed by clicking anywhere else, which nothing tells the frame about.
         -- A transparent button over the whole screen, shown only while the menu is, is how
         -- that is heard on every client: GLOBAL_MOUSE_DOWN exists on none of the three
-        -- private-server ones.
+        -- legacy ones.
         menuCatcher = CreateFrame("Button", "SpokenMinimapMenuCatcher", UIParent)
         menuCatcher:SetAllPoints(UIParent)
         menuCatcher:SetFrameStrata("DIALOG")

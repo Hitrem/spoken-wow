@@ -9,7 +9,7 @@ setfenv(1, VoiceOver)
 -- manager live, both of them AceGUI's to draw. What changed is that the settings a player
 -- actually changes are sections on one panel rather than entries in a tree.
 --
--- Absent on the three private-server clients, which have no Settings API at all. There the
+-- Absent on the three legacy clients, which have no Settings API at all. There the
 -- window and the slash commands are the whole interface, as they have always been.
 
 SettingsPanel = {}

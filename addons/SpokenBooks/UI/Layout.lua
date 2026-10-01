@@ -184,7 +184,7 @@ function Layout:Slider(label, minValue, maxValue, step, read, write, apply, show
     local top = self:Take(CONTROL_HEIGHT)
     local caption = Caption(self.parent, label, self.x, top, CONTROL_HEIGHT)
 
-    -- OptionsSliderTemplate is the private-server clients' name for it; WOW_PROJECT_ID
+    -- OptionsSliderTemplate is the legacy clients' name for it; WOW_PROJECT_ID
     -- exists on every client that calls it UISliderTemplate.
     local template = WOW_PROJECT_ID == nil and "OptionsSliderTemplate" or "UISliderTemplate"
     local slider = CreateFrame("Slider", nil, self.parent, template)

@@ -2,7 +2,7 @@
 -- and the Play button on the window is how the player starts it instead. Run with `make test-player`.
 --
 -- Both dispatch routes are covered, because the setting has to hold on each: the 10 Hz
--- watcher a Blizzard client reads quests through, and the direct events a private-server
+-- watcher a Blizzard client reads quests through, and the direct events a legacy
 -- client reads them through (VoiceOver.lua's directEvents says why the two differ).
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path

@@ -46,7 +46,7 @@ None of this is the project's to license, and the MIT grant does not reach it.
   `pipelines/quests/assets/sql/exported/` come from the same place.
 - **Zone and subzone lore prose** in `addons/SpokenZones/Data/` is derived from
   [Warcraft Wiki](https://warcraft.wiki.gg), which publishes under
-  **CC BY-SA 3.0**. Re-use of that text carries the same terms, including attribution
+  **CC BY-SA 4.0**. Re-use of that text carries the same terms, including attribution
   and share-alike. `pipelines/zones/tools/scrape.mjs` is what fetches it and records
   which article each line came from.
 - **Book, letter and in-world text** for SpokenBooks comes from the same vmangos

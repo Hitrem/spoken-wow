@@ -483,7 +483,7 @@ local ACTIONS = {
 	{
 		id = "report",
 		-- An icon in the corner rather than a word beside the line. The bug icon postdates
-		-- the three private-server clients, where the texture is missing and the button
+		-- the three legacy clients, where the texture is missing and the button
 		-- would be a blank square; `text` is what they draw instead. The addon's own
 		-- CreateReportButton still builds the labelled one the lore window uses.
 		icon = [[Interface\HelpFrame\HelpIcon-Bug]],

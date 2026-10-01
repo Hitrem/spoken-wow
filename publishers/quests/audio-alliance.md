@@ -50,7 +50,7 @@ The whole thing is a large download, and a good part of it is dialogue your char
 
 ## What this is
 
-A rework of the original VoiceOver addon, which makes NPCs speak their quest text. Main changes:
+A rework of the original [AI VoiceOver](https://github.com/mrthinger/wow-voiceover) addon, which makes NPCs speak their quest text. Main changes:
 
 - voices are matched per NPC flavor, instead of just race and gender, so a dwarf warrior and a dwarf official don't sound alike
 - object quests are also voiced now, using a narrator voice

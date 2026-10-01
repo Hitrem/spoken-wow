@@ -1,6 +1,6 @@
 ## Interface: 11200
 ## Title: Spoken Quests
-## Notes: Quest and gossip dialogue read aloud, through the Spoken player. Formerly VoiceOver Redux. Restores quest and gossip voiceovers on 1.12 servers.
+## Notes: Quest and gossip dialogue read aloud, through the Spoken player. Formerly VoiceOver Redux. Restores quest and gossip voiceovers on the 1.12 client.
 ## Notes-deDE: Quest- und Tratschdialoge, vorgelesen durch den Spoken-Player. Ehemals VoiceOver Redux. Stellt die Quest- und Tratsch-Vertonungen auf 1.12-Servern wieder her.
 ## Notes-esES: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en servidores 1.12.
 ## Notes-esMX: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en servidores 1.12.

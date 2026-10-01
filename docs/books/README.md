@@ -181,7 +181,7 @@ The cost is that a full page's last line runs under the button; the alternative 
 colliding with one of Blizzard's controls on page two of every book.
 
 **Every clip carries a Report action**, the bug icon the quests and zones clips use, falling
-back to an "R" on the three private-server clients where that texture does not exist. The
+back to an "R" on the three legacy clients where that texture does not exist. The
 client cannot open a browser or post anywhere, so pressing it raises a popup holding one
 selectable address — `UI/CopyLink.lua`, the same shape the zones addon carries, and not
 shared with it because two addons cannot own one StaticPopup id.
@@ -207,7 +207,7 @@ rather than from the request body, so nothing the reporter can edit decides whic
 triage sees.
 
 **A report presumes a page id, and a page this corpus has never seen has none to give.** That
-is every post-vanilla book, every locale but one, and whatever a private server wrote for
+is every post-vanilla book, every locale but one, and custom text a server added
 itself — `Contribute.lua`'s `HasContributionGap` is true exactly there, whenever
 `PageOnScreen` found nothing. The Play button itself becomes the way to say so: relabelled
 **Contribute** in that state, it opens the same copy box the Report action uses, holding an

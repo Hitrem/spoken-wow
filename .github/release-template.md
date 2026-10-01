@@ -4,12 +4,12 @@
 | Client | GitHub Direct Link | Addon stores |
 | ----- | ------------------ | ---------- |
 | Blizzard clients (Classic Era, Anniversary, Wrath, retail) | [GitHub ZIP Download]({{ github_zip_download_blizz }}) | [Curse]({{ curse_link_blizz }}) · [Wago]({{ wago_link_blizz }}) |
-| 1.12 (private Vanilla servers & Turtle) | [GitHub ZIP Download]({{ github_zip_download_112 }}) | - |
-| 2.4.3 (private TBC servers) | [GitHub ZIP Download]({{ github_zip_download_243 }}) | - |
-| 3.3.5 (private WotLK servers) | [GitHub ZIP Download]({{ github_zip_download_335 }}) | - |
+| 1.12.1 (build 5875) | [GitHub ZIP Download]({{ github_zip_download_112 }}) | - |
+| 2.4.3 (build 8606) | [GitHub ZIP Download]({{ github_zip_download_243 }}) | - |
+| 3.3.5 (build 12340) | [GitHub ZIP Download]({{ github_zip_download_335 }}) | - |
 
 One zip serves every Blizzard client — it carries a `.toc` per flavor and the client picks.
-The three private-server clients read `SpokenQuests.toc` and nothing else, so each has a zip
+The three legacy clients read `SpokenQuests.toc` and nothing else, so each has a zip
 of its own, carrying the vendored Ace3 that client needs.
 
 ### Sound packs
@@ -33,14 +33,14 @@ client marks it out of date.
 - Install the [**player**]({{ curse_link_blizz }}) and the packs with your addon manager, or
   unzip them into `Interface/AddOns`.
 
-### 1.12 (private Vanilla servers & Turtle)
+### 1.12.1 (build 5875)
 - Unzip the [**1.12 player**]({{ github_zip_download_112 }}) and your packs into
   `Interface/AddOns`.
 
-### 2.4.3 (private TBC servers)
+### 2.4.3 (build 8606)
 - Unzip the [**2.4.3 player**]({{ github_zip_download_243 }}) and your packs into
   `Interface/AddOns`.
 
-### 3.3.5 (private WotLK servers)
+### 3.3.5 (build 12340)
 - Unzip the [**3.3.5 player**]({{ github_zip_download_335 }}) and your packs into
   `Interface/AddOns`.

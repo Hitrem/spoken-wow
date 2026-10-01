@@ -95,7 +95,7 @@ end
 
 -- The address the popup is currently showing. Held here rather than passed to
 -- StaticPopup_Show, whose `data` argument and the dialog/data handler signature both postdate
--- the private-server clients: there the popup would open with an empty box.
+-- the legacy clients: there the popup would open with an empty box.
 local shownLink
 
 --- The report address for `target`, filed under `language` -- the language of the clip being

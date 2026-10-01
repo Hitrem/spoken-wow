@@ -21,7 +21,7 @@ local ICON_SIZE = 24
 local named = 0
 
 --- Whether an action's icon can be drawn. The art these use lives in folders that postdate
---- the three private-server clients, where the texture is simply missing and the button
+--- the three legacy clients, where the texture is simply missing and the button
 --- would be a blank square; an action carrying a `text` says what to put there instead.
 local function CanDrawIcon()
     return not Version.IsAnyLegacy

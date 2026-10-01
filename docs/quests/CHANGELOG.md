@@ -309,7 +309,7 @@ No sound pack change: install the same ones.
 
 ## 1.2.0 — player
 
-**The 1.12, 2.4.3 and 3.3.5 private-server clients are supported again.** Each has a zip of its
+**The 1.12, 2.4.3 and 3.3.5 legacy clients are supported again.** Each has a zip of its
 own on the [GitHub releases page](https://github.com/rusty-key/wow-voiceover/releases), carrying
 the one `.toc` that client reads and the Ace3 build it needs. Blizzard's clients keep the single
 zip they already had.
@@ -390,5 +390,5 @@ pack; the player finds it the same way.
 Nests the pack under the player in the AddOns list, and targets Blizzard's clients only: one
 zip carrying a `.toc` per flavor, which the client picks between.
 
-The 1.12, 2.4.3 and 3.3.5 private-server clients are no longer supported. They predate flavor
+The 1.12, 2.4.3 and 3.3.5 legacy clients are no longer supported. They predate flavor
 suffixes and each needed its own zip and its own vendored Ace3.

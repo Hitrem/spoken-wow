@@ -4,7 +4,7 @@ setfenv(1, VoiceOver)
 --
 -- The corpus is built from a 1.12 world database, so three kinds of gap cannot be closed from
 -- our end: content that postdates vanilla, locales that database does not carry, and whatever
--- a private server has invented. In all three the client in front of the player is holding the
+-- custom content a server has added. In all three the client in front of the player is holding the
 -- only copy of the text, and a report that says "nothing played" is worth less than the same
 -- report carrying it.
 --

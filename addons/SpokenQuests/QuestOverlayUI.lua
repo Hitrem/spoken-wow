@@ -44,7 +44,7 @@ function QuestOverlayUI:CreatePlayButton(questID)
     self.questPlayButtons[questID] = self:MakePlayButton()
 end
 
---- Contribute.lua, or nil where it is not loaded: the private-server clients leave it out
+--- Contribute.lua, or nil where it is not loaded: the legacy clients leave it out
 --- (Contribute.xml), and this file runs on them too. rawget, so a global of the same name from
 --- some other addon is never mistaken for it.
 local function ContributeModule()

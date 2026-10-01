@@ -23,7 +23,7 @@ describe("nextContributionFilters", () => {
   });
 
   it("changes the client dimension alone", () => {
-    expect(nextContributionFilters(current, { client: "private" })).toEqual({ ...current, client: "private" });
+    expect(nextContributionFilters(current, { client: "legacy" })).toEqual({ ...current, client: "legacy" });
   });
 
   it("changes the source dimension alone", () => {

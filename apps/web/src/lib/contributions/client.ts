@@ -10,15 +10,14 @@
  *   1.60.x  the WoW: Forever beta (1.16 and up, allowing for its later builds)
  *   2.5.x   TBC Anniversary
  *   10+     retail
- *   1.12.1, 2.4.3, 3.3.5  the three legacy clients -- only private servers run these
+ *   1.12.1, 2.4.3, 3.3.5  the three legacy clients
  *
  * Anything else (another Classic progression, say) is "other", labelled with its version so it
- * is still readable. A private server on a modern client looks exactly like the modern client;
- * nothing in `build` can say otherwise.
+ * is still readable.
  *
  * Node-free: ContributionTable, a client component, imports the family list for its dropdown.
  */
-export const CLIENT_FAMILIES = ["era", "anniversary", "retail", "forever", "private", "other"] as const;
+export const CLIENT_FAMILIES = ["era", "anniversary", "retail", "forever", "legacy", "other"] as const;
 
 export type ClientFamily = (typeof CLIENT_FAMILIES)[number];
 
@@ -27,7 +26,7 @@ export const CLIENT_FAMILY_LABELS: Record<ClientFamily, string> = {
   anniversary: "TBC Anniversary",
   retail: "Retail",
   forever: "Forever beta",
-  private: "Private server",
+  legacy: "Legacy client",
   other: "Other",
 };
 
@@ -48,7 +47,7 @@ export type ClientSummary = {
 const LEGACY_VERSIONS = new Set(["1.12.1", "2.4.3", "3.3.5"]);
 
 function familyOf(version: string): ClientFamily {
-  if (LEGACY_VERSIONS.has(version)) return "private";
+  if (LEGACY_VERSIONS.has(version)) return "legacy";
   const match = /^(\d+)\.(\d+)/.exec(version);
   if (!match) return "other";
   const major = Number(match[1]);

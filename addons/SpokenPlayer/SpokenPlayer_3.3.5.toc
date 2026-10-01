@@ -1,6 +1,6 @@
 ## Interface: 30300
 ## Title: Spoken Player
-## Notes: The voice player every Spoken addon speaks through, for 3.3.5 servers.
+## Notes: The voice player every Spoken addon speaks through, for the 3.3.5 client.
 ## Notes-deDE: Der Voice-Player, über den jedes Spoken-Addon spricht, für 3.3.5-Server.
 ## Notes-esES: El reproductor de voz a través del cual habla cada addon Spoken, para servidores 3.3.5.
 ## Notes-esMX: El reproductor de voz a través del cual habla cada addon Spoken, para servidores 3.3.5.

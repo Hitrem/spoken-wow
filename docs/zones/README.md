@@ -1618,10 +1618,9 @@ Addon code: MIT.
 
 `SoundQueue.lua`, `SoundUtils.lua`, `QueueEnv.lua`, `UI/SoundQueueUI.lua` and the
 queue widget's textures are ported from
-[VoiceOverRedux](https://github.com/rusty-key/wow-voiceover), which is released into
-the public domain under the Unlicense. Nothing in that licence requires
-attribution; the credit is here because knowing where the code came from is what
-makes re-applying its fixes possible.
+[VoiceOverRedux](https://github.com/rusty-key/wow-voiceover) and are MIT-licensed like the
+rest of the repository. The credit is here because knowing where the code came from is
+what makes re-applying its fixes possible.
 
 Zone lore text in `addons/SpokenZones/Data/Zones.lua` and `Data/Subzones.lua` is
 derived from [warcraft.wiki.gg](https://warcraft.wiki.gg) and is licensed

@@ -59,4 +59,4 @@ Nothing leaves your game until you upload it yourself. The zip carries a small *
 
 ## Compatibility
 
-Classic Era 1.15.9 and the Anniversary client (2.5.6). Also carries TOCs for Wrath Classic and retail, and — for private 1.12, 2.4.3 and 3.3.5 servers — ships inside Spoken Quests' zips for those clients, since they have no addon manager to install it.
+Classic Era 1.15.9 and the Anniversary client (2.5.6). Also carries TOCs for Wrath Classic and retail, and — for the 1.12, 2.4.3 and 3.3.5 clients — ships inside Spoken Quests' zips for those clients, since they have no addon manager to install it.

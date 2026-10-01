@@ -2,7 +2,7 @@
 --
 -- The gap is the same one Reader.lua's PageOnScreen answers with nil: a page whose checksum
 -- no lookup holds. On a 1.12-derived corpus that is every post-vanilla book, every locale but
--- one, and whatever a private server wrote itself.
+-- one, and custom text a server added itself.
 --
 -- MAIL NEVER LEAVES THE CLIENT. IsMail is already how the reader refuses to narrate a letter,
 -- and the reason is stronger here: a letter is a player's own words to another player, and

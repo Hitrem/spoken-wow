@@ -1,4 +1,4 @@
-# VoiceOver for World of Warcraft
+# Spoken Quests pipeline
 
 ### [voiceline explorer: voiceover.rusty.one](https://voiceover.rusty.one)
 
@@ -26,7 +26,7 @@ into a pack:
 The corpus is **committed** — 17,507 lines, 2 MB gzipped — so building a pack from a given
 `audio/` needs no dump and no Docker.
 
-## Below is for developers only. Go to [releases](https://github.com/mrthinger/wow-voiceover/releases) if youre looking to install the addon.
+## Below is for developers only. Go to [releases](https://github.com/rusty-key/spoken-wow/releases) if you are looking to install the addon.
 
 ## Requirements
 
@@ -143,7 +143,7 @@ zips. It refuses to build from an uncommitted tree — `ALLOW_DIRTY=1` overrides
 and refuses when a variant `.toc` or `Environment.lua` names a different version, which is drift
 nothing else notices until it ships.
 
-**One zip for Blizzard's clients, one apiece for the private-server ones.** Blizzard's clients
+**One zip for Blizzard's clients, one apiece for the legacy ones.** Blizzard's clients
 pick a `.toc` by flavor suffix — `_Vanilla`, `_TBC`, `_Wrath`, `_Mainline` — so a single archive
 serves Classic Era through retail and the client chooses. The 1.12, 2.4.3 and 3.3.5 clients
 predate suffix support: each reads `SpokenQuests.toc` and nothing else, and each wants a
@@ -817,16 +817,16 @@ file through the normal flow.
 
 A report presumes a line exists and is wrong. Some of the time there is no line to be wrong —
 the corpus is built from a 1.12 world database, so it has nothing for content that postdates
-vanilla, for a locale that database does not carry, or for whatever a private server invented
-on top of it. In those three cases the client in front of the player is holding the only copy
-of the text, and `Contribute:HasGap()` puts a button reading **"Contribute"** — the same word
+vanilla, for a locale that database does not carry, or for custom content a server added on
+top of it. In those three cases the client in front of the player is holding the only copy of
+the text, and `Contribute:HasGap()` puts a button reading **"Contribute"** — the same word
 the books addon's button carries — in the top right corner of the Blizzard quest or gossip
 frame, just left of its close button, exactly when there is text on screen and nothing queued
 to play. The quest log offers the same thing where a quest's Play would be: a small plus icon
 in the list, and the details view's Play reading **Contribute**. A contribution from the log
 carries the quest's own description as its accept text and `from=log`, but no NPC — the log
-does not say who gave the quest. It exists on the Blizzard clients only: the 1.12, 2.4.3 and 3.3.5 clients are private
-servers, where contributing is off for now, and their `.toc` files leave out the `Contribute.xml`
+does not say who gave the quest. It exists on the Blizzard clients only: contributing is off for now on the 1.12, 2.4.3
+and 3.3.5 clients, and their `.toc` files leave out the `Contribute.xml`
 that loads it (the 1.12 client's Lua 5.0 could not parse it anyway). A player who does not want it turns it off with **Hide the Contribute buttons** in the
 Spoken Player settings, one switch for the quests, books and zones buttons alike; each addon
 asks `Spoken:AreContributeButtonsHidden()` in its gap check and refreshes on the player's
@@ -949,12 +949,6 @@ has no model at all, submitting for an NPC somebody else already resolved.
 contributions wrote. Those carry the NPC's own resolution at the time it was accepted, often a
 `client` guess, and reading one back as `corpus` confirmed the guess and let it outrank the game's
 own appearance data. Migration 0058 demoted the 71 rows that had been confirmed that way.
-
-`apps/web/scripts/import-wowhead-npcs.mts` resolves NPCs from a Wowhead gathering rather than from
-players: each quest's start and end NPC, with the appearance ids, model and sex Wowhead shows, go
-through `resolveNpc` as an envelope would, so the rank above is what keeps it from touching a
-corpus or moderator answer. It does not re-voice lines already accepted; it ends by listing
-the speaker rows whose voice no longer matches, for a person to requeue.
 
 `/contributions` shows the result with its provenance and says plainly which rows are guesses;
 the override there writes `moderator` and is collaborator-only, like everything else that
@@ -1132,7 +1126,7 @@ snapshot is discarded.
 `tests/lua/quest_overlay_test.lua` covers the other thing the quest UI owes a player: the play
 button beside each quest in the quest log. There are two quest logs to draw it in. The old one
 is a named frame with numbered title rows (`QuestLogTitle1`…), redrawn through `QuestLog_Update`
-— what Classic Era and the private-server clients have, and what `QuestOverlayUI` was written
+— what Classic Era and the legacy clients have, and what `QuestOverlayUI` was written
 against. The Forever client reports itself as mainline and draws the modern map-attached log
 instead: no `QuestLogFrame`, no `QuestLog_Update`, no `GetQuestLogTitle`, and rows that come
 out of `QuestScrollFrame.titleFramePool` with no names at all. `Compatibility.lua` therefore

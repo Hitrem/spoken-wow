@@ -1,6 +1,6 @@
 ## Interface: 30300
 ## Title: Spoken Quests
-## Notes: Quest and gossip dialogue read aloud, through the Spoken player. Formerly VoiceOver Redux. Restores quest and gossip voiceovers on 3.3.5 servers.
+## Notes: Quest and gossip dialogue read aloud, through the Spoken player. Formerly VoiceOver Redux. Restores quest and gossip voiceovers on the 3.3.5 client.
 ## Notes-deDE: Quest- und Tratschdialoge, vorgelesen durch den Spoken-Player. Ehemals VoiceOver Redux. Stellt die Quest- und Tratsch-Vertonungen auf 3.3.5-Servern wieder her.
 ## Notes-esES: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en servidores 3.3.5.
 ## Notes-esMX: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en servidores 3.3.5.

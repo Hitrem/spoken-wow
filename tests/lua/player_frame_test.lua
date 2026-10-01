@@ -185,7 +185,7 @@ Expect("choosing an entry runs it", chose, true)
 Expect("...and the menu closes itself", stub.openDropDown, nil)
 
 ---------------------------------------------------------------- the menu where there is no menu API
--- The three private-server clients have no UIDropDownMenu worth the name, so the player
+-- The three legacy clients have no UIDropDownMenu worth the name, so the player
 -- draws its own: a background, a highlight, a catcher for the click that dismisses it.
 env, quests, zones = Boot("1.12")
 mmButton = stub.dbIcons.Spoken.button
@@ -413,7 +413,7 @@ Expect("...and it still does what it is for", (corner:Click() or reported), 1)
 -- The strip under the queue is what makes room for itself; a corner icon overlaps nothing.
 Expect("a corner action asks for no strip", env.PlayerFrame.frame.actions.shown, 0)
 
--- The art this uses postdates the three private-server clients, where the icon would be a
+-- The art this uses postdates the three legacy clients, where the icon would be a
 -- blank square. There the action falls back to the letter it carries for the purpose.
 env, quests, zones = Boot("1.12")
 quests:Enqueue(CornerClip())

@@ -394,7 +394,7 @@ function Followup:Setup()
         end
     end)
 
-    -- The private-server clients have neither event, but every accept and turn-in, clicked or
+    -- The legacy clients have neither event, but every accept and turn-in, clicked or
     -- automated by another addon, goes through these two calls while the dialog is still up.
     if Version.IsAnyLegacy and hooksecurefunc then
         -- IsEnabled first: resolving the quest can mean a fuzzy search of every loaded pack.

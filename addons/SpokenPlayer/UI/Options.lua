@@ -4,7 +4,7 @@ setfenv(1, SpokenEnv)
 -- and, where the Settings API exists, nests it under this one.
 --
 -- Settings.RegisterCanvasLayoutCategory is the modern path and exists on every current
--- client. The three private-server clients have no Settings API at all; there the same
+-- client. The three legacy clients have no Settings API at all; there the same
 -- panel is a movable window opened with /spoken options. One builder, two hosts.
 Options = {}
 
@@ -159,7 +159,7 @@ local function Build(canvas)
 
     -- The buttons live on Blizzard's quest, book and map frames, not on the player, but
     -- they all open the player's box, so the one switch for them is here. Absent where
-    -- Contribute.xml is not loaded (the private-server clients): nothing there to hide.
+    -- Contribute.xml is not loaded (the legacy clients): nothing there to hide.
     if Spoken.Contribute then
         layout:Section(L.OPT_CONTRIBUTE_TITLE)
         layout:Checkbox(L.OPT_HIDE_CONTRIBUTE, L.OPT_HIDE_CONTRIBUTE_TIP,
