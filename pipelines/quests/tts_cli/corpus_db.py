@@ -35,10 +35,7 @@ import os
 from collections import Counter
 from datetime import datetime, timezone
 
-import psycopg2
-import psycopg2.extras
-
-from tts_cli.corpus import load_corpus, write_corpus
+from tts_cli.corpus import SCHEMA_VERSION, load_corpus, write_corpus
 
 LANG = "enUS"
 
@@ -59,6 +56,10 @@ LINE_FIELDS = (
 
 SPEAKER_FIELDS = ("npcType", "npcId", "npcName", "race", "gender", "flavor", "voice")
 
+# The first schema whose export marks a contributed row with its "contributionId". In an older
+# file a contributed row looks exactly like the dump's, so nothing in it may overtake one.
+CONTRIBUTIONS_MARKED = 3
+
 
 def connect():
     url = os.environ.get("DATABASE_URL")
@@ -67,6 +68,10 @@ def connect():
             "DATABASE_URL is not set -- the corpus lives in Postgres now.\n"
             "Producing audio and building a pack still need no database; this command does."
         )
+    # Here rather than at the top, so the module's pure parts (split_contributed) load and are
+    # tested without psycopg2, which only requirements-extract.txt installs.
+    import psycopg2
+
     return psycopg2.connect(url)
 
 
@@ -90,6 +95,34 @@ def _variants(lines):
     return order
 
 
+def split_contributed(lines, schema_version, known_contributions, contributed_speakers):
+    """The file's rows -> (the dump's rows, how many contributed rows were left alone).
+
+    A contributed row is already in the tables, written when a moderator accepted it, and is
+    not the import's to write again: importing it as a speaker of its own is how the export
+    round trip once doubled every contributed speaker on production (migration 0060).
+
+    In a marked file (CONTRIBUTIONS_MARKED) that is the rows carrying a contributionId this
+    database knows. One it does not know -- a fresh database seeded from the committed export,
+    as CI is -- has no contribution to hang from, so it is seeded as a plain row, as it always
+    was. An older file marks nothing, so a row identical to a contributed speaker
+    (`contributed_speakers`: lineId plus SPEAKER_FIELDS) is taken for that speaker's copy.
+    """
+    marked = schema_version >= CONTRIBUTIONS_MARKED
+    extracted, skipped = [], 0
+    for row in lines:
+        contribution = row.get("contributionId")
+        if marked:
+            if contribution is not None and contribution in known_contributions:
+                skipped += 1
+                continue
+        elif (row["lineId"],) + tuple(row[f] for f in SPEAKER_FIELDS) in contributed_speakers:
+            skipped += 1
+            continue
+        extracted.append({k: v for k, v in row.items() if k != "contributionId"})
+    return extracted, skipped
+
+
 def _progress(message):
     """One line per step, as it happens: the import is a single transaction, so nothing it
     writes is visible from outside until the end, and this is the only way to see it move."""
@@ -98,6 +131,8 @@ def _progress(message):
 
 def _bulk(cur, what, rows, sql, template=None, page=1000):
     """execute_values in pages of `page` rows, saying how far it has got after each."""
+    import psycopg2.extras
+
     for start in range(0, len(rows), page):
         psycopg2.extras.execute_values(cur, sql, rows[start:start + page], template=template,
                                        page_size=page)
@@ -120,13 +155,28 @@ def import_corpus(path, verbose=True):
     same argument for a book page's structure.
     """
     corpus = load_corpus(path)
-    lines = corpus["lines"]
-    variants = _variants(lines)
+    marked = corpus["schemaVersion"] >= CONTRIBUTIONS_MARKED
 
     counts = Counter()
     conn = connect()
     try:
         with conn, conn.cursor() as cur:
+            cur.execute("""select "id" from "contribution" """)
+            known_contributions = {r[0] for r in cur.fetchall()}
+            cur.execute(
+                """select "lineId", "npcType", "npcId", "npcName", "race", "gender", "flavor",
+                          "voice"
+                     from "quest_line_speaker"
+                    where "lang" = %s and "contributionId" is not null""",
+                (LANG,),
+            )
+            contributed_speakers = {tuple(r) for r in cur.fetchall()}
+            lines, contributed = split_contributed(
+                corpus["lines"], corpus["schemaVersion"], known_contributions,
+                contributed_speakers,
+            )
+            variants = _variants(lines)
+
             # The extract's own timestamp, kept so the export can reproduce it. Without it
             # every export would differ from the file it replaced in exactly one field.
             cur.execute(
@@ -224,6 +274,8 @@ def import_corpus(path, verbose=True):
             # moderator accepted a contribution (apps/web migration 0034), is not the
             # extract's, and would otherwise vanish -- line and all -- on the next import.
             # Those rows take an `ord` from 1,000,000 up, so the extract's 0..n never meets them.
+            # Until the dump has the same NPC on the same line: then the dump is the source of
+            # truth, and the contribution has done its job (below).
             cur.execute(
                 """delete from "quest_line_speaker"
                     where "lang" = %s and "contributionId" is null""",
@@ -241,6 +293,22 @@ def import_corpus(path, verbose=True):
                        ("lineId", "variant", "lang", "ord", "npcType", "npcId", "npcName",
                         "race", "gender", "flavor", "voice")
                      values %s""")
+
+            # Only from a marked file: in an older one, the rows that would match are the
+            # contributed speakers' own round-tripped copies, skipped above or not.
+            superseded = 0
+            if marked:
+                cur.execute(
+                    """delete from "quest_line_speaker" c
+                        where c."lang" = %s and c."contributionId" is not null
+                          and exists (
+                            select 1 from "quest_line_speaker" e
+                             where e."contributionId" is null and e."lang" = c."lang"
+                               and e."lineId" = c."lineId" and e."variant" = c."variant"
+                               and e."npcType" = c."npcType" and e."npcId" = c."npcId")""",
+                    (LANG,),
+                )
+                superseded = cur.rowcount
 
             cur.execute("""delete from "quest_spawn" """)
             spawn_rows = []
@@ -273,10 +341,23 @@ def import_corpus(path, verbose=True):
         )
         print(f"{len(speaker_rows)} speakers, {len(spawn_rows)} spawn points")
         print(
+            f"{contributed} contributed rows left as they are, {superseded} contributed "
+            f"speakers overtaken by the dump"
+            + ("" if marked else " (none: the file predates marking them)")
+        )
+        print(
             f"defects carried over unchanged: {collisions} lineIds naming two different "
             f"lines, {duplicates} duplicate rows"
         )
     return counts
+
+
+def _with_contribution(row, contribution_id):
+    """A contributed row carries its contributionId, last, so the import can tell it from the
+    dump's. The dump's rows have no such key, which keeps them as the extract writes them."""
+    if contribution_id is not None:
+        row["contributionId"] = contribution_id
+    return row
 
 
 def export_corpus(path, check=False, verbose=True):
@@ -304,7 +385,7 @@ def export_corpus(path, check=False, verbose=True):
             # Ordered by the corpus's own row order, which is what `ord` records.
             cur.execute(
                 """select s."npcType", s."npcId", s."npcName", s."race", s."gender",
-                          s."flavor", s."voice",
+                          s."flavor", s."voice", s."contributionId",
                           l."lineId", l."source", l."questId", l."questTitle",
                           l."playerGender", l."text", l."originalText", l."fileName",
                           l."generatable", l."skipReason"
@@ -330,7 +411,7 @@ def export_corpus(path, check=False, verbose=True):
     # and nowhere else: json.dumps preserves insertion order, and a different order is a
     # different file even when it is the same data.
     lines = [
-        {
+        _with_contribution({
             "lineId": line_id,
             "source": source,
             "questId": quest_id,
@@ -348,10 +429,10 @@ def export_corpus(path, check=False, verbose=True):
             "fileName": file_name,
             "generatable": generatable,
             "skipReason": skip_reason,
-        }
-        for (npc_type, npc_id, npc_name, race, gender, flavor, voice, line_id, source,
-             quest_id, quest_title, player_gender, text, original_text, file_name,
-             generatable, skip_reason) in rows
+        }, contribution_id)
+        for (npc_type, npc_id, npc_name, race, gender, flavor, voice, contribution_id,
+             line_id, source, quest_id, quest_title, player_gender, text, original_text,
+             file_name, generatable, skip_reason) in rows
     ]
 
     spawns = {}
@@ -360,8 +441,10 @@ def export_corpus(path, check=False, verbose=True):
             {"map": map_id, "x": x, "y": y}
         )
 
+    # This code's schema rather than the one the last import recorded: what the export writes
+    # is defined here, and a file that marks its contributions must say that it does.
     corpus = {
-        "schemaVersion": meta[0],
+        "schemaVersion": SCHEMA_VERSION,
         "generatedAt": meta[1],
         "lineCount": len(lines),
         "lines": lines,
