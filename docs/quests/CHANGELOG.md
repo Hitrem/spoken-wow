@@ -8,29 +8,14 @@ carries that version. The heading says which.
 
 ## 2.2.0 — player
 
-- **NPCs speak what they say after your quest.** Many quest givers say or yell a line in chat
-  once you accept or turn in a quest — Thrall after *For The Horde!*, the Scarlet Cavaliers
-  after *Scarlet Subterfuge*. Spoken Quests now reads those aloud with the 2.2.0 sound packs.
-  Only lines your own quest set off are read, never another player's. **Experimental**: on by
-  default, and switched off with **Experimental: enable quest follow-ups** in the settings. A
-  line no installed pack has recorded yet stays silent.
-- **No more half a greeting before the line.** The NPC's own greeting is muted as its dialog
-  opens rather than cut off mid-word when Spoken starts reading, and only when Spoken has a
-  line for it. Needs Spoken Player 2.3.0.
-- **A quest played from the quest log names its giver in your client's language**, as the
-  quest dialog does, rather than in English, and the minimal player shows the giver's face
-  even when you have not met them. Names the game itself leaves untranslated stay in English.
-- Offers the 2.2.0 sound packs as the update for older ones.
+- **Experimental:** NPC lines said in chat after you accept or turn in a quest are voiced. Toggle in settings.
+- The NPC's greeting is muted as the dialog opens, instead of cut off mid-word. Needs Spoken Player 2.3.0.
+- Quests played from the quest log name the giver in your client's language.
 
 ## 2.2.0 — sound packs
 
-- **Follow-up lines are voiced**: 439 of the 486 lines NPCs say or yell after you accept or
-  turn in a quest, each in the speaker's own voice. They play with Spoken Quests 2.2.0, which
-  is the version that knows to look for them.
-- **59 more lines** sent in by players with Contribute: 50 NPC greetings and 9 quest offers
-  and turn-ins.
-- Still Ogg Vorbis at 44.1 kHz, and still one download on GitHub holding all four packs,
-  `SpokenQuestsAudioAll-2.2.0.zip`. Install over 2.1.0.
+- 439 quest follow-up lines voiced. Needs Spoken Quests 2.2.0.
+- 59 new contributed lines: 50 greetings, 9 quest lines.
 
 ## 2.1.0 — sound packs
 

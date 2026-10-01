@@ -5,9 +5,7 @@ existing compatible sound pack unless the release notes say otherwise.
 
 ## 2.1.2 — sound pack — 2026-10-01
 
-- **307 pages re-recorded**, with names and words of the world said the way the game says
-  them. The text of every page is unchanged.
-- The sound pack only; Spoken Books stays at 2.1.1. Install over 2.1.0.
+- 307 pages re-recorded.
 
 ## 2.1.1 — 2026-09-29
 
