@@ -21,7 +21,10 @@ from datetime import datetime, timezone
 from tts_cli.flavors import is_model_voice
 from tts_cli.naming import filename_for_row, line_id_for_row
 
-SCHEMA_VERSION = 2
+#: 3: a row a player contributed carries its "contributionId". The extract has none to mark,
+#: but the number says the file's unmarked rows are all the dump's -- which is what lets
+#: corpus_db's import let them overtake a contribution (see CONTRIBUTIONS_MARKED there).
+SCHEMA_VERSION = 3
 DEFAULT_CORPUS_PATH = "corpus/corpus.json.gz"
 INVALID_CHARS = "$<>"
 #: The skipReason of a line whose voice is a model slot nobody has chosen a voice for yet.

@@ -546,10 +546,11 @@ describe("resolveContribution: a book page in another language", () => {
       },
     ]);
     const { rows: names } = await db().query(
-      `select "name" from "entity_name" where "kind" = $1 and "entityId" = $2 and "lang" = $3 and "isCurrent"`,
+      `select "name", "origin" from "entity_name" where "kind" = $1 and "entityId" = $2 and "lang" = $3 and "isCurrent"`,
       [target.kind, target.owner, LOCALE],
     );
-    expect(names).toEqual([{ name: "Livro de Teste" }]);
+    // Not 'edited': an import that finds the game's own name must be free to promote over it.
+    expect(names).toEqual([{ name: "Livro de Teste", origin: "contributed" }]);
     expect(await lineIsInExplorer(await row(id))).toBe(true);
   });
 

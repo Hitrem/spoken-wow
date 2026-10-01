@@ -531,7 +531,9 @@ async function contributedPageExists(contributionId: number, client: PoolClient)
  * the title is the one the client showed. A page this language already has is left alone,
  * as acceptTranslation leaves a quest line: an import or a translator got there first. The
  * owner's name in this language is written the same way, only where it has none, since the
- * catalogue titles a translated page from entity_name rather than from the row.
+ * catalogue titles a translated page from entity_name rather than from the row. It is written
+ * as 'contributed', not 'edited', so the next import that finds the game's own name promotes
+ * it over this one (migration 0060).
  */
 async function acceptBookTranslation(
   client: PoolClient,
@@ -587,7 +589,7 @@ async function acceptBookTranslation(
          select $1, $2, $3,
                 (select coalesce(max("version"), 0) + 1 from "entity_name"
                   where "kind" = $1 and "entityId" = $2 and "lang" = $3),
-                true, 'edited', $4, $5, $6
+                true, 'contributed', $4, $5, $6
           where not exists (select 1 from "entity_name"
                              where "kind" = $1 and "entityId" = $2 and "lang" = $3 and "isCurrent")
          on conflict do nothing`,
