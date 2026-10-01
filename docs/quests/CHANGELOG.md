@@ -43,6 +43,19 @@ by players with Contribute, and 1,275 of them have a voice in these packs: 464 q
 - No longer tells you to update a sound pack that is newer than it knows about. Installing the
   2.1.0 packs under an older Spoken Quests offered an "update" back to 2.0.0.
 
+## 0.0.1 — quests-audio-koKR — 2026-10-01
+
+- **Experimental.** A first cut, numbered 0.0.1 so it does not read as finished: expect
+  lines to be re-recorded, and report the ones that sound wrong.
+- **The first Korean sound pack**, `SpokenQuestsAudio_koKR`: every quest and gossip line
+  Spoken Quests has a Korean take for, in one pack for both factions. It carries the
+  Korean gossip text too, so gossip is recognised on a koKR client. It installs beside the
+  English packs rather than over them; pick the language under **Voice Language**.
+  Needs Spoken Quests 2.1.1 or later.
+  **Partial**: the game's Korean text is missing for some quests, so it voices about four
+  in five quest offers and turn-ins, and most gossip. Set **Fallback Language** to English
+  to hear the rest.
+
 ## 0.0.2 — quests-audio-deDE — 2026-09-28
 
 - **Experimental**, still: expect lines to be re-recorded, and report the ones that sound wrong.
