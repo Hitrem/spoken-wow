@@ -577,10 +577,12 @@ export default function ContributionTable({
 
           <tbody>
             {rows.map((row) => {
-              const npc =
+              const override =
                 (row.npc?.npcKind ? npcOverrides[overrideKey(row.npc.npcKind, row.npc.npcId)] : undefined) ??
-                npcOverrides[contributionKey(row.id)] ??
-                row.npc;
+                npcOverrides[contributionKey(row.id)];
+              // An override is the shared resolution, named in English; the row keeps the name
+              // its own envelope gave, in its own locale (npcSummaryFrom's docstring).
+              const npc = override ? { ...override, npcName: row.npc?.npcName ?? override.npcName } : row.npc;
               return (
                 <ContributionTableRow
                   key={row.id}

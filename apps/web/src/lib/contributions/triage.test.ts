@@ -111,6 +111,21 @@ describe("npcSummaryFrom", () => {
     expect(summary.npcKind).toBe("creature");
   });
 
+  // The resolution is shared across languages and named in English; the envelope's name is what
+  // this row's own client called the NPC.
+  it("keeps the envelope's own, localised name over the resolution's", async () => {
+    const summary = await npcSummaryFrom(
+      { npcKind: "creature", npcId: 288, npcName: "Nervioso" },
+      resolution(),
+    );
+    expect(summary.npcName).toBe("Nervioso");
+  });
+
+  it("falls back to the resolution's name when the envelope named none", async () => {
+    const summary = await npcSummaryFrom({ npcKind: "creature", npcId: 288, npcName: null }, resolution());
+    expect(summary.npcName).toBe("Jitters");
+  });
+
   it("has no flavor options when the resolution names no race or gender", async () => {
     const summary = await npcSummaryFrom(
       { npcKind: "creature", npcId: 1, npcName: "A Narrator" },
