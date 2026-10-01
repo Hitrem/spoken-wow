@@ -121,6 +121,11 @@ export function idOnlyResolution(rows: NpcResolution[] | undefined): IdOnlyLooku
  * The resolution's own `npcKind` wins over the observation's: a resolution can only exist when
  * some envelope -- this one or an earlier one for the same NPC -- carried a kind, which makes it
  * strictly more informed than a kind-less current envelope naming the same id.
+ *
+ * The name goes the other way: the envelope's own name is what the player's client called the
+ * NPC, in the row's own locale, while the resolution is shared by every language and names the
+ * NPC in English (the corpus's name, or whichever envelope resolved it first). The resolution's
+ * name is only the fallback for an envelope that named none.
  */
 export async function npcSummaryFrom(
   observed: { npcKind: NpcKind | null; npcId: number; npcName: string | null },
@@ -130,7 +135,7 @@ export async function npcSummaryFrom(
   return {
     npcKind: resolution?.npcKind ?? observed.npcKind,
     npcId: observed.npcId,
-    npcName: resolution?.npcName ?? observed.npcName,
+    npcName: observed.npcName ?? resolution?.npcName ?? null,
     race: resolution?.race ?? null,
     gender: resolution?.gender ?? null,
     flavor: resolution?.flavor ?? null,
