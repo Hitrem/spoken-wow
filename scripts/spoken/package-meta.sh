@@ -3,7 +3,7 @@
 # English sound pack in behind it.
 #
 #   make package-spoken-all                 # dist/SpokenAll-<version>.zip
-#   VERSION=1.0.0 make package-spoken-all   # the version written into the .toc
+#   VERSION=2.0.0 make package-spoken-all   # the version written into the .toc
 #
 # The same mechanism as Spoken Quests Audio: All (scripts/quests/package-meta.sh), one level up:
 # a CurseForge file can declare required dependencies, and both the CurseForge app and WowUp
@@ -23,7 +23,7 @@ cd "$REPO"
 
 NAME="${NAME:-SpokenAll}"
 DIST="${DIST:-$REPO/dist}"
-VERSION="${VERSION:-1.0.0}"
+VERSION="${VERSION:-2.0.0}"
 ZIP="${ZIP:-1}"
 TITLE="${TITLE:-Spoken Everything: Quests, Zones, Books AI Voiceover}"
 
