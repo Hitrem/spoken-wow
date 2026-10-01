@@ -36,6 +36,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          # v5 turns on the package manager's cache by itself when package.json names one, and
+          # this job installs no pnpm to cache with: announce.mjs needs nothing beyond Node.
+          package-manager-cache: false
 
       - name: Resolve the name and notes from the tag
         env:
