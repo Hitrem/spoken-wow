@@ -18,8 +18,10 @@ import {
   pageOf,
   PAGE_SIZE,
   type ClientFilter,
+  type SourceFilter,
   type SpeakerFilter,
 } from "@/lib/contributions/query";
+import { isEnvelopeSource } from "@/lib/contributions/envelope";
 import { listContributions, observationMeta, type Contribution } from "@/lib/contributions/store";
 import {
   npcSummaryFrom,
@@ -165,7 +167,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ status?: string; provenance?: string; client?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; provenance?: string; client?: string; source?: string; page?: string }>;
 }) {
   const lang = await pageLang(params);
   const session = await auth.api.getSession({ headers: await headers() });
@@ -176,7 +178,13 @@ export default async function Page({
   const viewer = await viewerOf(session);
   if (!session || !can(viewer, "edit", lang)) notFound();
 
-  const { status: rawStatus, provenance: rawProvenance, client: rawClient, page: rawPage } = await searchParams;
+  const {
+    status: rawStatus,
+    provenance: rawProvenance,
+    client: rawClient,
+    source: rawSource,
+    page: rawPage,
+  } = await searchParams;
   const status: ContributionStatus | "all" = isStatus(rawStatus)
     ? rawStatus
     : rawStatus === "all"
@@ -202,6 +210,9 @@ export default async function Page({
   // unrecognised in the query string falls back to "all", as the other two dimensions do.
   const client: ClientFilter = isClientFamily(rawClient) ? rawClient : "all";
 
+  // Which corpus the row is for: quests, zones or books.
+  const source: SourceFilter = isEnvelopeSource(rawSource) ? rawSource : "all";
+
   const contributions = await listContributions(status, lang);
   // Every row's NPC, not just this page's: the Speaker filter reads it, and it is one query
   // for the lot (npcFor's own docstring).
@@ -211,7 +222,8 @@ export default async function Page({
   // survives a narrowed view only as MISSING, and only when it is a quests row.
   const matching = contributions
     .filter((row) => matchesSpeaker(npcs[row.id]?.provenance, provenance, row.source))
-    .filter((row) => client === "all" || clientOf(row.build).family === client);
+    .filter((row) => client === "all" || clientOf(row.build).family === client)
+    .filter((row) => source === "all" || row.source === source);
 
   // A page of rows, not the whole queue: every row rendered is a row the browser has to build
   // and React has to diff, and a queue of hundreds made both the load and every click slow.
@@ -266,6 +278,7 @@ export default async function Page({
         status={status}
         provenance={provenance}
         client={client}
+        source={source}
         existing={existing}
         flavorScopes={facetValues.flavorScopes}
         // What api/contributions/npc asks, so the speaker controls are offered only to

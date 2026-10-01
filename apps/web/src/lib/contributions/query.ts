@@ -50,16 +50,20 @@ export function isSpeakerSentinel(value: unknown): value is typeof NEEDS_DECISIO
 
 export type ClientFilter = ClientFamily | "all";
 
+export type SourceFilter = EnvelopeSource | "all";
+
 export type ContributionFilters = {
   status: ContributionStatus | "all";
   provenance: SpeakerFilter;
   client: ClientFilter;
+  source: SourceFilter;
 };
 
-type FilterChange = {
+export type FilterChange = {
   status?: ContributionStatus | "all";
   provenance?: SpeakerFilter;
   client?: ClientFilter;
+  source?: SourceFilter;
 };
 
 /**
@@ -77,6 +81,7 @@ export function nextContributionFilters(
     status: "status" in next ? (next.status ?? "all") : current.status,
     provenance: "provenance" in next ? (next.provenance ?? "all") : current.provenance,
     client: "client" in next ? (next.client ?? "all") : current.client,
+    source: "source" in next ? (next.source ?? "all") : current.source,
   };
 }
 
@@ -101,6 +106,7 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
     status: filters.status,
     provenance: filters.provenance,
     client: filters.client,
+    source: filters.source,
   });
   if (page > 1) params.set("page", String(page));
   return `/contributions?${params}`;
