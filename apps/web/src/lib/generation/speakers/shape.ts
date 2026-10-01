@@ -63,8 +63,8 @@ function paragraphed(
 // fish.audio's S2 models read [bracketed] cues as directions too, so it is shaped the same
 // way until listening shows which of them it performs.
 //
-// `raceTag` is the line's own race's direction; `raceTags` is every race's, for a stretch a
-// voice marker hands to another slot.
+// `raceTag` is the line's own slot's direction (directionFor); `raceTags` is the whole map, for
+// a stretch a voice marker hands to another slot.
 export const SHAPE: Record<
   Provider,
   (text: string, raceTag: string | undefined, raceTags?: Record<string, string>) => string

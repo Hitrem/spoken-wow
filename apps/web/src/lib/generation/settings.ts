@@ -177,10 +177,10 @@ export function validateConfig(input: unknown): GenerationConfig {
 /**
  * The accent directions, checked for the ways a tag can quietly do the wrong thing.
  *
- * Shape only: the race keys are not checked against the corpus. Validating them would mean
- * loading the corpus on every settings write, and the form offers the races it already knows
- * from facets, so a name no line carries is not reachable through the UI - it would simply
- * match nothing, which is the same as not setting it.
+ * Shape only: the keys - a race, or one voice slot of it - are not checked against the
+ * corpus. Validating them would mean loading the corpus on every settings write, and the form
+ * offers only the races and slots on the roster, so a name no line carries is not reachable
+ * through the UI - it would simply match nothing, which is the same as not setting it.
  */
 export function validateRaceTags(raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {

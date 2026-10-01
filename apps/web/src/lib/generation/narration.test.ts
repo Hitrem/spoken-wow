@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   accentTagged,
+  directionFor,
   audioTags,
   hasNarration,
   restoresOnlyNarration,
@@ -203,6 +204,13 @@ describe("voice markers", () => {
     );
   });
 
+  it("gives a marked stretch its own flavor's direction after its race's", () => {
+    const tags = { goblin: "[fast, nasal]", "goblin-male-zany": "[manic]" };
+    expect(accentTagged("Hm. _goblin-male-zany_ Wizbang here!", undefined, tags)).toBe(
+      "Hm. _goblin-male-zany_ [fast, nasal] [manic] Wizbang here!",
+    );
+  });
+
   it("leaves a stretch untagged when the marked race has no direction", () => {
     expect(accentTagged("Aye. _narrator-male_ He left.", "[Scottish accent]", {})).toBe(
       "[Scottish accent] Aye. _narrator-male_ He left.",
@@ -213,5 +221,26 @@ describe("voice markers", () => {
     expect(voiceAfter("Hi. _goblin-male-zany_ Yo.")).toBe("goblin-male-zany");
     expect(voiceAfter("Still going.", "goblin-male-zany")).toBe("goblin-male-zany");
     expect(voiceAfter("Plain.")).toBeUndefined();
+  });
+});
+
+describe("directionFor", () => {
+  const tags = { dwarf: "[Scottish accent]", "dwarf-female-young": "[girlish]", "gnome-male-young": "[boyish]" };
+
+  it("is the race's direction for a flavor with none of its own", () => {
+    expect(directionFor("dwarf-male-grim", tags)).toBe("[Scottish accent]");
+  });
+
+  it("adds a flavor's direction after its race's", () => {
+    expect(directionFor("dwarf-female-young", tags)).toBe("[Scottish accent] [girlish]");
+  });
+
+  it("is a flavor's own direction when its race has none", () => {
+    expect(directionFor("gnome-male-young", tags)).toBe("[boyish]");
+    expect(directionFor("gnome-male-zany", tags)).toBeUndefined();
+  });
+
+  it("does not read a race's direction twice for a slot named by the race alone", () => {
+    expect(directionFor("dwarf", tags)).toBe("[Scottish accent]");
   });
 });
