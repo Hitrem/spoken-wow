@@ -228,9 +228,6 @@ end
 
 local function AfterRemoval()
     if SoundQueue:IsEmpty() then
-        -- The cue marks one item giving way to another already waiting. A line arriving
-        -- after the queue has drained follows silence, which separates it well enough.
-        lastFinished = nil
         StopRetryTicker()
         SoundQueue:MuteGameDialogue(nil)
         Callbacks:Fire("QUEUE_EMPTY")
@@ -424,14 +421,18 @@ function SoundQueue:GapAfter(clip)
     return gap
 end
 
----@param clip SpokenClip
-function SoundQueue:PlaySound(clip)
-    local channel = clip.source:GetChannel()
-    -- Whatever we muted, we cannot speak on. Lifted first, so a clip on the very channel
-    -- the last line silenced is heard.
+-- Whatever we muted, we cannot speak on. Lifted first, so a clip on the very channel the
+-- last line silenced is heard.
+local function LiftOwnMute(channel)
     if SoundUtils:IsMutedByPlayer(channel) then
         SoundUtils:MuteChannel(channel, false)
     end
+end
+
+---@param clip SpokenClip
+function SoundQueue:PlaySound(clip)
+    local channel = clip.source:GetChannel()
+    LiftOwnMute(channel)
     local willPlay = SoundUtils:PlaySound(clip, channel)
     if not willPlay then
         Discard(clip, "missing")
@@ -456,22 +457,40 @@ function SoundQueue:PlaySound(clip)
     end, (clip.delay or 0) + clip.length + self:GapAfter(clip))
 end
 
+--- Whether to mark the change from one item to the next. Pages of one book are one item:
+--- a sound between each would be noise, and the page label already says where it is.
+local function WantsCue(previous, nextClip)
+    if not Addon.db.profile.Audio.CueBetweenItems then
+        return false
+    end
+    return not (previous.group and previous.group == nextClip.group)
+end
+
+--- Play the cue on the channel the next clip will speak on, so it follows the voice's
+--- volume rather than the effects', then start that clip once it has had its moment.
+local function PlayCue(nextClip)
+    local channel = nextClip.source:GetChannel()
+    LiftOwnMute(channel)
+    SoundUtils:PlayCue(channel)
+    cueTimer = Addon:ScheduleTimer(function()
+        cueTimer = nil
+        SoundQueue:Advance()
+    end, CUE_SECONDS)
+end
+
 --- Start something if nothing is speaking and something may. Safe to call at any time;
 --- the ticker and every queue mutation route through here.
 function SoundQueue:Advance()
+    -- Consumed by this call whatever it decides. A drained queue, or a clip held back by a
+    -- gate, means a wait that already separates the next line from the last.
+    local previous = lastFinished
+    lastFinished = nil
+
     local head = self.sounds[1]
-    if not head or head.nextSoundTimer or self:IsPaused() then
+    if not head or head.nextSoundTimer or cueTimer or self:IsPaused() then
         StopRetryTicker()
         return
     end
-    if cueTimer then
-        return
-    end
-
-    -- Consumed here whatever happens next: a clip held back by a gate plays after a wait
-    -- that already separates it from the last one.
-    local previous = lastFinished
-    lastFinished = nil
 
     -- The first clip no gate holds. A held head is skipped, not waited on.
     local playable = nil
@@ -492,8 +511,8 @@ function SoundQueue:Advance()
 
     StopRetryTicker()
     local nextClip = self.sounds[1]
-    if previous and self:WantsCue(previous, nextClip) then
-        self:PlayCue(nextClip)
+    if previous and WantsCue(previous, nextClip) then
+        PlayCue(nextClip)
         return
     end
     self:PlaySound(nextClip)
@@ -522,29 +541,6 @@ function SoundQueue:RecheckGates(source)
         Callbacks:Fire("AUDIO_CHANGED")
     end
     return true
-end
-
---- Whether to mark the change from one item to the next. Pages of one book are one item:
---- a sound between each would be noise, and the page label already says where it is.
-function SoundQueue:WantsCue(previous, nextClip)
-    if not Addon.db.profile.Audio.CueBetweenItems then
-        return false
-    end
-    return not (previous.group and previous.group == nextClip.group)
-end
-
---- Play the cue on the channel the next clip will speak on, so it follows the voice's
---- volume rather than the effects', then start that clip once it has had its moment.
-function SoundQueue:PlayCue(nextClip)
-    local channel = nextClip.source:GetChannel()
-    if SoundUtils:IsMutedByPlayer(channel) then
-        SoundUtils:MuteChannel(channel, false)
-    end
-    SoundUtils:PlayCue(channel)
-    cueTimer = Addon:ScheduleTimer(function()
-        cueTimer = nil
-        self:Advance()
-    end, CUE_SECONDS)
 end
 
 --------------------------------------------------------------------------------

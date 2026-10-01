@@ -34,7 +34,7 @@ local world = {
     -- the older quest tests read it unchanged; the channel of the nth play is beside it.
     playedChannels = {},
     stopped = {},      -- handles StopSound was asked to stop, in order
-    kitSounds = {},    -- every PlaySound, as {kit, channel, at}: UI clicks and the item cue
+    kitSounds = {},    -- every PlaySound, as {kit, channel}: UI clicks and the item cue
     music = {},        -- paths PlayMusic was given, in order (the 2.4.3/3.3.5 path)
     missing = {},      -- paths PlaySoundFile refuses, as a set
     cvars = {},        -- overrides; anything unset reads as "1"
@@ -513,7 +513,7 @@ function _G.GameTooltip_Hide() end
 function _G.MouseIsOver() return false end
 function _G.SetCursor() end
 function _G.PlaySound(kit, channel)
-    table.insert(world.kitSounds, { kit = kit, channel = channel, at = world.time })
+    table.insert(world.kitSounds, { kit = kit, channel = channel })
 end
 _G.SOUNDKIT = { U_CHAT_SCROLL_BUTTON = 1115, IG_QUEST_LOG_CLOSE = 845 }
 _G.HIGHLIGHT_FONT_COLOR = { r = 1, g = 1, b = 1 }
