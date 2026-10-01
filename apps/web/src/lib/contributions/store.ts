@@ -21,7 +21,7 @@ import type { EnvelopeSource } from "./envelope";
 /** Exported for accept.ts, whose row lock reads the same shape inside its own transaction. */
 export const CONTRIBUTION_COLUMNS = `"id", "source", "key", "locale", "build", "text", "meta", "raw", "count",
                  "status", "body", "name", "email", "userId", "createdAt"::text,
-                 "updatedAt"::text, "resolvedBy", "npcKind", "npcId", "npcName"`;
+                 "updatedAt"::text, "resolvedBy", "npcKind", "npcId", "npcName", "pageId"`;
 const COLUMNS = CONTRIBUTION_COLUMNS;
 
 export type Contribution = {
@@ -47,6 +47,8 @@ export type Contribution = {
   /** The NPC a moderator named for an envelope that named none (migration 0048); null otherwise. */
   npcId: number | null;
   npcName: string | null;
+  /** The English page a moderator matched a books contribution to (migration 0059); null until then. */
+  pageId: number | null;
 };
 
 /**
@@ -94,6 +96,42 @@ export async function setContributionNpc(
     subject: String(id),
     actorId: by,
     detail: { field: "npc", value: { npcKind: row.npcKind, npcId: row.npcId, npcName: row.npcName } },
+  });
+  return row;
+}
+
+/**
+ * Record which English page a books contribution's text is, or clear it with null. A no-op,
+ * returning null, for a row that is not books or whose page accept has already written: the
+ * written page is one-way (accept.ts), and moving the match under it would leave the two
+ * disagreeing. The page is the caller's to check exists. Returns the updated row.
+ *
+ * `by` is who answered, for the activity log, as for setContributionNpc.
+ */
+export async function setContributionPage(
+  id: number,
+  pageId: number | null,
+  by: string | null,
+): Promise<Contribution | null> {
+  const { rows } = await db().query<Contribution>(
+    `update "contribution"
+        set "pageId" = $2, "updatedAt" = now()
+      where "id" = $1 and "source" = 'books'
+        and not exists (select 1 from "book_line" b
+                         where b."origin" = 'contributed'
+                           and b."note" = 'contribution #' || "contribution"."id")
+      returning ${COLUMNS}`,
+    [id, pageId],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  await recordActivity({
+    kind: "contribution.edited",
+    lang: isLang(row.locale) ? row.locale : null,
+    source: row.source,
+    subject: String(id),
+    actorId: by,
+    detail: { field: "pageId", value: pageId },
   });
   return row;
 }

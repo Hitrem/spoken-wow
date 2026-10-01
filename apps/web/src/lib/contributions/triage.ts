@@ -8,6 +8,7 @@
  * QuestSummary as `import type`, which TypeScript erases entirely, so the client bundle never
  * sees this module's own imports.
  */
+import { BASE_LANG } from "@/lib/lang";
 import { flavorsFor } from "@/lib/quests/catalogue";
 import type { NpcKind, NpcResolution, Provenance } from "@/lib/npc/store";
 
@@ -31,6 +32,29 @@ export function questFor(row: { source: string; meta: Record<string, string> }):
   const { quest, title } = row.meta;
   if (quest && title) return { title, questId: Number(quest) };
   return "gossip";
+}
+
+/** The English page a books contribution is matched to, as the triage table shows it. */
+export type BookMatch = { pageId: number; bookId: number; title: string; pageNumber: number; pageCount: number };
+
+/**
+ * The Book column's content for one contribution: what the client showed, and the English page
+ * a moderator matched it to (migration 0059). Null for any source but books, and for an English
+ * row, which has no translation to place -- accept writes nothing for it.
+ */
+export type BookSummary = { title: string | null; number: number | null; match: BookMatch | null };
+
+export function bookFor(
+  row: { source: string; locale: string; meta: Record<string, string> },
+  match: BookMatch | null,
+): BookSummary | null {
+  if (row.source !== "books" || row.locale === BASE_LANG) return null;
+  const number = Number(row.meta.number);
+  return {
+    title: row.meta.book?.trim() || null,
+    number: Number.isInteger(number) && number > 0 ? number : null,
+    match,
+  };
 }
 
 /** Who a row's NPC is, in exactly the shape the triage table renders. */
