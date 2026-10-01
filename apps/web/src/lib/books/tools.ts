@@ -20,6 +20,12 @@ import * as namingModule from "@books-tools/lib/naming.mjs";
 export const spokenText = textModule.spokenText as (text: string) => string;
 
 /**
+ * A first page with its book's title ahead of it, unless the page already opens with it.
+ * The narration only: the shown text and the addon's checksum stay the page's own words.
+ */
+export const titledText = textModule.titledText as (title: string, text: string) => string;
+
+/**
  * Whether a page's text can be voiced, and if not why: empty, a placeholder, or a `$N`-style
  * token the game fills in at runtime and a recording cannot. The extract's own rule, so a
  * page written on the site is judged exactly as one read out of vmangos.

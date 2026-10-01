@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { normaliseText, spokenText, isGeneratable } from "./text.mjs";
+import { normaliseText, spokenText, isGeneratable, titledText } from "./text.mjs";
 
 test("CRLF becomes a newline", () => {
   assert.equal(normaliseText("Ola Morgan,\r\n\r\nOs negocios"), "Ola Morgan,\n\nOs negocios");
@@ -37,4 +37,29 @@ test("a page holding a substitution token is not generatable", () => {
 
 test("ordinary prose is generatable", () => {
   assert.deepEqual(isGeneratable("The rains have come."), { generatable: true, skipReason: null });
+});
+
+test("a title is read ahead of the page, closed with a full stop", () => {
+  assert.equal(spokenText(titledText("Letter to Ello", "The letters flicker.")), "Letter to Ello. The letters flicker.");
+});
+
+test("a title that already ends a sentence gets no second stop", () => {
+  assert.equal(spokenText(titledText("For the Light!", "Brothers,")), "For the Light! Brothers,");
+});
+
+test("a page that opens with its own title is not given it twice", () => {
+  assert.equal(titledText("Fellari Swiftarrow", "Fellari Swiftarrow\n\nRanger Captain"), "Fellari Swiftarrow\n\nRanger Captain");
+  assert.equal(
+    titledText("A Treatise on Military Ranks", '<H1 align="center">A TREATISE ON MILITARY RANKS</H1>'),
+    '<H1 align="center">A TREATISE ON MILITARY RANKS</H1>',
+  );
+});
+
+test("the comparison is not limited to ASCII", () => {
+  assert.equal(titledText("Записка Зама", "Записка Зама\n\nАптекарь"), "Записка Зама\n\nАптекарь");
+});
+
+test("no title, no change", () => {
+  assert.equal(titledText("", "Dear sir,"), "Dear sir,");
+  assert.equal(titledText("   ", "Dear sir,"), "Dear sir,");
 });

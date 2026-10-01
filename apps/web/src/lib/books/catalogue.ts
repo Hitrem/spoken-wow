@@ -16,7 +16,7 @@ import { nameStamp, versionStamp } from "@/lib/stamp";
 import { loadDirtyContext, NO_DIRT, type DirtyContext } from "@/lib/generation/dirty";
 
 import { ownerEntityKind, type OwnerKind } from "./filters";
-import { spokenText, textHash, fileFor, isGeneratable } from "./tools";
+import { spokenText, textHash, fileFor, isGeneratable, titledText } from "./tools";
 import { speakPlayerTokens } from "@/lib/player-words";
 import { madeByOf, type MadeBy } from "@/lib/takes/made-by";
 import { liveTakes } from "@/lib/takes/store";
@@ -177,9 +177,24 @@ async function stampOf(lang: Lang): Promise<string> {
  * page holding a $N down as `substitution`, which the word now speaks. isGeneratable is the
  * extract's rule, so asking it again changes nothing else.
  */
-function voiced(text: string, lang: Lang) {
-  const said = speakPlayerTokens(text, lang);
-  return { spoken: spokenText(said), hash: textHash(said), ...isGeneratable(said) };
+function voiced(text: string, lang: Lang, title?: string) {
+  const said = speakPlayerTokens(title ? titledText(title, text) : text, lang);
+  return {
+    spoken: spokenText(said),
+    hash: textHash(said),
+    // The page alone: a title in front of an empty page or a "Missing Text" is not a page.
+    ...isGeneratable(speakPlayerTokens(text, lang)),
+  };
+}
+
+/**
+ * The title a page is read with: the book's, on its first page only, and only in the
+ * language being read -- an English name standing in for an untranslated one is shown,
+ * marked, and never said. Adding it changed every first page's hash, which is the point:
+ * their takes are stale until they are read again with it.
+ */
+function spokenTitle(pageNumber: number, title: string | undefined): string | undefined {
+  return pageNumber === 1 ? title : undefined;
 }
 
 async function buildTranslated(lang: Lang): Promise<BookPage[]> {
@@ -206,7 +221,7 @@ async function buildTranslated(lang: Lang): Promise<BookPage[]> {
     return {
       ...page,
       ...(text
-        ? { text: text.text, ...voiced(text.text, lang) }
+        ? { text: text.text, ...voiced(text.text, lang, spokenTitle(page.pageNumber, title)) }
         : { spoken: "", hash: textHash(""), generatable: false, skipReason: "untranslated" }),
       title: title ?? page.title,
       english: page.text,
@@ -253,7 +268,7 @@ async function build(lang: Lang): Promise<BookPage[]> {
       ownerIds: row.ownerIds,
       material: row.material,
       text: row.text,
-      ...voiced(row.text, lang),
+      ...voiced(row.text, lang, spokenTitle(row.pageNumber, row.title)),
       file: fileFor(row.pageId),
     };
   });

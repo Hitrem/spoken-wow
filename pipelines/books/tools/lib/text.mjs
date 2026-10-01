@@ -57,3 +57,27 @@ export function isGeneratable(text) {
   if (SUBSTITUTION.test(spoken)) return { generatable: false, skipReason: "substitution" };
   return { generatable: true, skipReason: null };
 }
+
+/** Where a title already closes a sentence, and a second stop would be read as a pause. */
+const SENTENCE_END = /[.!?…。！？]$/;
+
+/** Letters and digits only, for asking whether a page opens with its own title. */
+function wordsOf(text) {
+  return spokenText(text).toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+/**
+ * A book's first page as a narrator reads it: the title, then the page.
+ *
+ * The client shows the title above every page and never says it, so a book that does not
+ * name itself in its own words starts mid-thought. Only the narration takes it -- the page's
+ * stored text, and the checksum the addon finds it by, are of the words on the page alone.
+ *
+ * A page that already opens with its title (a gravestone's name, a treatise's <H1>) is left
+ * as it is: prepending would read the same words twice in a row.
+ */
+export function titledText(title, text) {
+  const heading = String(title ?? "").trim();
+  if (wordsOf(text).startsWith(wordsOf(heading))) return text;
+  return `${heading}${SENTENCE_END.test(heading) ? "" : "."}\n\n${text}`;
+}
