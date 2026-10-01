@@ -12,6 +12,13 @@ name: Announce release
 on:
   release:
     types: [published]
+  # For a release published while this workflow did not exist or could not post: `published`
+  # fires once, and toggling a release back to draft to fire it again would hide the downloads.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to announce, e.g. quests/v2.2.0"
+        required: true
 
 jobs:
   discord:
@@ -32,14 +39,14 @@ jobs:
 
       - name: Resolve the name and notes from the tag
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: node scripts/lib/announce.mjs "$TAG" > announcement.json
 
       - name: Post to Discord
         env:
           WEBHOOK: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK }}
-          TAG: ${{ github.event.release.tag_name }}
-          URL: ${{ github.event.release.html_url }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+          URL: ${{ github.event.release.html_url || format('{0}/{1}/releases/tag/{2}', github.server_url, github.repository, inputs.tag) }}
         run: |
           if jq -e .skip announcement.json > /dev/null; then
             echo "::warning::not announcing: $(jq -r .skip announcement.json)"
