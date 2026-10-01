@@ -13,6 +13,7 @@
 import { recordActivity } from "@/lib/activity/store";
 import { db } from "@/lib/db";
 import { BASE_LANG, type Lang } from "@/lib/lang";
+import { bareDirection } from "@/lib/generation/narration";
 
 import {
   isSeedStrategy,
@@ -191,15 +192,36 @@ export function validateRaceTags(raw: unknown): Record<string, string> {
   for (const [race, tag] of Object.entries(raw as Record<string, unknown>)) {
     if (typeof tag !== "string") throw new SettingsError(`the ${race} tag must be a string`);
     const trimmed = tag.trim();
-    if (!trimmed) throw new SettingsError(`the ${race} tag is empty; remove it instead`);
+    if (!bareDirection(trimmed)) {
+      throw new SettingsError(`the ${race} tag is empty; remove it instead`);
+    }
     // narration.ts splits speech from stage directions on angle brackets, so a tag carrying
     // one would be read by the narrator rather than tagging the race it belongs to.
     if (/[<>]/.test(trimmed)) {
       throw new SettingsError(`the ${race} tag must not contain an angle bracket`);
     }
-    tags[race] = trimmed;
+    tags[race] = storedDirection(trimmed, race);
   }
   return tags;
+}
+
+/**
+ * A direction as typed, in the square brackets eleven_v3 performs rather than reads.
+ *
+ * The brackets are added here rather than at generation, so the stored form - and so every
+ * spoken text and take hash made from it - is what it was when people typed them by hand.
+ * Rewriting the rows bare instead would need a migration the release before this one cannot
+ * read: it would send "Scottish accent" to be spoken aloud.
+ *
+ * A value already bracketed is kept as it is: the form sends the whole map on every save,
+ * other entries included, and one typed before this change may be "[fast] [nasal]".
+ */
+function storedDirection(tag: string, key: string): string {
+  if (tag.startsWith("[") && tag.endsWith("]")) return tag;
+  if (/[[\]]/.test(tag)) {
+    throw new SettingsError(`the ${key} tag must not contain a square bracket; they are added for you`);
+  }
+  return `[${tag}]`;
 }
 
 /**

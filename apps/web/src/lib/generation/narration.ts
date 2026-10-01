@@ -85,6 +85,18 @@ export function directionFor(voice: string, tags: Record<string, string>): strin
   return own.length > 0 ? own.join(" ") : undefined;
 }
 
+/**
+ * A stored direction as it is typed: its words, without the square brackets around them.
+ *
+ * Stored bracketed, because that is the form eleven_v3 performs and the form every take so far
+ * was hashed with - settings.ts adds them on save. Leaves a value that is not one bracketed
+ * span as it is, so it round-trips through the form unchanged.
+ */
+export function bareDirection(tag: string): string {
+  const match = tag.trim().match(/^\[([^[\]]*)\]$/);
+  return match ? match[1].trim() : tag.trim();
+}
+
 /** A lowercase bracketed span: a sound the NPC makes, not the game narrating. */
 const SOUND = /<([a-z][^<>]*)>/g;
 

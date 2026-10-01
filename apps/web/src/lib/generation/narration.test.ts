@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   accentTagged,
+  bareDirection,
   directionFor,
   audioTags,
   hasNarration,
@@ -242,5 +243,17 @@ describe("directionFor", () => {
 
   it("does not read a race's direction twice for a slot named by the race alone", () => {
     expect(directionFor("dwarf", tags)).toBe("[Scottish accent]");
+  });
+});
+
+describe("bareDirection", () => {
+  it("drops the brackets around a stored direction", () => {
+    expect(bareDirection("[Scottish accent]")).toBe("Scottish accent");
+    expect(bareDirection(" [ boyish ] ")).toBe("boyish");
+  });
+
+  it("leaves a bare direction, and one that is not a single span, as they are", () => {
+    expect(bareDirection("Scottish accent")).toBe("Scottish accent");
+    expect(bareDirection("[fast] [nasal]")).toBe("[fast] [nasal]");
   });
 });

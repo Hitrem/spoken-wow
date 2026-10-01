@@ -14,6 +14,7 @@ import VoiceSamples from "./VoiceSamples";
 import { cloneVoice } from "./voices/PopulateDialog";
 import { Badge } from "@/components/ui/badge";
 import type { Provider } from "@/lib/generation/providers";
+import { bareDirection } from "@/lib/generation/narration";
 import { cn } from "@/lib/utils";
 import { displayName } from "@/lib/voices/names";
 import type { Sample } from "@/lib/voices/samples";
@@ -66,6 +67,11 @@ function groups(slots: VoiceSlot[]): Group[] {
   return [...byRace.values()];
 }
 
+/** Every direction without its square brackets, as the boxes show and take them. */
+function bare(tags: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(tags).map(([key, tag]) => [key, bareDirection(tag)]));
+}
+
 type Props = {
   tab: Provider;
   slots: VoiceSlot[];
@@ -112,9 +118,10 @@ export default function VoiceSlotList({
   const [openRaces, setOpenRaces] = useState<ReadonlySet<string>>(
     () => new Set(groups(slots).map((group) => group.race)),
   );
-  const [tags, setTags] = useState(raceTags);
+  // Bare, as typed: settings.ts puts the brackets back on save.
+  const [tags, setTags] = useState(() => bare(raceTags));
   // The last value written, so a box that was edited and put back does not claim a save.
-  const [saved, setSaved] = useState(raceTags);
+  const [saved, setSaved] = useState(() => bare(raceTags));
   const [tagError, setTagError] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [sweep, setSweep] = useState<{
@@ -209,7 +216,7 @@ export default function VoiceSlotList({
         setTags(saved);
         return;
       }
-      const stored = body.config.raceTags as Record<string, string>;
+      const stored = bare(body.config.raceTags as Record<string, string>);
       setTags(stored);
       setSaved(stored);
     } catch (caught) {
@@ -244,6 +251,7 @@ export default function VoiceSlotList({
         aria-label={`Direction for ${key}`}
         title="Direction, sent to ElevenLabs and fish.audio alike; a voice's follows its race's"
         value={tags[key] ?? ""}
+        // No brackets: they are added on save, and typing them is harmless.
         placeholder={placeholder}
         disabled={savingKey !== null}
         onChange={(event) => setTags((current) => ({ ...current, [key]: event.target.value }))}
