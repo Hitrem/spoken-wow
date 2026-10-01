@@ -6,11 +6,16 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
-## Unreleased — player
+## 2.2.0 — player
 
-- **A quest played from the quest log names its giver in your client's language**, as the
-  quest dialog does, rather than in English. Names the game itself leaves untranslated
-  stay in English.
+- **Experimental:** NPC lines said in chat after you accept or turn in a quest are voiced. Toggle in settings.
+- The NPC's greeting is muted as the dialog opens, instead of cut off mid-word. Needs Spoken Player 2.3.0.
+- Quests played from the quest log name the giver in your client's language.
+
+## 2.2.0 — Spoken Quests Audio
+
+- Hundreds of quest follow-up lines voiced. Needs Spoken Quests 2.2.0.
+- About 60 new contributed lines, mostly NPC greetings.
 
 ## 2.1.0 — sound packs
 

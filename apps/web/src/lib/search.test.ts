@@ -117,7 +117,7 @@ describe("filter scoping", () => {
 describe("field filters", () => {
   it("narrows to a race", () => {
     const lines = all({ race: "tauren" });
-    expect(lines).toHaveLength(2163);
+    expect(lines).toHaveLength(2164);
     expect(lines.every((l) => l.race === "tauren")).toBe(true);
   });
 
@@ -170,15 +170,15 @@ describe("field filters", () => {
   it("hides progress text unless asked for", () => {
     // 3,140 of the corpus's 17,792 lines, and no code path will ever voice one.
     expect(asShipped().every((l) => l.source !== "progress")).toBe(true);
-    expect(asShipped()).toHaveLength(16250);
-    expect(all()).toHaveLength(19616);
+    expect(asShipped()).toHaveLength(16315);
+    expect(all()).toHaveLength(19686);
   });
 
   it("treats asking for the progress source as asking to see them", () => {
     // Otherwise picking `progress` in the source filter would return nothing at all, which
     // reads as a broken filter rather than as a default doing its job.
     const lines = asShipped({ source: "progress" });
-    expect(lines).toHaveLength(3366);
+    expect(lines).toHaveLength(3371);
     expect(lines.every((l) => l.source === "progress")).toBe(true);
   });
 });

@@ -304,9 +304,9 @@ fi
 # The player and the packs are versioned independently - the packs move when the audio is
 # rebuilt, the player when its Lua changes - so each target looks up its own section.
 #
-# A heading is `## <version> — player` or `## <version> — sound pack(s)`, and the kind is half
-# the key: the player and the packs number themselves independently and have already collided
-# once on 1.1.0. Matching on the version alone would have sent the player's notes out with a
+# A heading is `## <version> — player`, or `## <version> — sound pack(s)` / `— Spoken Quests
+# Audio`, and the kind is half the key: the player and the packs number themselves
+# independently and have already collided once on 1.1.0. Matching on the version alone would have sent the player's notes out with a
 # sound pack.
 changelog_for() {
   local file="$REPO/docs/quests/CHANGELOG.md"
@@ -319,7 +319,7 @@ changelog_for() {
     // string and cannot import it -- keep the two in step.
     const language = /^## \S+ — [a-z]+(?:-[a-z]+)+-[a-z]{2}[A-Z]{2}(?:\s|$)/;
     const matches = (l) => l.startsWith(`## ${version}`) && !language.test(l) &&
-      (kind === "spoken" ? true : kind === "player" ? /player/i.test(l) : /pack/i.test(l));
+      (kind === "spoken" ? true : kind === "player" ? /player/i.test(l) : /pack|audio/i.test(l));
     const start = lines.findIndex(matches);
     if (start === -1) {
       console.error(`no "## ${version} ... ${kind}" section in CHANGELOG.md`);
