@@ -210,6 +210,45 @@ export async function createContribution(
   );
 }
 
+/**
+ * Store many submissions from one contributor at once, for scripts/import-contributions.mts: a
+ * scraped batch sent to us directly rather than through the upload page's hourly allowance.
+ *
+ * One statement for the lot, as fillContributionNpcs is, since the script runs over a tunnel. A
+ * dedup already stored is left alone rather than counted: "count" is how many players sent a
+ * line, and one contributor re-sending a batch that overlaps their last is not a second player.
+ * Returns the dedups it inserted.
+ */
+export async function importContributions(
+  inputs: Submission[],
+  identity: { name: string | null; email: string | null },
+): Promise<string[]> {
+  if (inputs.length === 0) return [];
+  const { rows } = await db().query<{ dedup: string }>(
+    `insert into "contribution"
+       ("source", "key", "locale", "build", "text", "meta", "raw", "dedup", "name", "email")
+     select "source", "key", "locale", "build", "text", "meta", "raw", "dedup", $9, $10
+       from unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::jsonb[],
+                   $7::text[], $8::text[])
+         as input ("source", "key", "locale", "build", "text", "meta", "raw", "dedup")
+     on conflict ("dedup") do nothing
+     returning "dedup"`,
+    [
+      inputs.map((input) => input.source),
+      inputs.map((input) => input.key),
+      inputs.map((input) => input.locale),
+      inputs.map((input) => input.build),
+      inputs.map((input) => input.text),
+      inputs.map((input) => JSON.stringify(input.meta)),
+      inputs.map((input) => input.raw),
+      inputs.map((input) => input.dedup),
+      identity.name,
+      identity.email,
+    ],
+  );
+  return rows.map((row) => row.dedup);
+}
+
 export async function recordContributionHit(ip: string | null): Promise<void> {
   await db().query(`insert into "contribution_hit" ("ip") values ($1)`, [ip]);
 }
