@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import ContributionTable, { type ContributionRow } from "@/components/ContributionTable";
 import ContributionsTabs from "@/components/ContributionsTabs";
 import { auth } from "@/lib/auth";
-import { pageById } from "@/lib/books/catalogue";
+import { bookFacets, catalogue, pageById } from "@/lib/books/catalogue";
 import { clientOf, isClientFamily } from "@/lib/contributions/client";
 import { corpusLookup } from "@/lib/contributions/existing";
 import { isStatus, type ContributionStatus } from "@/lib/contributions/contributions";
@@ -24,10 +24,12 @@ import {
 import { isEnvelopeSource } from "@/lib/contributions/envelope";
 import { listContributions, observationMeta, type Contribution } from "@/lib/contributions/store";
 import {
+  bookFor,
   npcSummaryFrom,
   questFor,
   resolveMissing,
   idOnlyResolution,
+  type BookMatch,
   type NpcSummary,
 } from "@/lib/contributions/triage";
 import { facets } from "@/lib/facets";
@@ -68,6 +70,19 @@ async function existingTextFor(contributions: Contribution[]): Promise<Record<nu
   );
 
   return found;
+}
+
+/** The English page each matched books row names, keyed on the page id. */
+async function bookMatchesFor(contributions: Contribution[]): Promise<Map<number, BookMatch>> {
+  const ids = new Set(contributions.flatMap((row) => (row.pageId === null ? [] : [row.pageId])));
+  if (ids.size === 0) return new Map();
+  const matches = new Map<number, BookMatch>();
+  for (const page of await catalogue(BASE_LANG)) {
+    if (!ids.has(page.pageId)) continue;
+    const { pageId, bookId, title, pageNumber, pageCount } = page;
+    matches.set(pageId, { pageId, bookId, title, pageNumber, pageCount });
+  }
+  return matches;
 }
 
 /**
@@ -232,7 +247,16 @@ export default async function Page({
   const pages = Math.max(1, Math.ceil(matching.length / PAGE_SIZE));
   const page = Math.min(pageOf(rawPage), pages);
   const shown = matching.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const [existing, linedIds] = await Promise.all([existingTextFor(shown), linesInExplorer(shown)]);
+  const [existing, linedIds, bookMatches] = await Promise.all([
+    existingTextFor(shown),
+    linesInExplorer(shown),
+    bookMatchesFor(shown),
+  ]);
+  // The English books, for matching a translated page to one -- only when this page shows a
+  // row that can be matched.
+  const books = shown.some((row) => bookFor(row, null))
+    ? (await bookFacets(BASE_LANG)).map(({ bookId, title, pages }) => ({ bookId, title, pages }))
+    : [];
 
   // ContributionTable is a client component: whatever shape crosses in `initial` lands in the
   // RSC flight payload and is readable in devtools, so the full row -- name, email, raw, the
@@ -252,6 +276,7 @@ export default async function Page({
     body: row.body,
     npc: npcs[row.id] ?? null,
     quest: questFor(row),
+    book: bookFor(row, row.pageId === null ? null : (bookMatches.get(row.pageId) ?? null)),
     hasLine: linedIds.has(row.id),
   }));
 
@@ -280,6 +305,7 @@ export default async function Page({
         client={client}
         source={source}
         existing={existing}
+        books={books}
         flavorScopes={facetValues.flavorScopes}
         // What api/contributions/npc asks, so the speaker controls are offered only to
         // somebody it will answer. An NPC's race and gender decide its voice in every
