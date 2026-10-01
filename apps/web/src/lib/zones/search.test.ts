@@ -246,8 +246,8 @@ describe("dirty", () => {
 describe("made by", () => {
   const entries = [entry({ id: "z:1" }), entry({ id: "z:2" }), entry({ id: "z:3" })];
   const madeBy = new Map([
-    ["z:1", madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy" })],
-    ["z:2", madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: null, createdByName: null })],
+    ["z:1", madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy", createdAt: new Date("2026-10-01T12:00:00Z") })],
+    ["z:2", madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: null, createdByName: null, createdAt: new Date("2026-10-01T12:00:00Z") })],
   ]);
 
   it("narrows by model and author, and offers every one the takes hold", () => {

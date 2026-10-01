@@ -25,12 +25,13 @@ function downloadName(line: ResultLine): string {
 type Props = {
   line: ResultLine | null;
   /**
-   * The live take, when this line has been regenerated in this session.
+   * The live take: the one regenerated in this session, else the one the search reported.
    *
    * Appended to the audio URL as a cache buster. Replacing a line does not change its path -
    * the addon resolves sounds by filename, so it cannot - and a cached response is only
    * revalidated after five minutes, so without this the browser replays the take that was
-   * just replaced.
+   * just replaced. Both sources, because a take made in another tab, or before a reload,
+   * left a bare URL the browser still held the old take under.
    */
   version?: number;
   ref: React.RefObject<HTMLAudioElement | null>;

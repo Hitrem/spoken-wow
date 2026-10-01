@@ -946,7 +946,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
         <Player
           ref={audio}
           line={current}
-          version={current ? versions[current.audioPath] : undefined}
+          version={current ? (versions[current.audioPath] ?? current.take?.version) : undefined}
         />
       </div>
     </>

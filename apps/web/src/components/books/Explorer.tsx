@@ -558,7 +558,7 @@ export function Explorer({ books }: { books: BookFacet[] }) {
         />
         <Player
           line={current}
-          version={current ? versions[current.id] : undefined}
+          version={current ? (versions[current.id] ?? current.take?.version) : undefined}
           audioRef={audio}
         />
       </div>

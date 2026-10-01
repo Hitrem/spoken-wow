@@ -16,6 +16,8 @@ export type MadeBy = {
   /** The user's id, which is what the author filter matches: names are not unique. */
   authorId: string | null;
   authorName: string | null;
+  /** When the take was made, as ISO 8601: a string, because this crosses to the client. */
+  madeAt: string;
 };
 
 /** What the filter chips can offer: every model and author among the live takes. */
@@ -48,11 +50,13 @@ export function madeByOf(row: {
   modelId: string | null;
   createdBy: string | null;
   createdByName: string | null;
+  createdAt: Date;
 }): MadeBy {
   return {
     model: modelLabel(row.provider, row.modelId),
     authorId: row.createdBy,
     authorName: row.createdByName,
+    madeAt: row.createdAt.toISOString(),
   };
 }
 
