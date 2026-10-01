@@ -94,10 +94,10 @@ export function audioTags(text: string): string {
 /**
  * The accent direction for a race, prefixed to the words the NPC says.
  *
- * Dwarves are the reason this exists: the game's actors play them with a strong Scottish
- * brogue, and an instant clone read by eleven_v3 returns something closer to RP. The model
- * has no other channel for direction - a text-to-speech request carries text, settings and a
- * seed, nothing else - so the direction has to travel inside the text.
+ * Dwarves are the reason this exists: they are meant to have a strong Scottish brogue, and
+ * an instant clone read by eleven_v3 returns something closer to RP. The model has no other
+ * channel for direction - a text-to-speech request carries text, settings and a seed,
+ * nothing else - so the direction has to travel inside the text.
  *
  * Applied per stretch of speech rather than once at the front, because a line can be
  * interrupted by a stage direction that `narrator-male` reads. Tagging the whole string would

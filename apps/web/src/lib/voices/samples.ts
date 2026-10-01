@@ -36,8 +36,8 @@ export type Sample = { file: string; bytes: number; uploadedAt: string };
 /**
  * Where one clone's clips are. `clone` is a clone's name (clone-name.ts): the slot for
  * English, whose clips stay exactly where they are, and `slot@lang` for another language,
- * whose clips -- its own actors' -- sit in a directory of their own, <samples>/<lang>/<slot>.
- * No slot is named like a language code, so the two can never meet.
+ * whose clips sit in a directory of their own, <samples>/<lang>/<slot>. No slot is named
+ * like a language code, so the two can never meet.
  */
 export async function voiceDir(clone: string): Promise<string> {
   const parsed = parseCloneName(clone);

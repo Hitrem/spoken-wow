@@ -29,7 +29,7 @@ describe("listVoices", () => {
     expect(found.get("orc-male-standard")).toBe("orc1");
   });
 
-  // Each language clones a slot from its own actors' clips, under its own name.
+  // Each language clones a slot from its own clips, under its own name.
   it("keeps every language's clone, under its own name", async () => {
     const fetchImpl = respondWith({
       voices: [
@@ -113,7 +113,7 @@ describe("addVoice", () => {
 
     const form = init?.body as FormData;
     expect(form.get("name")).toBe("orc-male-standard");
-    // Extracted game audio carries music and ambience, which a clone would reproduce.
+    // Source clips can carry music and ambience, which a clone would reproduce.
     expect(form.get("remove_background_noise")).toBe("true");
     expect(form.getAll("files")).toHaveLength(2);
   });

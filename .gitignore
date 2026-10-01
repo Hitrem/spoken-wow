@@ -56,11 +56,11 @@ superpowers/
 # audio-history/ is not.
 /pipelines/quests/audio-transcoded/
 
-# Blizzard's own NPC barks and the script that pulls them. Local reference material for
-# tuning voices, not part of what this project ships.
-/pipelines/quests/tools/fetch_npc_lines.py
+# Local seed clips for voices and the scripts that fetch them. Input to tuning voices, not
+# part of what this project ships.
+/pipelines/quests/tools/fetch_seed_clips.py
 /pipelines/quests/tools/fetch_voice_sets.py
-/pipelines/quests/voice/npc-lines/
+/pipelines/quests/voice/seed-clips/
 
 /pipelines/quests/tools/.lines_cache.pkl
 

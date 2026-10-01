@@ -87,27 +87,9 @@ voices rather than one per race-gender. `narrator-male` is the exception and has
 it is a pseudo-race for gameobjects and items.
 
 The whole set is listed on `/voices`, which is also the easiest way to build it — see
-"Managing voices". The clips to build them from are Blizzard's own NPC greeting barks:
-
-```bash
-python tools/fetch_npc_lines.py              # into voice/npc-lines/<race-gender>/<flavor>/
-python tools/fetch_npc_lines.py --lang frFR  # the French client's, into voice/npc-lines/frFR/...
-```
-
-Every language's clones come from its own client's barks, recorded by its own actors, so a
-language other than English has its own set under `voice/npc-lines/<lang>/`, the layout
-`/<lang>/voices` seeds from. Wowhead has no Skybourne elves in any language and no blood
-elves in Classic, so those come out of the game instead: file ids from the local install's
-tables, and each language's recording from Blizzard's CDN, since an install carries only its
-own language.
-
-```bash
-python tools/fetch_voice_sets.py                   # Skybourne and blood elf, every language
-python tools/fetch_voice_sets.py --lang frFR       # just one
-```
-
-That directory is gitignored and local-only. It is Blizzard's audio, and it is input to a
-pipeline rather than something to redistribute.
+"Managing voices". The clips to build them from sit in
+`voice/seed-clips/<race-gender>/<flavor>/`, and a language other than English has its own
+set under `voice/seed-clips/<lang>/`, the layout `/<lang>/voices` seeds from. That directory is gitignored and local-only.
 
 ## Usage
 
@@ -621,13 +603,12 @@ Skybourne elves have the game's two voice sets per gender, named by their NPCSou
 
 Expanding one shows the clips it would be cloned from: upload, play back, delete, and
 **merge** a selection into one take with an adjustable pause. A slot finds its own source
-material in `voice/npc-lines/<race-gender>/<flavor>/`, which is the shape of its name — no
+material in `voice/seed-clips/<race-gender>/<flavor>/`, which is the shape of its name — no
 mapping table to keep in sync when a flavor is added. A slot with no flavor seeds from the files
-directly in `<race-gender>/`: `bloodelf-female` is the game's noble blood elf set, the one voice
-the roster gives them. `narrator-male` has nothing to seed from, which is expected: it is not a
-race.
+directly in `<race-gender>/`, as `bloodelf-female` does: the one voice the roster gives
+them. `narrator-male` has nothing to seed from, which is expected: it is not a race.
 
-Merging is there because the practical source is one-second greeting barks.
+Merging is there because the practical source is one-second greeting clips.
 ElevenLabs treats combined length as what decides clone quality — one to two minutes is the
 target, past three it grows unstable — and a pile of one-second files gives the model no
 continuity between them. It defaults to deleting the originals, because cloning uploads every

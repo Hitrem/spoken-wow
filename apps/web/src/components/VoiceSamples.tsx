@@ -20,7 +20,7 @@ import type { Sample } from "@/lib/voices/samples";
  * ElevenLabs' guidance is that the number of samples is irrelevant and the combined length
  * is what decides clone quality, so that total is the thing this panel exists to show.
  *
- * Merging is here because the realistic source for these voices is wowhead NPC greetings, a
+ * Merging is here because the realistic source for these voices is short greeting clips, a
  * second or less each. Fifty separate one-second files give the model no continuity; one
  * take with a beat between them does.
  */
@@ -35,8 +35,8 @@ type Action = "upload" | "import" | "merge" | "delete" | "clone";
 type Props = {
   voice: string;
   samples: Sample[];
-  /** Whether voice/npc-lines has barks for this voice in this language. */
-  hasGameClips: boolean;
+  /** Whether voice/seed-clips has clips for this voice in this language. */
+  hasSeedClips: boolean;
   /** Whether a voice of this name already exists in the ElevenLabs account. */
   exists: boolean;
   onChange: (samples: Sample[]) => void;
@@ -46,7 +46,7 @@ type Props = {
 export default function VoiceSamples({
   voice,
   samples,
-  hasGameClips,
+  hasSeedClips,
   exists,
   onChange,
   onCloned,
@@ -91,7 +91,7 @@ export default function VoiceSamples({
     if (input.current) input.current.value = "";
   }
 
-  async function importGameClips() {
+  async function importSeedClips() {
     const payload = await request("import", () =>
       fetch(withLang(lang, `/api/voices/${voice}/samples/import`), {
         method: "POST",
@@ -167,8 +167,8 @@ export default function VoiceSamples({
       {samples.length === 0 ? (
         <p className="text-muted-foreground mb-3 text-sm">
           No clips yet.{" "}
-          {hasGameClips
-            ? "Import the game's own barks for this voice, or upload your own — short greeting clips are fine, and several merge into one take."
+          {hasSeedClips
+            ? "Import the seed clips for this voice, or upload your own — short greeting clips are fine, and several merge into one take."
             : "Short greeting clips are fine — upload several and merge them into one take."}
         </p>
       ) : (
@@ -255,16 +255,16 @@ export default function VoiceSamples({
           Add clips
         </Button>
 
-        {hasGameClips && (
+        {hasSeedClips && (
           <Button
             variant="outline"
             size="xs"
             disabled={busy !== null}
-            title={`Replace these clips with the game's own ${voice} barks, merged into one take`}
-            onClick={importGameClips}
+            title={`Replace these clips with the seed clips for ${voice}, merged into one take`}
+            onClick={importSeedClips}
           >
             {busy === "import" ? <Loader2 className="animate-spin" /> : <Download />}
-            {samples.length > 0 ? "Re-import game clips" : "Import game clips"}
+            {samples.length > 0 ? "Re-import seed clips" : "Import seed clips"}
           </Button>
         )}
 

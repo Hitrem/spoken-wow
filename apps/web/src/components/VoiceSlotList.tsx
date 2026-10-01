@@ -77,8 +77,8 @@ type Props = {
   setPresent: Dispatch<SetStateAction<Set<string> | null>>;
   samples: Record<string, Sample[]>;
   setSamples: Dispatch<SetStateAction<Record<string, Sample[]>>>;
-  /** Slots with game barks to import in this language. */
-  gameClips: string[];
+  /** Slots with seed clips to import in this language. */
+  seedSlots: string[];
   /** This language's fish.audio references, by voice. */
   references: Record<string, ReferenceView>;
   setReferences: Dispatch<SetStateAction<Record<string, ReferenceView>>>;
@@ -99,7 +99,7 @@ export default function VoiceSlotList({
   setPresent,
   samples,
   setSamples,
-  gameClips,
+  seedSlots,
   references,
   setReferences,
   raceTags,
@@ -122,7 +122,7 @@ export default function VoiceSlotList({
   } | null>(null);
   const [confirmingSweep, setConfirmingSweep] = useState(false);
 
-  const seedable = slots.filter((slot) => gameClips.includes(slot.name));
+  const seedable = slots.filter((slot) => seedSlots.includes(slot.name));
 
   // Voices that do not exist in the account yet. Empty while the account could not be read,
   // because "missing" would then mean "unknown" and the button would offer to rebuild
@@ -130,7 +130,7 @@ export default function VoiceSlotList({
   const missing = present === null ? [] : seedable.filter((slot) => !present.has(slot.name));
 
   /**
-   * Seed and clone a list of voices from the game's clips.
+   * Seed and clone a list of voices from voice/seed-clips.
    *
    * Sequential rather than parallel: each iteration is an ffmpeg merge and an ElevenLabs
    * voice creation, and fifty of those at once is neither kind to the rate limit nor
@@ -397,7 +397,7 @@ export default function VoiceSlotList({
                         <VoiceSamples
                           voice={slot.name}
                           samples={clips}
-                          hasGameClips={gameClips.includes(slot.name)}
+                          hasSeedClips={seedSlots.includes(slot.name)}
                           exists={present?.has(slot.name) ?? false}
                           onChange={(next) =>
                             setSamples((current) => ({ ...current, [slot.name]: next }))
@@ -411,7 +411,7 @@ export default function VoiceSlotList({
                         <FishReference
                           voice={slot.name}
                           samples={clips}
-                          hasGameClips={gameClips.includes(slot.name)}
+                          hasSeedClips={seedSlots.includes(slot.name)}
                           onSamples={(next) =>
                             setSamples((current) => ({ ...current, [slot.name]: next }))
                           }

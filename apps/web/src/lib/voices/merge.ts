@@ -1,7 +1,7 @@
 /**
  * Joining several clips into one, with a pause between them.
  *
- * Wowhead NPC greetings are a second or less each, and a clone wants a minute or more of
+ * Greeting clips are a second or less each, and a clone wants a minute or more of
  * audio. Uploading fifty one-second files gives ElevenLabs no prosodic context between
  * them; joining them into a single take with a beat of silence between does.
  *

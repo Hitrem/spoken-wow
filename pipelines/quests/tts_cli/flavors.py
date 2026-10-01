@@ -20,9 +20,9 @@ from typing import Iterable, Mapping
 
 from tts_cli.naming import FOLLOWUP, followup_stem
 
-# Wowhead and the sound files spell undead "Undead"; the corpus uses the client's internal
-# race name. Same mapping as RACE_TO_SLOT in tools/fetch_npc_lines.py, which named the
-# directories under voice/npc-lines that these flavors have to match.
+# The sound files spell undead "Undead"; the corpus uses the client's internal
+# race name. Same mapping as RACE_TO_SLOT in tools/fetch_seed_clips.py, which named the
+# directories under voice/seed-clips that these flavors have to match.
 RACE_TO_SLOT = {
     "Human": "human",
     "Dwarf": "dwarf",
@@ -48,7 +48,7 @@ RACE_TO_SLOT = {
 # on the kind would silently drop every name long enough to be cut, which is all of the
 # vendor variants. Requiring the literal `NPC` is filter enough - it matches 207 of the 1,197
 # sound entries that begin with a race and gender, and yields exactly the 52 flavors that
-# have clips in voice/npc-lines.
+# have clips in voice/seed-clips.
 SOUND_NAME = re.compile(
     r"^(?P<race>" + "|".join(RACE_TO_SLOT) + r")"
     r"(?P<gender>Male|Female)"

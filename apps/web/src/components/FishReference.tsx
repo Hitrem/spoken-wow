@@ -33,8 +33,8 @@ export type ReferenceView = Pick<
 type Props = {
   voice: string;
   samples: Sample[];
-  /** Whether voice/npc-lines has barks for this voice in this language. */
-  hasGameClips: boolean;
+  /** Whether voice/seed-clips has clips for this voice in this language. */
+  hasSeedClips: boolean;
   /** The clips after an import, for the page to hold. */
   onSamples: (samples: Sample[]) => void;
   initial: ReferenceView | null;
@@ -44,7 +44,7 @@ type Props = {
 export default function FishReference({
   voice,
   samples,
-  hasGameClips,
+  hasSeedClips,
   onSamples,
   initial,
   onChange,
@@ -119,11 +119,11 @@ export default function FishReference({
   }
 
   /**
-   * Seed the clips from the game's barks, the same import the ElevenLabs tab offers, so a
+   * Seed the clips from voice/seed-clips, the same import the ElevenLabs tab offers, so a
    * reference can be cut without a detour there. Only ever from empty: replacing clips is
    * that tab's, where they are listed.
    */
-  async function importGameClips() {
+  async function importSeedClips() {
     setBusy("import");
     setError(null);
     try {
@@ -158,26 +158,26 @@ export default function FishReference({
       )}
 
       {samples.length === 0 ? (
-        hasGameClips ? (
+        hasSeedClips ? (
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
               size="sm"
               variant="outline"
               disabled={busy !== null}
-              title={`Import the game's own ${voice} barks, merged into one take`}
-              onClick={importGameClips}
+              title={`Import the seed clips for ${voice}, merged into one take`}
+              onClick={importSeedClips}
             >
               {busy === "import" ? <Loader2 className="animate-spin" /> : <Download />}
-              Import game clips
+              Import seed clips
             </Button>
             <span className="text-muted-foreground text-xs">
-              No clips yet; import the game&apos;s barks to cut a reference from.
+              No clips yet; import the seed clips to cut a reference from.
             </span>
           </div>
         ) : (
           <p className="text-muted-foreground text-xs">
-            No clips yet, and no game barks for this voice. Upload some on the ElevenLabs tab to
+            No clips yet, and no seed clips for this voice. Upload some on the ElevenLabs tab to
             cut a reference from.
           </p>
         )

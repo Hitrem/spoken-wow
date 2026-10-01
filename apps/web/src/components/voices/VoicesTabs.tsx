@@ -41,8 +41,8 @@ type Props = {
   fishModels: FishModelOption[];
   slots: VoiceSlot[];
   initialSamples: Record<string, Sample[]>;
-  /** Slots with game barks to import in this language. */
-  gameClips: string[];
+  /** Slots with seed clips to import in this language. */
+  seedSlots: string[];
   initialReferences: Record<string, ReferenceView>;
   raceTags: Record<string, string>;
   /** Voice names in the viewer's ElevenLabs account, or null when it could not be read. */
@@ -269,7 +269,7 @@ export default function VoicesTabs(props: Props) {
           setPresent={setPresent}
           samples={samples}
           setSamples={setSamples}
-          gameClips={props.gameClips}
+          seedSlots={props.seedSlots}
           references={references}
           setReferences={setReferences}
           raceTags={props.raceTags}

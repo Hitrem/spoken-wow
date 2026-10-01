@@ -167,9 +167,8 @@ export type Clip = { name: string; data: Buffer };
 /**
  * Create an instant voice clone.
  *
- * Background noise removal is always on: the clips are extracted game audio, which carries
- * music beds and ambience, and similarity_boost at synthesis time reproduces whatever is in
- * the source — including the tavern behind the innkeeper.
+ * Background noise removal is always on: the clips can carry music beds and ambience, and
+ * similarity_boost at synthesis time reproduces whatever is in the source.
  */
 export async function addVoice(
   name: string,

@@ -11,7 +11,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help dev build typecheck test bootstrap deploy-scripts releases rollback logs \
-        ssh-check store migrate-books db-pull import-locale push-npc-lines push-voice-sources
+        ssh-check store migrate-books db-pull import-locale push-seed-clips push-voice-sources
 
 APP := @spoken/web
 
@@ -135,14 +135,14 @@ import-locale: require-droplet ## Load a language's text into the droplet databa
 	@test -n "$(LOCALE)" || { echo "import-locale: set LOCALE, e.g. LOCALE=frFR"; exit 2; }
 	@$(DB_ENV) bash scripts/db/import-locale.sh $(LOCALE)
 
-# The NPC barks /voices seeds clones from, onto the droplet's shared/npc-lines. Additive: no
+# The seed clips /voices seeds clones from, onto the droplet's shared/seed-clips. Additive: no
 # --delete, so pushing one language never removes another's -- or English, which a checkout
-# may not have. NPC_LINES is the local root, English at its top and frFR/ etc. beside.
-NPC_LINES ?= pipelines/quests/voice/npc-lines
+# may not have. SEED_CLIPS is the local root, English at its top and frFR/ etc. beside.
+SEED_CLIPS ?= pipelines/quests/voice/seed-clips
 
-push-npc-lines: require-droplet ## Copy local NPC barks (tools/fetch_npc_lines.py) to shared/npc-lines on the droplet
-	@test -d "$(NPC_LINES)" || { echo "no $(NPC_LINES): run tools/fetch_npc_lines.py first"; exit 1; }
-	$(RSYNC) -a --exclude .DS_Store -e "$(SSH)" "$(NPC_LINES)/" $(DROPLET):$(REMOTE_ROOT)/shared/npc-lines/
+push-seed-clips: require-droplet ## Copy local seed clips to shared/seed-clips on the droplet
+	@test -d "$(SEED_CLIPS)" || { echo "no $(SEED_CLIPS): fetch the seed clips first"; exit 1; }
+	$(RSYNC) -a --exclude .DS_Store -e "$(SSH)" "$(SEED_CLIPS)/" $(DROPLET):$(REMOTE_ROOT)/shared/seed-clips/
 	@echo "==> pushed"
 
 # The clips and fish.audio references apps/web/scripts/seed-voice-sources.mts wrote locally,
