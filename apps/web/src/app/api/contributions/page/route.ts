@@ -10,7 +10,7 @@
  *
  * Gated as ../npc-identity is: whoever may edit the row's language.
  */
-import { catalogue } from "@/lib/books/catalogue";
+import { query } from "@/lib/db";
 import { requireCapability } from "@/lib/generation/authz";
 import { contributionLocale, setContributionPage } from "@/lib/contributions/store";
 import type { BookMatch } from "@/lib/contributions/triage";
@@ -43,15 +43,13 @@ export async function POST(request: Request) {
 
   let match: BookMatch | null = null;
   if (!clear) {
-    const page = (await catalogue(BASE_LANG)).find((p) => p.bookId === bookId && p.pageNumber === pageNumber);
+    const [page] = await query<BookMatch>(
+      `select "pageId", "bookId", "title", "pageNumber", "pageCount" from "book_line"
+        where "lang" = $1 and "isCurrent" and "bookId" = $2 and "pageNumber" = $3`,
+      [BASE_LANG, bookId, pageNumber],
+    );
     if (!page) return Response.json({ error: `book ${bookId} has no page ${pageNumber}` }, { status: 400 });
-    match = {
-      pageId: page.pageId,
-      bookId: page.bookId,
-      title: page.title,
-      pageNumber: page.pageNumber,
-      pageCount: page.pageCount,
-    };
+    match = page;
   }
 
   const recorded = await setContributionPage(id, match?.pageId ?? null, session.user.id);

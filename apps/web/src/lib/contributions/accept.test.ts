@@ -488,21 +488,32 @@ describe("resolveContribution: a book page in another language", () => {
     return rows[0];
   }
 
-  /** An English page this language has neither a text nor an owner's name for. */
-  async function untranslatedPage(): Promise<{ pageId: number; lineId: string; owner: string; kind: string } | null> {
-    const { rows } = await db().query<{ pageId: number; lineId: string; owner: string; kind: string }>(
-      `select e."pageId", e."lineId", e."ownerIds"[1]::text as "owner",
-              case e."ownerKind" when 'object' then 'gameobject' else 'item' end as "kind"
-         from "book_line" e
-        where e."lang" = $1 and e."isCurrent"
-          and not exists (select 1 from "book_line" t where t."lineId" = e."lineId" and t."lang" = $2)
-          and not exists (select 1 from "entity_name" n
-                           where n."kind" = case e."ownerKind" when 'object' then 'gameobject' else 'item' end
-                             and n."entityId" = e."ownerIds"[1]::text and n."lang" = $2)
-        order by e."pageId" limit 1`,
-      [BASE_LANG, LOCALE],
+  /**
+   * An English page of this test's own, so it needs no imported corpus: ids far outside
+   * vmangos's, and an owner no language has named.
+   */
+  let seeded: number[] = [];
+
+  afterEach(async () => {
+    await db().query(`delete from "book_line" where "pageId" = any($1::int[])`, [seeded]);
+    // The English name book_line's trigger gave each owner (0036).
+    await db().query(`delete from "entity_name" where "kind" = 'gameobject' and "entityId" = any($1::text[])`, [
+      seeded.map(String),
+    ]);
+    seeded = [];
+  });
+
+  async function untranslatedPage(): Promise<{ pageId: number; lineId: string; owner: string; kind: string }> {
+    const pageId = 900_000_000 + Math.floor(Math.random() * 90_000_000);
+    seeded.push(pageId);
+    await db().query(
+      `insert into "book_line"
+         ("lineId", "lang", "version", "isCurrent", "origin", "pageId", "bookId",
+          "pageNumber", "pageCount", "title", "ownerKind", "ownerIds", "text")
+       values ($1, $2, 1, true, 'extracted', $3, $3, 1, 1, 'A Test Tome', 'object', $4, 'Words.')`,
+      [`b:${pageId}`, BASE_LANG, pageId, [pageId]],
     );
-    return rows[0] ?? null;
+    return { pageId, lineId: `b:${pageId}`, owner: String(pageId), kind: "gameobject" };
   }
 
   it("refuses a row nobody has matched to a page, and writes nothing", async () => {
@@ -513,7 +524,6 @@ describe("resolveContribution: a book page in another language", () => {
 
   it("writes the matched page in its language, with the title the client showed", async () => {
     const target = await untranslatedPage();
-    if (!target) return;
     const id = await page("Olá, $N. Esta é a página.", "Livro de Teste");
     expect(await setContributionPage(id, target.pageId, RESOLVER)).toMatchObject({ pageId: target.pageId });
     expect(await lineIsInExplorer({ ...(await row(id)), status: "accepted" })).toBe(false);
@@ -545,7 +555,6 @@ describe("resolveContribution: a book page in another language", () => {
 
   it("leaves a page this language already has alone, and is one-way once written", async () => {
     const target = await untranslatedPage();
-    if (!target) return;
     const first = await page("O primeiro texto.", "Livro de Teste");
     const second = await page("O segundo texto.", "Outro Título");
     await setContributionPage(first, target.pageId, RESOLVER);

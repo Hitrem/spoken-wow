@@ -4,7 +4,7 @@
  *
  * Needs DATABASE_URL, migrations applied (0059) and the books corpus imported.
  */
-import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { closeDb, db } from "@/lib/db";
 
@@ -34,6 +34,9 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
+  await db().query(`delete from "book_line" where "bookId" = $1`, [bookId]);
+  // The English name book_line's trigger gave the owner (0036).
+  await db().query(`delete from "entity_name" where "kind" = 'item' and "entityId" = $1`, [String(bookId)]);
   await closeDb();
 });
 
@@ -47,13 +50,26 @@ async function contribution(source = "books"): Promise<number> {
   return rows[0].id;
 }
 
-/** A real English book of at least two pages, and its second page. */
+/**
+ * A two-page English book of this run's own, so the test needs no imported corpus. Ids far
+ * outside vmangos's, and the run's own, so a concurrent run never shares them.
+ */
+const bookId = 900_000_000 + Math.floor(Math.random() * 90_000_000);
+
+beforeAll(async () => {
+  for (const pageNumber of [1, 2]) {
+    await db().query(
+      `insert into "book_line"
+         ("lineId", "lang", "version", "isCurrent", "origin", "pageId", "bookId",
+          "pageNumber", "pageCount", "title", "ownerKind", "ownerIds", "text")
+       values ($1, 'enUS', 1, true, 'extracted', $2, $3, $4, 2, 'A Test Tome', 'item', $5, 'Words.')`,
+      [`b:${bookId + pageNumber - 1}`, bookId + pageNumber - 1, bookId, pageNumber, [bookId]],
+    );
+  }
+});
+
 async function secondPage(): Promise<{ bookId: number; pageId: number }> {
-  const { rows } = await db().query<{ bookId: number; pageId: number }>(
-    `select "bookId", "pageId" from "book_line"
-      where "lang" = 'enUS' and "isCurrent" and "pageNumber" = 2 order by "bookId" limit 1`,
-  );
-  return rows[0];
+  return { bookId, pageId: bookId + 1 };
 }
 
 async function pageIdOf(id: number): Promise<number | null> {
