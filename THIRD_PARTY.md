@@ -59,9 +59,10 @@ None of this is the project's to license, and the MIT grant does not reach it.
 - **Minimal Classic player textures** (`addons/SpokenPlayer/Textures/Minimal*.tga`)
   also derive from Blizzard UI artwork. Sources and adaptations are listed in
   [`docs/minimal-classic/ARTWORK.md`](docs/minimal-classic/ARTWORK.md).
-- **The generated audio** is synthesised by [ElevenLabs](https://elevenlabs.io) from the
-  text above. It is distributed through the sound-pack addons and is not in this
-  repository; the terms that apply are ElevenLabs' and Blizzard's, not this project's.
+- **The generated audio** is synthesised by [ElevenLabs](https://elevenlabs.io) and
+  [fish.audio](https://fish.audio) from the text above. It is distributed through the
+  sound-pack addons and is not in this repository; the terms that apply are those
+  providers' and Blizzard's, not this project's.
 
 This project is a fan work. It is not affiliated with, endorsed by, or sponsored by
 Blizzard Entertainment. World of Warcraft and Blizzard Entertainment are trademarks or

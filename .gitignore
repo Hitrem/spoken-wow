@@ -56,10 +56,7 @@ superpowers/
 # audio-history/ is not.
 /pipelines/quests/audio-transcoded/
 
-# Local seed clips for voices and the scripts that fetch them. Input to tuning voices, not
-# part of what this project ships.
-/pipelines/quests/tools/fetch_seed_clips.py
-/pipelines/quests/tools/fetch_voice_sets.py
+# Local clips that voices are seeded from. Not part of what this project ships.
 /pipelines/quests/voice/seed-clips/
 
 /pipelines/quests/tools/.lines_cache.pkl

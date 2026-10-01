@@ -7,6 +7,10 @@ different actors. The game picks between them per NPC: a creature's display info
 NPCSoundID, that row names four SoundEntries, and those entries are called things like
 `DwarfFemaleMaternalNPCGreetings`. The personality in the middle is the flavor.
 
+The point is that each flavor gets a voice of its own: two NPCs the game voices differently -
+a dwarf guard and a grim dwarf - should not end up sounding the same here, so every flavor
+is a separate voice slot rather than one voice per race-gender.
+
 This module turns those names into flavor tokens and decides what to do where the game data
 does not answer. It deliberately knows nothing about dataframes or SQL so that the rules can
 be tested on their own.
@@ -20,9 +24,8 @@ from typing import Iterable, Mapping
 
 from tts_cli.naming import FOLLOWUP, followup_stem
 
-# The sound files spell undead "Undead"; the corpus uses the client's internal
-# race name. Same mapping as RACE_TO_SLOT in tools/fetch_seed_clips.py, which named the
-# directories under voice/seed-clips that these flavors have to match.
+# The sound entry names spell undead "Undead"; the corpus and the voice slots use the
+# client's internal race name.
 RACE_TO_SLOT = {
     "Human": "human",
     "Dwarf": "dwarf",
@@ -47,8 +50,7 @@ RACE_TO_SLOT = {
 # characters: `DwarfMaleStandardVendorNPCGreet`, `NightElfFemalePriestessNPCGreet`. Anchoring
 # on the kind would silently drop every name long enough to be cut, which is all of the
 # vendor variants. Requiring the literal `NPC` is filter enough - it matches 207 of the 1,197
-# sound entries that begin with a race and gender, and yields exactly the 52 flavors that
-# have clips in voice/seed-clips.
+# sound entries that begin with a race and gender, and yields exactly 52 flavors.
 SOUND_NAME = re.compile(
     r"^(?P<race>" + "|".join(RACE_TO_SLOT) + r")"
     r"(?P<gender>Male|Female)"

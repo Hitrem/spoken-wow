@@ -2,9 +2,8 @@
  * Which voice an NPC appearance speaks with.
  *
  * The appearance ids come from a client's creature cache (creature-cache.ts). What they mean
- * is in display-voices.json, generated from a local client by
- * pipelines/quests/tools/export_display_voices.py: per appearance, its model file, its NPCSounds
- * voice set, and that set's name where the game's sound files give one.
+ * is in display-voices.json: per appearance, its model file, its NPCSounds voice set, and that
+ * set's name where one is known.
  *
  * The voice set decides, not the model, because it is what the player hears: Elatrell
  * Featherlight is drawn as a blood elf but greets you in the Skybourne male voice, and his lines

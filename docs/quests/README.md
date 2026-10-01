@@ -962,12 +962,6 @@ unresolved NPC. The answers land in the client's `creaturecache.wdb`, which the 
 the browser for each NPC's appearance ids. The server turns those into voices with
 `apps/web/src/lib/npc/display-voices.json`, and **Apply** writes them as moderator answers.
 The voice set decides over the model, because it is what the player hears.
-`display-voices.json` comes from a local install, so regenerate it when the client updates:
-
-```bash
-curl -sL https://github.com/wowdev/wow-listfile/releases/latest/download/community-listfile.csv -o /tmp/listfile.csv
-python tools/export_display_voices.py --listfile /tmp/listfile.csv
-```
 
 ## Addon Install
 
