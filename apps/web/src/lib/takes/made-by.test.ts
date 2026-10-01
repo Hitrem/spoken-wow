@@ -22,10 +22,10 @@ describe("modelLabel", () => {
 describe("madeByFacets", () => {
   it("lists each model and author once, sorted", () => {
     const made = [
-      madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u2", createdByName: "Zed" }),
-      madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: "u1", createdByName: "Amy" }),
-      madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy" }),
-      madeByOf({ provider: "elevenlabs", modelId: null, createdBy: null, createdByName: null }),
+      madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u2", createdByName: "Zed", createdAt: new Date("2026-10-01T12:00:00Z") }),
+      madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: "u1", createdByName: "Amy", createdAt: new Date("2026-10-01T12:00:00Z") }),
+      madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy", createdAt: new Date("2026-10-01T12:00:00Z") }),
+      madeByOf({ provider: "elevenlabs", modelId: null, createdBy: null, createdByName: null, createdAt: new Date("2026-10-01T12:00:00Z") }),
     ];
     expect(madeByFacets(made)).toEqual({
       models: ["eleven:unknown", "eleven:v3", "fish:2.1-pro-free"],
@@ -38,7 +38,7 @@ describe("madeByFacets", () => {
 });
 
 describe("madeByMatches", () => {
-  const made = madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy" });
+  const made = madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy", createdAt: new Date("2026-10-01T12:00:00Z") });
 
   it("passes everything with no filter set", () => {
     expect(madeByMatches(undefined, {})).toBe(true);

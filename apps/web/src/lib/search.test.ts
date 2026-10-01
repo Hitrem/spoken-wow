@@ -598,8 +598,8 @@ describe("made by", () => {
   const context = {
     overrides: new Map(),
     madeBy: new Map([
-      [file(lines[0]), madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy" })],
-      [file(lines[1]), madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: null, createdByName: null })],
+      [file(lines[0]), madeByOf({ provider: "fish", modelId: "s2.1-pro-free", createdBy: "u1", createdByName: "Amy", createdAt: new Date("2026-10-01T12:00:00Z") })],
+      [file(lines[1]), madeByOf({ provider: "elevenlabs", modelId: "eleven_v3", createdBy: null, createdByName: null, createdAt: new Date("2026-10-01T12:00:00Z") })],
     ]),
   };
 
