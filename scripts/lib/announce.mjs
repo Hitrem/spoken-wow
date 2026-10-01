@@ -25,9 +25,9 @@ const ADDONS = ["spoken", "quests", "zones", "books"];
 
 // Which `## <version> ...` heading in docs/<section>/CHANGELOG.md is this release's. The addon
 // and its English audio share one file and, in zones and books, one heading shape, so the kind
-// words are what tell them apart: quests says `— player` / `— sound pack(s)`, zones marks its
-// audio `— audio` or `(sound packs)`. Books' English audio has no heading of its own; it ships
-// with the addon's version and takes the addon's notes.
+// words are what tell them apart: quests says `— player` / `— sound pack(s)` or `— Spoken Quests
+// Audio`, zones marks its audio `— audio` or `(sound packs)`. Books numbers its English audio with
+// the addon, so a books-audio tag takes whichever heading carries its version.
 const AUDIO_WORDS = /\b(audio|sound packs?)\b/i;
 
 function addonHeading(section) {
@@ -36,8 +36,7 @@ function addonHeading(section) {
 }
 
 function englishAudioHeading(section) {
-  if (section === "quests") return (l) => /\bpacks?\b/i.test(l);
-  if (section === "zones") return (l) => AUDIO_WORDS.test(l);
+  if (section === "quests" || section === "zones") return (l) => AUDIO_WORDS.test(l);
   return () => true;
 }
 

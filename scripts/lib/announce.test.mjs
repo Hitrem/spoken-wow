@@ -49,7 +49,15 @@ const zones = `# Changelog
 - French notes.
 `;
 
-const quests = `## 2.1.0 — sound packs
+const quests = `## 2.2.0 — Spoken Quests Audio
+
+Audio notes.
+
+## 2.2.0 — player
+
+Newer player notes.
+
+## 2.1.0 — sound packs
 
 Pack notes.
 
@@ -68,6 +76,9 @@ test("English audio takes the heading its kind word marks", () => {
   assert.equal(run("zones-audio/v2.0.1").notes, "- Audio notes.");
   assert.equal(run("quests-audio-horde/v2.1.0").notes, "Pack notes.");
   assert.equal(run("quests/v2.1.0").notes, "Player notes.");
+  // The heading quests' packs are written under since 2.2.0.
+  assert.equal(run("quests-audio-horde/v2.2.0").notes, "Audio notes.");
+  assert.equal(run("quests/v2.2.0").notes, "Newer player notes.");
 });
 
 test("a language pack takes its tag's heading, and the heading line is dropped", () => {
