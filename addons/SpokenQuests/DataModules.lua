@@ -645,15 +645,24 @@ end
 ---@param id number ID of the desired object
 ---@return string|nil name
 function DataModules:GetObjectName(type, id)
-    local table
+    local table, kind
     if Enums.GUID:IsCreature(type) then
-        table = "NPCNameLookupByNPCID"
+        table, kind = "NPCNameLookupByNPCID", "creature"
     elseif type == Enums.GUID.GameObject then
-        table = "ObjectNameLookupByObjectID"
+        table, kind = "ObjectNameLookupByObjectID", "gameobject"
     elseif type == Enums.GUID.Item then
-        table = "ItemNameLookupByItemID"
+        table, kind = "ItemNameLookupByItemID", "item"
     else
         return
+    end
+
+    -- The packs' names are the English corpus's. Locale/Names holds the client's own, so a
+    -- quest-log line names its giver as the dialog did. It holds quest givers only - the ids
+    -- the packs' questlog tables can return - and a giver missing there is one whose name the
+    -- language does not translate.
+    local localized = GiverNames and GiverNames[kind] and GiverNames[kind][id]
+    if localized then
+        return localized
     end
 
     for _, module in self:GetModules() do

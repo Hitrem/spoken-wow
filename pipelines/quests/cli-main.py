@@ -8,6 +8,7 @@ the corpus, and building a pack from audio/ once `make quests-sounds` has assemb
     import-corpus corpus/corpus.json.gz -> Postgres         after an extract
     export-corpus Postgres -> corpus/corpus.json.gz         before a build
     export-locale-text  Postgres -> one language's gossip text   before its Gossip pack
+    export-giver-names  Postgres -> the addon's translated quest-giver names   after import-locale
     build         corpus + audio/ -> dist/<module>          per release
     install       dist/<module> -> WoW AddOns               per release
 """
@@ -62,6 +63,12 @@ lxt = subparsers.add_parser(
     help="One language's gossip text as its client shows it -> a file build --locale-text reads.")
 lxt.add_argument("--lang", required=True, help="e.g. esMX")
 lxt.add_argument("--out", required=True, help="e.g. build/quests/esMX/locale-text.json.gz")
+
+gvn = subparsers.add_parser(
+    "export-giver-names",
+    help="Every other language's quest-giver names -> the addon's Locale/Names/<lang>.lua.")
+gvn.add_argument("--corpus", default=DEFAULT_CORPUS_PATH)
+gvn.add_argument("--out-dir", required=True, help="e.g. ../../addons/SpokenQuests/Locale/Names")
 
 bld = subparsers.add_parser(
     "build",
@@ -138,6 +145,10 @@ elif args.mode == "export-corpus":
 elif args.mode == "export-locale-text":
     from tts_cli.corpus_db import export_locale_text
     export_locale_text(args.lang, args.out)
+
+elif args.mode == "export-giver-names":
+    from tts_cli.corpus_db import export_giver_names
+    export_giver_names(args.corpus, args.out_dir)
 
 elif args.mode == "build":
     locale_text = None

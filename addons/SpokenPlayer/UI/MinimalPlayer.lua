@@ -584,6 +584,7 @@ function MinimalPlayer:Tick(elapsed)
         end
     end
     if not self.wanted then return end
+    if StaticPortrait:Resolved() then self:ConfigurePortrait() end
     self:UpdateProgress()
     self.poll = (self.poll or 0) + elapsed
     if self.poll >= .2 then

@@ -192,6 +192,29 @@ Q:Add(Clip("Quest log", "Creature-0-0-0-0-456-000000",456),source)
 assert(P.viewport.active=="static" and P.viewport.activeFrame.nativeGUID==b)
 print("PASS: appearance-load refresh, honest unseen-speaker fallback, later native capture and exact-GUID matching")
 
+-- A quest-log giver never met this session: no unit to photograph, so the face is drawn from
+-- the creature's appearance, and a creature the client has not cached yet is asked again.
+Q:RemoveAllSoundsFromQueue()
+MockUnits.npc=nil;MockUnits.target=nil
+MockDisplays[654]=9001
+Q:Add(Clip("Unmet giver","Creature-0-0-0-0-654-000000",654),source)
+assert(P.viewport.active=="static" and P.viewport.activeFrame.nativeDisplay==9001)
+assert(getn(P.viewport.activeFrame.masks)==1)
+Q:RemoveAllSoundsFromQueue()
+Q:Add(Clip("Uncached giver","Creature-0-0-0-0-655-000000",655),source)
+assert(P.viewport.active=="texture" and P.viewport.texture:GetTexture()=="Book")
+MockDisplays[655]=9002;Advance(.06)
+assert(P.viewport.active=="static" and P.viewport.activeFrame.nativeDisplay==9002)
+Q:RemoveAllSoundsFromQueue()
+Q:Add(Clip("Never cached","Creature-0-0-0-0-656-000000",656),source)
+for i=1,200 do Advance(.05) end
+assert(P.viewport.active=="texture" and P.viewport.texture:GetTexture()=="Book")
+-- A real speaker still never borrows a face drawn from the creature id.
+Q:RemoveAllSoundsFromQueue()
+Q:Add(Clip("Real spawn","Creature-0-1-2-3-654-REAL",654),source)
+assert(P.viewport.active=="texture")
+print("PASS: unmet quest-log giver drawn from its creature appearance, uncached creature retried, then the book")
+
 Q:RemoveAllSoundsFromQueue();Advance(.3)
 for i=1,48 do
  local guid="Creature-0-1-2-3-"..(1000+i).."-TEST"

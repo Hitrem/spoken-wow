@@ -454,6 +454,9 @@ function _G.CreateFrame(kind, name, parent)
     return f
 end
 
+-- The minimal player draws a quest-log giver's face from its appearance id with this.
+function _G.SetPortraitTextureFromCreatureDisplayID(texture, display) texture.display = display end
+
 -- Whether this client ever calls a PlayerModel's OnModelLoaded handler at all -- unknown for
 -- real, since it has not been confirmed against a live client; a test sets this true to
 -- exercise the addon's fallback for that possibility instead of the fast path.

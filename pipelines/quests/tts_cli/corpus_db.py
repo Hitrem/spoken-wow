@@ -477,3 +477,41 @@ def export_locale_text(lang, path, verbose=True):
     if verbose:
         print(f"wrote {path}: {len(lines)} {lang} gossip lines with client text")
     return lines
+
+
+def export_giver_names(corpus_path, out_dir, verbose=True):
+    """Every other language's quest-giver names -> one addon Lua file per language.
+
+    See tts_cli/giver_names.py. The name is the newest *extracted* version rather than the
+    live one, for the reason export_locale_text takes localeText: a translator's edit changes
+    how a name is spoken, and what the addon shows must be what the client shows.
+    """
+    from tts_cli.giver_names import (KINDS, givers, localized_names, write_giver_names,
+                                   write_names_xml)
+    from tts_cli.ignores import ignored_line_ids
+
+    found = givers(load_corpus(corpus_path), ignored_line_ids())
+    conn = connect()
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """select distinct on ("lang", "kind", "entityId")
+                          "lang", "kind", "entityId", "name"
+                     from "entity_name"
+                    where "lang" <> %s and "origin" = 'extracted'
+                      and "kind" = any(%s)
+                    order by "lang", "kind", "entityId", "version" desc""",
+                (LANG, list(KINDS)),
+            )
+            by_lang = {}
+            for lang, kind, entity_id, name in cur.fetchall():
+                by_lang.setdefault(lang, {})[(kind, entity_id)] = name
+    finally:
+        conn.close()
+
+    for lang in sorted(by_lang):
+        table = localized_names(found, by_lang[lang])
+        path = write_giver_names(out_dir, lang, table)
+        if verbose:
+            print(f"wrote {path}: {sum(len(t) for t in table.values())} of {len(found)} givers")
+    write_names_xml(out_dir, sorted(by_lang))

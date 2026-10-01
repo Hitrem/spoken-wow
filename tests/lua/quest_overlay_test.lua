@@ -37,6 +37,9 @@ end
 VO.Addon:OnInitialize()
 VO.DataModules:Register("TestPack", {
     SoundLengthLookupByFileName = { ["748-accept"] = 1 },
+    -- The quest log has no NPC to ask who gave the quest; the pack says, in English.
+    NPCIDLookupByQuestID = { [748] = 2948 },
+    NPCNameLookupByNPCID = { [2948] = "Mull Thunderhorn" },
     GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
 })
 -- Wait out the deferred data module load that OnInitialize schedules.
@@ -67,7 +70,12 @@ _G.CreateFrame = function(kind, name, parent, ...)
 end
 
 -- What the client does when it draws the list.
+-- Only the minimal player draws a face from the giver's appearance, so only it is primed for.
+SpokenEnv.Addon.db.profile.Frame.MinimalPlayer = true
+local setCreatures = stub.SetCreatureCount()
 QuestLogQuests_Update()
+-- Asked while the list is read, so the portrait has the giver's appearance by the click.
+Expect("drawing the log asks the client about the giver", stub.SetCreatureCount() - setCreatures, 1)
 
 local buttons = VO.QuestOverlayUI.questPlayButtons
 Expect("a quest with a line has a button", buttons[748] ~= nil, true)
@@ -103,6 +111,7 @@ QuestLogQuests_Update()
 Expect("with the icons off it is back beside the title", buttons[748].anchor.relativeTo == row, true)
 
 Expect("two rows drawn, two buttons displayed", table.getn(VO.QuestOverlayUI.displayedButtons), 2)
+Expect("...once, however often the log is redrawn", stub.SetCreatureCount() - setCreatures, 1)
 
 -- Clicking it reads the quest's accept line, under the title the client reports rather than
 -- the one the row draws with its level prefix.
@@ -111,6 +120,23 @@ buttons[748]:Click()
 Expect("...under the quest's own title", buttons[748].soundData.title, "Poison Water")
 stub.Advance(3)
 Expect("clicking play reads the accept line", table.concat(played, ", "), "748-accept")
+
+-- The giver, named the way the dialog would have: on an English client the pack's name, on
+-- any other the client's own, which the addon ships because the packs only have English.
+local QUESTS = here .. "/../../addons/SpokenQuests/"
+Expect("an English client names the giver from the pack", VO.DataModules:GetObjectName(VO.Enums.GUID.Creature, 2948),
+    "Mull Thunderhorn")
+stub.SetLocale("ruRU")
+for _, lang in ipairs({ "deDE", "ruRU", "zhCN" }) do
+    dofile(QUESTS .. "Locale/Names/" .. lang .. ".lua")
+end
+buttons[748]:Click()
+Expect("a Russian client names the quest-log giver in Russian", buttons[748].soundData.name, "Мулл Громовой Рог")
+stub.Advance(3)
+Expect("...and the other languages' files built nothing there", VO.GiverNames.creature[2948], "Мулл Громовой Рог")
+stub.SetLocale("enUS")
+VO.GiverNames = nil
+
 
 -- A quest with no line stays silent when clicked.
 local before = table.getn(played)

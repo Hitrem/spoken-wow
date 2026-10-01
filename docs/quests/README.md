@@ -1167,6 +1167,19 @@ inset. The objective icons are how that is detected: they are pooled beside the 
 than parented to them, so the row's own icon is the 20-pixel button carrying the row's quest ID
 that is not the play button.
 
+A quest-log play button has no NPC to ask who is speaking. The dialog names its speaker with
+`UnitName("questnpc")` in the client's own language; the log looks the giver up in the pack
+(`NPCIDLookupByQuestID` and its object and item twins) and names them from
+`NPCNameLookupByNPCID`, which is built from the English corpus. So the addon itself ships every
+other language's giver names, `Locale/Names/<lang>.lua`, each returning before it builds
+anything on a client in another locale, and `DataModules:GetObjectName` asks them first. They
+live in the addon rather than in the packs because the name follows the client, not the voice:
+a German client with English packs still shows German names. `make quests-export-giver-names`
+writes them from `entity_name` (`tts_cli/giver_names.py`), after an `import-locale`, along with
+the `Names.xml` that `addon.xml` includes to load them. Only
+names that differ from the English are written, since vmangos leaves untranslated names empty;
+a giver missing from a file is read in English.
+
 That log's details view gets a button of its own, beside Back, which says `Play` and says
 `Stop` while it is reading. The list's buttons cannot follow a quest into it — a frame has one
 parent — so it is a single button rebound to whichever quest the panel shows, hung off the same
