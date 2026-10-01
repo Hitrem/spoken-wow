@@ -44,9 +44,3 @@ client marks it out of date.
 ### 3.3.5 (private WotLK servers)
 - Unzip the [**3.3.5 player**]({{ github_zip_download_335 }}) and your packs into
   `Interface/AddOns`.
-
-## Support This Project
-You can say thanks by donating here: {{ donation_link }}
-
-## Community
-Our Discord: {{ discord_link }}

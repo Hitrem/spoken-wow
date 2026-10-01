@@ -1,7 +1,6 @@
 # VoiceOver for World of Warcraft
 
 ### [voiceline explorer: voiceover.rusty.one](https://voiceover.rusty.one)
-### [voiceover discord](https://discord.gg/VdhUmA8ZCt)
 
 ## Overview
 

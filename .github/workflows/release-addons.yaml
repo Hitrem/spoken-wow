@@ -101,8 +101,6 @@ jobs:
               "curse_link_pack_horde": "https://www.curseforge.com/wow/addons/spoken-quests-audio-horde",
               "curse_link_pack_shared": "https://www.curseforge.com/wow/addons/spoken-quests-audio-shared",
               "curse_link_pack_gossip": "https://www.curseforge.com/wow/addons/spoken-quests-audio-gossip",
-              "donation_link": "https://ko-fi.com/evanpierce",
-              "discord_link": "https://discord.gg/VdhUmA8ZCt",
           }
 
           with open(".github/release-template.md", encoding="utf-8") as handle:
