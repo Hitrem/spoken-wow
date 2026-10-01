@@ -6,6 +6,12 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## Unreleased — player
+
+- **A quest played from the quest log names its giver in your client's language**, as the
+  quest dialog does, rather than in English. Names the game itself leaves untranslated
+  stay in English.
+
 ## 2.1.0 — sound packs
 
 **The Forever quests are voiced.** About 1,550 lines are new since 2.0.0, all of them sent in

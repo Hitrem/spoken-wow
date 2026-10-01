@@ -59,7 +59,7 @@ endef
         package-audio-complete package-meta push-complete icon \
         downloads-status \
         factions followup-lines release release-audio release-audio-dry release-wago release-curse \
-        release-dry import-corpus import-locale fill-locales export-corpus export-ignores export-locale-text \
+        release-dry import-corpus import-locale fill-locales export-corpus export-ignores export-locale-text export-giver-names \
         sync check-synced full-release
 
 help: ## Show this help
@@ -378,6 +378,13 @@ export-corpus: check-synced ## quest_line -> corpus/corpus.json.gz (ARGS=--check
 export-locale-text: ## quest_line localeText -> build/quests/$(LOCALE)/locale-text.json.gz (LOCALE=esMX)
 	@test -n "$(filter-out enUS,$(LOCALE))" || { echo "export-locale-text: set LOCALE to a language other than English, e.g. LOCALE=esMX"; exit 2; }
 	@$(QUESTS_CLI) export-locale-text --lang $(LOCALE) --out $(abspath build/quests/$(LOCALE)/locale-text.json.gz)
+
+# What a quest-log play button names the giver on a client in another language. Committed into
+# the addon, not a pack: the name follows the client's language, not the voice the player
+# chose, so it has to be there with the English packs too (tts_cli/giver_names.py). Rerun after
+# an import-locale; the files only change when a name does.
+export-giver-names: ## entity_name -> addons/SpokenQuests/Locale/Names/<lang>.lua
+	@$(QUESTS_CLI) export-giver-names --out-dir $(abspath addons/SpokenQuests/Locale/Names)
 
 export-ignores: ## line_ignore -> corpus/ignored.json, replacing the old ssh export
 	@$(QUESTS_CLI) export-ignores $(ARGS)

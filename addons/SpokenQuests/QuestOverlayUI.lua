@@ -131,9 +131,27 @@ function QuestOverlayUI:UpdatePlayButtonTexture(questID)
     end
 end
 
+-- The minimal player draws a quest-log giver's face from its creature id, and a creature the
+-- client has not cached reads as nothing until its server answers -- the book, for a round
+-- trip, after the click. Asking as the log draws the button starts that round trip while the
+-- player is still reading the list. The player owns the model it asks through.
+--
+-- Quest ids already asked about, or whose giver is not a creature. Left unset only while the
+-- data modules have not loaded: there is no giver to ask about yet, and a redraw tries again.
+local primed = {}
+
+local function PrimeGiver(questID)
+    if primed[questID] or not (Spoken and Spoken.PrimePortrait) then return end
+    local type, id = DataModules:GetQuestLogQuestGiverTypeAndID(questID)
+    if not type then return end
+    primed[questID] = true
+    if Enums.GUID:IsCreature(type) then Spoken:PrimePortrait(id) end
+end
+
 --- What a play button does when it is clicked, for whichever quest it currently stands for.
 --- Shared by the buttons in the quest log and the one in the quest details view.
 function QuestOverlayUI:BindPlayButton(playButton, questID, soundTitle)
+    PrimeGiver(questID)
     playButton:SetScript("OnClick", function(self)
         if not self.soundData then
             local type, id = DataModules:GetQuestLogQuestGiverTypeAndID(questID)

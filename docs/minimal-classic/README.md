@@ -63,8 +63,13 @@ not captures of the WoW client. Actual portrait appearance comes from the game.
 Portraits are cached as native Texture regions, keyed by exact unit GUID,
 with at most 32 entries. Queued/current portraits are protected from eviction.
 Synthetic quest-log identities may use an encountered portrait of the same
-creature type. Missing portraits use the source image/book fallback rather
-than borrowing an unrelated target's face.
+creature type. A quest-log giver not met this session is drawn from its
+creature id instead (`SetCreature` on a hidden `DressUpModel`, then
+`SetPortraitTextureFromCreatureDisplayID`). An uncached creature is asked
+for again every 0.05 s for up to 5 s while the client fetches it, and the
+quest log asks for each giver as it draws their play button, so the fetch is
+usually done before the click. Missing portraits use the source
+image/book fallback rather than borrowing an unrelated target's face.
 
 Source-owned action buttons retain their original handlers. The public player
 frame API returns the selected layout. The queue and narration producer are

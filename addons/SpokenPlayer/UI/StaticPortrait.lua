@@ -47,6 +47,92 @@ function StaticPortrait:Acquire(key)
     end
     return oldest
 end
+-- Quest-log playback has no unit to photograph: the giver is wherever the player left them.
+-- Its creature id is enough for the same kind of still. DressUpModel:SetCreature builds the
+-- creature from the client's cache and GetDisplayInfo names its appearance in the same tick,
+-- and SetPortraitTextureFromCreatureDisplayID draws that as a unit-frame portrait. A face met
+-- later through a real unit is newer and wins over this one.
+--
+-- One model, never parented and never shown: a shown model draws a 3D scene every frame,
+-- and this client has hung its GPU on model rendering before. nil until first asked for;
+-- false on a client without what it takes, so it is never asked again.
+local roller
+-- Creature id -> the appearance it answered with, kept so a face does not change between
+-- clips. A creature the client has not cached answers 0 until its server replies to the
+-- query SetCreature sent, so MinimalPlayer's Tick asks again every few frames (Resolved)
+-- rather than waiting for a timer; one that never replies keeps the book. `asked` holds when
+-- a creature was first and last asked: the watcher below captures on every mouseover, and
+-- each of those must not become another SetCreature.
+local displays, asked = {}, {}
+local RETRY_SECONDS = 0.05
+local GIVE_UP_SECONDS = 5
+
+local function Roller()
+    if roller == nil then
+        roller = false
+        if SetPortraitTextureFromCreatureDisplayID then
+            local ok, frame = pcall(CreateFrame, "DressUpModel")
+            if ok and frame and frame.SetCreature and frame.GetDisplayInfo then
+                frame:Hide()
+                roller = frame
+            end
+        end
+    end
+    return roller or nil
+end
+
+local function DisplayFor(creature)
+    if displays[creature] then return displays[creature] end
+    local model = Roller()
+    if not model then return end
+    local now = GetTime()
+    local times = asked[creature]
+    if times and (now - times.first > GIVE_UP_SECONDS or now - times.last < RETRY_SECONDS) then return end
+    if not times then times = { first = now }; asked[creature] = times end
+    times.last = now
+    model:SetCreature(creature)
+    local display = model:GetDisplayInfo()
+    if display and display > 0 then
+        displays[creature] = display
+        return display
+    end
+end
+
+--- Start the client's round trip for a creature a portrait may soon be drawn from. Quest-log
+--- play buttons call it (Spoken:PrimePortrait) as the log draws them, so the wait is usually
+--- over by the click.
+function StaticPortrait:Prime(creature)
+    DisplayFor(creature)
+end
+
+--- Whether the creature the viewport fell back to the book for has an appearance now. Asked
+--- every frame by MinimalPlayer, which repaints when it does.
+function StaticPortrait:Resolved()
+    if self.waiting and DisplayFor(self.waiting) then
+        self.waiting = nil
+        return true
+    end
+    return false
+end
+
+function StaticPortrait:Keep(entry, key, creature)
+    entry.key, entry.creature = key, creature
+    self.age = self.age + 1
+    entry.age = self.age
+    self.cache[key] = entry
+    return entry
+end
+
+function StaticPortrait:FromCreature(creature)
+    local display = DisplayFor(creature)
+    if not display then return end
+    local key = "creature:" .. creature
+    local entry = self:Acquire(key)
+    if not entry then return end
+    SetPortraitTextureFromCreatureDisplayID(entry.texture, display)
+    entry.texture:SetTexCoord(0, 1, 0, 1)
+    return self:Keep(entry, key, creature)
+end
 function StaticPortrait:Capture(clip, refreshGUID)
     local spec, guid, creature = Identity(clip)
     if not spec or not SetPortraitTexture or not UnitGUID then return end
@@ -65,15 +151,11 @@ function StaticPortrait:Capture(clip, refreshGUID)
                 SetPortraitTexture(entry.texture, unit)
                 entry.texture:SetTexCoord(0, 1, 0, 1)
             end
-            entry.key, entry.creature = actual, creature
-            self.age = self.age + 1
-            entry.age = self.age
-            self.cache[actual] = entry
-            return entry
+            return self:Keep(entry, actual, creature)
         end
     end
-    if cached then self.age = self.age + 1; cached.age = self.age end
-    return cached
+    if cached then self.age = self.age + 1; cached.age = self.age; return cached end
+    if not guid and type(creature) == "number" then return self:FromCreature(creature) end
 end
 function StaticPortrait:Mask(viewport, texture)
     if not texture.AddMaskTexture then return end
@@ -95,9 +177,11 @@ function StaticPortrait:Release(viewport)
     end
 end
 function StaticPortrait:Configure(viewport, clip)
-    local spec = Identity(clip)
+    local spec, guid, creature = Identity(clip)
+    self.waiting = nil
     if not spec then self:Release(viewport); return false end
     local entry = self:Capture(clip)
+    if not entry and not guid and type(creature) == "number" then self.waiting = creature end
     if entry then
         if viewport.activeFrame ~= entry.texture then
             if viewport.active == "static" then self:Release(viewport)

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Quests played from the quest log show the giver's face** in the minimal player, even when
+  you have not met them this session. It used to show the book.
 - **The player remembers where you put it.** Its position and width, in either layout, and
   whether the captions are expanded now come back after `/reload` and on the next login,
   on every character of the account. `/spoken reset` still puts it back on the default spot.

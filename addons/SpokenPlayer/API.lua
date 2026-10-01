@@ -95,6 +95,13 @@ function Spoken:GetPortraitRenderer(kind)
     return Renderers[kind]
 end
 
+--- Ask the client about a creature whose portrait may soon be drawn, so the minimal player
+--- has its face by then rather than the book while the client fetches it. A no-op in the
+--- other layout, which draws a 3D model and needs nothing ahead of time.
+function Spoken:PrimePortrait(creatureID)
+    if MinimalPlayer and MinimalPlayer:IsEnabled() then StaticPortrait:Prime(creatureID) end
+end
+
 --------------------------------------------------------------------------------
 -- Contributions: sending text the corpus does not have
 --------------------------------------------------------------------------------
