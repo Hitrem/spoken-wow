@@ -3,7 +3,7 @@ release: quests-audio-koKR
 section: quests
 lang: koKR
 pack: all
-version: 0.0.1
+version: 0.0.2
 slug: spoken-quests-audio-kokr
 name: Spoken Quests Audio: Korean
 summary: Quest and gossip lines for Spoken Quests, voiced in Korean. One pack, both factions. Partial: about four quests in five. Needs Spoken Quests.

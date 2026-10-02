@@ -3,7 +3,7 @@ release: quests-audio-esMX
 section: quests
 lang: esMX
 pack: all
-version: 0.0.2
+version: 0.0.3
 slug: spoken-quests-audio-esmx
 name: Spoken Quests Audio: Spanish (AL)
 summary: Every quest and gossip line for Spoken Quests, voiced in Latin American Spanish. One pack, both factions. Needs Spoken Quests.

@@ -3,7 +3,7 @@
 # English sound pack in behind it.
 #
 #   make package-spoken-all                 # dist/SpokenAll-<version>.zip
-#   VERSION=2.0.0 make package-spoken-all   # the version written into the .toc
+#   VERSION=2.0.1 make package-spoken-all   # the version written into the .toc
 #
 # The same mechanism as Spoken Quests Audio: All (scripts/quests/package-meta.sh), one level up:
 # a CurseForge file can declare required dependencies, and both the CurseForge app and WowUp
@@ -23,7 +23,7 @@ cd "$REPO"
 
 NAME="${NAME:-SpokenAll}"
 DIST="${DIST:-$REPO/dist}"
-VERSION="${VERSION:-2.0.0}"
+VERSION="${VERSION:-2.0.1}"
 ZIP="${ZIP:-1}"
 TITLE="${TITLE:-Spoken Everything: Quests, Zones, Books AI Voiceover}"
 
@@ -40,7 +40,7 @@ LUA
 cp "$REPO/pipelines/quests/assets/icon/spoken-player.tga" "$module_dir/icon.tga"
 
 cat > "$module_dir/$NAME.toc" <<TOC
-## Interface: 100000
+## Interface: 100000, 11509, 20506, 16001
 ## Title: $TITLE
 ## Notes: Installs every Spoken addon with its English audio - quests, gossip, zone lore and books.|n|nThis addon holds no audio itself. If your addon manager did not fetch the rest with it, install them from CurseForge; |cFFFFD200Spoken Player|r says what is missing.
 ## Version: $VERSION

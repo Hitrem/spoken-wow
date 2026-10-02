@@ -6,6 +6,12 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 2.2.1 — Spoken Quests Audio
+
+- The packs load on the Forever client again. Its update on 2 October marked them
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged from 2.2.0; install over it.
+
 ## 2.2.0 — player
 
 - **Experimental:** NPC lines said in chat after you accept or turn in a quest are voiced. Toggle in settings.
@@ -42,6 +48,48 @@ by players with Contribute, and 1,275 of them have a voice in these packs: 464 q
   language.
 - No longer tells you to update a sound pack that is newer than it knows about. Installing the
   2.1.0 packs under an older Spoken Quests offered an "update" back to 2.0.0.
+
+## 0.0.3 — quests-audio-deDE — 2026-10-02
+
+- The pack loads on the Forever client again. Its update on 2 October marked it
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged; install over the previous version.
+
+## 0.0.3 — quests-audio-esES — 2026-10-02
+
+- The pack loads on the Forever client again. Its update on 2 October marked it
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged; install over the previous version.
+
+## 0.0.3 — quests-audio-esMX — 2026-10-02
+
+- The pack loads on the Forever client again. Its update on 2 October marked it
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged; install over the previous version.
+
+## 0.0.3 — quests-audio-frFR — 2026-10-02
+
+- The pack loads on the Forever client again. Its update on 2 October marked it
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged; install over the previous version.
+
+## 0.0.3 — quests-audio-ptBR — 2026-10-02
+
+- The pack loads on the Forever client again. Its update on 2 October marked it
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged; install over the previous version.
+
+## 0.0.3 — quests-audio-ruRU — 2026-10-02
+
+- The pack loads on the Forever client again. Its update on 2 October marked it
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged; install over the previous version.
+
+## 0.0.2 — quests-audio-koKR — 2026-10-02
+
+- The pack loads on the Forever client again. Its update on 2 October marked it
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged; install over the previous version.
 
 ## 0.0.1 — quests-audio-koKR — 2026-10-01
 
