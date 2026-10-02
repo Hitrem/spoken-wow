@@ -21,6 +21,7 @@ import { submissionFrom } from "@/lib/contributions/submission";
 import {
   CONTRIBUTION_WINDOW_MS,
   CONTRIBUTIONS_PER_HOUR,
+  knownSubmissions,
   storeSubmission,
   stringOrNull,
 } from "@/lib/contributions/intake";
@@ -78,13 +79,19 @@ export async function POST(request: Request) {
   // way to put words in their mouth.
   const session = await auth.api.getSession({ headers: await headers() });
 
-  await storeSubmission(submission, {
-    body: complaint || null,
-    userId: session?.user.id ?? null,
-    name: session ? null : stringOrNull(body.name, 200),
-    email: session ? null : stringOrNull(body.email, 320),
-    ip,
-  });
+  // A line the corpus already has is thanked for and dropped, the same answer as a stored one:
+  // the player did nothing wrong, there is just nothing to triage. A complaint about it is
+  // still kept -- that is a report about the line, not a copy of it.
+  const [known] = await knownSubmissions([submission]);
+  if (!known || complaint) {
+    await storeSubmission(submission, {
+      body: complaint || null,
+      userId: session?.user.id ?? null,
+      name: session ? null : stringOrNull(body.name, 200),
+      email: session ? null : stringOrNull(body.email, 320),
+      ip,
+    });
+  }
 
   // After the write, and unconditionally: the hit is what the limiter counts, and an identical
   // paste that only bumped a count is still a paste.

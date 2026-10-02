@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth";
 import { bookFacets, catalogue, pageById } from "@/lib/books/catalogue";
 import { clientOf, isClientFamily } from "@/lib/contributions/client";
 import { corpusLookup } from "@/lib/contributions/existing";
+import { lineStates, tabOf } from "@/lib/contributions/known";
 import { isStatus, type ContributionStatus } from "@/lib/contributions/contributions";
 import { linesInExplorer } from "@/lib/contributions/accept";
 import {
@@ -236,7 +237,11 @@ export default async function Page({
   // Which quest panel the text was read off -- accept, progress or complete -- or gossip.
   const stage: StageFilter = isStageFilter(rawStage) ? rawStage : "all";
 
-  const contributions = await listContributions(status, lang);
+  // Lines the corpus already has are not this queue's: a different text is a correction, on
+  // its own tab, and the same text is nothing to triage at all (known.ts's tabOf).
+  const listed = await listContributions(status, lang);
+  const states = await lineStates(listed);
+  const contributions = listed.filter((row, index) => tabOf(row.status, states[index]) === "contributions");
   // Every row's NPC, not just this page's: the Speaker filter reads it, and it is one query
   // for the lot (npcFor's own docstring).
   const npcs = await npcFor(contributions);
