@@ -6,6 +6,12 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 2.2.1 — Spoken Quests Audio
+
+- The packs load on the Forever client again. Its update on 2 October marked them
+  **Incompatible**, and Spoken Quests said no usable sound packs were loaded. The audio is
+  unchanged from 2.2.0; install over it.
+
 ## 2.2.0 — player
 
 - **Experimental:** NPC lines said in chat after you accept or turn in a quest are voiced. Toggle in settings.

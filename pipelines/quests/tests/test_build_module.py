@@ -152,6 +152,17 @@ def test_the_toc_title_says_which_pack_this_is(tmp_path):
         assert "## Title: Spoken Quests Audio (Horde)\n" in f.read()
 
 
+def test_the_toc_names_the_forever_client(tmp_path):
+    # Forever marks a pack whose Interface it does not list incompatible, which the player's
+    # checkAddonVersion switch cannot override. 100000 stays first for the legacy clients.
+    store = _store(tmp_path, "quests/5-accept.ogg")
+
+    build_module(CORPUS, store, str(tmp_path / "dist"), "Mod")
+
+    with open(tmp_path / "dist" / "Mod" / "Mod.toc", encoding="utf-8") as f:
+        assert f.read().startswith("## Interface: 100000, 16001\n")
+
+
 def test_the_pack_ships_an_icon_the_toc_points_at(tmp_path):
     # Without it the AddOns list shows a red question mark against every pack. The path is
     # absolute from Interface\AddOns, so it has to name this module's own folder.

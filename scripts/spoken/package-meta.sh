@@ -40,7 +40,7 @@ LUA
 cp "$REPO/pipelines/quests/assets/icon/spoken-player.tga" "$module_dir/icon.tga"
 
 cat > "$module_dir/$NAME.toc" <<TOC
-## Interface: 100000
+## Interface: 100000, 16001
 ## Title: $TITLE
 ## Notes: Installs every Spoken addon with its English audio - quests, gossip, zone lore and books.|n|nThis addon holds no audio itself. If your addon manager did not fetch the rest with it, install them from CurseForge; |cFFFFD200Spoken Player|r says what is missing.
 ## Version: $VERSION
