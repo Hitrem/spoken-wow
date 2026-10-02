@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+
 import Link from "@/components/LocaleLink";
+import { LOCALES, langName, type Lang } from "@/lib/lang";
+import { pageLang } from "@/lib/lang-server";
+import { packFor, PACKS, type Section } from "@/lib/packs";
+import { cn } from "@/lib/utils";
+import { Contained } from "@/components/Width";
 
 export const metadata: Metadata = { title: "Spoken" };
 
@@ -21,183 +28,280 @@ function DiscordIcon({ className }: { className?: string }) {
 }
 
 /**
- * The front door.
+ * The front door, written for a player rather than a developer: what this is, where to hear
+ * it, and how to install it.
  *
- * Three sections, named by what they voice rather than by which project they came from: a
- * visitor does not know that one of these used to be at voiceover.rusty.one and another at
- * lore.rusty.one, and should not have to.
+ * Top to bottom: the logo and one sentence, the Discord invite, a button per explorer, then
+ * the install section. That leads with Spoken Everything, because a player using an addon
+ * manager in English needs nothing else, and follows with one table of every addon and every
+ * sound pack by language for everybody else.
  *
- * Each card carries the addon's own icon, the same art CurseForge and the in-game addon
- * list show, so somebody arriving from either recognises what they came for. They are the
- * exported SVGs from pipelines/*, copied into public/icons/ -- see the note there.
- *
- * The store links sit BELOW the card rather than inside it, and that is structural
- * rather than aesthetic: the card is one big anchor, and an anchor inside an anchor is
- * invalid HTML that browsers resolve by closing the outer one early.
- *
- * TWO STORES, AND NOT EVERY ADDON IS ON BOTH. The slugs are identical on CurseForge and
- * Wago, so one slug addresses both -- but a sound pack is 280-452 MB and Wago's upload
- * endpoint refuses a file that size. Those rows carry `release`, the pack's tag prefix on
- * GitHub, and link there instead: a player who installed the addon from Wago still has
- * somewhere to get its audio. The link is the releases query rather than a tag, so it does
- * not go stale the next time the audio is built.
+ * THREE CHANNELS, AND NOT EVERYTHING IS ON ALL OF THEM. The slugs are identical on CurseForge
+ * and Wago, so one slug addresses both -- but a sound pack is hundreds of megabytes and Wago's
+ * upload endpoint refuses a file that size, and most languages' packs have no CurseForge
+ * project yet. Every addon and every pack has a GitHub release, so GitHub is the one link
+ * nearly every cell carries. The link is the releases query rather than a tag, so it does not
+ * go stale the next time the audio is built.
  */
-/** A project as it is offered: on the two stores, or on GitHub when a store will not host it. */
-type Addon = { slug: string; label: string; wago?: boolean; release?: string };
+/** An addon as it is offered: CurseForge always, Wago when it is there, GitHub by tag prefix. */
+type Addon = {
+  slug: string;
+  label: string;
+  description: string;
+  wago?: boolean;
+  release?: string;
+  /** The section whose sound packs it plays; none for the player itself. */
+  section?: Section;
+};
 
-const SECTIONS: {
-  href: string;
-  icon: string;
-  title: string;
-  blurb: string;
-  detail: string;
-  addons: Addon[];
-  addonsNote?: string;
-}[] = [
+const ADDONS: Addon[] = [
+  // First, since every other row needs it.
   {
-    href: "/quests",
-    icon: "/icons/quests.svg",
-    title: "Quest dialogue",
-    blurb:
-      "Every line an NPC speaks when you take, hand in or ask about a quest, and the gossip " +
-      "in between. Extracted from the game, voiced per race, gender and flavour.",
-    detail: "17,507 lines · 54 voices",
-    addons: [
-      { slug: "spoken-quests", label: "Spoken Quests", wago: true },
-      { slug: "spoken-quests-audio-all", label: "Audio: All", wago: true },
-      // The four split packs are on the All page and on GitHub; the All project itself is a
-      // stub that only an addon manager resolves, so it has no release of its own.
-    ],
-    // The other four packs are Alliance, Horde, Shared and Gossip. They are listed on the
-    // All pack's own page, which is where somebody choosing between them should be reading
-    // anyway -- the choice is about download size, and that page is where the sizes are.
-    addonsNote: "Alliance, Horde, Shared and Gossip packs on the All page",
+    slug: "spoken-player",
+    label: "Spoken Player",
+    description: "Plays the audio for the other addons. Required by all of them.",
+    wago: true,
+    release: "spoken/",
   },
   {
-    href: "/zones",
-    icon: "/icons/zones.svg",
-    title: "Zone lore",
-    blurb:
-      "The prose the addon reads when you walk into a place, for every zone and subzone. " +
-      "Written rather than extracted: scraped from the wiki, and correctable here.",
-    detail: "1,353 lines · one narrator",
-    addons: [
-      { slug: "spoken-zones", label: "Spoken Zones", wago: true },
-      { slug: "spoken-zones-audio", label: "Spoken Zones Audio", release: "zones-audio" },
-    ],
+    slug: "spoken-quests",
+    label: "Spoken Quests",
+    description: "Voices quest and gossip dialogue.",
+    wago: true,
+    release: "quests/",
+    section: "quests",
   },
   {
-    href: "/books",
-    icon: "/icons/books.svg",
-    title: "Books and notes",
-    blurb:
-      "Every book, letter, note and plaque the game will show you, page by page. " +
-      "Blizzard's words again, read by the narrator rather than by the NPC who hands them over.",
-    detail: "1,191 pages · 404 books",
-    addons: [
-      { slug: "spoken-books", label: "Spoken Books", wago: true },
-      { slug: "spoken-books-audio", label: "Spoken Books Audio", release: "books-audio" },
-    ],
+    slug: "spoken-zones",
+    label: "Spoken Zones",
+    description: "Narrates the lore of each zone as you enter it.",
+    wago: true,
+    release: "zones/",
+    section: "zones",
+  },
+  {
+    slug: "spoken-books",
+    label: "Spoken Books",
+    description: "Reads books, letters and notes aloud.",
+    wago: true,
+    release: "books/",
+    section: "books",
   },
 ];
 
-export default function Page() {
+/**
+ * The explorers. Each carries the addon's own icon, the same art CurseForge and the in-game
+ * addon list show -- the exported SVGs from pipelines/*, copied into public/icons/.
+ */
+const EXPLORERS = [
+  { href: "/quests", icon: "/icons/quests.svg", title: "Quests" },
+  { href: "/zones", icon: "/icons/zones.svg", title: "Zones" },
+  { href: "/books", icon: "/icons/books.svg", title: "Books" },
+];
+
+/** The languages with at least one pack, in the site's order: the table's columns. */
+const PACK_LANGS: Lang[] = LOCALES.map((locale) => locale.code).filter((code) =>
+  PACKS.some((pack) => pack.lang === code),
+);
+
+const linkClass = "hover:text-foreground underline underline-offset-2";
+
+function External({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-10 pb-24">
-      <h1 className="text-2xl font-semibold">Spoken</h1>
-      <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-        Voiced dialogue, lore and text for World of Warcraft Classic. Browse and play every
-        line the addons ship, search for the one you heard, and tell us when one is wrong.
-      </p>
-      <a
-        href={DISCORD}
-        target="_blank"
-        rel="noreferrer"
-        className="text-muted-foreground hover:text-foreground mt-3 mb-8 inline-flex items-center gap-2 text-base font-medium transition-colors"
-      >
-        <DiscordIcon className="h-6 w-6" />
-        Join us on Discord
-      </a>
+    <a href={href} target="_blank" rel="noreferrer" className={linkClass}>
+      {children}
+    </a>
+  );
+}
 
-      {/* Three columns once there is room, so the third card does not sit alone on a row
-          of its own. Two below that, one on a phone.
+const github = (release: string) => `${GITHUB_RELEASES}${encodeURIComponent(release)}`;
 
-          items-start, so a cell whose links wrap to a second line does not stretch its
-          neighbours: the cards stay the same height as each other and the link rows below
-          them are free to differ. */}
-      <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SECTIONS.map((section) => (
-          <div key={section.href}>
-            <Link
-              href={section.href}
-              className="hover:bg-accent block h-full rounded-lg border p-5 transition-colors"
-            >
-              {/* Plain img, not next/image: these are fixed-size SVGs, which the image
-                  optimiser passes through untouched, and the standalone server would want
-                  sharp installed to do even that. */}
-              <img
-                src={section.icon}
-                alt=""
-                width={40}
-                height={40}
-                className="mb-3 h-10 w-10"
-              />
-              <h2 className="font-medium">{section.title}</h2>
-              <p className="text-muted-foreground mt-1 text-sm">{section.blurb}</p>
-              <p className="text-muted-foreground mt-3 text-xs">{section.detail}</p>
-            </Link>
+export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
+  const lang = await pageLang(params);
 
-            <div className="mt-2 px-1 text-xs">
-              {/* One row per addon, the name plain and the stores beside it. The name used to
-                  be the CurseForge link itself, which stopped working the moment there were
-                  two stores: a single anchor cannot say "this addon, over there, twice". */}
-              {section.addons.map((addon) => (
-                <p key={addon.slug} className="text-muted-foreground">
-                  {addon.label}
-                  <span className="px-1.5">·</span>
-                  <a
-                    href={`${CURSEFORGE}/${addon.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-foreground underline underline-offset-2"
+  return (
+    <main className="pt-12 pb-24">
+      <Contained>
+        <div className="text-center">
+          <h1>
+            {/* Intrinsic 1024x187, the header's logo at hero size. */}
+            <Image
+              src="/logo.png"
+              alt="Spoken WoW"
+              width={350}
+              height={64}
+              priority
+              className="mx-auto h-16 w-auto"
+            />
+          </h1>
+          <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-sm">
+            Addons that make World of Warcraft Classic more immersive by voicing quest dialogue,
+            zone lore and books. Install them from the links below, or open an explorer to hear the
+            lines first.
+          </p>
+          <a
+            href={DISCORD}
+            target="_blank"
+            rel="noreferrer"
+            className="text-muted-foreground hover:text-foreground mt-4 inline-flex items-center gap-2 text-sm transition-colors"
+          >
+            <DiscordIcon className="h-5 w-5" />
+            <span>
+              Want to help or have feedback?{" "}
+              <span className="text-foreground font-medium underline underline-offset-2">
+                Join us on Discord
+              </span>
+            </span>
+          </a>
+
+          <nav className="mt-8 flex flex-wrap justify-center gap-3">
+            {EXPLORERS.map((explorer) => (
+              <Link
+                key={explorer.href}
+                href={explorer.href}
+                className="hover:bg-accent inline-flex items-center gap-2.5 rounded-lg border px-5 py-3 font-medium transition-colors"
+              >
+                {/* Plain img, not next/image: fixed-size SVGs, which the optimiser passes
+                    through untouched anyway. */}
+                <img src={explorer.icon} alt="" width={28} height={28} className="h-7 w-7" />
+                {explorer.title}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        <h2 className="mt-16 text-2xl font-semibold">How to install</h2>
+
+        <div className="mt-4 text-sm">
+          <p>
+            Install <External href={`${CURSEFORGE}/spoken`}>Spoken Everything</External> from
+            CurseForge or WowUp-CF if you use one of these managers. It brings in every addon and
+            its English audio.
+          </p>
+          <p className="text-muted-foreground mt-1">
+            <span aria-hidden="true">⚠️</span>{" "}
+            <span className="text-foreground font-medium">Don&apos;t download and install it by hand.</span>{" "}
+            It&apos;s a meta package and won&apos;t work on its own. For a manual install, see below.
+          </p>
+        </div>
+
+        <div className="text-muted-foreground my-8 flex items-center gap-4 text-xs font-medium tracking-widest uppercase">
+          <span className="h-px flex-1 bg-border" />
+          or
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <p className="text-muted-foreground mb-3 text-sm">
+          Pick the addons you want and a sound pack in your language for each.
+        </p>
+
+        {/* A real table, scrolled inside its own box on a narrow screen so the page itself never
+            scrolls sideways. Each pack cell stacks its links, which keeps eight language
+            columns narrow enough to fit a desktop. */}
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full text-left text-xs">
+            <thead className="text-muted-foreground">
+              <tr className="border-b">
+                <th rowSpan={2} className="px-3 py-2 font-medium">
+                  Addon
+                </th>
+                <th rowSpan={2} className="min-w-48 px-3 py-2 font-medium">
+                  Description
+                </th>
+                <th rowSpan={2} className="px-3 py-2 font-medium">
+                  Download
+                </th>
+                <th colSpan={PACK_LANGS.length} className="border-l px-3 py-2 text-center font-medium">
+                  Sound packs
+                </th>
+              </tr>
+              <tr className="border-b">
+                {PACK_LANGS.map((code, index) => (
+                  <th
+                    key={code}
+                    className={cn(
+                      "px-3 py-2 font-medium whitespace-nowrap",
+                      index === 0 && "border-l",
+                      code === lang && "text-foreground",
+                    )}
                   >
-                    CurseForge
-                  </a>
-                  {addon.wago && (
-                    <>
-                      <span className="px-1.5">·</span>
-                      <a
-                        href={`${WAGO}/${addon.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-foreground underline underline-offset-2"
-                      >
-                        Wago
-                      </a>
-                    </>
+                    {langName(code)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ADDONS.map((addon) => (
+                <tr key={addon.slug} className="border-b last:border-b-0 align-top">
+                  <td className="px-3 py-3 text-sm font-medium whitespace-nowrap">{addon.label}</td>
+                  <td className="text-muted-foreground px-3 py-3">{addon.description}</td>
+                  <td className="text-muted-foreground px-3 py-3">
+                    <span className="flex flex-col gap-1">
+                      <External href={`${CURSEFORGE}/${addon.slug}`}>CurseForge</External>
+                      {addon.wago && <External href={`${WAGO}/${addon.slug}`}>Wago</External>}
+                      {addon.release && <External href={github(addon.release)}>GitHub</External>}
+                    </span>
+                  </td>
+                  {addon.section ? (
+                    PACK_LANGS.map((code, index) => {
+                      const pack = packFor(addon.section!, code);
+                      return (
+                        <td
+                          key={code}
+                          className={cn(
+                            "text-muted-foreground px-3 py-3",
+                            index === 0 && "border-l",
+                            code === lang && "bg-accent/40",
+                          )}
+                        >
+                          {pack ? (
+                            <span className="flex flex-col gap-1">
+                              {pack.split ? (
+                                // Two to a line, so the English column is no wider than the rest.
+                                <span className="flex flex-col gap-1">
+                                  <span>CurseForge:</span>
+                                  <span className="grid grid-cols-[auto_auto] justify-start gap-x-2 gap-y-1">
+                                    {pack.split.map((part) => (
+                                      <External key={part.slug} href={`${CURSEFORGE}/${part.slug}`}>
+                                        {part.label}
+                                      </External>
+                                    ))}
+                                  </span>
+                                </span>
+                              ) : (
+                                pack.curseforge && (
+                                  <External href={`${CURSEFORGE}/${pack.curseforge}`}>CurseForge</External>
+                                )
+                              )}
+                              {pack.split ? (
+                                // The bundle of the same four packs, as one download.
+                                <span>
+                                  GitHub: <External href={github(pack.release)}>All</External>
+                                </span>
+                              ) : (
+                                <External href={github(pack.release)}>GitHub</External>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/40">—</span>
+                          )}
+                        </td>
+                      );
+                    })
+                  ) : (
+                    <td
+                      colSpan={PACK_LANGS.length}
+                      className="text-muted-foreground/60 border-l px-3 py-3 text-center"
+                    >
+                      No sound pack needed
+                    </td>
                   )}
-                  {addon.release && (
-                    <>
-                      <span className="px-1.5">·</span>
-                      <a
-                        href={`${GITHUB_RELEASES}${addon.release}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-foreground underline underline-offset-2"
-                      >
-                        GitHub
-                      </a>
-                    </>
-                  )}
-                </p>
+                </tr>
               ))}
-              {section.addonsNote && (
-                <p className="text-muted-foreground/70 mt-1">{section.addonsNote}</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+            </tbody>
+          </table>
+        </div>
+      </Contained>
     </main>
   );
 }

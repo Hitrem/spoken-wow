@@ -11,6 +11,7 @@ import { langName } from "@/lib/lang";
 import { languageStates } from "@/lib/languages/store";
 import { isAdmin, langsWhere } from "@/lib/permissions";
 import { currentSession } from "@/lib/session";
+import { Contained, Wide } from "@/components/Width";
 
 export const metadata: Metadata = { title: "Users · Spoken" };
 
@@ -72,47 +73,52 @@ export default async function Page({
     : [{ users: [], total: 0 }, await listGrants(administered), null, null];
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-6 pb-36">
-      <h1 className="text-xl font-semibold">Users</h1>
-      <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        {global ? (
+    <main className="pt-6 pb-36">
+      <Contained>
+        <h1 className="text-xl font-semibold">Users</h1>
+        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+          {global ? (
+            <>
+              Everyone who registers starts as a member. What somebody may do beyond reading is
+              granted one language at a time, English included; an admin may do everything
+              everywhere. Regenerating spends credits from the person&apos;s own ElevenLabs or
+              fish.audio account, so a grant is only half of it — the key is theirs, set on
+              their profile.
+            </>
+          ) : (
+            <>
+              Who works on {administered.map(langName).join(", ")}. You may let somebody edit or
+              regenerate there; they need to have registered first.
+            </>
+          )}
+        </p>
+      </Contained>
+      <Wide>
+        <UserTable
+          // Remounted per page: the table keeps what it was given in state.
+          key={page}
+          users={users}
+          grants={grants}
+          viewer={viewer}
+          currentUserId={session.user.id}
+          keyedUserIds={keyed}
+          page={global ? { page, pageCount: Math.ceil(total / PAGE_SIZE) } : null}
+        />
+      </Wide>
+      <Contained>
+        {languages && (
           <>
-            Everyone who registers starts as a member. What somebody may do beyond reading is
-            granted one language at a time, English included; an admin may do everything
-            everywhere. Regenerating spends credits from the person&apos;s own ElevenLabs or
-            fish.audio account, so a grant is only half of it — the key is theirs, set on
-            their profile.
-          </>
-        ) : (
-          <>
-            Who works on {administered.map(langName).join(", ")}. You may let somebody edit or
-            regenerate there; they need to have registered first.
+            <h2 className="mt-10 text-lg font-semibold">Languages</h2>
+            <p className="text-muted-foreground mt-1 mb-4 text-sm">
+              A language switched on appears in everyone&apos;s header. One that is off can still
+              be opened by an admin at its address, to prepare it before anybody else sees it.
+            </p>
+            <LanguageTable
+              initial={languages.map((state) => ({ ...state, name: langName(state.code) }))}
+            />
           </>
         )}
-      </p>
-      <UserTable
-        // Remounted per page: the table keeps what it was given in state.
-        key={page}
-        users={users}
-        grants={grants}
-        viewer={viewer}
-        currentUserId={session.user.id}
-        keyedUserIds={keyed}
-        page={global ? { page, pageCount: Math.ceil(total / PAGE_SIZE) } : null}
-      />
-
-      {languages && (
-        <>
-          <h2 className="mt-10 text-lg font-semibold">Languages</h2>
-          <p className="text-muted-foreground mt-1 mb-4 text-sm">
-            A language switched on appears in everyone&apos;s header. One that is off can still
-            be opened by an admin at its address, to prepare it before anybody else sees it.
-          </p>
-          <LanguageTable
-            initial={languages.map((state) => ({ ...state, name: langName(state.code) }))}
-          />
-        </>
-      )}
+      </Contained>
     </main>
   );
 }

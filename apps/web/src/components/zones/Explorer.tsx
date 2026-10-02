@@ -19,6 +19,7 @@ import { LoreDialog } from "@/components/zones/LoreDialog";
 import { Player } from "@/components/zones/Player";
 import ReportDialog from "@/components/ReportDialog";
 import { SearchBar } from "@/components/zones/SearchBar";
+import { Contained, Wide } from "@/components/Width";
 import { totals as estimateTotals, LIST_RATE, type Estimate } from "@/lib/generation/billing";
 import {
   fetchGenerationStatus,
@@ -555,155 +556,161 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
 
   return (
     <div className="pb-24">
-      <SearchBar
-        zones={zones}
-        filters={filters}
-        canTriage={canTriage}
-        madeBy={result?.madeBy}
-        query={query}
-        inputRef={searchInput}
-        onQueryChange={setQuery}
-        onQuerySubmit={submitQuery}
-        onChange={updateFilters}
-        onClearAll={() => replaceQuery(new URLSearchParams())}
-      />
+      <Contained>
+        <SearchBar
+          zones={zones}
+          filters={filters}
+          canTriage={canTriage}
+          madeBy={result?.madeBy}
+          query={query}
+          inputRef={searchInput}
+          onQueryChange={setQuery}
+          onQuerySubmit={submitQuery}
+          onChange={updateFilters}
+          onClearAll={() => replaceQuery(new URLSearchParams())}
+        />
 
-      {/* A line id has no dropdown to sit in - it arrives by link from /reports - so
-          without this the list would be narrowed with nothing on the page saying so. */}
-      {filters.line && (
-        <div className="text-muted-foreground mt-3 flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs">
-          <span>
-            Showing one line: <span className="font-mono">{filters.line}</span>
-          </span>
-          <Button size="sm" variant="ghost" onClick={() => updateFilters({ line: undefined })}>
-            Show everything
-          </Button>
+        {/* A line id has no dropdown to sit in - it arrives by link from /reports - so
+            without this the list would be narrowed with nothing on the page saying so. */}
+        {filters.line && (
+          <div className="text-muted-foreground mt-3 flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs">
+            <span>
+              Showing one line: <span className="font-mono">{filters.line}</span>
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => updateFilters({ line: undefined })}>
+              Show everything
+            </Button>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 pb-1">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
+            {result && `${result.total.toLocaleString()} ${result.total === 1 ? "line" : "lines"}`}
+            {loading && result && <Refreshing />}
+          </div>
+          {result && result.counts.missing > 0 && (
+            <span className="text-destructive text-sm">{result.counts.missing} missing</span>
+          )}
+          {result && result.counts.stale > 0 && (
+            <span className="text-sm text-amber-300">{result.counts.stale} outdated</span>
+          )}
+          {/* Its own count, beside the states rather than among them: a line can be current
+              and carry this at once. The button only for someone who could act on it. */}
+          {result && result.dirty > 0 && (
+            <span className="flex items-center gap-1 text-sm text-amber-300">
+              {result.dirty} pronunciation
+              {canRegenerate && (
+                <Button size="xs" variant="ghost" onClick={clearAllDirty}>
+                  clear all
+                </Button>
+              )}
+            </span>
+          )}
+
+          {canRegenerate && result && result.total > 0 && (
+            <Button size="xs" variant="secondary" className="ml-auto" onClick={askToRegenerateAll}>
+              Regenerate all {result.total.toLocaleString()}
+            </Button>
+          )}
         </div>
-      )}
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 pb-1">
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          {result && `${result.total.toLocaleString()} ${result.total === 1 ? "line" : "lines"}`}
-          {loading && result && <Refreshing />}
-        </div>
-        {result && result.counts.missing > 0 && (
-          <span className="text-destructive text-sm">{result.counts.missing} missing</span>
+        {/* Above the table as well as below it: 43 pages of lore is a lot of scrolling to
+            reach a control that is one line away at the top. */}
+        <Pagination page={page} pageCount={pages} onPage={(next) => updateUrl({ page: next })} />
+      </Contained>
+
+      <Wide>
+        {/* Fixed layout, because the point of the columns is that they line up down the
+            page: left to auto sizing, one long subzone name would widen its column for
+            every row. The lore column takes whatever the named ones leave. */}
+        {loading && !result && <Loading />}
+
+        <table
+          aria-busy={loading}
+          hidden={!result}
+          className={`w-full table-fixed border-collapse text-sm transition-opacity ${loading ? "opacity-60" : ""}`}
+        >
+          <colgroup>
+            <col className="w-40" />
+            <col className="w-44" />
+            <col />
+            {/* Audio: the state word, or the take selector, both of which are short. */}
+            <col className="w-28" />
+            {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
+            {showMadeBy && <col className="w-36" />}
+            {/* Wide enough for what the cell actually holds: icon buttons are 32px and an
+                editor can have three side by side - report, edit, regenerate - plus the
+                report count. Anything narrower and the row overflows left over the prose.
+                w-16 for everyone else, who has the report button and the count; never w-0,
+                since that button is not gated. */}
+            <col className={canRegenerate ? "w-40" : "w-16"} />
+          </colgroup>
+          <thead>
+            <tr className="text-muted-foreground border-border border-b text-left text-xs">
+              <th className="px-2 pb-1 font-medium">Zone</th>
+              <th className="px-2 pb-1 font-medium">Subzone</th>
+              <th className="px-2 pb-1 font-medium">Lore</th>
+              <th className="px-2 pb-1 font-medium">Audio</th>
+              {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
+              <th className="sr-only">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result?.lines.map((line) => (
+              <LineRow
+                key={line.id}
+                line={withEdits(line)}
+                current={line.id === current?.id}
+                showMadeBy={showMadeBy}
+                canRegenerate={canRegenerate}
+                canEdit={canEdit}
+                canTriage={canTriage}
+                onPlay={play}
+                onNarrowToZone={(l) => updateFilters({ mapID: l.mapID })}
+                state={rowStates[line.id]}
+                onClearDirty={(l) => clearDirty([l.file])}
+                onRestored={(l, version) => {
+                  // The player's cache buster: the file name does not move when a take is
+                  // put back, so without this the browser replays the clip just replaced.
+                  setVersions((current) => ({ ...current, [l.id]: version }));
+                  refetch();
+                }}
+                onReport={setReportFor}
+                onEditText={(l) => setEditFor(withEdits(l))}
+                onRename={
+                  lang !== BASE_LANG && canEdit
+                    ? (l) =>
+                        setNaming(
+                          nameSubject({
+                            kind: l.kind,
+                            entityId: l.id,
+                            title: l.name,
+                            subtitle: l.id,
+                            english: l.englishName ?? l.name,
+                            current: l.nameMissing ? null : l.name,
+                          }),
+                        )
+                    : null
+                }
+                onRegenerate={regenerateOne}
+              />
+            ))}
+          </tbody>
+        </table>
+
+        {result && result.total === 0 && !loading && (
+          <p className="text-muted-foreground py-8 text-center">Nothing matches these filters.</p>
         )}
-        {result && result.counts.stale > 0 && (
-          <span className="text-sm text-amber-300">{result.counts.stale} outdated</span>
-        )}
-        {/* Its own count, beside the states rather than among them: a line can be current
-            and carry this at once. The button only for someone who could act on it. */}
-        {result && result.dirty > 0 && (
-          <span className="flex items-center gap-1 text-sm text-amber-300">
-            {result.dirty} pronunciation
-            {canRegenerate && (
-              <Button size="xs" variant="ghost" onClick={clearAllDirty}>
-                clear all
-              </Button>
-            )}
-          </span>
-        )}
+      </Wide>
 
-        {canRegenerate && result && result.total > 0 && (
-          <Button size="xs" variant="secondary" className="ml-auto" onClick={askToRegenerateAll}>
-            Regenerate all {result.total.toLocaleString()}
-          </Button>
-        )}
-      </div>
+      <Contained>
+        <Pagination page={page} pageCount={pages} onPage={(next) => updateUrl({ page: next })} />
 
-      {/* Above the table as well as below it: 43 pages of lore is a lot of scrolling to
-          reach a control that is one line away at the top. */}
-      <Pagination page={page} pageCount={pages} onPage={(next) => updateUrl({ page: next })} />
-
-      {/* Fixed layout, because the point of the columns is that they line up down the
-          page: left to auto sizing, one long subzone name would widen its column for
-          every row. The lore column takes whatever the named ones leave. */}
-      {loading && !result && <Loading />}
-
-      <table
-        aria-busy={loading}
-        hidden={!result}
-        className={`w-full table-fixed border-collapse text-sm transition-opacity ${loading ? "opacity-60" : ""}`}
-      >
-        <colgroup>
-          <col className="w-40" />
-          <col className="w-44" />
-          <col />
-          {/* Audio: the state word, or the take selector, both of which are short. */}
-          <col className="w-28" />
-          {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
-          {showMadeBy && <col className="w-36" />}
-          {/* Wide enough for what the cell actually holds: icon buttons are 32px and an
-              editor can have three side by side - report, edit, regenerate - plus the
-              report count. Anything narrower and the row overflows left over the prose.
-              w-16 for everyone else, who has the report button and the count; never w-0,
-              since that button is not gated. */}
-          <col className={canRegenerate ? "w-40" : "w-16"} />
-        </colgroup>
-        <thead>
-          <tr className="text-muted-foreground border-border border-b text-left text-xs">
-            <th className="px-2 pb-1 font-medium">Zone</th>
-            <th className="px-2 pb-1 font-medium">Subzone</th>
-            <th className="px-2 pb-1 font-medium">Lore</th>
-            <th className="px-2 pb-1 font-medium">Audio</th>
-            {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
-            <th className="sr-only">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {result?.lines.map((line) => (
-            <LineRow
-              key={line.id}
-              line={withEdits(line)}
-              current={line.id === current?.id}
-              showMadeBy={showMadeBy}
-              canRegenerate={canRegenerate}
-              canEdit={canEdit}
-              canTriage={canTriage}
-              onPlay={play}
-              onNarrowToZone={(l) => updateFilters({ mapID: l.mapID })}
-              state={rowStates[line.id]}
-              onClearDirty={(l) => clearDirty([l.file])}
-              onRestored={(l, version) => {
-                // The player's cache buster: the file name does not move when a take is
-                // put back, so without this the browser replays the clip just replaced.
-                setVersions((current) => ({ ...current, [l.id]: version }));
-                refetch();
-              }}
-              onReport={setReportFor}
-              onEditText={(l) => setEditFor(withEdits(l))}
-              onRename={
-                lang !== BASE_LANG && canEdit
-                  ? (l) =>
-                      setNaming(
-                        nameSubject({
-                          kind: l.kind,
-                          entityId: l.id,
-                          title: l.name,
-                          subtitle: l.id,
-                          english: l.englishName ?? l.name,
-                          current: l.nameMissing ? null : l.name,
-                        }),
-                      )
-                  : null
-              }
-              onRegenerate={regenerateOne}
-            />
-          ))}
-        </tbody>
-      </table>
-
-      {result && result.total === 0 && !loading && (
-        <p className="text-muted-foreground py-8 text-center">Nothing matches these filters.</p>
-      )}
-
-      <Pagination page={page} pageCount={pages} onPage={(next) => updateUrl({ page: next })} />
-
-      <p className="text-muted-foreground mt-6 flex flex-wrap items-center gap-1.5 text-xs">
-        <Key>/</Key> search · <Key>space</Key> play/pause · <Key>j</Key> <Key>k</Key> next and
-        previous line on this page
-      </p>
+        <p className="text-muted-foreground mt-6 flex flex-wrap items-center gap-1.5 text-xs">
+          <Key>/</Key> search · <Key>space</Key> play/pause · <Key>j</Key> <Key>k</Key> next and
+          previous line on this page
+        </p>
+      </Contained>
 
       <LoreDialog
         line={editFor}

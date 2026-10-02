@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { Explorer } from "@/components/zones/Explorer";
 import { isCorpusEmpty, zoneFacets } from "@/lib/zones/catalogue";
+import { Contained } from "@/components/Width";
 
 export const metadata: Metadata = { title: "Zones · Spoken" };
 
@@ -29,26 +30,31 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
     // somebody that the import has not been run.
     if (!isCorpusEmpty(error)) throw error;
     return (
-      <main className="mx-auto max-w-6xl px-5 pt-6 pb-36">
-        <h1 className="text-xl font-semibold">Zone lore</h1>
-        <p className="text-muted-foreground mt-2 max-w-xl text-sm">
-          The lore corpus has not been loaded into this database yet, so there is nothing to
-          show. It is seeded from the committed Lua with{" "}
-          <code className="text-foreground">make zones-lore-import</code>.
-        </p>
+      <main className="pt-6 pb-36">
+        <Contained>
+          <h1 className="text-xl font-semibold">Zone lore</h1>
+          <p className="text-muted-foreground mt-2 max-w-xl text-sm">
+            The lore corpus has not been loaded into this database yet, so there is nothing to
+            show. It is seeded from the committed Lua with{" "}
+            <code className="text-foreground">make zones-lore-import</code>.
+          </p>
+        </Contained>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-6 pb-36">
-      <h1 className="text-xl font-semibold">Zone lore</h1>
-      <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        The prose the addon reads when you walk into a place, for every zone and subzone.
-        Unlike quest dialogue, these words are written rather than extracted: scraped from
-        warcraft.wiki.gg, sometimes rewritten, and correctable here.
-      </p>
+    <main className="pt-6 pb-36">
+      <Contained>
+        <h1 className="text-xl font-semibold">Zone lore</h1>
+        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+          The prose the addon reads when you walk into a place, for every zone and subzone.
+          Unlike quest dialogue, these words are written rather than extracted: scraped from
+          warcraft.wiki.gg, sometimes rewritten, and correctable here.
+        </p>
+      </Contained>
       {/* Suspense is required: Explorer calls useSearchParams(). */}
+      {/* Outside the column: the explorer places its own search (capped) and table (wide). */}
       <Suspense>
         <Explorer zones={zones} />
       </Suspense>
