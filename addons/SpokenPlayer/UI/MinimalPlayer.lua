@@ -5,6 +5,9 @@ setfenv(1, SpokenEnv)
 MinimalPlayer = { rows = {}, offset = 0, expanded = false }
 local ART = [[Interface\AddOns\SpokenPlayer\Textures\]]
 local HEIGHT, WIDTH, MAX_ROWS = 98, 380, 4
+-- The corner Report icon: the header row's height less a little, so it never
+-- reaches the playing line's fold button beneath it.
+local CORNER_ICON = 20
 -- Space between the progress bar and the caption lines under it, and between
 -- the last caption line and the frame's bottom border.
 local CAPTION_GAP, CAPTION_BOTTOM = 4, 8
@@ -129,7 +132,8 @@ function MinimalPlayer:Initialize(original)
     self.header:SetScript("OnDragStart", function() self:StartDrag() end)
     self.header:SetScript("OnDragStop", function() self:StopDrag() end)
     self.name = Font(self.header, 16, 1, .82, 0)
-    self.name:SetAllPoints()
+    self.name:SetPoint("TOPLEFT")
+    self.name:SetPoint("BOTTOMRIGHT")
     content.name = self.name -- Actions' original header anchor contract.
     content.buttons = {}
 
@@ -371,7 +375,7 @@ end
 
 function MinimalPlayer:ConfigureActions()
     Actions:Configure(self.frame, self.clip)
-    local x, y, rowHeight, count, rows = 0, 0, 0, 0, 0
+    local x, y, rowHeight, count, rows, corner = 0, 0, 0, 0, 0, nil
     for _, button in ipairs(self.frame.actions.buttons) do
         local action = button.action
         -- Header actions (Stop Gossip) belong beside the original player's speaker name.
@@ -379,7 +383,19 @@ function MinimalPlayer:ConfigureActions()
         if action.anchor == "header" then
             button:Hide()
         elseif action.icon and action.label then
-            button:Hide()
+            -- A corner icon (Report) stays on the frame as well as in the menu: tucked
+            -- behind a right-click, nobody found it. Parented to the content, which
+            -- sits above the panel; the frame itself draws beneath the rock.
+            if action.anchor == "topright" and button.showsIcon and not corner then
+                corner = button
+                button:SetParent(self.content)
+                button:SetFrameLevel(self.content:GetFrameLevel() + 2)
+                button:SetSize(CORNER_ICON, CORNER_ICON)
+                button:ClearAllPoints()
+                button:SetPoint("TOPRIGHT", self.content, "TOPRIGHT", 4, 2)
+            else
+                button:Hide()
+            end
             rows = rows + 1
             local row = self:ActionRow(rows)
             row.action = action
@@ -398,6 +414,8 @@ function MinimalPlayer:ConfigureActions()
             count = count + 1
         end
     end
+    -- The speaker name stops short of the icon rather than running under it.
+    self.name:SetPoint("BOTTOMRIGHT", corner and -(CORNER_ICON + 2) or 0, 0)
     for index = rows + 1, getn(self.actionRows) do self.actionRows[index]:Hide() end
     local listed = 8 + (getn(self.menuButtons) + rows) * 23
     self.actionHost:ClearAllPoints()
