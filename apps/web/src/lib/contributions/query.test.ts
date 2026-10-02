@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { MISSING, NEEDS_DECISION, contributionsHref, matchesSpeaker, nextContributionFilters, pageOf } from "./query";
+import { MISSING, NEEDS_DECISION, contributionsHref, matchesSpeaker, matchesStage, nextContributionFilters, pageOf } from "./query";
 
 describe("nextContributionFilters", () => {
-  const current = { status: "new", provenance: "all", client: "all", source: "all" } as const;
+  const current = { status: "new", provenance: "all", client: "all", source: "all", stage: "all" } as const;
 
   it("changes the dimension named in `next` and keeps the other", () => {
     expect(nextContributionFilters(current, { provenance: "corpus" })).toEqual({
@@ -11,14 +11,15 @@ describe("nextContributionFilters", () => {
       provenance: "corpus",
       client: "all",
       source: "all",
+      stage: "all",
     });
   });
 
   it("resets a dimension to 'all' when `next` names it with no value", () => {
     // FilterChip's reset button calls onChange(undefined) -- the key is present, the value
     // isn't, and that must read as "clear this filter", not "leave it alone".
-    expect(nextContributionFilters({ status: "accepted", provenance: "moderator", client: "forever", source: "books" }, { provenance: undefined })).toEqual(
-      { status: "accepted", provenance: "all", client: "forever", source: "books" },
+    expect(nextContributionFilters({ status: "accepted", provenance: "moderator", client: "forever", source: "books", stage: "all" }, { provenance: undefined })).toEqual(
+      { status: "accepted", provenance: "all", client: "forever", source: "books", stage: "all" },
     );
   });
 
@@ -37,8 +38,8 @@ describe("nextContributionFilters", () => {
 
 describe("contributionsHref", () => {
   it("builds a query string carrying every dimension", () => {
-    expect(contributionsHref({ status: "new", provenance: "all", client: "era", source: "all" }, { status: "rejected" })).toBe(
-      "/contributions?status=rejected&provenance=all&client=era&source=all",
+    expect(contributionsHref({ status: "new", provenance: "all", client: "era", source: "all", stage: "all" }, { status: "rejected" })).toBe(
+      "/contributions?status=rejected&provenance=all&client=era&source=all&stage=all",
     );
   });
 
@@ -46,18 +47,18 @@ describe("contributionsHref", () => {
   // encoding, just the same string page.tsx's own parsing compares rawProvenance against.
   it("round-trips the NEEDS_DECISION sentinel through the href", () => {
     expect(
-      contributionsHref({ status: "all", provenance: "all", client: "all", source: "all" }, { provenance: NEEDS_DECISION }),
-    ).toBe(`/contributions?status=all&provenance=${NEEDS_DECISION}&client=all&source=all`);
+      contributionsHref({ status: "all", provenance: "all", client: "all", source: "all", stage: "all" }, { provenance: NEEDS_DECISION }),
+    ).toBe(`/contributions?status=all&provenance=${NEEDS_DECISION}&client=all&source=all&stage=all`);
   });
 });
 
 describe("paging", () => {
   it("carries a page past the first, and leaves the first page bare", () => {
-    const filters = { status: "new", provenance: "all", client: "all", source: "all" } as const;
-    expect(contributionsHref(filters, {}, 3)).toBe("/contributions?status=new&provenance=all&client=all&source=all&page=3");
-    expect(contributionsHref(filters, {}, 1)).toBe("/contributions?status=new&provenance=all&client=all&source=all");
+    const filters = { status: "new", provenance: "all", client: "all", source: "all", stage: "all" } as const;
+    expect(contributionsHref(filters, {}, 3)).toBe("/contributions?status=new&provenance=all&client=all&source=all&stage=all&page=3");
+    expect(contributionsHref(filters, {}, 1)).toBe("/contributions?status=new&provenance=all&client=all&source=all&stage=all");
     // A filter change starts again from the first page.
-    expect(contributionsHref(filters, { status: "accepted" })).toBe("/contributions?status=accepted&provenance=all&client=all&source=all");
+    expect(contributionsHref(filters, { status: "accepted" })).toBe("/contributions?status=accepted&provenance=all&client=all&source=all&stage=all");
   });
 
   it("reads anything that is not a positive integer as the first page", () => {
@@ -96,5 +97,29 @@ describe("matchesSpeaker", () => {
   it("never matches a row with no npc for a real filter, sentinel included", () => {
     expect(matchesSpeaker(undefined, NEEDS_DECISION, "quests")).toBe(false);
     expect(matchesSpeaker(undefined, "client", "quests")).toBe(false);
+  });
+});
+
+describe("matchesStage", () => {
+  const quest = (stage: "accept" | "progress" | "complete" | null) => ({ title: "Stalk With The Earthmother", questId: 76156, stage });
+
+  it("lets everything through when no stage is picked", () => {
+    expect(matchesStage(null, "all")).toBe(true);
+    expect(matchesStage("gossip", "all")).toBe(true);
+    expect(matchesStage(quest(null), "all")).toBe(true);
+  });
+
+  it("matches a quest row on its own stage only", () => {
+    expect(matchesStage(quest("progress"), "progress")).toBe(true);
+    expect(matchesStage(quest("progress"), "complete")).toBe(false);
+    expect(matchesStage(quest(null), "accept")).toBe(false);
+    expect(matchesStage(quest("accept"), "gossip")).toBe(false);
+  });
+
+  it("matches gossip only to gossip, and a row with no quest concept to nothing narrowed", () => {
+    expect(matchesStage("gossip", "gossip")).toBe(true);
+    expect(matchesStage("gossip", "accept")).toBe(false);
+    expect(matchesStage(null, "gossip")).toBe(false);
+    expect(matchesStage(null, "complete")).toBe(false);
   });
 });

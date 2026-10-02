@@ -44,10 +44,13 @@ import {
   contributionsHref,
   MISSING,
   NEEDS_DECISION,
+  QUEST_STAGES,
   type ClientFilter,
   type FilterChange,
+  type QuestStage,
   type SourceFilter,
   type SpeakerFilter,
+  type StageFilter,
 } from "@/lib/contributions/query";
 import { SOURCES } from "@/lib/contributions/envelope";
 import type { Contribution } from "@/lib/contributions/store";
@@ -106,6 +109,17 @@ const SOURCE_CHIP_OPTIONS: ChipOption[] = SOURCES.map((option) => ({
   label: SOURCE_LABELS[option],
 }));
 
+const STAGE_LABELS: Record<QuestStage, string> = {
+  accept: "Accept",
+  progress: "Progress",
+  complete: "Complete",
+};
+
+const STAGE_CHIP_OPTIONS: ChipOption[] = [
+  ...QUEST_STAGES.map((option) => ({ value: option, label: STAGE_LABELS[option] })),
+  { value: "gossip", label: "Gossip" },
+];
+
 const STATUS_LABELS: Record<ContributionStatus, string> = {
   new: "New",
   accepted: "Accepted",
@@ -163,6 +177,7 @@ export default function ContributionTable({
   provenance,
   client,
   source,
+  stage,
   existing,
   books,
   flavorScopes,
@@ -178,6 +193,7 @@ export default function ContributionTable({
   provenance: SpeakerFilter;
   client: ClientFilter;
   source: SourceFilter;
+  stage: StageFilter;
   /** id -> corpus text, present only where the row's key resolves to something on file. */
   existing: Record<number, string>;
   /** The English books, for matching a translated page to one. Empty when no row here needs it. */
@@ -484,7 +500,7 @@ export default function ContributionTable({
    * lib/contributions/query.ts so it can be tested without rendering FilterChip or this table.
    */
   function go(next: FilterChange, toPage = 1) {
-    push(localeHref(lang, contributionsHref({ status, provenance, client, source }, next, toPage)));
+    push(localeHref(lang, contributionsHref({ status, provenance, client, source, stage }, next, toPage)));
   }
 
   return (
@@ -516,6 +532,12 @@ export default function ContributionTable({
           value={source === "all" ? undefined : source}
           options={SOURCE_CHIP_OPTIONS}
           onChange={(next) => go({ source: next as SourceFilter | undefined })}
+        />
+        <FilterChip
+          label="stage"
+          value={stage === "all" ? undefined : stage}
+          options={STAGE_CHIP_OPTIONS}
+          onChange={(next) => go({ stage: next as StageFilter | undefined })}
         />
         {pending && <Refreshing />}
       </nav>
@@ -851,6 +873,9 @@ const ContributionTableRow = memo(function ContributionTableRow({
               >
                 #{row.quest.questId}
               </a>
+              {row.quest.stage ? (
+                <div className="text-muted-foreground">{STAGE_LABELS[row.quest.stage]}</div>
+              ) : null}
             </>
           )}
         </td>
