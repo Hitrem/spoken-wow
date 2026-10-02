@@ -9,6 +9,7 @@ import { pageLang } from "@/lib/lang-server";
 import { can, isAdmin } from "@/lib/permissions";
 import { isSource } from "@/lib/sections";
 import { currentSession } from "@/lib/session";
+import { Contained, Wide } from "@/components/Width";
 
 export const metadata: Metadata = { title: "Activity · Spoken" };
 
@@ -69,22 +70,25 @@ export default async function Page({
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-6 pb-24">
-      <h1 className="text-xl font-semibold">Activity</h1>
-      <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        Everything done in this language, newest first, and who did it: takes cut and put
-        back, text and pronunciation changes, voices, and who was given what. Changes that
-        apply to every language are listed here too. Anything older than this log was
-        rebuilt from what the site kept, so restores and removals before it began are missing.
-      </p>
-
-      <ActivityTable
-        rows={rows}
-        next={next ? `${next.at}|${next.id}` : null}
-        paged={Boolean(raw.before)}
-        filter={filter}
-        actors={actors}
-      />
+    <main className="pt-6 pb-24">
+      <Contained>
+        <h1 className="text-xl font-semibold">Activity</h1>
+        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+          Everything done in this language, newest first, and who did it: takes cut and put
+          back, text and pronunciation changes, voices, and who was given what. Changes that
+          apply to every language are listed here too. Anything older than this log was
+          rebuilt from what the site kept, so restores and removals before it began are missing.
+        </p>
+      </Contained>
+      <Wide>
+        <ActivityTable
+          rows={rows}
+          next={next ? `${next.at}|${next.id}` : null}
+          paged={Boolean(raw.before)}
+          filter={filter}
+          actors={actors}
+        />
+      </Wide>
     </main>
   );
 }

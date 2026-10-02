@@ -12,6 +12,7 @@ import { BASE_LANG } from "@/lib/lang";
 import { pageLang } from "@/lib/lang-server";
 import { listResolutions } from "@/lib/npc/store";
 import { can } from "@/lib/permissions";
+import { Contained, Wide } from "@/components/Width";
 
 export const metadata: Metadata = { title: "NPCs · Spoken" };
 
@@ -35,14 +36,18 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
   const npcs = (await listResolutions()).map((row) => summaryFromResolution(row, flavorScopes));
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-6 pb-24">
-      <h1 className="text-xl font-semibold">Contributions</h1>
-      <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        Every NPC a contribution has named, and who voices them. An answer here settles every
-        line that NPC speaks.
-      </p>
-      <ContributionsTabs lang={lang} active="npcs" showNpcs />
-      <NpcEditor initial={npcs} flavorScopes={flavorScopes} />
+    <main className="pt-6 pb-24">
+      <Contained>
+        <h1 className="text-xl font-semibold">Contributions</h1>
+        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+          Every NPC a contribution has named, and who voices them. An answer here settles every
+          line that NPC speaks.
+        </p>
+        <ContributionsTabs lang={lang} active="npcs" showNpcs />
+      </Contained>
+      <Wide>
+        <NpcEditor initial={npcs} flavorScopes={flavorScopes} />
+      </Wide>
     </main>
   );
 }

@@ -17,6 +17,8 @@ import { usd } from "@/lib/generation/money";
 import { queueStatus } from "@/lib/generation/queue-line";
 import { LOCALES } from "@/lib/lang";
 
+import { Contained } from "./Width";
+
 function n(value: number): string {
   return value.toLocaleString();
 }
@@ -86,7 +88,7 @@ export default function RegenerationPanel({
     if (!note) return null;
     return (
       <div className="bg-card/95 border-t backdrop-blur">
-        <div className="text-muted-foreground mx-auto max-w-6xl px-5 py-2.5 text-sm">{note}</div>
+        <Contained className="text-muted-foreground py-2.5 text-sm">{note}</Contained>
       </div>
     );
   }
@@ -112,7 +114,7 @@ export default function RegenerationPanel({
 
   return (
     <div className="bg-card/95 border-t backdrop-blur">
-      <div className="mx-auto max-w-6xl px-5 py-2.5">
+      <Contained className="py-2.5">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           {active && !paused && <Loader2 className="size-4 shrink-0 animate-spin" />}
 
@@ -231,7 +233,7 @@ export default function RegenerationPanel({
             ))}
           </ul>
         )}
-      </div>
+      </Contained>
 
       {/* Held open only while there is still something to stop: a queue that drains while the
           question is up has nothing left to cancel, and the X then closes it as usual. */}

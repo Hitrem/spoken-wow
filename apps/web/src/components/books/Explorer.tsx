@@ -17,6 +17,7 @@ import { PageTextDialog } from "@/components/books/PageTextDialog";
 import type { RowState } from "@/components/books/PageRow";
 import { Player } from "@/components/books/Player";
 import { SearchBar } from "@/components/books/SearchBar";
+import { Contained, Wide } from "@/components/Width";
 import { Loading, Refreshing } from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import type { BookFacet } from "@/lib/books/catalogue";
@@ -436,118 +437,124 @@ export function Explorer({ books }: { books: BookFacet[] }) {
 
   return (
     <>
-      <SearchBar
-        books={books}
-        filters={filters}
-        query={query}
-        inputRef={searchInput}
-        onQueryChange={setQuery}
-        onQuerySubmit={submitQuery}
-        onChange={updateFilters}
-        onClearAll={() => replaceQuery(new URLSearchParams())}
-        canTriage={canEdit}
-        madeBy={result?.madeBy}
-      />
+      <Contained>
+        <SearchBar
+          books={books}
+          filters={filters}
+          query={query}
+          inputRef={searchInput}
+          onQueryChange={setQuery}
+          onQuerySubmit={submitQuery}
+          onChange={updateFilters}
+          onClearAll={() => replaceQuery(new URLSearchParams())}
+          canTriage={canEdit}
+          madeBy={result?.madeBy}
+        />
 
-      {/* A line id has no dropdown to sit in - it arrives by link from /reports - so
-          without this the list would be narrowed with nothing on the page saying so. */}
-      {filters.line && (
-        <div className="text-muted-foreground mt-3 flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs">
-          <span>
-            Showing one line: <span className="font-mono">{filters.line}</span>
-          </span>
-          <Button size="sm" variant="ghost" onClick={() => updateFilters({ line: undefined })}>
-            Show everything
-          </Button>
-        </div>
-      )}
-
-      <div className="text-muted-foreground mb-2 flex items-center gap-3 text-xs">
-        {loading && result && <Refreshing />}
-        <span>
-          {result ? result.total.toLocaleString() : "…"} pages
-          {result && ` · ${result.counts.missing.toLocaleString()} without audio`}
-          {result && result.counts.stale > 0 && ` · ${result.counts.stale.toLocaleString()} outdated`}
-          {result && result.dirty > 0 && ` · ${result.dirty.toLocaleString()} pronunciation`}
-        </span>
-        {/* Beside the counts, and only for someone who could act on it. */}
-        {canRegenerate && result && result.dirty > 0 && (
-          <Button size="sm" variant="ghost" onClick={clearAllDirty}>
-            Clear {result.dirty.toLocaleString()} marks
-          </Button>
-        )}
-        {canRegenerate && result && result.total > 0 && (
-          <Button size="sm" variant="secondary" onClick={askToRegenerateAll}>
-            Regenerate these
-          </Button>
-        )}
-      </div>
-
-      {loading && !result ? (
-        <Loading label="Loading pages…" />
-      ) : result && result.lines.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Nothing matches these filters.</p>
-      ) : (
-        result && (
-          <div aria-busy={loading} className={`transition-opacity ${loading ? "opacity-60" : ""}`}>
-            <BookList
-              // Cleared in this session laid over the fetched rows, the way the zones
-              // explorer lays a rewrite over its own: the search said what was true when it
-              // ran.
-              lines={result.lines.map((line) => {
-                let row = cleared.has(line.file) ? { ...line, dirty: false } : line;
-                // A rewritten page is stale by definition -- its text no longer hashes to
-                // what was spoken -- so the state moves with the text rather than waiting
-                // for a refetch.
-                if (line.id in rewritten) {
-                  const text = rewritten[line.id];
-                  row = {
-                    ...row,
-                    text,
-                    chars: text.length,
-                    state: row.state === "missing" ? "missing" : "stale",
-                  };
-                }
-                return row;
-              })}
-              current={current}
-              showMadeBy={result.madeBy !== undefined}
-              canRegenerate={canRegenerate}
-              canEdit={canEdit}
-              rowStates={rowStates}
-              onPlay={play}
-              onClearDirty={(line) => clearDirty([line.file])}
-              onRegenerate={regenerateOne}
-              onSelectBook={(line) => updateFilters({ bookId: line.bookId })}
-              onReport={setReportFor}
-              onEditText={setEditFor}
-              onRename={
-                lang !== BASE_LANG && canEdit
-                  ? (l) =>
-                      setNaming(
-                        nameSubject({
-                          kind: ownerEntityKind(l.ownerKind),
-                          entityId: String(l.ownerIds[0]),
-                          title: l.title,
-                          subtitle: `${l.ownerKind} ${l.ownerIds[0]}`,
-                          english: l.englishTitle ?? l.title,
-                          current: l.missing?.title ? null : l.title,
-                        }),
-                      )
-                  : null
-              }
-              onRestored={(line, version) => {
-                // The player's cache buster, so the clip that was just put back is the one
-                // that plays rather than the take it replaced -- the file name does not move.
-                setVersions((state) => ({ ...state, [line.id]: version }));
-                refetch();
-              }}
-            />
+        {/* A line id has no dropdown to sit in - it arrives by link from /reports - so
+            without this the list would be narrowed with nothing on the page saying so. */}
+        {filters.line && (
+          <div className="text-muted-foreground mt-3 flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs">
+            <span>
+              Showing one line: <span className="font-mono">{filters.line}</span>
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => updateFilters({ line: undefined })}>
+              Show everything
+            </Button>
           </div>
-        )
-      )}
+        )}
 
-      <Pagination page={page} pageCount={pageCount} onPage={(next) => updateUrl({ page: next })} />
+        <div className="text-muted-foreground mb-2 flex items-center gap-3 text-xs">
+          {loading && result && <Refreshing />}
+          <span>
+            {result ? result.total.toLocaleString() : "…"} pages
+            {result && ` · ${result.counts.missing.toLocaleString()} without audio`}
+            {result && result.counts.stale > 0 && ` · ${result.counts.stale.toLocaleString()} outdated`}
+            {result && result.dirty > 0 && ` · ${result.dirty.toLocaleString()} pronunciation`}
+          </span>
+          {/* Beside the counts, and only for someone who could act on it. */}
+          {canRegenerate && result && result.dirty > 0 && (
+            <Button size="sm" variant="ghost" onClick={clearAllDirty}>
+              Clear {result.dirty.toLocaleString()} marks
+            </Button>
+          )}
+          {canRegenerate && result && result.total > 0 && (
+            <Button size="sm" variant="secondary" onClick={askToRegenerateAll}>
+              Regenerate these
+            </Button>
+          )}
+        </div>
+      </Contained>
+
+      <Wide>
+        {loading && !result ? (
+          <Loading label="Loading pages…" />
+        ) : result && result.lines.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Nothing matches these filters.</p>
+        ) : (
+          result && (
+            <div aria-busy={loading} className={`transition-opacity ${loading ? "opacity-60" : ""}`}>
+              <BookList
+                // Cleared in this session laid over the fetched rows, the way the zones
+                // explorer lays a rewrite over its own: the search said what was true when it
+                // ran.
+                lines={result.lines.map((line) => {
+                  let row = cleared.has(line.file) ? { ...line, dirty: false } : line;
+                  // A rewritten page is stale by definition -- its text no longer hashes to
+                  // what was spoken -- so the state moves with the text rather than waiting
+                  // for a refetch.
+                  if (line.id in rewritten) {
+                    const text = rewritten[line.id];
+                    row = {
+                      ...row,
+                      text,
+                      chars: text.length,
+                      state: row.state === "missing" ? "missing" : "stale",
+                    };
+                  }
+                  return row;
+                })}
+                current={current}
+                showMadeBy={result.madeBy !== undefined}
+                canRegenerate={canRegenerate}
+                canEdit={canEdit}
+                rowStates={rowStates}
+                onPlay={play}
+                onClearDirty={(line) => clearDirty([line.file])}
+                onRegenerate={regenerateOne}
+                onSelectBook={(line) => updateFilters({ bookId: line.bookId })}
+                onReport={setReportFor}
+                onEditText={setEditFor}
+                onRename={
+                  lang !== BASE_LANG && canEdit
+                    ? (l) =>
+                        setNaming(
+                          nameSubject({
+                            kind: ownerEntityKind(l.ownerKind),
+                            entityId: String(l.ownerIds[0]),
+                            title: l.title,
+                            subtitle: `${l.ownerKind} ${l.ownerIds[0]}`,
+                            english: l.englishTitle ?? l.title,
+                            current: l.missing?.title ? null : l.title,
+                          }),
+                        )
+                    : null
+                }
+                onRestored={(line, version) => {
+                  // The player's cache buster, so the clip that was just put back is the one
+                  // that plays rather than the take it replaced -- the file name does not move.
+                  setVersions((state) => ({ ...state, [line.id]: version }));
+                  refetch();
+                }}
+              />
+            </div>
+          )
+        )}
+      </Wide>
+
+      <Contained>
+        <Pagination page={page} pageCount={pageCount} onPage={(next) => updateUrl({ page: next })} />
+      </Contained>
 
       <div className="fixed inset-x-0 bottom-0 z-20">
         <RegenerationPanel

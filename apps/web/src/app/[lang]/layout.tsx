@@ -13,6 +13,7 @@ import UserMenu from "@/components/UserMenu";
 import { langTag } from "@/lib/lang";
 import { pageLang } from "@/lib/lang-server";
 import { cn } from "@/lib/utils";
+import { Contained } from "@/components/Width";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -56,7 +57,7 @@ export default async function RootLayout({
         <LangProvider lang={lang}>
           <GrantsProvider>
             <header className="border-b">
-              <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-3 px-5">
+              <Contained className="flex h-12 items-center justify-between gap-3">
                 <Link href="/" aria-label="Spoken">
                   {/* Intrinsic 1024x187; height is what the header constrains, so the
                       width below is that ratio and only exists to stop the reflow. */}
@@ -73,7 +74,7 @@ export default async function RootLayout({
                   <LanguageSwitcher />
                   <UserMenu />
                 </div>
-              </div>
+              </Contained>
             </header>
             {children}
           </GrantsProvider>
