@@ -168,7 +168,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
         </nav>
       </div>
 
-      <h2 className="mt-16 text-lg font-semibold">How to install</h2>
+      <h2 className="mt-16 text-2xl font-semibold">How to install</h2>
 
       <div className="mt-4 text-sm">
         <p>
