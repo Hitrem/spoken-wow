@@ -312,35 +312,40 @@ local function BuildWindow()
 	window:SetScript("OnDragStart", window.StartMoving)
 	window:SetScript("OnDragStop", window.StopMovingOrSizing)
 	window:SetClampedToScreen(true)
-	window:SetBackdrop({
-		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-		tile = true,
-		tileSize = 32,
-		edgeSize = 32,
-		insets = { left = 11, right = 12, top = 12, bottom = 11 },
-	})
+	local titleBar = SpokenZones:SkinFrame(window)
 	window:Hide()
 
+	-- With the metal frame, the title and the close button sit in its title bar, where
+	-- PortraitFrameTemplate puts its TitleText and UIPanelCloseButtonDefaultAnchors.
 	local title = window:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	title:SetPoint("TOP", window, "TOP", 0, -PADDING)
+	title:SetPoint("TOP", window, "TOP", 0, titleBar > 0 and -6 or -PADDING)
 	title:SetText("Spoken Zones")
 
 	local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
-	close:SetPoint("TOPRIGHT", window, "TOPRIGHT", -8, -8)
+	if titleBar > 0 then
+		close:SetPoint("TOPRIGHT", window, "TOPRIGHT", 1, 0)
+	else
+		close:SetPoint("TOPRIGHT", window, "TOPRIGHT", -8, -8)
+	end
 	close:SetScript("OnClick", function()
 		window:Hide()
 	end)
 
-	-- On the title row beside the close button rather than on the header row.
-	-- UIPanelCloseButton is 32x32 and reaches down to -40, which is exactly where
-	-- the header row starts, so anything anchored top-right there overlaps it.
+	local top = titleBar > 0 and titleBar + 10 or PADDING + 20
 	audioButton = SpokenZones:CreateAudioButton(window)
-	audioButton:SetPoint("TOPRIGHT", close, "TOPLEFT", -2, -5)
+	if titleBar > 0 then
+		-- Too tall for the title bar, so at the end of the header row instead.
+		audioButton:SetPoint("TOPRIGHT", window, "TOPRIGHT", -PADDING, -(top - 2))
+	else
+		-- On the title row beside the close button rather than on the header row.
+		-- UIPanelCloseButton is 32x32 and reaches down to -40, which is exactly where
+		-- the header row starts, so anything anchored top-right there overlaps it.
+		audioButton:SetPoint("TOPRIGHT", close, "TOPLEFT", -2, -5)
+	end
 
 	-- Left: the zone/subzone list.
 	listScroll = CreateFrame("ScrollFrame", nil, window)
-	listScroll:SetPoint("TOPLEFT", window, "TOPLEFT", PADDING, -(PADDING + 20))
+	listScroll:SetPoint("TOPLEFT", window, "TOPLEFT", PADDING, -top)
 	listScroll:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", PADDING, PADDING + 4)
 	listScroll:SetWidth(LIST_WIDTH)
 	if listScroll.SetClipsChildren then
@@ -365,7 +370,13 @@ local function BuildWindow()
 	-- Right: the selected entry.
 	header = window:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	header:SetPoint("TOPLEFT", listScroll, "TOPRIGHT", PADDING, 0)
-	header:SetPoint("RIGHT", window, "RIGHT", -PADDING, 0)
+	if titleBar > 0 then
+		-- Against the window, as MapPanel does, not the button: a RIGHT point on the
+		-- button would also pin the header's middle to the button's.
+		header:SetPoint("RIGHT", window, "RIGHT", -(PADDING + audioButton:GetWidth() + 8), 0)
+	else
+		header:SetPoint("RIGHT", window, "RIGHT", -PADDING, 0)
+	end
 	header:SetJustifyH("LEFT")
 	header:SetWordWrap(true)
 
