@@ -70,10 +70,10 @@ VoiceOver.DataModules:Register("{module}", {module})
 # AI_VoiceOver read, so one built pack serves every one of them. Drop the inherited pair
 # only once no supported release still looks for it.
 #
-# The Interface line keeps 100000 first and names the Forever client's 16001 after it.
-# DataModules turns checkAddonVersion off around LoadAddOn, which loads a pack a client calls
-# out of date, but Forever build 70170 calls 100000 incompatible instead, and nothing turns
-# that off: the pack has to name the client.
+# The Interface line names every client the packs ship for - Era, Anniversary, Forever - as
+# the zones and books packs do. DataModules turns checkAddonVersion off around LoadAddOn, which
+# loads a pack a client calls out of date, but Forever build 70170 calls an Interface it does
+# not list incompatible instead, and nothing turns that off: the pack has to name the client.
 DEFAULT_TITLE = "Spoken Quests Audio"
 
 #: The TOC key naming the language a pack was recorded in. Must match what the addon's
@@ -87,7 +87,7 @@ ICON_SOURCE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
                            "assets", "icon", "spoken-quests.tga")
 ICON_NAME = "icon.tga"
 
-TOC_HEADER = """## Interface: 100000, 16001
+TOC_HEADER = """## Interface: 11509, 20506, 16001
 ## Title: {title}
 ## Notes: Contains voiceovers for content released during the Vanilla era.|n|nIt's |cFF20FF20OK|r for this addon to appear |cFF808080"disabled"|r or |cFFFF2020"out of date"|r, it's compatible with any client and |cFFFFD200Spoken Quests|r will load it even if it's disabled or out of date.
 ## Version: {version}

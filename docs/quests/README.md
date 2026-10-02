@@ -156,12 +156,13 @@ CurseForge has no game version to file those zips against, so they are published
 release: tag `v<version>` and `.github/workflows/release-addons.yaml` checks the tag against
 `## Version:`, runs this same script, and attaches all four zips.
 
-The sound packs are the same files on every client. Their `## Interface: 100000, 16001` is
-deliberate, and `DataModules` sets `checkAddonVersion` to 0 around `LoadAddOn` so a client that
-considers a pack out of date loads it anyway. That switch reaches "out of date" and nothing else:
-the Forever client marks an Interface it does not recognise as incompatible (since build 70170),
-which no setting overrides, so Forever's own 16001 is listed. 100000 stays first for the legacy
-clients, which read one number.
+The sound packs are the same files on every client. Their `## Interface: 11509, 20506, 16001`
+names Era, Anniversary and Forever, as the zones and books packs do, and `DataModules` sets
+`checkAddonVersion` to 0 around `LoadAddOn` so a client that considers a pack out of date loads
+it anyway. That switch reaches "out of date" and nothing else: the Forever client marks an
+Interface it does not list as incompatible (since build 70170), which no setting overrides, so
+every client a pack is filed against has to be on the line. Packs up to quests 2.2.0 carried
+`100000` alone and relied on the switch.
 
 **The shipping packs are Ogg Vorbis at 44.1 kHz** (`ogg-q0-44k`), which takes 3.2 GB of masters
 to about 1.3 GB, split five ways. Vorbis is worth 1.3–1.5× over LAME at these rates and is VBR,
