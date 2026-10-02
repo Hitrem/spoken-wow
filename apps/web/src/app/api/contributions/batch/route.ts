@@ -19,12 +19,14 @@ import { parseEnvelope } from "@/lib/contributions/envelope";
 import {
   CONTRIBUTION_WINDOW_MS,
   CONTRIBUTIONS_PER_HOUR,
+  knownSubmissions,
   storeSubmission,
   stringOrNull,
 } from "@/lib/contributions/intake";
 import { MAX_ENVELOPES } from "@/lib/contributions/saved-variables";
 import { countRecentContributions, recordContributionHit } from "@/lib/contributions/store";
 import { submissionFrom } from "@/lib/contributions/submission";
+import type { Submission } from "@/lib/contributions/contributions";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
 
   // 200 and not 400, as on the single route: a bot that believes it succeeded stops adapting.
   if (typeof body.website === "string" && body.website.trim()) {
-    return Response.json({ ok: true, accepted: 0, refused: {} });
+    return Response.json({ ok: true, accepted: 0, known: 0, refused: {} });
   }
 
   const envelopes = body.envelopes;
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
     ip,
   };
 
-  let accepted = 0;
+  const submissions: Submission[] = [];
   const refused: Record<string, number> = {};
   const refuse = (reason: string) => {
     refused[reason] = (refused[reason] ?? 0) + 1;
@@ -90,11 +92,22 @@ export async function POST(request: Request) {
       refuse("incomplete");
       continue;
     }
-    await storeSubmission(submission, identity, resolved);
-    accepted += 1;
+    submissions.push(submission);
+  }
+
+  // Lines the corpus already has are counted as accepted -- the player sent nothing wrong --
+  // and dropped rather than stored: intake.ts's knownSubmissions, asked once for the file.
+  const known = await knownSubmissions(submissions);
+  for (const [index, submission] of submissions.entries()) {
+    if (!known[index]) await storeSubmission(submission, identity, resolved);
   }
 
   await recordContributionHit(ip);
 
-  return Response.json({ ok: true, accepted, refused });
+  return Response.json({
+    ok: true,
+    accepted: submissions.length,
+    known: known.filter(Boolean).length,
+    refused,
+  });
 }

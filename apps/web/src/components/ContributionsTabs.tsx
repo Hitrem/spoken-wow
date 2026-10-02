@@ -5,11 +5,13 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "contributions", label: "Contributions", href: "/contributions" },
+  { key: "corrections", label: "Corrections", href: "/contributions/corrections" },
   { key: "npcs", label: "NPCs", href: "/contributions/npcs" },
 ] as const;
 
 /**
- * The two views of /contributions: the triage queue, and every NPC it has named. Links, not
+ * The views of /contributions: the triage queue of missing lines, the corrections to lines the
+ * corpus already has, and every NPC they have named. Links, not
  * client state -- each is its own page with its own gate, and the NPC tab is left out for
  * somebody that page would 404 for. Styled as VoicesTabs's own tab strip.
  */

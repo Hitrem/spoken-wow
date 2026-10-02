@@ -5,6 +5,7 @@
  *
  * Server-side only: it writes.
  */
+import { lineStates } from "@/lib/contributions/known";
 import { createContribution } from "@/lib/contributions/store";
 import type { Submission } from "@/lib/contributions/contributions";
 import { observedFrom, resolveNpc } from "@/lib/npc/resolve";
@@ -29,6 +30,15 @@ export function stringOrNull(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed ? trimmed.slice(0, max) : null;
+}
+
+/**
+ * Which submissions say what the corpus already says, in the order given: those are dropped
+ * rather than stored (known.ts). The addon gathers every line a player sees, so this is most of
+ * what a gathered file holds, and a row for each would bury the lines that are missing.
+ */
+export async function knownSubmissions(submissions: readonly Submission[]): Promise<boolean[]> {
+  return (await lineStates(submissions)).map((state) => state.kind === "known");
 }
 
 /**

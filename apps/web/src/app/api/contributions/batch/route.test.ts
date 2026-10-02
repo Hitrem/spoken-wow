@@ -62,6 +62,7 @@ describe("POST /api/contributions/batch", () => {
     expect(await response.json()).toEqual({
       ok: true,
       accepted: 2,
+      known: 0,
       refused: { describe: 1, checksum: 1, malformed: 1 },
     });
 
@@ -73,6 +74,32 @@ describe("POST /api/contributions/batch", () => {
       { source: "books", name: "Tester" },
       { source: "quests", name: "Tester" },
     ]);
+  });
+
+  it("thanks for a line the corpus already has and stores nothing for it", async () => {
+    const questId = 2_000_000_000 - Math.floor(Math.random() * 1_000_000);
+    const lineId = `q:${questId}:accept`;
+    await db().query(
+      `insert into "quest_line"
+         ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "fileName", "text", "originalText")
+       values ($1, 0, 'enUS', 1, true, 'extracted', 'accept', $1, $2, $2)`,
+      [lineId, "Kill six.$B$BThen come back, $n."],
+    );
+    try {
+      const envelope = (text: string) => {
+        const body = `!SPOKEN1 quests\naddon=SpokenQuests/2.1.0\nbuild=1.60.1/69913\nlocale=enUS\nquest=${questId}\nevent=accept\nnpc=9123 Tester\nkind=creature\ntitle=Test\ntext<<\n${text}\n>>\n`;
+        return `${body}sum=${checksum(body)}\n`;
+      };
+      const response = await POST(
+        post({ envelopes: [envelope("Kill six.\n\nThen come back, $N."), envelope("Kill seven.\n\nThen come back, $N.")] }),
+      );
+      expect(await response.json()).toEqual({ ok: true, accepted: 2, known: 1, refused: {} });
+
+      const { rows } = await db().query<{ text: string }>(`select "text" from "contribution" where "ip" = $1`, [ip]);
+      expect(rows.map((row) => row.text)).toEqual(["Kill seven.\n\nThen come back, $N."]);
+    } finally {
+      await db().query(`delete from "quest_line" where "lineId" = $1`, [lineId]);
+    }
   });
 
   it("resolves each speaker once, however many of their lines arrive", async () => {
