@@ -34,7 +34,7 @@ local clicked=0
 local actions={
  {id="report",text="Report",onClick=function(clip) assert(clip==Q:GetCurrentSound());clicked=clicked+1 end},
  {id="gossip",anchor="header",onClick=function() error("header actions stay out of the menu") end},
- {id="bug",icon="bug-icon",label="Report a problem",onClick=function(clip) assert(clip==Q:GetCurrentSound());clicked=clicked+1 end},
+ {id="bug",icon="bug-icon",label="Report a problem",anchor="topright",onClick=function(clip) assert(clip==Q:GetCurrentSound());clicked=clicked+1 end},
  {id="custom",create=function(parent)
     local b=CreateFrame("Button",nil,parent);b:SetSize(32,32)
     b:SetScript("OnClick",function(self) assert(self.seen==Q:GetCurrentSound());clicked=clicked+1 end)
@@ -77,17 +77,29 @@ P.frame.bottom=2;P:LayoutQueue()
 assert(P.drawer.points[1][1]=="BOTTOMLEFT")
 P.frame.bottom=200
 P:ToggleMenu();assert(P.menu:IsShown())
+local corner
 for _,button in ipairs(P.frame.actions.buttons) do
- if button.action.label or button.action.anchor=="header" then assert(not button:IsShown()) else assert(button:GetParent()==P.actionHost);button:Click() end
+ if button.action.id=="bug" then corner=button
+ elseif button.action.anchor=="header" then assert(not button:IsShown())
+ else assert(button:GetParent()==P.actionHost);button:Click() end
 end
+-- The corner Report icon stays on the frame, above the panel, and the name stops short of it.
+assert(corner and corner:IsShown() and corner:GetParent()==P.content and corner.points[1][1]=="TOPRIGHT")
+assert(P.name.points[#P.name.points][2]<0)
 local row=P.actionRows[1]
 assert(row:IsShown() and row.icon.texture=="bug-icon" and row.text:GetText()=="Report a problem" and not P.actionRows[2])
 row:Click();assert(clicked==3 and not P.menu:IsShown())
+corner:Click();assert(clicked==4)
+-- "Hide report button" hides the frame icon and its menu row alike.
+A.db.profile.Frame.HiddenActions={bug=true};P:ConfigureActions()
+assert(not corner:IsShown() and not P.actionRows[1]:IsShown() and P.name.points[#P.name.points][2]==0)
+A.db.profile.Frame.HiddenActions={};P:ConfigureActions()
+assert(corner:IsShown() and P.actionRows[1]:IsShown())
 P:ToggleMenu();assert(P.menu:IsShown())
 Q:Skip();assert(not P.menu:IsShown())
 local head,size=Q:GetCurrentSound(),Q:GetQueueSize()
 P.title:Click();assert(Q:GetCurrentSound()~=head and Q:GetQueueSize()==size-1)
-print("PASS: paginated queue, removal, title click skips the line, bottom-edge drop-up, original custom/source action handlers, stale-menu closure")
+print("PASS: paginated queue, removal, title click skips the line, bottom-edge drop-up, original custom/source action handlers, corner Report icon and its hide setting, stale-menu closure")
 
 A.db.profile.Frame.HidePortrait=true;E.PlayerFrame:RefreshConfig()
 assert(not P.portrait:IsShown());near(P.frame:GetWidth(),300)
