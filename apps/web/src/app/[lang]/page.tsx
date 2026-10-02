@@ -270,7 +270,14 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
                                 <External href={`${CURSEFORGE}/${pack.curseforge}`}>CurseForge</External>
                               )
                             )}
-                            <External href={github(pack.release)}>GitHub</External>
+                            {pack.split ? (
+                              // The bundle of the same four packs, as one download.
+                              <span>
+                                GitHub: <External href={github(pack.release)}>All</External>
+                              </span>
+                            ) : (
+                              <External href={github(pack.release)}>GitHub</External>
+                            )}
                           </span>
                         ) : (
                           <span className="text-muted-foreground/40">—</span>
