@@ -156,10 +156,11 @@ CurseForge has no game version to file those zips against, so they are published
 release: tag `v<version>` and `.github/workflows/release-addons.yaml` checks the tag against
 `## Version:`, runs this same script, and attaches all four zips.
 
-The sound packs are the same files on every client. Their `## Interface: 11509, 20506, 16001`
-names Era, Anniversary and Forever, as the zones and books packs do, and `DataModules` sets
-`checkAddonVersion` to 0 around `LoadAddOn` so a client that considers a pack out of date loads
-it anyway. That switch reaches "out of date" and nothing else: the Forever client marks an
+The sound packs are the same files on every client. Their
+`## Interface: 100000, 11509, 20506, 16001` names Era, Anniversary and Forever, as the zones and
+books packs do, after a 100000 for the 1.12/2.4.3/3.3.5 clients, which read the first number
+alone and refuse one below 20000. `DataModules` sets `checkAddonVersion` to 0 around
+`LoadAddOn` so a client that considers a pack out of date loads it anyway. That switch reaches "out of date" and nothing else: the Forever client marks an
 Interface it does not list as incompatible (since build 70170), which no setting overrides, so
 every client a pack is filed against has to be on the line. Packs up to quests 2.2.0 carried
 `100000` alone and relied on the switch.
