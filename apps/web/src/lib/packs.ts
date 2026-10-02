@@ -6,9 +6,9 @@
  * because the standalone server ships without that directory. packs.test.ts fails if the two
  * drift, the way lang.test.ts guards the language list.
  *
- * English quests are listed once, as the All pack: on CurseForge that is the meta addon pulling
- * in the four split packs, and on GitHub the bundle holding the same four folders. The split
- * packs are reached from the All page, which is where their sizes are.
+ * English quests are listed once, as the All pack: on GitHub that is the bundle holding the four
+ * split packs' folders, and on CurseForge, where the All project is a meta addon, the page links
+ * the four split packs themselves (`split`).
  */
 import type { Lang } from "@/lib/lang";
 
@@ -21,10 +21,26 @@ export type Pack = {
   curseforge: string | null;
   /** The GitHub release tag prefix, `<release>/vX.Y.Z`. */
   release: string;
+  /**
+   * The packs CurseForge splits this one into, linked instead of `curseforge` itself: English
+   * quests only, whose All project there is a meta addon holding no audio.
+   */
+  split?: readonly { label: string; slug: string }[];
 };
 
 export const PACKS: readonly Pack[] = [
-  { section: "quests", lang: "enUS", curseforge: "spoken-quests-audio-all", release: "quests-audio" },
+  {
+    section: "quests",
+    lang: "enUS",
+    curseforge: "spoken-quests-audio-all",
+    release: "quests-audio",
+    split: [
+      { label: "Alliance", slug: "spoken-quests-audio-alliance" },
+      { label: "Horde", slug: "spoken-quests-audio-horde" },
+      { label: "Shared", slug: "spoken-quests-audio-shared" },
+      { label: "Gossip", slug: "spoken-quests-audio-gossip" },
+    ],
+  },
   { section: "quests", lang: "deDE", curseforge: null, release: "quests-audio-deDE" },
   { section: "quests", lang: "esES", curseforge: null, release: "quests-audio-esES" },
   { section: "quests", lang: "esMX", curseforge: null, release: "quests-audio-esMX" },

@@ -253,8 +253,22 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
                       >
                         {pack ? (
                           <span className="flex flex-col gap-1">
-                            {pack.curseforge && (
-                              <External href={`${CURSEFORGE}/${pack.curseforge}`}>CurseForge</External>
+                            {pack.split ? (
+                              // Two to a line, so the English column is no wider than the rest.
+                              <span className="flex flex-col gap-1">
+                                <span>CurseForge:</span>
+                                <span className="grid grid-cols-[auto_auto] justify-start gap-x-2 gap-y-1">
+                                  {pack.split.map((part) => (
+                                    <External key={part.slug} href={`${CURSEFORGE}/${part.slug}`}>
+                                      {part.label}
+                                    </External>
+                                  ))}
+                                </span>
+                              </span>
+                            ) : (
+                              pack.curseforge && (
+                                <External href={`${CURSEFORGE}/${pack.curseforge}`}>CurseForge</External>
+                              )
                             )}
                             <External href={github(pack.release)}>GitHub</External>
                           </span>
@@ -277,11 +291,6 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
           </tbody>
         </table>
       </div>
-
-      <p className="text-muted-foreground/70 mt-2 text-xs">
-        English quest audio on CurseForge comes as four packs (Alliance, Horde, Shared, Gossip),
-        installed together by its All pack. GitHub has it as one download.
-      </p>
     </main>
   );
 }

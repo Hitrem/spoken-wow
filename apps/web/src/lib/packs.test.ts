@@ -30,9 +30,19 @@ describe("the landing page's pack list", () => {
         release: pack.github ? pack.release : null,
       }));
 
+    const withoutSplit = PACKS.map(({ split: _split, ...pack }) => pack);
     const sorted = <T extends { section: string; lang: string }>(packs: readonly T[]) =>
       [...packs].sort((a, b) => key(a).localeCompare(key(b)));
 
-    expect(sorted(PACKS)).toEqual(sorted(registry));
+    expect(sorted(withoutSplit)).toEqual(sorted(registry));
+  });
+
+  it("links English quests' four CurseForge packs", () => {
+    const split = (loadPacks() as RegistryPack[])
+      .filter((pack) => pack.section === "quests" && pack.lang === "enUS" && pack.pack !== "all")
+      .map((pack) => pack.slug)
+      .sort();
+    const english = PACKS.find((pack) => pack.section === "quests" && pack.lang === "enUS");
+    expect(english?.split?.map((part) => part.slug).sort()).toEqual(split);
   });
 });
