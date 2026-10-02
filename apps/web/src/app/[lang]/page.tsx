@@ -54,6 +54,14 @@ type Addon = {
 };
 
 const ADDONS: Addon[] = [
+  // First, since every other row needs it.
+  {
+    slug: "spoken-player",
+    label: "Spoken Player",
+    description: "Plays the audio for the other addons. Required by all of them.",
+    wago: true,
+    release: "spoken/",
+  },
   {
     slug: "spoken-quests",
     label: "Spoken Quests",
@@ -77,13 +85,6 @@ const ADDONS: Addon[] = [
     wago: true,
     release: "books/",
     section: "books",
-  },
-  {
-    slug: "spoken-player",
-    label: "Spoken Player",
-    description: "Plays the audio for the others. Required by all of them.",
-    wago: true,
-    release: "spoken/",
   },
 ];
 
@@ -169,7 +170,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
 
       <h2 className="mt-16 text-lg font-semibold">How to install</h2>
 
-      <div className="bg-accent/40 mt-4 rounded-lg border p-4 text-sm">
+      <div className="mt-4 text-sm">
         <p>
           <span className="font-medium">Playing in English with CurseForge or WowUp-CF?</span>{" "}
           Install{" "}
@@ -181,8 +182,14 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
         </p>
       </div>
 
-      <p className="text-muted-foreground mt-8 mb-3 text-sm">
-        Otherwise, pick the addons you want and a sound pack in your language for each.
+      <div className="text-muted-foreground my-8 flex items-center gap-4 text-xs font-medium tracking-widest uppercase">
+        <span className="h-px flex-1 bg-border" />
+        or
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <p className="text-muted-foreground mb-3 text-sm">
+        Pick the addons you want and a sound pack in your language for each.
       </p>
 
       {/* A real table, scrolled inside its own box on a narrow screen so the page itself never
@@ -197,6 +204,9 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
               </th>
               <th rowSpan={2} className="min-w-48 px-3 py-2 font-medium">
                 Description
+              </th>
+              <th rowSpan={2} className="px-3 py-2 font-medium">
+                Download
               </th>
               <th colSpan={PACK_LANGS.length} className="border-l px-3 py-2 text-center font-medium">
                 Sound packs
@@ -220,15 +230,15 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
           <tbody>
             {ADDONS.map((addon) => (
               <tr key={addon.slug} className="border-b last:border-b-0 align-top">
-                <td className="px-3 py-3">
-                  <p className="text-sm font-medium whitespace-nowrap">{addon.label}</p>
-                  <p className="text-muted-foreground mt-1 flex gap-2 whitespace-nowrap">
+                <td className="px-3 py-3 text-sm font-medium whitespace-nowrap">{addon.label}</td>
+                <td className="text-muted-foreground px-3 py-3">{addon.description}</td>
+                <td className="text-muted-foreground px-3 py-3">
+                  <span className="flex flex-col gap-1">
                     <External href={`${CURSEFORGE}/${addon.slug}`}>CurseForge</External>
                     {addon.wago && <External href={`${WAGO}/${addon.slug}`}>Wago</External>}
                     {addon.release && <External href={github(addon.release)}>GitHub</External>}
-                  </p>
+                  </span>
                 </td>
-                <td className="text-muted-foreground px-3 py-3">{addon.description}</td>
                 {addon.section ? (
                   PACK_LANGS.map((code, index) => {
                     const pack = packFor(addon.section!, code);
