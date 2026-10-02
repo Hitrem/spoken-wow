@@ -864,7 +864,8 @@ if Version.IsLegacyWrath then
 
 end
 
-if Version.IsRetailMainline then
+-- Forever runs the modern engine and its HD models whatever project id it answers.
+if Version.IsRetailMainline or Version.IsCamelot then
     function Portrait:GetCurrentModelSet()
         return "HD"
     end
