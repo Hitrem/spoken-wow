@@ -1,5 +1,11 @@
 # Changelog — Spoken Player
 
+## 2.3.2 — 2026-10-02
+
+- **Report is back on Minimal Classic.** The bug icon sits in the player's top-right corner
+  again instead of only in the right-click menu. **Hide the Report button** hides it, as it does
+  on the original player.
+
 ## 2.3.1 — 2026-10-02
 
 - **Forever build 70170 is recognised again.** That build reports a different client type,
