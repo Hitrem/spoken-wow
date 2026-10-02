@@ -172,13 +172,14 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
 
       <div className="mt-4 text-sm">
         <p>
-          <span className="font-medium">Playing in English with CurseForge or WowUp-CF?</span>{" "}
-          Install{" "}
-          <External href={`${CURSEFORGE}/spoken`}>Spoken Everything</External> from there: it
-          brings in every addon and its English audio.
+          Install <External href={`${CURSEFORGE}/spoken`}>Spoken Everything</External> from
+          CurseForge or WowUp-CF if you use one of these managers. It brings in every addon and
+          its English audio.
         </p>
         <p className="text-muted-foreground mt-1">
-          Don&apos;t install it by hand. It is only a package that pulls in the others.
+          <span aria-hidden="true">⚠️</span>{" "}
+          <span className="text-foreground font-medium">Don&apos;t download and install it by hand.</span>{" "}
+          It&apos;s a meta package and won&apos;t work on its own. For a manual install, see below.
         </p>
       </div>
 
