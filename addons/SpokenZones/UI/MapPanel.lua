@@ -24,6 +24,19 @@ local AUDIO_GAP = 8
 -- another one.
 local REPORT_GAP = 6
 
+-- Space between the map's frame and the panel's. The metal border's art sits well
+-- inside the offsets NineSliceLayouts gives its corners: a gap worked out from those
+-- showed about 20 units of empty space on Forever, so these are set from a screenshot
+-- instead, to leave about 4 between the two borders. The left one is the right one
+-- moved by the same amount, not measured: the map's portrait corner is the
+-- difference between the sides.
+local DIALOG_GAP = 2
+local METAL_GAP = { RIGHT = -4, LEFT = 1 }
+
+-- Height of the title bar the metal frame draws across the panel's top; 0 for the
+-- dialog border, which has none. SkinFrame (UI/Skin.lua) reports it when the panel is built.
+local titleBar = 0
+
 local panel, header, infoLine, body, footer, audioButton, reportButton, contributeButton
 
 --------------------------------------------------------------------------------
@@ -37,21 +50,19 @@ local function BuildPanel()
 	panel:SetWidth(width)
 	panel:SetFrameStrata(WorldMapFrame:GetFrameStrata())
 	panel:SetFrameLevel(WorldMapFrame:GetFrameLevel() + 10)
-	panel:SetBackdrop({
-		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-		tile = true,
-		tileSize = 32,
-		edgeSize = 32,
-		insets = { left = 11, right = 12, top = 12, bottom = 11 },
-	})
+	-- The same height as the map (see ApplyAnchors), so with the metal frame the
+	-- panel's title bar and bottom edge continue the map's own.
+	titleBar = SpokenZones:SkinFrame(panel)
+	-- Under the title bar, the header keeps the gap below it that the dialog border's
+	-- inner edge leaves above it.
+	local top = titleBar > 0 and titleBar + 10 or PADDING
 
 	audioButton = SpokenZones:CreateAudioButton(panel)
-	audioButton:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PADDING, -(PADDING - 2))
+	audioButton:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PADDING, -(top - 2))
 
 	header = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	header:SetPoint("TOPLEFT", panel, "TOPLEFT", PADDING, -PADDING)
-	header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(PADDING + audioButton:GetWidth() + AUDIO_GAP), -PADDING)
+	header:SetPoint("TOPLEFT", panel, "TOPLEFT", PADDING, -top)
+	header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(PADDING + audioButton:GetWidth() + AUDIO_GAP), -top)
 	header:SetJustifyH("LEFT")
 	header:SetWordWrap(true)
 
@@ -109,12 +120,14 @@ end
 
 local function ApplyAnchors()
 	panel:ClearAllPoints()
-	if SpokenZones:Get("panelSide") == "LEFT" then
-		panel:SetPoint("TOPRIGHT", WorldMapFrame, "TOPLEFT", -2, 0)
-		panel:SetPoint("BOTTOMRIGHT", WorldMapFrame, "BOTTOMLEFT", -2, 0)
+	local side = SpokenZones:Get("panelSide") == "LEFT" and "LEFT" or "RIGHT"
+	local gap = titleBar > 0 and METAL_GAP[side] or DIALOG_GAP
+	if side == "LEFT" then
+		panel:SetPoint("TOPRIGHT", WorldMapFrame, "TOPLEFT", -gap, 0)
+		panel:SetPoint("BOTTOMRIGHT", WorldMapFrame, "BOTTOMLEFT", -gap, 0)
 	else
-		panel:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 2, 0)
-		panel:SetPoint("BOTTOMLEFT", WorldMapFrame, "BOTTOMRIGHT", 2, 0)
+		panel:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", gap, 0)
+		panel:SetPoint("BOTTOMLEFT", WorldMapFrame, "BOTTOMRIGHT", gap, 0)
 	end
 end
 
