@@ -11,8 +11,10 @@
 import { BASE_LANG } from "@/lib/lang";
 import { flavorsFor } from "@/lib/quests/catalogue";
 import type { NpcKind, NpcResolution, Provenance } from "@/lib/npc/store";
+import { isQuestStage, type QuestStage } from "./query";
 
-export type QuestSummary = { title: string; questId: number } | "gossip";
+/** `stage` is null only for stored meta whose `event` is not one the addon sends. */
+export type QuestSummary = { title: string; questId: number; stage: QuestStage | null } | "gossip";
 
 /**
  * The Quest column's content for one contribution.
@@ -29,8 +31,8 @@ export type QuestSummary = { title: string; questId: number } | "gossip";
  */
 export function questFor(row: { source: string; meta: Record<string, string> }): QuestSummary | null {
   if (row.source !== "quests") return null;
-  const { quest, title } = row.meta;
-  if (quest && title) return { title, questId: Number(quest) };
+  const { quest, title, event } = row.meta;
+  if (quest && title) return { title, questId: Number(quest), stage: isQuestStage(event) ? event : null };
   return "gossip";
 }
 

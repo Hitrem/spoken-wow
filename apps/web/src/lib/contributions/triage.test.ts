@@ -7,8 +7,14 @@ describe("questFor", () => {
     // A real row from the local database (id 518): meta carries both, so the Quest column has
     // something to show and a link to build.
     expect(
-      questFor({ source: "quests", meta: { quest: "76156", title: "Stalk With The Earthmother" } }),
-    ).toEqual({ title: "Stalk With The Earthmother", questId: 76156 });
+      questFor({ source: "quests", meta: { quest: "76156", title: "Stalk With The Earthmother", event: "progress" } }),
+    ).toEqual({ title: "Stalk With The Earthmother", questId: 76156, stage: "progress" });
+  });
+
+  it("leaves the stage null for an event the addon never sends", async () => {
+    expect(
+      questFor({ source: "quests", meta: { quest: "76156", title: "Stalk With The Earthmother", event: "greeting" } }),
+    ).toEqual({ title: "Stalk With The Earthmother", questId: 76156, stage: null });
   });
 
   // checkEnvelope's other quests-source shape: an `npc:<id>` key, carrying neither field.

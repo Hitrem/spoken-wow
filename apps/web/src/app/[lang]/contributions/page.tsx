@@ -14,12 +14,15 @@ import { isStatus, type ContributionStatus } from "@/lib/contributions/contribut
 import { linesInExplorer } from "@/lib/contributions/accept";
 import {
   isSpeakerSentinel,
+  isStageFilter,
   matchesSpeaker,
+  matchesStage,
   pageOf,
   PAGE_SIZE,
   type ClientFilter,
   type SourceFilter,
   type SpeakerFilter,
+  type StageFilter,
 } from "@/lib/contributions/query";
 import { isEnvelopeSource } from "@/lib/contributions/envelope";
 import { listContributions, observationMeta, type Contribution } from "@/lib/contributions/store";
@@ -183,7 +186,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ status?: string; provenance?: string; client?: string; source?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; provenance?: string; client?: string; source?: string; stage?: string; page?: string }>;
 }) {
   const lang = await pageLang(params);
   const session = await auth.api.getSession({ headers: await headers() });
@@ -199,6 +202,7 @@ export default async function Page({
     provenance: rawProvenance,
     client: rawClient,
     source: rawSource,
+    stage: rawStage,
     page: rawPage,
   } = await searchParams;
   const status: ContributionStatus | "all" = isStatus(rawStatus)
@@ -222,12 +226,15 @@ export default async function Page({
   const provenance: SpeakerFilter =
     isSpeakerSentinel(rawProvenance) || isProvenance(rawProvenance) ? rawProvenance : "all";
 
-  // Which game the text came from, read off `build` (lib/contributions/client.ts). Anything
-  // unrecognised in the query string falls back to "all", as the other two dimensions do.
-  const client: ClientFilter = isClientFamily(rawClient) ? rawClient : "all";
+  // Which game the text came from, read off `build` (lib/contributions/client.ts). Defaults to
+  // the Forever beta, the client nearly all of this queue comes from; "all" has to be asked for.
+  const client: ClientFilter = isClientFamily(rawClient) ? rawClient : rawClient === "all" ? "all" : "forever";
 
   // Which corpus the row is for: quests, zones or books.
   const source: SourceFilter = isEnvelopeSource(rawSource) ? rawSource : "all";
+
+  // Which quest panel the text was read off -- accept, progress or complete -- or gossip.
+  const stage: StageFilter = isStageFilter(rawStage) ? rawStage : "all";
 
   const contributions = await listContributions(status, lang);
   // Every row's NPC, not just this page's: the Speaker filter reads it, and it is one query
@@ -239,7 +246,8 @@ export default async function Page({
   const matching = contributions
     .filter((row) => matchesSpeaker(npcs[row.id]?.provenance, provenance, row.source))
     .filter((row) => client === "all" || clientOf(row.build).family === client)
-    .filter((row) => source === "all" || row.source === source);
+    .filter((row) => source === "all" || row.source === source)
+    .filter((row) => matchesStage(questFor(row), stage));
 
   // A page of rows, not the whole queue: every row rendered is a row the browser has to build
   // and React has to diff, and a queue of hundreds made both the load and every click slow.
@@ -307,6 +315,7 @@ export default async function Page({
           provenance={provenance}
           client={client}
           source={source}
+          stage={stage}
           existing={existing}
           books={books}
           flavorScopes={facetValues.flavorScopes}

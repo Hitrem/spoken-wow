@@ -12,6 +12,7 @@ import type { ClientFamily } from "./client";
 import type { ContributionStatus } from "./contributions";
 import type { EnvelopeSource } from "./envelope";
 import type { Provenance } from "../npc/npc";
+import type { QuestSummary } from "./triage";
 
 /**
  * "Everything a moderator still owes a decision" -- not a fifth provenance, a sentinel over the
@@ -52,11 +53,43 @@ export type ClientFilter = ClientFamily | "all";
 
 export type SourceFilter = EnvelopeSource | "all";
 
+/**
+ * The quest panel a quests row was read off, as the addon's `event` field names it (SpokenQuests'
+ * EVENT_PATHS): the detail, progress or reward panel.
+ */
+export const QUEST_STAGES = ["accept", "progress", "complete"] as const;
+
+export type QuestStage = (typeof QUEST_STAGES)[number];
+
+export function isQuestStage(value: unknown): value is QuestStage {
+  return QUEST_STAGES.includes(value as QuestStage);
+}
+
+/** A quest stage, or "gossip" for the quests rows tied to no quest at all. */
+export type StageFilter = QuestStage | "gossip" | "all";
+
+export function isStageFilter(value: unknown): value is StageFilter {
+  return isQuestStage(value) || value === "gossip" || value === "all";
+}
+
+/**
+ * Whether one row's Quest column satisfies the Stage dropdown. Any narrowed view drops every
+ * row with no quest concept at all (zones, books), the same way a Speaker filter drops rows
+ * with no NPC.
+ */
+export function matchesStage(quest: QuestSummary | null, filter: StageFilter): boolean {
+  if (filter === "all") return true;
+  if (quest === null) return false;
+  if (quest === "gossip") return filter === "gossip";
+  return quest.stage === filter;
+}
+
 export type ContributionFilters = {
   status: ContributionStatus | "all";
   provenance: SpeakerFilter;
   client: ClientFilter;
   source: SourceFilter;
+  stage: StageFilter;
 };
 
 export type FilterChange = {
@@ -64,6 +97,7 @@ export type FilterChange = {
   provenance?: SpeakerFilter;
   client?: ClientFilter;
   source?: SourceFilter;
+  stage?: StageFilter;
 };
 
 /**
@@ -82,6 +116,7 @@ export function nextContributionFilters(
     provenance: "provenance" in next ? (next.provenance ?? "all") : current.provenance,
     client: "client" in next ? (next.client ?? "all") : current.client,
     source: "source" in next ? (next.source ?? "all") : current.source,
+    stage: "stage" in next ? (next.stage ?? "all") : current.stage,
   };
 }
 
@@ -107,6 +142,7 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
     provenance: filters.provenance,
     client: filters.client,
     source: filters.source,
+    stage: filters.stage,
   });
   if (page > 1) params.set("page", String(page));
   return `/contributions?${params}`;
