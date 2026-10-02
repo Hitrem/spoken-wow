@@ -16,6 +16,7 @@ import OverrideDialog from "./OverrideDialog";
 import RegenerateDialog from "./RegenerateDialog";
 import RegenerationPanel from "./RegenerationPanel";
 import SearchBar from "./SearchBar";
+import { Contained, Wide } from "./Width";
 import { Loading, Refreshing } from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { audioStateFromParams } from "@/lib/audio-state";
@@ -757,149 +758,155 @@ export default function Explorer({ facets }: { facets: Facets }) {
 
   return (
     <>
-      <SearchBar
-        ref={searchInput}
-        query={query}
-        filters={filters}
-        facets={facets}
-        onQuery={setQuery}
-        onFilters={updateFilters}
-        onClearAll={clearAll}
-        canTriage={showRegenerate}
-        madeBy={result?.madeBy}
-      />
+      <Contained>
+        <SearchBar
+          ref={searchInput}
+          query={query}
+          filters={filters}
+          facets={facets}
+          onQuery={setQuery}
+          onFilters={updateFilters}
+          onClearAll={clearAll}
+          canTriage={showRegenerate}
+          madeBy={result?.madeBy}
+        />
 
-      {/* No dropdown to sit in: a line id arrives by link from /reports, so without this
-          the list would be narrowed with nothing on the page saying so. */}
-      {filters.line && (
-        <div className="text-muted-foreground mt-3 flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs">
-          <span>
-            Showing one line: <span className="font-mono">{filters.line}</span>
-          </span>
-          <Button size="xs" variant="ghost" onClick={() => updateFilters({ line: undefined })}>
-            Show everything
-          </Button>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 pb-1">
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          {result && `${plural(result.total, "line")} across ${plural(result.npcCount, "NPC")}`}
-          {loading && result && <Refreshing />}
-        </div>
-        {/* This page's marks, which is what the row-level question was asked for. The
-            corpus-wide count is what the "pronunciation moved" filter is for. */}
-        {showRegenerate && marked > 0 && (
-          <span className="flex items-center gap-1 text-sm text-amber-300">
-            {marked} pronunciation on this page
-            <Button size="xs" variant="ghost" onClick={() => void clearAllDirty()}>
-              clear all matching
+        {/* No dropdown to sit in: a line id arrives by link from /reports, so without this
+            the list would be narrowed with nothing on the page saying so. */}
+        {filters.line && (
+          <div className="text-muted-foreground mt-3 flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs">
+            <span>
+              Showing one line: <span className="font-mono">{filters.line}</span>
+            </span>
+            <Button size="xs" variant="ghost" onClick={() => updateFilters({ line: undefined })}>
+              Show everything
             </Button>
-          </span>
+          </div>
         )}
-        {showRegenerate && result && result.total > 0 && (
-          <Button
-            size="xs"
-            variant="secondary"
-            className="ml-auto"
-            onClick={() => void requestBatch()}
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-3 pb-1">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
+            {result && `${plural(result.total, "line")} across ${plural(result.npcCount, "NPC")}`}
+            {loading && result && <Refreshing />}
+          </div>
+          {/* This page's marks, which is what the row-level question was asked for. The
+              corpus-wide count is what the "pronunciation moved" filter is for. */}
+          {showRegenerate && marked > 0 && (
+            <span className="flex items-center gap-1 text-sm text-amber-300">
+              {marked} pronunciation on this page
+              <Button size="xs" variant="ghost" onClick={() => void clearAllDirty()}>
+                clear all matching
+              </Button>
+            </span>
+          )}
+          {showRegenerate && result && result.total > 0 && (
+            <Button
+              size="xs"
+              variant="secondary"
+              className="ml-auto"
+              onClick={() => void requestBatch()}
+            >
+              Regenerate all {result.total.toLocaleString()}
+            </Button>
+          )}
+        </div>
+
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          onPage={(next) => updateUrl({ page: next })}
+        />
+      </Contained>
+
+      <Wide>
+        {/* Fixed layout, because the point of the columns is that they line up down the page:
+            left to auto sizing, one long quest title would widen its column for every row. The
+            text column takes whatever the named columns leave. */}
+        {loading && !result && <Loading />}
+
+        {result && result.lines.length > 0 && (
+          <table
+            aria-busy={loading}
+            className={`w-full table-fixed border-collapse text-sm transition-opacity ${loading ? "opacity-60" : ""}`}
           >
-            Regenerate all {result.total.toLocaleString()}
-          </Button>
+            <colgroup>
+              <col className="w-52" />
+              <col className="w-48" />
+              <col className="w-32" />
+              {/* The line text takes whatever the named columns leave, which is what anyone
+                  here to read came for. */}
+              <col />
+              {/* Audio: a state word, or the take selector. Both are short. */}
+              <col className="w-28" />
+              {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
+              {showMadeBy && <col className="w-36" />}
+              {/* Wide enough for what the cell actually holds, which the old w-20 was not:
+                  icon buttons are 32px, and a collaborator can have four side by side --
+                  report, edit, ignore, regenerate -- plus the report count. Anything narrower
+                  pushes them left over the line text. w-16 for everyone else, who has the
+                  report button and the count; never w-0, since that button is not gated. */}
+              <col className={showRegenerate ? "w-40" : "w-16"} />
+            </colgroup>
+            <thead>
+              <tr className="text-muted-foreground border-border border-b text-left text-xs">
+                <th className="px-2 pb-1 font-medium">NPC / object</th>
+                <th className="px-2 pb-1 font-medium">Quest</th>
+                <th className="px-2 pb-1 font-medium">Race / gender / flavor</th>
+                <th className="px-2 pb-1 font-medium">Line</th>
+                <th className="px-2 pb-1 font-medium">Audio</th>
+                {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
+                <th className="sr-only">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.lines.map((line) => (
+                <LineRow
+                  key={line.key}
+                  line={line}
+                  current={line.key === current?.key}
+                  showMadeBy={showMadeBy}
+                  canRegenerate={showRegenerate}
+                  canEdit={canEdit}
+                  canTriage={canEdit}
+                  state={lineStates[line.lineId]}
+                  blocked={blockedReason(line)}
+                  takes={line.take?.takes ?? 0}
+                  version={versions[line.audioPath] ?? line.take?.version ?? null}
+                  stale={line.stale}
+                  dirty={line.dirty && !cleared.has(line.audioPath)}
+                  onClearDirty={(l) => clearDirty([l.audioPath])}
+                  onPlay={play}
+                  onEditText={editText}
+                  onRename={lang !== BASE_LANG && canEdit ? rename : null}
+                  onIgnore={canIgnore ? setIgnoring : null}
+                  onReport={setReporting}
+                  onRegenerate={regenerateLine}
+                  onRestored={handleRestored}
+                  onNarrowToNpc={narrowToNpc}
+                  onNarrowToQuest={narrowToQuest}
+                />
+              ))}
+            </tbody>
+          </table>
         )}
-      </div>
 
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        onPage={(next) => updateUrl({ page: next })}
-      />
+        {result && result.lines.length === 0 && (
+          <div className="text-muted-foreground py-2 text-sm">No matches.</div>
+        )}
+      </Wide>
 
-      {/* Fixed layout, because the point of the columns is that they line up down the page:
-          left to auto sizing, one long quest title would widen its column for every row. The
-          text column takes whatever the named columns leave. */}
-      {loading && !result && <Loading />}
+      <Contained>
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          onPage={(next) => updateUrl({ page: next })}
+        />
 
-      {result && result.lines.length > 0 && (
-        <table
-          aria-busy={loading}
-          className={`w-full table-fixed border-collapse text-sm transition-opacity ${loading ? "opacity-60" : ""}`}
-        >
-          <colgroup>
-            <col className="w-52" />
-            <col className="w-48" />
-            <col className="w-32" />
-            {/* The line text takes whatever the named columns leave, which is what anyone
-                here to read came for. */}
-            <col />
-            {/* Audio: a state word, or the take selector. Both are short. */}
-            <col className="w-28" />
-            {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
-            {showMadeBy && <col className="w-36" />}
-            {/* Wide enough for what the cell actually holds, which the old w-20 was not:
-                icon buttons are 32px, and a collaborator can have four side by side --
-                report, edit, ignore, regenerate -- plus the report count. Anything narrower
-                pushes them left over the line text. w-16 for everyone else, who has the
-                report button and the count; never w-0, since that button is not gated. */}
-            <col className={showRegenerate ? "w-40" : "w-16"} />
-          </colgroup>
-          <thead>
-            <tr className="text-muted-foreground border-border border-b text-left text-xs">
-              <th className="px-2 pb-1 font-medium">NPC / object</th>
-              <th className="px-2 pb-1 font-medium">Quest</th>
-              <th className="px-2 pb-1 font-medium">Race / gender / flavor</th>
-              <th className="px-2 pb-1 font-medium">Line</th>
-              <th className="px-2 pb-1 font-medium">Audio</th>
-              {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
-              <th className="sr-only">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {result.lines.map((line) => (
-              <LineRow
-                key={line.key}
-                line={line}
-                current={line.key === current?.key}
-                showMadeBy={showMadeBy}
-                canRegenerate={showRegenerate}
-                canEdit={canEdit}
-                canTriage={canEdit}
-                state={lineStates[line.lineId]}
-                blocked={blockedReason(line)}
-                takes={line.take?.takes ?? 0}
-                version={versions[line.audioPath] ?? line.take?.version ?? null}
-                stale={line.stale}
-                dirty={line.dirty && !cleared.has(line.audioPath)}
-                onClearDirty={(l) => clearDirty([l.audioPath])}
-                onPlay={play}
-                onEditText={editText}
-                onRename={lang !== BASE_LANG && canEdit ? rename : null}
-                onIgnore={canIgnore ? setIgnoring : null}
-                onReport={setReporting}
-                onRegenerate={regenerateLine}
-                onRestored={handleRestored}
-                onNarrowToNpc={narrowToNpc}
-                onNarrowToQuest={narrowToQuest}
-              />
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {result && result.lines.length === 0 && (
-        <div className="text-muted-foreground py-2 text-sm">No matches.</div>
-      )}
-
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        onPage={(next) => updateUrl({ page: next })}
-      />
-
-      <p className="text-muted-foreground mt-6 flex flex-wrap items-center gap-1.5 text-xs">
-        <Key>/</Key> search · <Key>space</Key> play/pause · <Key>j</Key> <Key>k</Key> next
-        and previous line on this page
-      </p>
+        <p className="text-muted-foreground mt-6 flex flex-wrap items-center gap-1.5 text-xs">
+          <Key>/</Key> search · <Key>space</Key> play/pause · <Key>j</Key> <Key>k</Key> next
+          and previous line on this page
+        </p>
+      </Contained>
 
       <OverrideDialog
         line={editing}

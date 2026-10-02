@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn, timecode } from "@/lib/utils";
 
+import { Contained } from "./Width";
+
 /**
  * The transport bar both sections play through.
  *
@@ -197,7 +199,7 @@ export default function AudioPlayer({
 
   return (
     <div className="bg-card/95 border-t backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3">
+      <Contained className="flex items-center gap-4 py-3">
         <Button
           size="icon"
           variant="secondary"
@@ -317,7 +319,7 @@ export default function AudioPlayer({
         )}
 
         <audio ref={attach} preload="metadata" src={src} />
-      </div>
+      </Contained>
     </div>
   );
 }

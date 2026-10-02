@@ -38,6 +38,7 @@ import { isProvenance, getResolutions, getResolutionsById, resolutionKey, type N
 import { BASE_LANG } from "@/lib/lang";
 import { can } from "@/lib/permissions";
 import { lineByPath } from "@/lib/zones/catalogue";
+import { Contained, Wide } from "@/components/Width";
 
 export const metadata: Metadata = { title: "Contributions · Spoken" };
 
@@ -283,35 +284,38 @@ export default async function Page({
   const facetValues = await facets();
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-6 pb-24">
-      <h1 className="text-xl font-semibold">Contributions</h1>
-      <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        Envelopes players pasted in for text this corpus has no audio for. Accepting a row does
-        not queue anything -- it only marks the row for the next export, which the pipelines
-        pull on their own schedule.
-      </p>
+    <main className="pt-6 pb-24">
+      <Contained>
+        <h1 className="text-xl font-semibold">Contributions</h1>
+        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+          Envelopes players pasted in for text this corpus has no audio for. Accepting a row does
+          not queue anything -- it only marks the row for the next export, which the pipelines
+          pull on their own schedule.
+        </p>
 
-      <ContributionsTabs lang={lang} active="contributions" showNpcs={can(viewer, "regenerate", BASE_LANG)} />
-
-      <ContributionTable
-        initial={rows}
-        // Every row the filters match, on any page, as just its id and status: what "Accept all"
-        // acts on.
-        matching={matching.map((row) => ({ id: row.id, status: row.status }))}
-        page={page}
-        pages={pages}
-        status={status}
-        provenance={provenance}
-        client={client}
-        source={source}
-        existing={existing}
-        books={books}
-        flavorScopes={facetValues.flavorScopes}
-        // What api/contributions/npc asks, so the speaker controls are offered only to
-        // somebody it will answer. An NPC's race and gender decide its voice in every
-        // language, so that stays narrower than triaging this language's text.
-        canAnswerNpc={can(viewer, "regenerate", BASE_LANG)}
-      />
+        <ContributionsTabs lang={lang} active="contributions" showNpcs={can(viewer, "regenerate", BASE_LANG)} />
+      </Contained>
+      <Wide>
+        <ContributionTable
+          initial={rows}
+          // Every row the filters match, on any page, as just its id and status: what "Accept all"
+          // acts on.
+          matching={matching.map((row) => ({ id: row.id, status: row.status }))}
+          page={page}
+          pages={pages}
+          status={status}
+          provenance={provenance}
+          client={client}
+          source={source}
+          existing={existing}
+          books={books}
+          flavorScopes={facetValues.flavorScopes}
+          // What api/contributions/npc asks, so the speaker controls are offered only to
+          // somebody it will answer. An NPC's race and gender decide its voice in every
+          // language, so that stays narrower than triaging this language's text.
+          canAnswerNpc={can(viewer, "regenerate", BASE_LANG)}
+        />
+      </Wide>
     </main>
   );
 }

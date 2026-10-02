@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import ContributeForm from "@/components/ContributeForm";
 import UploadGathered from "@/components/UploadGathered";
 import { auth } from "@/lib/auth";
+import { Contained } from "@/components/Width";
 
 /**
  * Where the addons send a player when there is no audio for a quest, book page or place.
@@ -31,30 +32,32 @@ export default async function Page() {
   const signedInAs = session ? (session.user.name?.trim() || session.user.email) : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-8 pb-24">
-      <article className="max-w-xl">
-        <h1 className="text-xl font-semibold">Contribute</h1>
-        <p className="text-muted-foreground mt-1 mb-6 text-sm">
-          Send the game&apos;s own text for what Spoken has not narrated yet: one line from a link
-          the addon gives you, or everything the addon gathered while you played. A person reads
-          the queue, not a script, so it can take a while before it is answered.
-        </p>
+    <main className="pt-8 pb-24">
+      <Contained>
+        <article className="max-w-xl">
+          <h1 className="text-xl font-semibold">Contribute</h1>
+          <p className="text-muted-foreground mt-1 mb-6 text-sm">
+            Send the game&apos;s own text for what Spoken has not narrated yet: one line from a link
+            the addon gives you, or everything the addon gathered while you played. A person reads
+            the queue, not a script, so it can take a while before it is answered.
+          </p>
 
-        <ContributeForm signedInAs={signedInAs} />
+          <ContributeForm signedInAs={signedInAs} />
 
-        {/* Below the single-line form, not instead of it: most arrivals come from a link, and
-            the file is for players who turned gathering on in the game. */}
-        <h2 className="mt-10 mb-1 text-base font-semibold">Everything you gathered</h2>
-        <p className="text-muted-foreground mb-4 text-sm">
-          If you chose <strong>Gather as I play</strong> in the game, log out (or type{" "}
-          <code>/reload</code>) so the game writes its files, then drop in{" "}
-          <code className="break-all">
-            World of Warcraft/&lt;game folder&gt;/WTF/Account/&lt;your account&gt;/SavedVariables/SpokenContributions.lua
-          </code>
-          . Only the gathered lines are sent, never your settings.
-        </p>
-        <UploadGathered signedInAs={signedInAs} />
-      </article>
+          {/* Below the single-line form, not instead of it: most arrivals come from a link, and
+              the file is for players who turned gathering on in the game. */}
+          <h2 className="mt-10 mb-1 text-base font-semibold">Everything you gathered</h2>
+          <p className="text-muted-foreground mb-4 text-sm">
+            If you chose <strong>Gather as I play</strong> in the game, log out (or type{" "}
+            <code>/reload</code>) so the game writes its files, then drop in{" "}
+            <code className="break-all">
+              World of Warcraft/&lt;game folder&gt;/WTF/Account/&lt;your account&gt;/SavedVariables/SpokenContributions.lua
+            </code>
+            . Only the gathered lines are sent, never your settings.
+          </p>
+          <UploadGathered signedInAs={signedInAs} />
+        </article>
+      </Contained>
     </main>
   );
 }

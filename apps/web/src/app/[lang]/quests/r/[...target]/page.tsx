@@ -21,6 +21,7 @@ import ReportForm from "@/components/ReportForm";
 import { audioRelPath } from "@/lib/audio";
 import { formatTarget, parseTarget, resolveTarget } from "@/lib/reports/target";
 import { liveVersion } from "@/lib/takes/store";
+import { Contained } from "@/components/Width";
 
 export const metadata: Metadata = { title: "Report a voice line · VoiceOver" };
 
@@ -40,12 +41,14 @@ export default async function ReportPage({
 
   if (!target) {
     return (
-      <main className="mx-auto max-w-6xl px-5 pt-6 pb-24">
-        <h1 className="text-xl font-semibold">Report a voice line</h1>
-        <p className="text-muted-foreground mt-1 mb-5 text-sm">
-          That address is not one this site understands, but you can still tell us about it.
-        </p>
-        <ReportForm source="quests" target={segments.join("/")} lineId={null} />
+      <main className="pt-6 pb-24">
+        <Contained>
+          <h1 className="text-xl font-semibold">Report a voice line</h1>
+          <p className="text-muted-foreground mt-1 mb-5 text-sm">
+            That address is not one this site understands, but you can still tell us about it.
+          </p>
+          <ReportForm source="quests" target={segments.join("/")} lineId={null} />
+        </Contained>
       </main>
     );
   }
@@ -73,60 +76,62 @@ export default async function ReportPage({
   const version = line ? await liveVersion("quests", audioRelPath(line), lang) : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-6 pb-24">
-      <h1 className="text-xl font-semibold">Report a voice line</h1>
-      <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        You came here from the game. Tell us what sounded wrong and someone will listen to it.
-      </p>
-
-      {line ? (
-        <section className="mb-6 rounded border p-4">
-          <h2 className="font-medium">{line.questTitle ?? line.npcName}</h2>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {line.npcName} · {line.voice}
-          </p>
-          <p className="mt-2 text-sm whitespace-pre-wrap">{line.text}</p>
-          <audio
-            controls
-            className="mt-3 w-full"
-            src={withLang(
-              lang,
-              `/api/quests/audio/${audioRelPath(line)}${version === null ? "" : `?v=${version}`}`,
-            )}
-          />
-        </section>
-      ) : null}
-
-      {choices.length > 1 && !line ? (
-        <section className="mb-6 rounded border p-4">
-          <h2 className="font-medium">{choices[0].npcName}</h2>
-          <p className="text-muted-foreground mt-1 mb-2 text-sm">
-            This character has more than one line. Which one sounded wrong?
-          </p>
-          <ul className="flex flex-col gap-2 text-sm">
-            {choices.map((candidate) => (
-              <li key={candidate.lineId}>
-                <Link
-                  href={`/quests/r/${formatTarget(target)}?line=${encodeURIComponent(candidate.lineId)}`}
-                  className="underline-offset-2 hover:underline"
-                >
-                  {candidate.text.slice(0, 120)}
-                  {candidate.text.length > 120 ? "…" : ""}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {lines.length === 0 ? (
-        <p className="text-muted-foreground mb-6 text-sm">
-          Nothing in the corpus matches that address. File the report anyway — an address that
-          resolves to nothing is worth knowing about.
+    <main className="pt-6 pb-24">
+      <Contained>
+        <h1 className="text-xl font-semibold">Report a voice line</h1>
+        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+          You came here from the game. Tell us what sounded wrong and someone will listen to it.
         </p>
-      ) : null}
 
-      <ReportForm source="quests" target={formatTarget(target)} lineId={line?.lineId ?? null} />
+        {line ? (
+          <section className="mb-6 rounded border p-4">
+            <h2 className="font-medium">{line.questTitle ?? line.npcName}</h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              {line.npcName} · {line.voice}
+            </p>
+            <p className="mt-2 text-sm whitespace-pre-wrap">{line.text}</p>
+            <audio
+              controls
+              className="mt-3 w-full"
+              src={withLang(
+                lang,
+                `/api/quests/audio/${audioRelPath(line)}${version === null ? "" : `?v=${version}`}`,
+              )}
+            />
+          </section>
+        ) : null}
+
+        {choices.length > 1 && !line ? (
+          <section className="mb-6 rounded border p-4">
+            <h2 className="font-medium">{choices[0].npcName}</h2>
+            <p className="text-muted-foreground mt-1 mb-2 text-sm">
+              This character has more than one line. Which one sounded wrong?
+            </p>
+            <ul className="flex flex-col gap-2 text-sm">
+              {choices.map((candidate) => (
+                <li key={candidate.lineId}>
+                  <Link
+                    href={`/quests/r/${formatTarget(target)}?line=${encodeURIComponent(candidate.lineId)}`}
+                    className="underline-offset-2 hover:underline"
+                  >
+                    {candidate.text.slice(0, 120)}
+                    {candidate.text.length > 120 ? "…" : ""}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {lines.length === 0 ? (
+          <p className="text-muted-foreground mb-6 text-sm">
+            Nothing in the corpus matches that address. File the report anyway — an address that
+            resolves to nothing is worth knowing about.
+          </p>
+        ) : null}
+
+        <ReportForm source="quests" target={formatTarget(target)} lineId={line?.lineId ?? null} />
+      </Contained>
     </main>
   );
 }

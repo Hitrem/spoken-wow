@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import ReportForm from "@/components/ReportForm";
 import { audioRelPath } from "@/lib/zones/audio";
 import { isCorpusEmpty, lineByPath, loadContext } from "@/lib/zones/catalogue";
+import { Contained } from "@/components/Width";
 
 /**
  * One zone line, and the form to complain about it.
@@ -68,62 +69,64 @@ export default async function Page({ params }: { params: Promise<Params> }) {
   const take = (await loadContext(lang)).takes.get(entry.id);
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-8 pb-24">
-      <article className="max-w-2xl">
-        <h1 className="text-xl font-semibold">{entry.name}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {entry.kind === "subzone" ? `In ${entry.zoneName}` : "Zone lore"}
-        </p>
-
-        {take ? (
-          // The native control rather than the explorer's Player: that one carries a rate
-          // selector and keyboard wiring built for somebody working through a list. Here
-          // there is one clip and one reason to play it.
-          <audio
-            controls
-            preload="metadata"
-            className="mt-4 w-full"
-            // The take version busts the browser cache after a regeneration; without it
-            // someone sent back to check a fix would hear the clip they complained about.
-            src={withLang(lang, `/api/zones/audio/${audioRelPath(entry.file)}?v=${take.version}`)}
-          />
-        ) : (
-          <p className="text-muted-foreground mt-4 text-sm">
-            This line has no narration yet.
+    <main className="pt-8 pb-24">
+      <Contained>
+        <article className="max-w-2xl">
+          <h1 className="text-xl font-semibold">{entry.name}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {entry.kind === "subzone" ? `In ${entry.zoneName}` : "Zone lore"}
           </p>
-        )}
 
-        {entry.full ? (
-          <p className="mt-5 whitespace-pre-line">{entry.full}</p>
-        ) : (
-          // Said plainly rather than left as an empty gap, because somebody arriving from
-          // the game is here to report a problem and "there is no text yet" is the answer
-          // to the one they are about to file.
-          <p className="text-muted-foreground mt-5 italic">
-            There is no lore written for this place yet.
-          </p>
-        )}
+          {take ? (
+            // The native control rather than the explorer's Player: that one carries a rate
+            // selector and keyboard wiring built for somebody working through a list. Here
+            // there is one clip and one reason to play it.
+            <audio
+              controls
+              preload="metadata"
+              className="mt-4 w-full"
+              // The take version busts the browser cache after a regeneration; without it
+              // someone sent back to check a fix would hear the clip they complained about.
+              src={withLang(lang, `/api/zones/audio/${audioRelPath(entry.file)}?v=${take.version}`)}
+            />
+          ) : (
+            <p className="text-muted-foreground mt-4 text-sm">
+              This line has no narration yet.
+            </p>
+          )}
 
-        <section className="bg-muted mt-8 rounded-lg border p-4">
-          <h2 className="font-medium">Report a problem</h2>
-          <p className="text-muted-foreground mt-1 mb-3 text-xs">
-            Wrong lore, a mispronunciation, or narration that does not play. Nothing is
-            required but the description.
-          </p>
-          <ReportForm source="zones" target={entry.file} lineId={entry.id} />
-        </section>
+          {entry.full ? (
+            <p className="mt-5 whitespace-pre-line">{entry.full}</p>
+          ) : (
+            // Said plainly rather than left as an empty gap, because somebody arriving from
+            // the game is here to report a problem and "there is no text yet" is the answer
+            // to the one they are about to file.
+            <p className="text-muted-foreground mt-5 italic">
+              There is no lore written for this place yet.
+            </p>
+          )}
 
-        <footer className="text-muted-foreground mt-8 text-sm">
-          <Link href={`/zones?zone=${entry.mapID}`} className="hover:text-foreground">
-            Browse every line in {entry.zoneName}
-          </Link>
-          <p className="mt-2 text-xs">
-            Lore from{" "}
-            {entry.source ? <a href={entry.source}>warcraft.wiki.gg</a> : "warcraft.wiki.gg"}{" "}
-            (CC BY-SA 4.0)
-          </p>
-        </footer>
-      </article>
+          <section className="bg-muted mt-8 rounded-lg border p-4">
+            <h2 className="font-medium">Report a problem</h2>
+            <p className="text-muted-foreground mt-1 mb-3 text-xs">
+              Wrong lore, a mispronunciation, or narration that does not play. Nothing is
+              required but the description.
+            </p>
+            <ReportForm source="zones" target={entry.file} lineId={entry.id} />
+          </section>
+
+          <footer className="text-muted-foreground mt-8 text-sm">
+            <Link href={`/zones?zone=${entry.mapID}`} className="hover:text-foreground">
+              Browse every line in {entry.zoneName}
+            </Link>
+            <p className="mt-2 text-xs">
+              Lore from{" "}
+              {entry.source ? <a href={entry.source}>warcraft.wiki.gg</a> : "warcraft.wiki.gg"}{" "}
+              (CC BY-SA 4.0)
+            </p>
+          </footer>
+        </article>
+      </Contained>
     </main>
   );
 }

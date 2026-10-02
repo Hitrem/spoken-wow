@@ -10,6 +10,7 @@ import { can } from "@/lib/permissions";
 import { isCategory, isStatus, type Category, type Status } from "@/lib/reports/reports";
 import { listReports } from "@/lib/reports/store";
 import { type Source, isSource } from "@/lib/sections";
+import { Contained, Wide } from "@/components/Width";
 
 export const metadata: Metadata = { title: "Reports · Spoken" };
 
@@ -43,21 +44,24 @@ export default async function Page({
   const reports = await listReports(status, source, category, undefined, lang);
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-6 pb-24">
-      <h1 className="text-xl font-semibold">Reports</h1>
-      <p className="text-muted-foreground mt-1 mb-5 text-sm">
-        What players filed from inside the game. A report is a claim, not a verdict: read it,
-        listen to the line, and if it is right, queue the file for regeneration the usual way.
-        Nothing here starts a job on its own.
-      </p>
-
-      <ReportTable
-        initial={reports}
-        view={status}
-        source={source}
-        category={category}
-        canRegenerate={can(viewer, "regenerate", lang)}
-      />
+    <main className="pt-6 pb-24">
+      <Contained>
+        <h1 className="text-xl font-semibold">Reports</h1>
+        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+          What players filed from inside the game. A report is a claim, not a verdict: read it,
+          listen to the line, and if it is right, queue the file for regeneration the usual way.
+          Nothing here starts a job on its own.
+        </p>
+      </Contained>
+      <Wide>
+        <ReportTable
+          initial={reports}
+          view={status}
+          source={source}
+          category={category}
+          canRegenerate={can(viewer, "regenerate", lang)}
+        />
+      </Wide>
     </main>
   );
 }
