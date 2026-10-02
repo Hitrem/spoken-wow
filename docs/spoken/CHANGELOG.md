@@ -1,5 +1,12 @@
 # Changelog — Spoken Player
 
+## 2.3.1 — 2026-10-02
+
+- **Forever build 70170 is recognised again.** That build reports a different client type,
+  so the player stopped treating it as Forever: the **Bronze tint** setting disappeared and
+  portraits lost the HD models. The player now recognises Forever by its version number,
+  which keeps working whatever client type later builds report.
+
 ## 2.3.0 — 2026-10-01
 
 - The player remembers its position, width and expanded captions across `/reload` and logins.
