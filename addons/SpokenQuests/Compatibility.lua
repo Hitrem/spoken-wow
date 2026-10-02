@@ -620,7 +620,9 @@ if Version.IsLegacyWrath then
     end
 
 end
-if Version.IsRetailMainline then
+-- Asked of the API rather than the project id: Forever took this shim as mainline until
+-- build 70170 gave it a project id of its own, and the next build may change it again.
+if C_GossipInfo and not GetGossipText then
 
     GetGossipText = C_GossipInfo.GetText
     GetNumGossipActiveQuests = C_GossipInfo.GetNumActiveQuests

@@ -6,6 +6,12 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 2.2.1 — player
+
+- Gossip quest lines play on Forever build 70170 again. That build reports a different
+  client type, and Spoken Quests stopped setting up the gossip functions Forever needs.
+  It now checks whether the client has them instead.
+
 ## 2.2.1 — Spoken Quests Audio
 
 - The packs load on the Forever client again. Its update on 2 October marked them
