@@ -571,6 +571,33 @@ describe("snapshot", () => {
     });
   });
 
+  it("lists only one owner's running lines and failures when asked, but everyone's queue", async () => {
+    const alice = await newUser();
+    const bob = await newUser();
+    await enqueue(await newBatch("quests", alice), [line(1), line(2)], "quests");
+    await enqueue(await newBatch("quests", bob), [line(3), line(4)], "quests");
+
+    const aliceLane = { owner: alice, provider: "elevenlabs" as const };
+    const bobLane = { owner: bob, provider: "elevenlabs" as const };
+    await claimNext(undefined, aliceLane);
+    await claimNext(undefined, bobLane);
+    await failJob((await claimNext(undefined, aliceLane))!.id, { kind: "test", message: `${prefix} alice` });
+    await failJob((await claimNext(undefined, bobLane))!.id, { kind: "test", message: `${prefix} bob` });
+
+    const mine = (seen: Awaited<ReturnType<typeof snapshot>>) => ({
+      running: seen.running.map((job) => job.preview),
+      failures: seen.failures.filter((job) => job.message.startsWith(prefix)).map((job) => job.message),
+    });
+
+    const own = await snapshot(null, { viewerId: alice, linesOf: alice });
+    expect(mine(own)).toEqual({ running: ["line 1"], failures: [`${prefix} alice`] });
+    expect(own.queues.map((queue) => queue.owner)).toEqual(expect.arrayContaining([alice, bob]));
+
+    const all = mine(await snapshot(null, { viewerId: alice }));
+    expect(all.running).toEqual(expect.arrayContaining(["line 1", "line 3"]));
+    expect(all.failures).toEqual(expect.arrayContaining([`${prefix} alice`, `${prefix} bob`]));
+  });
+
   it("answers one poll with two pooled queries, not seven", async () => {
     // The exact count that matters: a batch in flight already holds two connections per job,
     // so the number a poll opens on top of that is the tightest budget in the system. This

@@ -574,10 +574,14 @@ export async function dismissThrough(jobId: string, userId: string | null): Prom
 
 export async function snapshot(
   since: string | null,
-  options: { viewerId?: string | null; maxActive?: number } = {},
+  options: { viewerId?: string | null; maxActive?: number; linesOf?: string } = {},
 ): Promise<QueueSnapshot> {
   const maxActive = options.maxActive ?? maxActiveFrom(process.env.QUEUE_MAX_ACTIVE);
   const viewerId = options.viewerId ?? null;
+  // Whose running lines and failures to list: one owner's, or everybody's when unset. The
+  // counts and the per-person queues stay whole either way, so a waiting batch still says
+  // what it is waiting behind - only what is being said, and why it failed, is private.
+  const linesOf = options.linesOf ?? null;
   // Live work first, then whatever finished recently: the two halves of what the panel is
   // for. Never just the age, for the reason WINDOW records.
   //
@@ -611,11 +615,13 @@ export async function snapshot(
        ),
        running_jobs as (
          select "source", "lang", "lineId", "npcName", "preview" from "regeneration_job"
-          where "state" = 'running' order by "id" limit 20
+          where "state" = 'running' and ($2::text is null or "owner" = $2)
+          order by "id" limit 20
        ),
        recent_failures as (
          select "source", "lang", "lineId", "error" as message from "regeneration_job"
-          where "state" = 'failed' and ${window} order by "id" desc limit 20
+          where "state" = 'failed' and ${window} and ($2::text is null or "owner" = $2)
+          order by "id" desc limit 20
        ),
        finished_page as (
          select "id"::text as "id", "source", "lang", "lineId", "file", "version" from "regeneration_job"
@@ -665,7 +671,7 @@ export async function snapshot(
          (select max from terminal) as cursor,
          (select max from shown) as through
        from job_counts jc`,
-      [since],
+      [since, linesOf],
     ),
     db().query<{ stoppedBecause: string | null; cancelled: string }>(
       `select b."stoppedBecause",

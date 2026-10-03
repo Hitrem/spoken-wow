@@ -32,6 +32,7 @@ import { filtersFromParams, needsStale } from "@/lib/search-request";
 import { ensureQueueRunning, queueWorker } from "@/lib/generation/boot";
 import { catalogue as bookCatalogue } from "@/lib/books/catalogue";
 import type { Lang } from "@/lib/lang";
+import { isAdmin } from "@/lib/permissions";
 import type { Provider } from "@/lib/generation/speakers/speaker";
 import { catalogue as zoneCatalogue } from "@/lib/zones/catalogue";
 
@@ -267,5 +268,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json(await snapshot(rawSince, { viewerId: session.user.id }));
+  // A global admin watches every line; anybody else sees only their own being said or
+  // failing, while still seeing whose queues are ahead of theirs.
+  return NextResponse.json(
+    await snapshot(rawSince, {
+      viewerId: session.user.id,
+      linesOf: isAdmin(session.user.role) ? undefined : session.user.id,
+    }),
+  );
 }
