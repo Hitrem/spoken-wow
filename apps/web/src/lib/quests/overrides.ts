@@ -73,6 +73,9 @@ export async function writeOverride(
   text: string,
   // Nullable to match the column, which is SET NULL: who rewrote a line outlives the account.
   userId: string | null,
+  // The contribution the text came from, when it is a correction accepted from the game: the
+  // table has no provenance column, so the activity log is where that is kept.
+  contributionId?: number,
 ): Promise<LineOverride> {
   // "before" is read in the same statement, from the snapshot the upsert started with, so
   // the log says what this write replaced and not what a concurrent one did.
@@ -100,7 +103,7 @@ export async function writeOverride(
       source: "quests",
       subject: file,
       lineId,
-      detail: { text, before },
+      detail: contributionId ? { text, before, contribution: contributionId } : { text, before },
     });
   }
   return toOverride(row);

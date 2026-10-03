@@ -30,8 +30,8 @@ import type { ContributionStatus, Submission } from "./contributions";
 export type LineState =
   | { kind: "missing" }
   | { kind: "known" }
-  /** `current` is the corpus's text of `lineId`, in the contribution's language. */
-  | { kind: "changed"; lineId: string; current: string };
+  /** `current` is the corpus's text of `lineId` and `variant`, in the contribution's language. */
+  | { kind: "changed"; lineId: string; variant: number; current: string };
 
 type Comparable = Pick<Submission, "source" | "locale" | "text" | "meta">;
 
@@ -50,14 +50,14 @@ function npcOf(row: Comparable): number | null {
   return id && Number(id) <= 2_147_483_647 ? Number(id) : null;
 }
 
-type CorpusText = { lineId: string; text: string };
+type CorpusText = { lineId: string; variant: number; text: string };
 
 /** Every current line answering each (language, moment), in one query. */
 async function momentTexts(pairs: { locale: string; moment: string }[]): Promise<Map<string, CorpusText[]>> {
   const found = new Map<string, CorpusText[]>();
   if (pairs.length === 0) return found;
-  const { rows } = await db().query<{ locale: string; moment: string; lineId: string; text: string }>(
-    `select m."locale", m."moment", l."lineId",
+  const { rows } = await db().query<{ locale: string; moment: string; lineId: string; variant: number; text: string }>(
+    `select m."locale", m."moment", l."lineId", l."variant",
             coalesce(case when l."lang" = $3 then l."originalText" else l."localeText" end, l."text") as "text"
        from unnest($1::text[], $2::text[]) as m ("locale", "moment")
        join "quest_line" l
@@ -69,7 +69,7 @@ async function momentTexts(pairs: { locale: string; moment: string }[]): Promise
   for (const row of rows) {
     const key = `${row.locale}|${row.moment}`;
     const group = found.get(key);
-    const text = { lineId: row.lineId, text: row.text };
+    const text = { lineId: row.lineId, variant: row.variant, text: row.text };
     if (group) group.push(text);
     else found.set(key, [text]);
   }
@@ -121,7 +121,7 @@ export async function lineStates(rows: readonly Comparable[]): Promise<LineState
       const lines = byMoment.get(`${row.locale}|${moment}`);
       if (!lines?.length) return MISSING;
       if (lines.some((line) => sameLine(line.text, text))) return { kind: "known" };
-      return { kind: "changed", lineId: lines[0].lineId, current: lines[0].text };
+      return { kind: "changed", lineId: lines[0].lineId, variant: lines[0].variant, current: lines[0].text };
     }
     const npcId = npcOf(row);
     const spoken = npcId === null ? undefined : byNpc.get(`${row.locale}|${npcId}`);
@@ -134,15 +134,17 @@ export type ContributionTab = "contributions" | "corrections";
 /**
  * Which tab of /contributions a stored row is listed on, or null for none.
  *
- * A "changed" row is a correction. A "known" row still waiting on triage is on neither -- it is
- * one intake would now drop, kept only because it was stored first or the corpus caught up
- * since (scripts/drop-known-contributions.mts clears them). An accepted row stays where it was
- * accepted from, whatever the corpus says now: an accepted line is usually known precisely
- * because accepting it wrote it.
+ * A "changed" row is a correction, accepted or not: accepting one rewrites what the line
+ * speaks (correction.ts), never the printed text it is compared on, so an accepted correction
+ * still differs and is still listed there. A "known" row still waiting on triage is on neither
+ * -- it is one intake would now drop, kept only because it was stored first or the corpus
+ * caught up since (scripts/drop-known-contributions.mts clears them). Any other accepted row
+ * stays where it was accepted from, whatever the corpus says now: an accepted line is usually
+ * known precisely because accepting it wrote it.
  */
 export function tabOf(status: ContributionStatus, state: LineState): ContributionTab | null {
-  if (status === "accepted") return "contributions";
   if (state.kind === "changed") return "corrections";
+  if (status === "accepted") return "contributions";
   if (state.kind === "known" && status === "new") return null;
   return "contributions";
 }

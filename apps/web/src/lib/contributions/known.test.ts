@@ -64,7 +64,7 @@ describe("lineStates", () => {
 
   it("gives the corpus text of a moment that reads differently", async () => {
     expect(await lineStates([moment("accept", "Hello, $N.\n\nTurn left at the tree.")])).toEqual([
-      { kind: "changed", lineId: `q:${quest}:accept`, current: "Hello, $n.$B$BTurn right at the tree." },
+      { kind: "changed", lineId: `q:${quest}:accept`, variant: 0, current: "Hello, $n.$B$BTurn right at the tree." },
     ]);
   });
 
@@ -93,12 +93,12 @@ describe("lineStates", () => {
 });
 
 describe("tabOf", () => {
-  const changed = { kind: "changed", lineId: "q:1:accept", current: "x" } as const;
+  const changed = { kind: "changed", lineId: "q:1:accept", variant: 0, current: "x" } as const;
 
-  it("puts a changed row on the corrections tab until it is accepted", () => {
+  it("puts a changed row on the corrections tab, accepted or not", () => {
     expect(tabOf("new", changed)).toBe("corrections");
     expect(tabOf("rejected", changed)).toBe("corrections");
-    expect(tabOf("accepted", changed)).toBe("contributions");
+    expect(tabOf("accepted", changed)).toBe("corrections");
   });
 
   it("lists a known row nowhere while it waits, and where it was resolved once it is", () => {

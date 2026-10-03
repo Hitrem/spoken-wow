@@ -52,13 +52,15 @@ export type ActivityDetail = {
     note?: string | null;
     variant?: number;
     origin?: string;
+    /** The contribution whose text this is, for a correction accepted from the game. */
+    contribution?: number;
   };
   "text.restored": { version: number; from?: number | null };
   "name.edited": { version: number; name?: string; note?: string | null };
   "lexicon.added": { after?: string };
   "lexicon.edited": { before?: string; after?: string };
   "lexicon.removed": { before?: string };
-  "override.set": { text: string; before?: string | null };
+  "override.set": { text: string; before?: string | null; contribution?: number };
   "override.cleared": { before?: string | null };
   "ignore.set": { reason?: string | null };
   "ignore.cleared": Record<string, never>;
@@ -85,7 +87,7 @@ export type ActivityDetail = {
   "grant.added": { capability: Capability };
   "grant.removed": { capability: Capability };
   "language.toggled": { enabled: boolean };
-  "contribution.resolved": { status: string; key?: string };
+  "contribution.resolved": { status: string; key?: string; correction?: boolean };
   "contribution.edited": { field: string; value?: unknown };
   "report.resolved": { status: string; category?: string };
 

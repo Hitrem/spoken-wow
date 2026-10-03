@@ -78,6 +78,8 @@ export async function saveQuestText(args: {
   note?: string | null;
   editedBy: string;
   expectedVersion?: number | null;
+  /** The contribution the text came from, for a correction accepted from the game. */
+  contribution?: number;
 }): Promise<QuestTextVersion> {
   refuseEnglish(args.lang);
   const text = args.text.trim();
@@ -180,7 +182,13 @@ export async function saveQuestText(args: {
         source: "quests",
         subject: args.lineId,
         lineId: args.lineId,
-        detail: { version, text, note: args.note?.trim() || null, variant: args.variant },
+        detail: {
+          version,
+          text,
+          note: args.note?.trim() || null,
+          variant: args.variant,
+          ...(args.contribution ? { contribution: args.contribution } : {}),
+        },
       },
       client,
     );

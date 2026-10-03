@@ -146,6 +146,9 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
     case "queue.resumed":
       return { what: "resumed the regeneration queue", quote: null };
     case "text.edited":
+      if (num(d.contribution)) {
+        return { what: `took a correction from the game (contribution #${num(d.contribution)})`, quote: str(d.text) };
+      }
       return { what: version ? `edited the text (v${version})` : "edited the text", quote: str(d.text) };
     case "text.restored":
       return { what: `restored text v${version}`, quote: null };
@@ -161,6 +164,9 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
     case "lexicon.removed":
       return { what: `removed the pronunciation of “${row.subject}”`, quote: str(d.before) };
     case "override.set":
+      if (num(d.contribution)) {
+        return { what: `took a correction from the game (contribution #${num(d.contribution)})`, quote: str(d.text) };
+      }
       return { what: "overrode the English text", quote: str(d.text) };
     case "override.cleared":
       return { what: "cleared the English text override", quote: str(d.before) };
@@ -208,7 +214,10 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
     case "language.toggled":
       return { what: d.enabled ? "switched the language on" : "switched the language off", quote: null };
     case "contribution.resolved":
-      return { what: `${str(d.status) ?? "resolved"} a contribution`, quote: str(d.key) };
+      return {
+        what: `${str(d.status) ?? "resolved"} a ${d.correction ? "correction from the game" : "contribution"}`,
+        quote: str(d.key),
+      };
     case "contribution.edited":
       return { what: `changed a contribution's ${str(d.field) ?? "details"}`, quote: null };
     case "report.resolved":
