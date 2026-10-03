@@ -26,10 +26,10 @@ export const dynamic = "force-dynamic";
  * Contributions for a quest moment the corpus already has, whose text says something else: the
  * line as the corpus has it and as the player's client showed it, side by side.
  *
- * Gated as the triage page is -- the rows are the same table's. Accept is not offered: accepting
- * a quests row only ever writes a line that is missing (accept.ts), so here it would change
- * nothing. Taking a correction is the explorer's text edit on the line, linked from each row;
- * dismissing one is the same reject the triage page sends.
+ * Gated as the triage page is -- the rows are the same table's. Accepting one writes the
+ * player's text as what the line speaks (correction.ts), the explorer's text edit in one click;
+ * the line is still linked for an edit of its own. Rejecting one is the same reject the triage
+ * page sends.
  */
 export default async function Page({
   params,
@@ -81,8 +81,8 @@ export default async function Page({
         <h1 className="text-xl font-semibold">Contributions</h1>
         <p className="text-muted-foreground mt-1 mb-5 text-sm">
           Lines the corpus already has, sent back with different text -- usually the game
-          rewording a quest since the corpus was extracted. Take a correction by editing the line
-          in the explorer; dismiss one that is wrong.
+          rewording a quest since the corpus was extracted. Accept a correction to make the
+          player&apos;s text what the line speaks; reject one that is wrong.
         </p>
         <ContributionsTabs
           lang={lang}

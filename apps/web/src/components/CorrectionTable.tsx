@@ -52,11 +52,10 @@ const STAGE_LABELS: Record<QuestStage, string> = {
   complete: "Complete",
 };
 
-// Accepted is not a state a correction can be in (known.ts's tabOf lists an accepted row on
-// the triage tab), so it is not offered.
 const STATUS_CHIP_OPTIONS: ChipOption[] = [
   { value: "new", label: "New" },
-  { value: "rejected", label: "Dismissed" },
+  { value: "accepted", label: "Accepted" },
+  { value: "rejected", label: "Rejected" },
 ];
 
 function when(at: string): string {
@@ -82,13 +81,18 @@ export default function CorrectionTable({
   const [busy, setBusy] = useState<number | null>(null);
   const [refusals, setRefusals] = useState<Record<number, string>>({});
 
+  // Accepting writes the player's text as the line's (api/contributions/correction); rejecting
+  // and reopening are resolve's plain status flips.
   const resolve = useCallback(async (id: number, next: ContributionStatus) => {
     setBusy(id);
-    const response = await fetch("/api/contributions/resolve", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id, status: next }),
-    }).catch(() => null);
+    const response = await fetch(
+      next === "accepted" ? "/api/contributions/correction" : "/api/contributions/resolve",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, status: next }),
+      },
+    ).catch(() => null);
     if (response?.ok) {
       setResolved((current) => ({ ...current, [id]: next }));
       setRefusals(({ [id]: _, ...rest }) => rest);
@@ -201,13 +205,22 @@ export default function CorrectionTable({
                         Edit line
                       </Link>
                       {current === "new" ? (
-                        <LiteButton
-                          variant="outline"
-                          disabled={busy === row.id}
-                          onClick={() => void resolve(row.id, "rejected")}
-                        >
-                          Dismiss
-                        </LiteButton>
+                        <>
+                          <LiteButton
+                            disabled={busy === row.id}
+                            title="Take the player's text as what this line speaks"
+                            onClick={() => void resolve(row.id, "accepted")}
+                          >
+                            Accept
+                          </LiteButton>
+                          <LiteButton
+                            variant="outline"
+                            disabled={busy === row.id}
+                            onClick={() => void resolve(row.id, "rejected")}
+                          >
+                            Reject
+                          </LiteButton>
+                        </>
                       ) : (
                         <LiteButton
                           variant="ghost"
