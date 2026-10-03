@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  actedFolder,
   changelogSection, findPack, isLanguageHeading, loadPacks, packsFor,
 } from "./packs.mjs";
 
@@ -139,4 +140,11 @@ test("github: false keeps a pack off GitHub, and nothing else is accepted", () =
   assert.equal(findPack("zones", "enUS", null, packs).github, true);
   assert.throws(() => loadPacks(tree([["quests", "h.md", { ...hordeEn[2], github: "true" }]])),
     /github may only be false/);
+});
+
+test("an acted overlay is the section's English folder plus Acted, and the language's code", () => {
+  assert.equal(actedFolder("quests", "enUS"), "SpokenQuestsAudioActed");
+  assert.equal(actedFolder("zones", "deDE"), "SpokenZonesAudioActed_deDE");
+  assert.equal(actedFolder("books", "ptBR"), "SpokenBooksAudioActed_ptBR");
+  assert.throws(() => actedFolder("zones", "itIT"));
 });

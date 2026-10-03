@@ -17,7 +17,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help db extract import export lookup deploy deploy-copy status remove \
-        import-locale pull-history pull-live sounds sync check-synced package package-audio release-dry release release-wago release-curse \
+        import-locale pull-history pull-live pull-recorded package-acted acted sounds sync check-synced package package-audio release-dry release release-wago release-curse \
         release-audio-dry release-audio icon test \
         full-release
 
@@ -96,6 +96,17 @@ pull-live: require-droplet ## Fetch only the live takes the local database names
 # live takes and the archive before every build. See scripts/audio/sounds.mjs.
 sounds: ## Assemble the pack's Sounds/ (LOCALE=xx: into build/books/xx) from the live takes
 	@$(DB_ENV) node scripts/audio/sounds.mjs --lang=$(or $(LOCALE),enUS) books
+
+# The voice actors' recordings (migration 0062) ship as an overlay pack of their own, which the
+# player prefers over the generated pack where it has a line. Built from the `recording` table
+# and the files under the archive's recorded/, not from the takes. See scripts/audio/acted.mjs.
+pull-recorded: require-droplet ## Fetch the voice actors' live recordings the local database names (after sync)
+	@$(DB_ENV) RSYNC="$(RSYNC)" scripts/audio/pull-live.sh books $(or $(LOCALE),enUS) recorded
+
+package-acted: check-synced ## Build the voice-acted overlay zip into dist/ (LOCALE=xx, ACTED_VERSION=x.y.z)
+	@$(DB_ENV) node scripts/audio/acted.mjs --lang=$(or $(LOCALE),enUS) --version=$(or $(ACTED_VERSION),1.0.0) books
+
+acted: pull-recorded package-acted ## Pull the recordings and build the voice-acted overlay (after sync)
 
 package: ## Zip the addon into dist/ (for a release)
 	@./scripts/books/package.sh

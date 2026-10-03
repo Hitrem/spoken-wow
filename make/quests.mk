@@ -55,7 +55,7 @@ endef
 
 .DEFAULT_GOAL := help
 .PHONY: help pull-voices push-voices voices-status \
-        pull-history pull-live history-status sounds package package-audio \
+        pull-history pull-live pull-recorded package-acted acted history-status sounds package package-audio \
         package-audio-complete package-meta push-complete icon \
         downloads-status \
         factions followup-lines release release-audio release-audio-dry release-wago release-curse \
@@ -127,6 +127,17 @@ history-status: require-droplet ## Compare take count and size on both sides
 # live takes and the archive before every build. See scripts/audio/sounds.mjs.
 sounds: ## Assemble pipelines/quests/audio from the live takes and the archive
 	@$(DB_ENV) node scripts/audio/sounds.mjs --lang=$(or $(LOCALE),enUS) quests
+
+# The voice actors' recordings (migration 0062) ship as an overlay pack of their own, which the
+# player prefers over the generated pack where it has a line. Built from the `recording` table
+# and the files under the archive's recorded/, not from the takes. See scripts/audio/acted.mjs.
+pull-recorded: require-droplet ## Fetch the voice actors' live recordings the local database names (after sync)
+	@$(DB_ENV) RSYNC="$(RSYNC)" scripts/audio/pull-live.sh quests $(or $(LOCALE),enUS) recorded
+
+package-acted: check-synced ## Build the voice-acted overlay zip into dist/ (LOCALE=xx, ACTED_VERSION=x.y.z)
+	@$(DB_ENV) node scripts/audio/acted.mjs --lang=$(or $(LOCALE),enUS) --version=$(or $(ACTED_VERSION),1.0.0) quests
+
+acted: pull-recorded package-acted ## Pull the recordings and build the voice-acted overlay (after sync)
 
 # --- packaging ------------------------------------------------------------------------
 #

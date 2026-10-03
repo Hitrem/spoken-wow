@@ -3,6 +3,9 @@
 #
 #   scripts/audio/pull-live.sh <quests|zones|books>
 #   scripts/audio/pull-live.sh <section> <lang>   another language's pack
+#   scripts/audio/pull-live.sh <section> <lang> recorded
+#                                                 the voice actors' live recordings instead,
+#                                                 which the acted overlay is built from
 #
 # The list is the local database's live takes, written by `sounds.mjs --list` -- the same
 # query that later copies them into the pack -- so run the section's sync first: a pull
@@ -33,6 +36,14 @@ lang=${2:-enUS}
 REMOTE_ROOT=${REMOTE_ROOT:-/srv/spoken}
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
+# The recordings sit in the same archive, under recorded/<lang>/, and acted.mjs prints them
+# relative to its root the same way, so only the lister changes.
+what=${3:-takes}
+case "$what" in
+  takes) lister="$root/scripts/audio/sounds.mjs"; next="make $section-sounds";;
+  recorded) lister="$root/scripts/audio/acted.mjs"; next="make $section-package-acted";;
+  *) echo "usage: pull-live.sh <section> [lang] [recorded]" >&2; exit 2;;
+esac
 # Where sounds.mjs reads the archive from, including its SPOKEN_<SECTION>_AUDIO_HISTORY
 # override, so the pull lands where the build looks.
 override="SPOKEN_$(printf '%s' "$section" | tr '[:lower:]' '[:upper:]')_AUDIO_HISTORY"
@@ -40,8 +51,8 @@ archive=${!override:-$root/pipelines/$section/audio-history}
 
 list=$(mktemp)
 trap 'rm -f "$list"' EXIT
-node "$root/scripts/audio/sounds.mjs" --list --lang="$lang" "$section" >"$list"
-echo "==> $(wc -l <"$list" | tr -d ' ') live $section $lang takes"
+node "$lister" --list --lang="$lang" "$section" >"$list"
+echo "==> $(wc -l <"$list" | tr -d ' ') live $section $lang $what"
 
 mkdir -p "$archive"
 # shellcheck disable=SC2086 -- SSH carries its own flags
@@ -56,4 +67,4 @@ mkdir -p "$archive"
 }
 suffix=""
 [ "$lang" = enUS ] || suffix=" LOCALE=$lang"
-echo "==> pulled into ${archive#"$root"/}. Build the pack's audio with:  make $section-sounds$suffix"
+echo "==> pulled into ${archive#"$root"/}. Next:  $next$suffix"

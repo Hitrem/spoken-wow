@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help package package-audio check validate validate-audio lint deploy deploy-copy \
         status remove clean voice voice-zones lookup export \
-        pull-history pull-live history-status sounds ssh-check sync check-synced full-release \
+        pull-history pull-live pull-recorded package-acted acted history-status sounds ssh-check sync check-synced full-release \
         icon lore-import lore-import-names lore-export lore-check lore-rewrite aliases languages locale-check \
         release release-dry release-wago release-curse release-audio release-audio-dry
 
@@ -241,6 +241,17 @@ history-status: require-droplet ## Compare archived take count and size on both 
 # made again before every build. See scripts/audio/sounds.mjs.
 sounds: ## Assemble the pack's Sounds/ (LOCALE=xx: into build/zones/xx) from the live takes
 	@$(DB_ENV) node scripts/audio/sounds.mjs --lang=$(or $(LOCALE),enUS) zones
+
+# The voice actors' recordings (migration 0062) ship as an overlay pack of their own, which the
+# player prefers over the generated pack where it has a line. Built from the `recording` table
+# and the files under the archive's recorded/, not from the takes. See scripts/audio/acted.mjs.
+pull-recorded: require-droplet ## Fetch the voice actors' live recordings the local database names (after sync)
+	@$(DB_ENV) RSYNC="$(RSYNC)" scripts/audio/pull-live.sh zones $(or $(LOCALE),enUS) recorded
+
+package-acted: check-synced ## Build the voice-acted overlay zip into dist/ (LOCALE=xx, ACTED_VERSION=x.y.z)
+	@$(DB_ENV) node scripts/audio/acted.mjs --lang=$(or $(LOCALE),enUS) --version=$(or $(ACTED_VERSION),1.0.0) zones
+
+acted: pull-recorded package-acted ## Pull the recordings and build the voice-acted overlay (after sync)
 
 #-------------------------------------------------------------------------------
 # Moving the database between machines

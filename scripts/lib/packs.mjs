@@ -51,7 +51,7 @@ function englishFolder(section, pack) {
   return "SpokenQuestsAudio" + ENGLISH_QUESTS_PACKS[pack];
 }
 
-function languageFolder(section, pack) {
+export function languageFolder(section, pack) {
   if (section !== "quests") return englishFolder(section, pack);
   return "SpokenQuestsAudio" + LANGUAGE_QUESTS_PACKS[pack];
 }
@@ -59,6 +59,22 @@ function languageFolder(section, pack) {
 function englishRelease(section, pack) {
   if (section !== "quests") return `${section}-audio`;
   return pack === "all" ? "quests-audio" : `quests-audio-${pack}`;
+}
+
+/**
+ * The folder a voice-acted overlay pack ships in: the section's English pack name plus
+ * "Acted", plus the language's code like any language pack. One per section and language,
+ * quests included -- an overlay carries only the recorded lines, which nowhere near needs
+ * splitting by faction. Not on any store yet, so a rule and not a page (scripts/audio/acted.mjs).
+ *
+ * The prefix matters to nothing in the player: quests finds a pack by its TOC's
+ * DataModule-Version key, and zones and books by the registry it writes itself into.
+ */
+export function actedFolder(section, lang) {
+  if (!SECTIONS.includes(section)) throw new Error(`no section '${section}'`);
+  if (!CODES.includes(lang)) throw new Error(`no language '${lang}'`);
+  // A language's single quests pack is the bare SpokenQuestsAudio, as zones and books always are.
+  return `${languageFolder(section, "all")}Acted${lang === BASE_LOCALE ? "" : `_${lang}`}`;
 }
 
 const NOT_A_PAGE = new Set(["README.md"]);

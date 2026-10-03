@@ -32,23 +32,16 @@ import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { archiveOf } from "../lib/archives.mjs";
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 const BASE_LANG = "enUS";
 
 const SECTIONS = {
-  quests: {
-    archive: process.env.SPOKEN_QUESTS_AUDIO_HISTORY ?? join(ROOT, "pipelines/quests/audio-history"),
-    out: join(ROOT, "pipelines/quests/audio"),
-  },
-  zones: {
-    archive: process.env.SPOKEN_ZONES_AUDIO_HISTORY ?? join(ROOT, "pipelines/zones/audio-history"),
-    out: join(ROOT, "addons/SpokenZonesAudio/Sounds"),
-  },
-  books: {
-    archive: process.env.SPOKEN_BOOKS_AUDIO_HISTORY ?? join(ROOT, "pipelines/books/audio-history"),
-    out: join(ROOT, "addons/SpokenBooksAudio/Sounds"),
-  },
+  quests: { archive: archiveOf("quests"), out: join(ROOT, "pipelines/quests/audio") },
+  zones: { archive: archiveOf("zones"), out: join(ROOT, "addons/SpokenZonesAudio/Sounds") },
+  books: { archive: archiveOf("books"), out: join(ROOT, "addons/SpokenBooksAudio/Sounds") },
 };
 
 // --list prints, relative to the archive, every file this would copy, and copies nothing.
