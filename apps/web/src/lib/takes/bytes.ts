@@ -21,7 +21,8 @@ export function contentId(data: Buffer): string {
 }
 
 /**
- * The name a take's bytes are archived under: `v3-1a2b3c4d.mp3`.
+ * The name a take's bytes are archived under: `v3-1a2b3c4d.mp3`. A voice actor's recording
+ * is named the same way, with its own extension: `v2-9f8e7d6c.ogg`.
  *
  * The version keeps it readable; the content hash makes it unique. Before this, archive
  * names were derived from something that could be missing or collide -- a take version,
@@ -33,8 +34,8 @@ export function contentId(data: Buffer): string {
  * Only takes cut from here on are named this way. Files already on disk keep whatever
  * name they were written under, and their rows record it in `archiveFile`.
  */
-export function archiveName(version: number, data: Buffer): string {
-  return `v${version}-${contentId(data)}.mp3`;
+export function archiveName(version: number, data: Buffer, ext = "mp3"): string {
+  return `v${version}-${contentId(data)}.${ext}`;
 }
 
 /** Write `data` to `target` through a dotted `.part` beside it, renamed into place. */

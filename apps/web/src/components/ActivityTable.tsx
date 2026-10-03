@@ -115,6 +115,10 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
         what: num(d.from) ? `restored take v${version} over v${num(d.from)}` : `restored take v${version}`,
         quote: null,
       };
+    case "recording.uploaded":
+      return { what: `recorded v${version}`, quote: null };
+    case "recording.removed":
+      return { what: `removed recording v${version}`, quote: null };
     case "take.acked":
       return { what: "marked the audio fine after a pronunciation change", quote: row.lineId ? null : row.subject };
     case "marks.cleared":

@@ -39,6 +39,9 @@ export type ActivityDetail = {
   };
   "queue.stopped": { groupId: string; batches: number; cancelled: number; reason?: string | null };
   "queue.paused": Record<string, never>;
+  /** A voice actor's upload (migration 0062), beside the generated takes rather than one of them. */
+  "recording.uploaded": { version: number; format?: string; durationSec?: number };
+  "recording.removed": { version: number };
   "queue.resumed": Record<string, never>;
 
   // Text and pronunciation.
@@ -136,6 +139,7 @@ const CATEGORY_OF: Record<string, Category> = {
   batch: "audio",
   marks: "audio",
   queue: "audio",
+  recording: "audio",
   text: "text",
   name: "text",
   lexicon: "text",

@@ -28,7 +28,16 @@ import type { TakeBytes } from "./store";
 export async function serveTake(
   request: Request,
   bytes: TakeBytes,
-  { immutable, lang = BASE_LANG }: { immutable: boolean; lang?: Lang },
+  {
+    immutable,
+    lang = BASE_LANG,
+    shared = true,
+  }: {
+    immutable: boolean;
+    lang?: Lang;
+    /** False for audio behind a grant, which no shared cache may keep: a voice actor's recordings. */
+    shared?: boolean;
+  },
 ): Promise<Response> {
   // Three different 404s, because the page predicts none of them and this is where a
   // listener finds out: nothing recorded, a take whose clip was not kept, and a take whose
@@ -39,19 +48,22 @@ export async function serveTake(
   const info = await stat(bytes.path).catch(() => null);
   if (!info) return new Response("this take's audio is not on disk", { status: 404 });
 
+  const scope = shared ? "public" : "private";
   const cacheControl = immutable
-    ? "public, max-age=31536000, immutable"
-    : "public, max-age=300, must-revalidate";
+    ? `${scope}, max-age=31536000, immutable`
+    : `${scope}, max-age=300, must-revalidate`;
   // The archived name is unique within one language's directory. Another language's take
   // of the same file can carry the same version and, in principle, the same short hash, so
   // its tag says which language it is; English keeps the tags browsers already hold.
-  const archived = path.basename(bytes.path, ".mp3");
+  const archived = path.parse(bytes.path).name;
   const etag = lang === BASE_LANG ? `"${archived}"` : `"${lang}-${archived}"`;
 
   return serveFile(request, bytes.path, info.size, {
     etag,
     cacheControl,
     revalidate: !immutable,
+    // Every take is mp3; a voice actor's recording may be kept as the Ogg it was uploaded as.
+    contentType: path.extname(bytes.path) === ".ogg" ? "audio/ogg" : "audio/mpeg",
     headers: lang === BASE_LANG ? {} : { "Content-Language": langTag(lang) },
   });
 }

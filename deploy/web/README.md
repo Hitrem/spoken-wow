@@ -41,6 +41,11 @@ writes them since the take table became the record
 they stay only so a rollback to a release from before that still has its audio, and a
 cleanup may remove them later.
 
+Each section's archive also holds `recorded/<lang>/`: what voice actors uploaded
+(migration 0062), kept exactly as uploaded beside the generated takes and never a version
+of them. It is the least replaceable audio there is, since a session cannot be cut again
+for a few credits.
+
 Everything under `shared/` is there for one reason: a release directory is deleted five
 deploys later, and every one of those is either irreplaceable or was paid for.
 

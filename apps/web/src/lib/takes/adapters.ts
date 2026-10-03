@@ -73,3 +73,17 @@ export function historyDirOf(source: Source, file: string, lang: Lang = BASE_LAN
     ? path.join(adapter.root(), relative)
     : path.join(adapter.root(), lang, relative);
 }
+
+/**
+ * Where a voice actor's recordings of one file live: the same per-file directory, under
+ * recorded/<lang>/ in the section's archive. Every language has the level, English
+ * included, since there is no older layout to keep. `recorded` can be no section path's
+ * first segment -- see the list above -- nor a language code.
+ *
+ * In the archive because it is as irreplaceable as the takes: an actor's session is not
+ * something that can be cut again for a few credits.
+ */
+export function recordedDirOf(source: Source, file: string, lang: Lang): string {
+  const adapter = ADAPTERS[source];
+  return path.join(adapter.root(), "recorded", lang, adapter.relative(file));
+}
