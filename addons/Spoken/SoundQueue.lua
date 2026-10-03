@@ -421,18 +421,19 @@ function SoundQueue:GapAfter(clip)
     return gap
 end
 
--- Whatever we muted, we cannot speak on. Lifted first, so a clip on the very channel the
--- last line silenced is heard.
-local function LiftOwnMute(channel)
+-- The channel a clip speaks on, ready for it. Whatever we muted, we cannot speak on, so it
+-- is lifted first: a clip on the very channel the last line silenced is heard.
+local function SpeakingChannel(clip)
+    local channel = clip.source:GetChannel()
     if SoundUtils:IsMutedByPlayer(channel) then
         SoundUtils:MuteChannel(channel, false)
     end
+    return channel
 end
 
 ---@param clip SpokenClip
 function SoundQueue:PlaySound(clip)
-    local channel = clip.source:GetChannel()
-    LiftOwnMute(channel)
+    local channel = SpeakingChannel(clip)
     local willPlay = SoundUtils:PlaySound(clip, channel)
     if not willPlay then
         Discard(clip, "missing")
@@ -460,7 +461,7 @@ end
 --- Whether to mark the change from one item to the next. Pages of one book are one item:
 --- a sound between each would be noise, and the page label already says where it is.
 local function WantsCue(previous, nextClip)
-    if not Addon.db.profile.Audio.CueBetweenItems then
+    if not previous or not Addon.db.profile.Audio.CueBetweenItems then
         return false
     end
     return not (previous.group and previous.group == nextClip.group)
@@ -469,9 +470,7 @@ end
 --- Play the cue on the channel the next clip will speak on, so it follows the voice's
 --- volume rather than the effects', then start that clip once it has had its moment.
 local function PlayCue(nextClip)
-    local channel = nextClip.source:GetChannel()
-    LiftOwnMute(channel)
-    SoundUtils:PlayCue(channel)
+    SoundUtils:PlayCue(SpeakingChannel(nextClip))
     cueTimer = Addon:ScheduleTimer(function()
         cueTimer = nil
         SoundQueue:Advance()
@@ -511,7 +510,7 @@ function SoundQueue:Advance()
 
     StopRetryTicker()
     local nextClip = self.sounds[1]
-    if previous and WantsCue(previous, nextClip) then
+    if WantsCue(previous, nextClip) then
         PlayCue(nextClip)
         return
     end
