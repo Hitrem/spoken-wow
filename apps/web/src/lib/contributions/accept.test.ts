@@ -406,7 +406,21 @@ describe("resolveContribution: a translation", () => {
   // A language no import on this machine writes, so the rows here are this test's own.
   const LOCALE = "ptBR";
 
-  async function translation(quest: string, event: string, text: string): Promise<number> {
+  afterEach(async () => {
+    // The English names quest_line's and quest_line_speaker's triggers gave this test's own
+    // quest and NPC (0036), and the ones accepting wrote in LOCALE.
+    await db().query(
+      `delete from "entity_name" where "kind" in ('quest', 'creature') and "entityId" = any($1::text[])`,
+      [[String(questId), String(npcId)]],
+    );
+  });
+
+  async function translation(
+    quest: string,
+    event: string,
+    text: string,
+    meta: Record<string, string> = { title: "Liberado de la colmena", kind: "creature", npc: "7880 Ginro" },
+  ): Promise<number> {
     const dedup = `accept-test-${Math.random().toString(36).slice(2)}`;
     await createContribution({
       source: "quests",
@@ -414,7 +428,7 @@ describe("resolveContribution: a translation", () => {
       locale: LOCALE,
       build: "1.12.1/5875",
       text,
-      meta: { quest, event, title: "Liberado de la colmena", kind: "creature", npc: "7880 Ginro" },
+      meta: { quest, event, ...meta },
       raw: `raw:${dedup}`,
       dedup,
       body: null,
@@ -449,6 +463,66 @@ describe("resolveContribution: a translation", () => {
       [LOCALE],
     );
     expect(rows.map((row) => row.variant)).toEqual([0]);
+  });
+
+  /** This test's own English line for questId's accept, spoken by npcId, as an English accept writes it. */
+  async function englishLine(): Promise<void> {
+    await speaker(npcId, "tauren", "male", "warrior");
+    expect((await resolveContribution(await questContribution(), "accepted", RESOLVER)).ok).toBe(true);
+  }
+
+  async function nameIn(kind: string, entityId: number): Promise<{ name: string; origin: string }[]> {
+    const { rows } = await db().query(
+      `select "name", "origin" from "entity_name"
+        where "kind" = $1 and "entityId" = $2 and "lang" = $3 and "isCurrent"`,
+      [kind, String(entityId), LOCALE],
+    );
+    return rows;
+  }
+
+  it("names the quest and the NPC in the language, as the client showed them", async () => {
+    await englishLine();
+    const id = await translation(String(questId), "accept", "Traga-me seis peles de lobo, $C.", {
+      title: "Uma Missão de Teste",
+      kind: "creature",
+      npc: `${npcId} Orador de Teste`,
+    });
+    expect((await resolveContribution(id, "accepted", RESOLVER)).ok).toBe(true);
+
+    // Not 'edited': an import that finds the game's own name must be free to promote over it.
+    expect(await nameIn("quest", questId)).toEqual([{ name: "Uma Missão de Teste", origin: "contributed" }]);
+    expect(await nameIn("creature", npcId)).toEqual([{ name: "Orador de Teste", origin: "contributed" }]);
+  });
+
+  it("leaves a name the language already has alone", async () => {
+    await englishLine();
+    const first = await translation(String(questId), "accept", "Traga-me seis peles de lobo, $C.", {
+      title: "O Primeiro Título",
+      kind: "creature",
+      npc: `${npcId} O Primeiro Nome`,
+    });
+    const second = await translation(String(questId), "accept", "Outro texto.", {
+      title: "O Segundo Título",
+      kind: "creature",
+      npc: `${npcId} O Segundo Nome`,
+    });
+    expect((await resolveContribution(first, "accepted", RESOLVER)).ok).toBe(true);
+    expect((await resolveContribution(second, "accepted", RESOLVER)).ok).toBe(true);
+
+    expect(await nameIn("quest", questId)).toEqual([{ name: "O Primeiro Título", origin: "contributed" }]);
+    expect(await nameIn("creature", npcId)).toEqual([{ name: "O Primeiro Nome", origin: "contributed" }]);
+  });
+
+  it("does not name an NPC whose envelope never said what kind of thing it is", async () => {
+    await englishLine();
+    const id = await translation(String(questId), "accept", "Traga-me seis peles de lobo, $C.", {
+      title: "Uma Missão de Teste",
+      npc: `${npcId} Orador de Teste`,
+    });
+    expect((await resolveContribution(id, "accepted", RESOLVER)).ok).toBe(true);
+
+    expect(await nameIn("quest", questId)).toHaveLength(1);
+    expect(await nameIn("creature", npcId)).toEqual([]);
   });
 });
 

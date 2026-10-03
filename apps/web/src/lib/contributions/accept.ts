@@ -442,6 +442,7 @@ async function insertLine(
  * translations keep theirs, and the language's own word is put in when the line is voiced
  * (player-words.ts).
  * A line this language already has is left alone: an import or a translator got there first.
+ * The quest's and the NPC's names the client showed are written the same way (namesSeenIn).
  */
 async function acceptTranslation(
   client: PoolClient,
@@ -500,11 +501,71 @@ async function acceptTranslation(
       ],
     );
   }
+  for (const name of namesSeenIn(contribution)) {
+    await nameIfUnnamed(client, { ...name, lang: contribution.locale as Lang, userId, note: noteFor(contribution.id) });
+  }
   return null;
 }
 
+/** Longer than any name the game gives a quest or an NPC; what npc-identity caps a typed one at. */
+const MAX_NAME = 200;
+
+/**
+ * The names a translated quests contribution shows in its own language: the quest's title and
+ * the NPC's name, as the client displayed them. Without them the translated explorer shows a
+ * line in the language under the English names of its quest and speaker -- the catalogue reads
+ * names from entity_name alone, and only an import wrote them there, so an NPC newer than the
+ * last dump stayed English however many of its lines were accepted.
+ *
+ * The NPC is the envelope's own `npc`, never the moderator's answer (setContributionNpc): that
+ * answer names who it is, typed by someone reading the English site, not what this client
+ * called them. And only with the envelope's `kind`: a creature and a gameobject can share an
+ * id, and a kind-less envelope does not say which (observedFrom).
+ */
+export function namesSeenIn(
+  contribution: Pick<Contribution, "source" | "meta">,
+): { kind: "quest" | NpcKind; entityId: string; name: string }[] {
+  if (contribution.source !== "quests") return [];
+  const names: { kind: "quest" | NpcKind; entityId: string; name: string }[] = [];
+  const { quest, title } = contribution.meta;
+  if (quest && /^\d+$/.test(quest) && title?.trim() && title.trim().length <= MAX_NAME) {
+    names.push({ kind: "quest", entityId: quest, name: title.trim() });
+  }
+  const observed = observedFrom(contribution.meta);
+  if (observed.npcKind && observed.npcId !== null && observed.npcName && observed.npcName.length <= MAX_NAME) {
+    names.push({ kind: observed.npcKind, entityId: String(observed.npcId), name: observed.npcName });
+  }
+  return names;
+}
+
+/**
+ * A name a moderator accepted, written only where the language has none. As 'contributed',
+ * not 'edited', so the next import that finds the game's own name promotes over it (migration
+ * 0060); and never over a name already there, whether an import's or a translator's.
+ * Conflict-free rather than locked: two rows of a batch may name the same thing, and whichever
+ * lands first is the one kept.
+ */
+async function nameIfUnnamed(
+  client: PoolClient,
+  args: { kind: string; entityId: string; lang: Lang; name: string; userId: string | null; note: string },
+): Promise<boolean> {
+  const { rowCount } = await client.query(
+    `insert into "entity_name"
+       ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name", "editedBy", "note")
+     select $1, $2, $3,
+            (select coalesce(max("version"), 0) + 1 from "entity_name"
+              where "kind" = $1 and "entityId" = $2 and "lang" = $3),
+            true, 'contributed', $4, $5, $6
+      where not exists (select 1 from "entity_name"
+                         where "kind" = $1 and "entityId" = $2 and "lang" = $3 and "isCurrent")
+     on conflict do nothing`,
+    [args.kind, args.entityId, args.lang, args.name, args.userId, args.note],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 /** The note a written row carries, which is also how it is found again. */
-function noteFor(contributionId: number): string {
+export function noteFor(contributionId: number): string {
   return `contribution #${contributionId}`;
 }
 
@@ -583,18 +644,14 @@ async function acceptBookTranslation(
   if (!title) return null;
   for (const { ownerKind, ownerIds } of written) {
     for (const owner of ownerIds) {
-      await client.query(
-        `insert into "entity_name"
-           ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name", "editedBy", "note")
-         select $1, $2, $3,
-                (select coalesce(max("version"), 0) + 1 from "entity_name"
-                  where "kind" = $1 and "entityId" = $2 and "lang" = $3),
-                true, 'contributed', $4, $5, $6
-          where not exists (select 1 from "entity_name"
-                             where "kind" = $1 and "entityId" = $2 and "lang" = $3 and "isCurrent")
-         on conflict do nothing`,
-        [ownerKind === "object" ? "gameobject" : "item", String(owner), lang, title, userId, note],
-      );
+      await nameIfUnnamed(client, {
+        kind: ownerKind === "object" ? "gameobject" : "item",
+        entityId: String(owner),
+        lang,
+        name: title,
+        userId,
+        note,
+      });
     }
   }
   return null;
