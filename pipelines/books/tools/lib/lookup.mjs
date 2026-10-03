@@ -139,23 +139,28 @@ export async function buildLookup({ lang = LANG, out = lookupPath(lang) } = {}) 
 
     let entries = null;
     if (lang !== LANG) {
-      // The newest extracted version, not the live row: the client shows the world
-      // database's words, and a correction made here changes what is voiced, not what is on
-      // screen. Placed by the English page, which is what fixes a page's book and number.
+      // The newest version of the words the client shows, not the live row: a correction made
+      // here changes what is voiced, not what is on screen. Those words are the world
+      // database's ('extracted') or, for a language the world database has none of, what a
+      // player's client displayed and sent in ('contributed') -- Portuguese books are all the
+      // latter, and an index read from 'extracted' alone shipped a pack no page could find.
+      // Extracted wins where both exist, being the game's own. Placed by the English page,
+      // which is what fixes a page's book and number.
       const [pages, names] = await Promise.all([
         pool.query(
           `select e."pageId", e."bookId", e."pageNumber", e."ownerKind", e."ownerIds", l."text"
              from (select distinct on ("lineId") "lineId", "text" from "book_line"
-                    where "lang" = $1 and "origin" = 'extracted'
-                    order by "lineId", "version" desc) l
+                    where "lang" = $1 and "origin" in ('extracted', 'contributed')
+                    order by "lineId", ("origin" = 'extracted') desc, "version" desc) l
              join "book_line" e on e."lineId" = l."lineId" and e."lang" = $2 and e."isCurrent"`,
           [lang, LANG],
         ),
         // The same rule for the owners' names.
         pool.query(
           `select distinct on ("kind", "entityId") "kind", "entityId", "name" from "entity_name"
-            where "lang" = $1 and "origin" = 'extracted' and "kind" in ('gameobject', 'item')
-            order by "kind", "entityId", "version" desc`,
+            where "lang" = $1 and "origin" in ('extracted', 'contributed')
+              and "kind" in ('gameobject', 'item')
+            order by "kind", "entityId", ("origin" = 'extracted') desc, "version" desc`,
           [lang],
         ),
       ]);

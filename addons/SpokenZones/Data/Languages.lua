@@ -17,7 +17,7 @@ SpokenZones.Languages = {
 	{ code = "frFR", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 735, audio = true, ready = true },
 	{ code = "ptBR", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 732, audio = true, ready = true },
 	{ code = "ruRU", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 780, audio = true, ready = true },
-	{ code = "koKR", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 777, audio = false, ready = true },
-	{ code = "zhCN", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 781, audio = false, ready = true },
-	{ code = "zhTW", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 783, audio = false, ready = true },
+	{ code = "koKR", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 777, audio = true, ready = true },
+	{ code = "zhCN", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 781, audio = true, ready = true },
+	{ code = "zhTW", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 783, audio = true, ready = true },
 }

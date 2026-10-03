@@ -1,4 +1,5 @@
 ---
+curseforge: 1717817
 release: quests-audio-esES
 section: quests
 lang: esES

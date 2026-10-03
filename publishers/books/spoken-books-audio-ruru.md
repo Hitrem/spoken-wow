@@ -1,4 +1,5 @@
 ---
+curseforge: 1723285
 release: books-audio-ruRU
 section: books
 lang: ruRU

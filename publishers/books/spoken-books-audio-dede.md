@@ -1,4 +1,5 @@
 ---
+curseforge: 1723279
 release: books-audio-deDE
 section: books
 lang: deDE

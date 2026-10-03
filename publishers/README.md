@@ -41,11 +41,32 @@ which is why there is one file per project here and not two.
 | `quests/audio-horde.md` | Spoken Quests Audio: Horde | 1660198 | vNAg3OKo | `spoken-quests-audio-horde` |
 | `quests/audio-shared.md` | Spoken Quests Audio: Shared Quests | 1660199 | QNlz3YKe | `spoken-quests-audio-shared` |
 | `quests/audio-gossip.md` | Spoken Quests Audio: Gossip | 1660202 | XKqA45Ky | `spoken-quests-audio-gossip` |
+| `quests/audio-dede.md` | Spoken Quests Audio: German | 1717808 | — | `spoken-quests-audio-dede` |
+| `quests/audio-eses.md` | Spoken Quests Audio: Spanish (EU) | 1717817 | — | `spoken-quests-audio-eses` |
+| `quests/audio-esmx.md` | Spoken Quests Audio: Spanish (AL) | 1717814 | — | `spoken-quests-audio-esmx` |
+| `quests/audio-frfr.md` | Spoken Quests Audio: French | 1717800 | — | `spoken-quests-audio-frfr` |
+| `quests/audio-kokr.md` | Spoken Quests Audio: Korean | 1719018 | — | `spoken-quests-audio-kokr` |
+| `quests/audio-ptbr.md` | Spoken Quests Audio: Portuguese | 1717819 | — | `spoken-quests-audio-ptbr` |
+| `quests/audio-ruru.md` | Spoken Quests Audio: Russian | 1717824 | — | `spoken-quests-audio-ruru` |
+| *(page not on master yet)* | Spoken Quests Audio: Chinese (Simplified) | 1719048 | — | `spoken-quests-audio-zhcn` |
+| *(page not on master yet)* | Spoken Quests Audio: Chinese (Traditional) | 1719049 | — | `spoken-quests-audio-zhtw` |
 | `zones/spoken-zones.md` | Spoken Zones (was ZoneLore) | 1636521 | mNw7b5No | `spoken-zones` |
 | `zones/spoken-zones-audio.md` | Spoken Zones Audio | 1636532 | b6mvD9KP | `spoken-zones-audio` |
 | `zones/spoken-zones-audio-esmx.md` | Spoken Zones Audio: Spanish (AL) | 1711067 | — | `spoken-zones-audio-esmx` |
+| `zones/spoken-zones-audio-kokr.md` | Spoken Zones Audio: Korean | 1723252 | — | `spoken-zones-audio-kokr` |
+| `zones/spoken-zones-audio-zhcn.md` | Spoken Zones Audio: Chinese (Simplified) | 1723273 | — | `spoken-zones-audio-zhcn` |
+| `zones/spoken-zones-audio-zhtw.md` | Spoken Zones Audio: Chinese (Traditional) | 1723276 | — | `spoken-zones-audio-zhtw` |
 | `books/spoken-books.md` | Spoken Books | 1701514 | qGYZnRNg | `spoken-books` |
 | `books/spoken-books-audio.md` | Spoken Books Audio | 1701520 | qGZOrvNd | `spoken-books-audio` |
+| `books/spoken-books-audio-dede.md` | Spoken Books Audio: German | 1723279 | — | `spoken-books-audio-dede` |
+| `books/spoken-books-audio-eses.md` | Spoken Books Audio: Spanish (EU) | 1723280 | — | `spoken-books-audio-eses` |
+| `books/spoken-books-audio-esmx.md` | Spoken Books Audio: Spanish (AL) | 1723282 | — | `spoken-books-audio-esmx` |
+| `books/spoken-books-audio-frfr.md` | Spoken Books Audio: French | 1723284 | — | `spoken-books-audio-frfr` |
+| `books/spoken-books-audio-ruru.md` | Spoken Books Audio: Russian | 1723285 | — | `spoken-books-audio-ruru` |
+| `books/spoken-books-audio-ptbr.md` | Spoken Books Audio: Portuguese | 1723287 | — | `spoken-books-audio-ptbr` |
+| `books/spoken-books-audio-kokr.md` | Spoken Books Audio: Korean | 1723288 | — | `spoken-books-audio-kokr` |
+| `books/spoken-books-audio-zhcn.md` | Spoken Books Audio: Chinese (Simplified) | 1723289 | — | `spoken-books-audio-zhcn` |
+| `books/spoken-books-audio-zhtw.md` | Spoken Books Audio: Chinese (Traditional) | 1723295 | — | `spoken-books-audio-zhtw` |
 
 **A sound pack's page is also its registry entry.** `section:` (quests, zones or books), `lang:`
 and, on a quests pack, `pack:` say which pack it is; a language other than English also carries
