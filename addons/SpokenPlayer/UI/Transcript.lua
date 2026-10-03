@@ -27,6 +27,59 @@ local function CharacterCount(text)
     local _, count = text:gsub(UTF8_CHAR, "")
     return math.max(1, count)
 end
+-- Trailing punctuation lengthens a word's share of the recording.
+local STOPS = { ["."] = 0.7, ["!"] = 0.7, ["?"] = 0.7, ["。"] = 0.7, ["！"] = 0.7, ["？"] = 0.7,
+    [","] = 0.35, [";"] = 0.35, [":"] = 0.35, ["，"] = 0.35, ["、"] = 0.35, ["；"] = 0.35, ["："] = 0.35 }
+local CLOSERS = { ['"'] = true, ["'"] = true, [")"] = true, ["]"] = true, ["”"] = true, ["’"] = true,
+    ["」"] = true, ["』"] = true, ["）"] = true, ["》"] = true, ["】"] = true }
+local OPENERS = { ["“"] = true, ["‘"] = true, ["「"] = true, ["『"] = true, ["（"] = true,
+    ["《"] = true, ["【"] = true }
+local function PausesAfter(chars)
+    local i = #chars
+    while i > 1 and CLOSERS[chars[i]] do i = i - 1 end
+    return STOPS[chars[i]] or 0
+end
+local function CodePoint(char)
+    local a, b, c = char:byte(1, 3)
+    if #char ~= 3 then return 0 end
+    return (a % 16) * 4096 + (b % 64) * 64 + c % 64
+end
+-- Chinese has no spaces between words: each character (and kana) is a word of its own.
+local function IsHan(char)
+    local code = CodePoint(char)
+    return code >= 0x3040 and code <= 0x30FF -- kana
+        or code >= 0x3400 and code <= 0x9FFF or code >= 0xF900 and code <= 0xFAFF
+end
+-- Punctuation after a character stays with it, so no line starts with "，".
+local function IsPunctuation(char)
+    local code = CodePoint(char)
+    return char:find("^%p$") or code >= 0x2000 and code <= 0x206F
+        or code >= 0x3000 and code <= 0x303F or code >= 0xFF00 and code <= 0xFF65
+end
+-- Splits one whitespace-separated run into words: Chinese characters each
+-- (with their punctuation), anything else in between as a whole.
+local function SplitRun(run)
+    local words, open = {}, {}
+    local function Add(char, han)
+        local word = { chars = open, han = han }
+        word.chars[#word.chars + 1] = char
+        words[#words + 1], open = word, {}
+    end
+    for char in run:gmatch(UTF8_CHAR) do
+        local last = words[#words]
+        if IsHan(char) then Add(char, true)
+        elseif OPENERS[char] then open[#open + 1] = char
+        elseif #open == 0 and last and (not last.han or IsPunctuation(char)) then
+            last.chars[#last.chars + 1] = char
+        else Add(char, false) end
+    end
+    if #open > 0 then -- An opening quote with nothing after it.
+        if #words == 0 then words[1] = { chars = {} } end
+        local last = words[#words].chars
+        for _, char in ipairs(open) do last[#last + 1] = char end
+    end
+    return words
+end
 
 function Transcript:CleanText(text)
     if type(text) ~= "string" then return "" end
@@ -61,17 +114,17 @@ end
 
 function Transcript:Tokenize()
     self.words, self.totalWeight = {}, 0
-    for space, text in self.text:gmatch("(%s*)(%S+)") do
-        local count = CharacterCount(text)
-        -- Longer words get more time, with a little extra for punctuation.
-        -- Normalize these weights to the known duration of this recording.
-        local weight = 0.6 + count * 0.12
-        if text:find("[.!?][\"')%]]*$") then weight = weight + 0.7
-        elseif text:find("[,;:][\"')%]]*$") then weight = weight + 0.35 end
-        self.words[#self.words + 1] = { text = text, count = count,
-            breakBefore = space:find("\n") ~= nil,
-            start = self.totalWeight, finish = self.totalWeight + weight }
-        self.totalWeight = self.totalWeight + weight
+    for space, run in self.text:gmatch("(%s*)(%S+)") do
+        for i, word in ipairs(SplitRun(run)) do
+            local count = #word.chars
+            -- Longer words get more time, with a little extra for punctuation.
+            -- Normalize these weights to the known duration of this recording.
+            local weight = 0.6 + count * 0.12 + PausesAfter(word.chars)
+            self.words[#self.words + 1] = { text = table.concat(word.chars), count = count,
+                breakBefore = i == 1 and space:find("\n") ~= nil, joined = i > 1,
+                start = self.totalWeight, finish = self.totalWeight + weight }
+            self.totalWeight = self.totalWeight + weight
+        end
     end
 end
 
@@ -139,7 +192,7 @@ function Transcript:Reflow()
         local pieces = self:SplitWord(word.text, width)
         local chars = 0
         for pi, text in ipairs(pieces) do
-            local prefix = line and #line > 0 and " " or ""
+            local prefix = line and #line > 0 and not word.joined and " " or ""
             if not line or (pi == 1 and word.breakBefore and #line > 0)
                 or pi > 1 or self:TextWidth(lineText .. prefix .. text) > width then
                 NewLine()

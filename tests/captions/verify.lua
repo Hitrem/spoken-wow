@@ -151,6 +151,20 @@ Advance(1)
 Check(Q:IsEmpty() and not T.frame:IsShown(),'normal completion hides captions')
 Check(Captions()=='' and T.activeWord==nil,'queue exhaustion clears stale dialogue and highlighting')
 
+-- Chinese has no spaces: each character is a word, punctuation stays with
+-- the character before it and adds a pause, and no spaces are inserted.
+local chinese=Clip('zh','你好，「勇士」。去吧Go!',10)
+source:Enqueue(chinese)
+Check(Captions()=='|cffffd100你|r|cffffd100好，|r「勇士」。去吧Go!','Chinese highlights one character at a time, without spaces')
+local texts={}
+for i,w in ipairs(T.words) do texts[i]=w.text end
+Check(table.concat(texts,'|')=='你|好，|「勇|士」。|去|吧|Go!','Chinese splits into characters with attached punctuation')
+Check(T.words[2].finish-T.words[2].start>T.words[1].finish-T.words[1].start
+    and T.words[4].finish-T.words[4].start>T.words[2].finish-T.words[2].start,'。 pauses longer than ， and ， longer than none')
+Advance(5)
+Check(HighlightCount()==2 and Plain(Captions())=='你好，「勇士」。去吧Go!','highlight moves through Chinese text')
+Q:RemoveAllSoundsFromQueue()
+
 source:Enqueue(Clip('c',long,30)); Advance(12)
 source:Enqueue(Clip('no-text',nil,5)); Q:Skip()
 Check(not T.frame:IsShown() and Captions()=='','a clip without text never shows previous captions')
