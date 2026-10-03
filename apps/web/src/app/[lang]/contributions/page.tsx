@@ -41,7 +41,7 @@ import {
 import { facets } from "@/lib/facets";
 import { observedFrom, resolveNpc } from "@/lib/npc/resolve";
 import { isProvenance, getResolutions, getResolutionsById, resolutionKey, type NpcKind } from "@/lib/npc/store";
-import { BASE_LANG } from "@/lib/lang";
+import { BASE_LANG, isClientLang, langName } from "@/lib/lang";
 import { can } from "@/lib/permissions";
 import { lineByPath } from "@/lib/zones/catalogue";
 import { Contained, Wide } from "@/components/Width";
@@ -199,6 +199,23 @@ export default async function Page({
   // accepting a contribution writes that language's text.
   const viewer = await viewerOf(session);
   if (!session || !can(viewer, "edit", lang)) notFound();
+
+  // Every envelope is in the language of the client that wrote it, and no client runs in this
+  // one: the queue is empty by construction, not because nobody has sent anything yet.
+  if (!isClientLang(lang)) {
+    return (
+      <main className="pt-6 pb-24">
+        <Contained>
+          <h1 className="text-xl font-semibold">Contributions</h1>
+          <p className="text-muted-foreground mt-1 mb-5 text-sm">
+            Contributions come from the game client, and no client runs in {langName(lang)}. Its
+            text is written here, on each line&apos;s page.
+          </p>
+          <ContributionsTabs lang={lang} active="contributions" showNpcs={can(viewer, "regenerate", BASE_LANG)} />
+        </Contained>
+      </main>
+    );
+  }
 
   const {
     status: rawStatus,

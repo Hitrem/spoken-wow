@@ -435,6 +435,15 @@ Expect("asking again for an already-resolved NPC builds no model frame",
 Expect("...and calls SetUnit no further times",
     (stub.SetUnitCount and stub.SetUnitCount() or 0), setUnitCallsBefore)
 
+---------------------------------------------------------- a language no client runs in
+-- Listening in Italian, every line its pack has not voiced yet would read as missing text,
+-- and the English on screen is text the corpus already has. Nothing is offered.
+Expect("the same line is a gap in the client's language", VoiceOver.Contribute:HasGap(), true)
+VoiceOver.Addon.db.profile.Audio.VoiceLanguage = "itIT"
+Expect("listening in Italian, no line is a gap", VoiceOver.Contribute:HasGap(), false)
+VoiceOver.Addon.db.profile.Audio.VoiceLanguage = nil
+Expect("...and back on auto it is again", VoiceOver.Contribute:HasGap(), true)
+
 ---------------------------------------------------------- closing a dialog mid-load
 -- The exposure this fix closes: no click and no retarget, just the player closing the dialog
 -- (or a pack picking up the line) while the probe is still mid-load. Before this fix nothing

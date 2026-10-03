@@ -146,5 +146,5 @@ test("an acted overlay is the section's English folder plus Acted, and the langu
   assert.equal(actedFolder("quests", "enUS"), "SpokenQuestsAudioActed");
   assert.equal(actedFolder("zones", "deDE"), "SpokenZonesAudioActed_deDE");
   assert.equal(actedFolder("books", "ptBR"), "SpokenBooksAudioActed_ptBR");
-  assert.throws(() => actedFolder("zones", "itIT"));
+  assert.throws(() => actedFolder("zones", "xxYY"));
 });

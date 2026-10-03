@@ -15,9 +15,9 @@
 ## X-SpokenZones-Quality: high
 ## X-SpokenZones-Bitrate: 128
 
-# The language this pack narrates, read back the same way. ZoneLore plays only
-# packs matching the language it is showing text in: an English voice reading
-# under German prose is worse than the silence it would replace.
+# The language this pack narrates, read back the same way. Spoken Zones loads that
+# language's lore for the captions and offers the pack under it; the player picks
+# which installed pack plays, so it can narrate a language the client is not in.
 ## X-SpokenZones-Language: enUS
 
 # Defines the SpokenZonesAudioPacks registry entry that Spoken Zones reads. No dependency

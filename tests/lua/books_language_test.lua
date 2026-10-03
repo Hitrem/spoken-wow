@@ -115,6 +115,22 @@ Expect("E. ...as does one with no language", B:ReportURL(PAGE), "https://spoken.
 Expect("E. a German report goes to the German page", B:ReportURL(PAGE, "deDE"),
     "https://spoken.rusty.one/deDE/books/r/15")
 
+---------------------------------------------------------------- F. a language no client runs in
+-- Italian has no index of its own: the page is found by the English client's and read from
+-- the Italian pack, captions included.
+local ITALIAN = { addon = "SpokenBooksAudio_itIT", language = "itIT", pages = {
+    [PAGE] = { file = "15", len = 2, text = "Prima pagina italiana." } } }
+B = Install({ ENGLISH, ITALIAN }, "enUS")
+Expect("F. on Auto an English client hears English", B:GetVoiceLanguage(), "enUS")
+SpokenBooksDB.voiceLanguage = "itIT"
+SpokenBooksData.index["Registry"][1][B:ChecksumOf("English first page.")] = PAGE
+stub.ShowPage({ title = "Registry", number = 1, text = "English first page." })
+Expect("F. the English index finds the page", B:PageOnScreen(), PAGE)
+Expect("F. ...and the Italian pack reads it", B:ClipFor(PAGE).present.transcript, "Prima pagina italiana.")
+B = Install({ ENGLISH, ITALIAN }, "itIT")
+Expect("F. a client claiming Italian is not taken at its word", B:GetClientLanguage(), "enUS")
+Expect("F. Italian is not a client language", B:IsClientLanguage("itIT"), false)
+
 ---------------------------------------------------------------- in step with SpokenZones
 local booksCodes = {}
 for _, locale in ipairs(B.LOCALES) do table.insert(booksCodes, locale.code) end

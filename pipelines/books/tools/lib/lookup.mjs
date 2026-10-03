@@ -12,13 +12,15 @@
 // SpokenBooks addon, is keyed on the English title and a checksum of the English words, and a
 // client in another locale shows neither: without its own index a translated page is never
 // found at all. It ships in the pack because a client in that locale is the only one it can
-// match, and a player there who wants the language installs the pack.
+// match, and a player there who wants the language installs the pack. A language no client
+// runs in carries none.
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import pg from "pg";
 
+import { isClientLocale } from "../../../lib/locales.mjs";
 import { indexLua, pageIndex, quote } from "./lua.mjs";
 import { spokenText } from "./text.mjs";
 
@@ -137,8 +139,10 @@ export async function buildLookup({ lang = LANG, out = lookupPath(lang) } = {}) 
       [lang],
     );
 
+    // A language no client runs in (Italian) has no index: no client shows its words, so a page
+    // is always found by the client's own index and only played in this one.
     let entries = null;
-    if (lang !== LANG) {
+    if (lang !== LANG && isClientLocale(lang)) {
       // The newest version of the words the client shows, not the live row: a correction made
       // here changes what is voiced, not what is on screen. Those words are the world
       // database's ('extracted') or, for a language the world database has none of, what a

@@ -29,8 +29,11 @@
 
 local ADDON_NAME, SpokenZones = ...
 
--- Every locale a Classic Era or Anniversary client can run in. A code absent
--- here can never be selected, so the list is the addon's definition of "a
+-- Every locale a Classic Era or Anniversary client can run in, plus the
+-- languages a community translates into that no client ships (`client = false`:
+-- Italian). GetLocale() never returns one of those, so it has no aliases and no
+-- interface strings, and Auto never lands on it; a player reads it by choosing
+-- it. A code absent here can never be selected, so the list is the addon's definition of "a
 -- language", not a list of languages that have content -- readiness is a
 -- separate question, answered by Data/Languages.lua.
 --
@@ -48,6 +51,7 @@ SpokenZones.LOCALES = {
 	{ code = "esES", name = "Spanish (EU)", native = "Español (España)", script = "latin" },
 	{ code = "esMX", name = "Spanish (AL)", native = "Español (América Latina)", script = "latin" },
 	{ code = "frFR", name = "French", native = "Français", script = "latin" },
+	{ code = "itIT", name = "Italian", native = "Italiano", script = "latin", client = false },
 	{ code = "ptBR", name = "Portuguese", native = "Português", script = "latin" },
 	{ code = "ruRU", name = "Russian", native = "Русский", script = "cyrillic" },
 	{ code = "koKR", name = "Korean", native = "한국어", script = "korean" },
@@ -63,6 +67,12 @@ for i = 1, #SpokenZones.LOCALES do
 end
 
 SpokenZones.clientLocale = GetLocale()
+
+-- Whether a game client runs in this language. See `client` on LOCALES.
+function SpokenZones:IsClientLanguage(code)
+	local locale = code and byCode[code]
+	return locale ~= nil and locale.client ~= false
+end
 
 -- Localized area name -> English corpus key, keyed by *client* locale.
 -- Populated by Data/<locale>/Aliases.lua.
@@ -89,7 +99,7 @@ local function coverage(code)
 end
 
 -- A language is ready when every lore line has a translation (and, for a
--- non-English one, an alias table). Interface strings are not required -- they
+-- non-English language a client runs in, an alias table). Interface strings are not required -- they
 -- fall back to English per key. Computed at build time rather than counted
 -- here, because the addon cannot know how many lines there are supposed to be.
 function SpokenZones:IsLanguageReady(code)
@@ -154,7 +164,7 @@ end
 -- without having to pick it -- and picking it would pin them to it.
 function SpokenZones:GetAutoLanguage()
 	local client = self.clientLocale
-	if byCode[client] and self:IsLanguageReady(client) and self:CanRenderLanguage(client) then
+	if self:IsClientLanguage(client) and self:IsLanguageReady(client) and self:CanRenderLanguage(client) then
 		return client
 	end
 	return BASE

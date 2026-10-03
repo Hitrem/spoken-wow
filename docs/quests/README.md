@@ -352,6 +352,25 @@ carries them, once per language; the faction packs and every English pack are bu
 before. A language with no imported text (`make import-locale LOCALE=esMX`) still builds, with
 a warning, and its gossip is matched against the English text.
 
+#### Italian, a language no client runs in
+
+No Classic client ships `itIT`, so the world database has no Italian and no player's client
+sends any. Its quest text comes from QuestIT (by Drakanast, MIT), a community
+translation shipped as an addon, imported on each of its releases:
+
+```bash
+make quests-import-questit QUESTIT=~/Downloads/QuestIT ARGS=--dry-run   # match and count
+make quests-import-questit QUESTIT=~/Downloads/QuestIT                  # write
+```
+
+QuestIT keys a translation by the hash of the English it was made from (its `Core.EnglishHash`),
+which `tts_cli/questit.py` reproduces over the corpus's English. A line matches only if that
+English is the corpus's, so a quest reworded since is left out. Rows are written with origin
+`community` and the release in `note`; a later release replaces them, and a line edited on the
+site keeps its edit. Everything client-keyed is skipped for a language like this (`client: false`
+in `pipelines/lib/locales.mjs`): its packs carry no gossip locale text, the addon never picks
+it on Auto, and it offers no contributions while a player listens in it.
+
 ### Browsing the corpus
 
 Nothing in a filename identifies an NPC — quest audio is `{questID}-{accept|complete}.mp3`
@@ -400,7 +419,7 @@ nothing left for it to replace, its words having been written in at extraction; 
 in any language, English included, goes through the same table (`docs/books/README.md`). A
 token glued to a following letter (`$Nama`) is left in, so the line stays unvoiceable until a
 translator rewrites it. Doing this at send time rather than in the rows covers every way a
-translation arrives — the dump, the ptBR import, a player's contribution, a translator's edit
+translation arrives — the dump, the ptBR import, QuestIT's Italian, a player's contribution, a translator's edit
 — and lets a word be changed later without rewriting any of them; the changed word then marks
 those takes stale.
 

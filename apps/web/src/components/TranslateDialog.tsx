@@ -18,7 +18,7 @@ import { useLang } from "./LangProvider";
 type Version = {
   version: number;
   isCurrent: boolean;
-  origin: "extracted" | "edited" | "contributed";
+  origin: "extracted" | "edited" | "contributed" | "community";
   note: string | null;
   createdAt: string;
   /** The field is `text` on a line and `name` on a name. */

@@ -25,7 +25,7 @@ export type QuestTextVersion = {
   variant: number;
   version: number;
   isCurrent: boolean;
-  origin: "extracted" | "edited";
+  origin: "extracted" | "edited" | "contributed" | "community";
   text: string;
   editedBy: string | null;
   note: string | null;

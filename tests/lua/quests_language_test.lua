@@ -269,6 +269,25 @@ VO = Install(PACKS, "ptBR")
 Expect("J. reporting a Portuguese clip files it in Portuguese", ReportFor(VO, 1), "ptBR")
 Expect("J. reporting a fallback clip files it in English", ReportFor(VO, 2), "enUS")
 
+---------------------------------------------------------------- K. a language no client runs in
+-- Italian: a pack may declare it and a player may choose it, but GetLocale() never says it,
+-- so Auto never lands on it -- even on a (hypothetical) client that claimed it.
+local IT_PACKS = {
+    { folder = "EnglishPack", lines = EN_LINES },
+    { folder = "ItalianPack", language = "itIT", lines = { ["1-accept"] = 5.5 } },
+}
+VO = Install(IT_PACKS, "enUS")
+Expect("K. an Italian pack declares Italian", VO.DataModules:GetPresentModule("ItalianPack").Language, "itIT")
+Expect("K. on Auto an English client hears English", Resolve(VO, 1), "EnglishPack")
+VO.Addon.db.profile.Audio.VoiceLanguage = "itIT"
+Expect("K. chosen, Italian answers", Resolve(VO, 1), "ItalianPack")
+Expect("K. ...and falls back to English where it has no clip", Resolve(VO, 2), "EnglishPack")
+VO = Install(IT_PACKS, "itIT")
+Expect("K. a client claiming Italian is not taken at its word", VO.Language:GetClientLanguage(), "enUS")
+Expect("K. ...so Auto stays English", Resolve(VO, 1), "EnglishPack")
+Expect("K. Italian is not a client language", VO.Language:IsClientLanguage("itIT"), false)
+Expect("K. Portuguese is", VO.Language:IsClientLanguage("ptBR"), true)
+
 ---------------------------------------------------------------- the metadata itself
 VO = Install({ { folder = "Pack", language = "ptBR", lines = EN_LINES } })
 Expect("a declared language is read off the TOC", VO.DataModules:GetPresentModule("Pack").Language, "ptBR")

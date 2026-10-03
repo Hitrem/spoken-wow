@@ -51,6 +51,9 @@ None of this is the project's to license, and the MIT grant does not reach it.
   which article each line came from.
 - **Book, letter and in-world text** for SpokenBooks comes from the same vmangos
   extraction as the quest corpus, and is likewise Blizzard's.
+- **Italian quest, gossip and book text** comes from QuestIT, an Italian community
+  translation by Drakanast whose addon code is MIT-licensed; the quest text it translates
+  is Blizzard's. `pipelines/quests/tools/import_questit.py` imports it.
 - Text submitted through `/contribute` is game text as well: a player's client is showing it and
   they are sending a copy. It sits on the same footing as the corpus above, and the same terms
   apply to it.

@@ -2,8 +2,9 @@
 --
 -- What each language covers, and whether it is finished. `ready` is what
 -- decides whether a language is offered in the switcher at all: every lore
--- line translated, and an alias table. Interface strings and audio are
--- counted but not required; strings fall back to English per key.
+-- line translated, and an alias table where a client runs in the language.
+-- Interface strings and audio are counted but not required; strings fall
+-- back to English per key.
 --
 -- Measured against English: 856 lore lines, 90 interface strings.
 
@@ -15,6 +16,7 @@ SpokenZones.Languages = {
 	{ code = "esES", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 740, audio = true, ready = true },
 	{ code = "esMX", lore = { done = 856, total = 856 }, strings = { done = 0, total = 90 }, aliases = 730, audio = true, ready = true },
 	{ code = "frFR", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 735, audio = true, ready = true },
+	{ code = "itIT", lore = { done = 0, total = 856 }, strings = { done = 0, total = 90 }, aliases = 0, audio = false, ready = false },
 	{ code = "ptBR", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 732, audio = true, ready = true },
 	{ code = "ruRU", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 780, audio = true, ready = true },
 	{ code = "koKR", lore = { done = 856, total = 856 }, strings = { done = 90, total = 90 }, aliases = 777, audio = true, ready = true },

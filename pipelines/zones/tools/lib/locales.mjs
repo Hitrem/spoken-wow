@@ -6,7 +6,7 @@
 // tools/validate.mjs fails the build if the two lists drift, the same way it
 // already guards NormaliseAreaKey.
 
-import { BASE_LOCALE, CODES, LOCALES } from "../../../lib/locales.mjs";
+import { BASE_LOCALE, CODES, isClientLocale, LOCALES } from "../../../lib/locales.mjs";
 
 // What the zones tools import from here; anything else about a language, from the source.
-export { BASE_LOCALE, CODES, LOCALES };
+export { BASE_LOCALE, CODES, isClientLocale, LOCALES };

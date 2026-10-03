@@ -9,8 +9,9 @@
  * translation, and a book page in any language -- keeps its tokens as stored, and this puts
  * the language's word in at the point the text is judged and sent: the gate, the request and
  * the staleness hash all see the same string. Kept out of the rows on purpose: a translation
- * reaches the tables from the dump, from another source for Portuguese, from a player and
- * from a translator, and one place to substitute covers all four without rewriting any of
+ * reaches the tables from the dump, from another source for Portuguese, from the QuestIT
+ * community for Italian, from a player and from a translator, and one place to substitute
+ * covers all of them without rewriting any of
  * them; the words themselves are a native speaker's call, and changing one here reaches
  * every line at once (and marks its takes stale, which is what they then are).
  *
@@ -42,6 +43,7 @@ const WORDS: Partial<Record<Lang, { m: Words; f: Words }>> = {
   esES: { m: { name: "aventurero", race: "viajero" }, f: { name: "aventurera", race: "viajera" } },
   esMX: { m: { name: "aventurero", race: "viajero" }, f: { name: "aventurera", race: "viajera" } },
   frFR: { m: { name: "aventurier", race: "voyageur" }, f: { name: "aventurière", race: "voyageuse" } },
+  itIT: { m: { name: "avventuriero", race: "viaggiatore" }, f: { name: "avventuriera", race: "viaggiatrice" } },
   ptBR: { m: { name: "aventureiro", race: "viajante" }, f: { name: "aventureira", race: "viajante" } },
   ruRU: { m: { name: "путник", race: "странник" }, f: { name: "путница", race: "странница" } },
   koKR: { m: { name: "모험가", race: "여행자" }, f: { name: "모험가", race: "여행자" } },

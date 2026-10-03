@@ -234,3 +234,22 @@ def test_a_line_with_two_variants_of_different_english_is_translated_once(db):
 
     again = import_locale(db, "zhTW", lines, {})
     assert again["lines promote"] == 0
+
+
+def test_a_community_release_replaces_its_own_rows_and_keeps_an_edit(db):
+    line_id, original, _ = _english_line(db)
+    line = {"lineId": line_id, "originalText": original, "text": "一", "localeText": None,
+            "generatable": True, "skipReason": None}
+    import_locale(db, "zhTW", [line], {}, origin="community", note="QuestIT 1")
+    assert _live(db, line_id) == ("一", "community")
+
+    counts = import_locale(db, "zhTW", [dict(line, text="二")], {}, origin="community", note="QuestIT 2")
+    assert counts["lines promote"] == 1
+    assert _live(db, line_id) == ("二", "community")
+
+    with db, db.cursor() as cur:
+        cur.execute("""update "quest_line" set "origin" = 'edited', "text" = '改'
+                        where "lineId" = %s and "lang" = 'zhTW' and "isCurrent" """, (line_id,))
+    counts = import_locale(db, "zhTW", [dict(line, text="三")], {}, origin="community", note="QuestIT 3")
+    assert counts["lines record"] == 1
+    assert _live(db, line_id) == ("改", "edited")

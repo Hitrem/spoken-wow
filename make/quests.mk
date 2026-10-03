@@ -59,7 +59,7 @@ endef
         package-audio-complete package-meta push-complete icon \
         downloads-status \
         factions followup-lines release release-audio release-audio-dry release-wago release-curse \
-        release-dry import-corpus import-locale fill-locales export-corpus export-ignores export-locale-text export-giver-names \
+        release-dry import-corpus import-locale fill-locales import-questit export-corpus export-ignores export-locale-text export-giver-names \
         sync check-synced full-release
 
 help: ## Show this help
@@ -184,7 +184,12 @@ icon: ## Rebuild the addons' icon.tga and the minimap BLP from pipelines/quests/
 package: ## Zip the player addon into dist/: one Blizzard zip, one per legacy client
 	@./scripts/quests/package.sh
 
-package-audio: check-synced export-corpus export-ignores $(if $(filter-out enUS,$(LOCALE)),export-locale-text) sounds ## Transcode, build and zip the four split packs, and bundle them into one zip for GitHub, into dist/ (VERSION=1.4.0)
+# Languages no client runs in (pipelines/lib/locales.mjs, `client: false`). Their packs carry
+# no gossip locale text: the addon matches gossip by what the client shows, which is never in
+# them. Recursive, so only a target that reads it pays for the node start.
+NON_CLIENT_LOCALES = $(shell node --input-type=module -e 'const { LOCALES } = await import("./pipelines/lib/locales.mjs"); console.log(LOCALES.filter((l) => l.client === false).map((l) => l.code).join(" "))')
+
+package-audio: check-synced export-corpus export-ignores $(if $(filter-out enUS $(NON_CLIENT_LOCALES),$(LOCALE)),export-locale-text) sounds ## Transcode, build and zip the four split packs, and bundle them into one zip for GitHub, into dist/ (VERSION=1.4.0)
 	@VERSION=$(VERSION) ENCODE=$(if $(ENCODE),$(ENCODE),ogg-q0-44k) MODULE=SpokenQuestsAudio \
 	  LANGUAGE="$(or $(LOCALE),enUS)" JOBS=$(JOBS) ./scripts/quests/package-audio.sh
 
@@ -379,6 +384,13 @@ fill-locales: ## Fill vmangos's empty *_locN columns from TrinityCore (TDB335= T
 	@cd $(QUESTS_DIR) && $(abspath $(PYTHON)) tools/fill_locales_from_tdb.py \
 	  --tdb335 "$(abspath $(TDB335))" --tdb-world "$(abspath $(TDB_WORLD))" \
 	  --tdb-hotfixes "$(abspath $(TDB_HOTFIXES))" $(ARGS)
+
+# Italian, which no client runs in, from the QuestIT community's addon: quest text, quest
+# titles and the few book pages it has, as 'community' rows. Run again on each of their
+# releases; an edit made on the site is kept. ARGS=--dry-run counts instead.
+import-questit: ## Import a QuestIT release into itIT (QUESTIT=~/Downloads/QuestIT)
+	@test -n "$(QUESTIT)" || { echo "import-questit: set QUESTIT to a QuestIT release folder"; exit 2; }
+	@cd $(QUESTS_DIR) && $(abspath $(PYTHON)) tools/import_questit.py "$(abspath $(patsubst ~/%,$(HOME)/%,$(QUESTIT)))" $(ARGS)
 
 export-corpus: check-synced ## quest_line -> corpus/corpus.json.gz (ARGS=--check to compare instead)
 	@$(QUESTS_CLI) export-corpus $(ARGS)

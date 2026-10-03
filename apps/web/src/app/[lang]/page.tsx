@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 
 import Link from "@/components/LocaleLink";
-import { LOCALES, langName, type Lang } from "@/lib/lang";
+import { isClientLang, LOCALES, langName, type Lang } from "@/lib/lang";
 import { pageLang } from "@/lib/lang-server";
 import { packFor, PACKS, type Section } from "@/lib/packs";
 import { cn } from "@/lib/utils";
@@ -103,6 +103,12 @@ const EXPLORERS = [
 const PACK_LANGS: Lang[] = LOCALES.map((locale) => locale.code).filter((code) =>
   PACKS.some((pack) => pack.lang === code),
 );
+
+/**
+ * Pack languages no game client runs in (Italian). Every other pack plays on a client in its
+ * language without being asked; these play only once a player picks them, so the table says so.
+ */
+const CHOSEN_LANGS: Lang[] = PACK_LANGS.filter((code) => !isClientLang(code));
 
 const linkClass = "hover:text-foreground underline underline-offset-2";
 
@@ -226,6 +232,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
                     )}
                   >
                     {langName(code)}
+                    {!isClientLang(code) && "*"}
                   </th>
                 ))}
               </tr>
@@ -301,6 +308,12 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
             </tbody>
           </table>
         </div>
+        {CHOSEN_LANGS.length > 0 && (
+          <p className="text-muted-foreground mt-2 text-xs">
+            * No game client runs in {CHOSEN_LANGS.map(langName).join(" or ")}: install the pack,
+            then choose the language under Voice Language in the addon&apos;s settings.
+          </p>
+        )}
       </Contained>
     </main>
   );

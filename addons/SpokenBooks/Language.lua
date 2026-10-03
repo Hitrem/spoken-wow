@@ -20,12 +20,17 @@ local ADDON_NAME, SpokenBooks = ...
 -- side by side, and a language offered in one and missing from the other is a setting the
 -- player makes once and finds half-honoured. tests/lua/books_language_test.lua holds them
 -- together.
+--
+-- `client = false` is a language no game client runs in -- Italian, which a community
+-- translates. A player hears it by choosing it; "auto" never lands on it, because
+-- GetLocale() never says it.
 SpokenBooks.LOCALES = {
 	{ code = "enUS", name = "English", native = "English" },
 	{ code = "deDE", name = "German", native = "Deutsch" },
 	{ code = "esES", name = "Spanish (EU)", native = "Español (España)" },
 	{ code = "esMX", name = "Spanish (AL)", native = "Español (América Latina)" },
 	{ code = "frFR", name = "French", native = "Français" },
+	{ code = "itIT", name = "Italian", native = "Italiano", client = false },
 	{ code = "ptBR", name = "Portuguese", native = "Português" },
 	{ code = "ruRU", name = "Russian", native = "Русский" },
 	{ code = "koKR", name = "Korean", native = "한국어" },
@@ -63,8 +68,18 @@ function SpokenBooks:GetLanguageName(code)
 	return locale.native or locale.name
 end
 
+--- Whether a game client runs in this language. See `client` on LOCALES.
+function SpokenBooks:IsClientLanguage(code)
+	local locale = code and byCode[code]
+	return locale ~= nil and locale.client ~= false
+end
+
 function SpokenBooks:GetClientLanguage()
-	return self:NormalizeLanguage(GetLocale and GetLocale())
+	local locale = GetLocale and GetLocale()
+	if self:IsClientLanguage(locale) then
+		return locale
+	end
+	return self.BASE_LANGUAGE
 end
 
 --- The language the player wants to hear, resolved: "auto" becomes the client's.

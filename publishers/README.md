@@ -47,6 +47,7 @@ which is why there is one file per project here and not two.
 | `quests/audio-frfr.md` | Spoken Quests Audio: French | 1717800 | — | `spoken-quests-audio-frfr` |
 | `quests/audio-kokr.md` | Spoken Quests Audio: Korean | 1719018 | — | `spoken-quests-audio-kokr` |
 | `quests/audio-ptbr.md` | Spoken Quests Audio: Portuguese | 1717819 | — | `spoken-quests-audio-ptbr` |
+| `quests/audio-itit.md` | Spoken Quests Audio: Italian | *(not created yet)* | — | `spoken-quests-audio-itit` |
 | `quests/audio-ruru.md` | Spoken Quests Audio: Russian | 1717824 | — | `spoken-quests-audio-ruru` |
 | *(page not on master yet)* | Spoken Quests Audio: Chinese (Simplified) | 1719048 | — | `spoken-quests-audio-zhcn` |
 | *(page not on master yet)* | Spoken Quests Audio: Chinese (Traditional) | 1719049 | — | `spoken-quests-audio-zhtw` |

@@ -243,7 +243,7 @@ end
 --
 -- Falls through to the normalised name when there is no alias. That covers an
 -- English client, and every place whose name Blizzard left in English -- which
--- is around one subzone in eight for German, and all of them for Italian.
+-- is around one subzone in eight for German.
 function SpokenZones:ResolveAreaKey(name)
 	if type(name) ~= "string" then
 		return nil

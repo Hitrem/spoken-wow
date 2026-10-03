@@ -23,7 +23,7 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { BASE_LOCALE, LOCALES } from "../lib/locales.mjs";
+import { BASE_LOCALE, isClientLocale, LOCALES } from "../lib/locales.mjs";
 import { luaString, ROOT } from "../lib/wiki.mjs";
 import { stringCoverage } from "./check-strings.mjs";
 import { loadPacks } from "../../../../scripts/lib/packs.mjs";
@@ -83,7 +83,10 @@ export async function buildLanguages() {
     const aliases = await countAliases(locale.code);
     const strung = strings.get(locale.code) || { done: 0, total: 0 };
 
-    const ready = loreDone === baseTotal && (locale.code === BASE_LOCALE || aliases > 0);
+    // Aliases turn what a client shows into English keys, so only a language a client runs in
+    // needs them; one no client ships (Italian) is ready once its lore is.
+    const needsAliases = locale.code !== BASE_LOCALE && isClientLocale(locale.code);
+    const ready = loreDone === baseTotal && (!needsAliases || aliases > 0);
 
     rows.push({ locale, loreDone, strung, aliases, ready });
   }
@@ -93,8 +96,9 @@ export async function buildLanguages() {
     "--",
     "-- What each language covers, and whether it is finished. `ready` is what",
     "-- decides whether a language is offered in the switcher at all: every lore",
-    "-- line translated, and an alias table. Interface strings and audio are",
-    "-- counted but not required; strings fall back to English per key.",
+    "-- line translated, and an alias table where a client runs in the language.",
+    "-- Interface strings and audio are counted but not required; strings fall",
+    "-- back to English per key.",
     "--",
     `-- Measured against English: ${baseTotal} lore lines, ${strings.get(BASE_LOCALE).total} interface strings.`,
     "",

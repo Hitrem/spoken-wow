@@ -33,14 +33,21 @@ if [ "${1:-}" = "--into" ]; then
   INTO=${2:?--into needs a database url}
 fi
 
-# Which of the three sources this language has. `vmangos` is null for Portuguese and Italian,
-# whose text the dump does not carry; their place names still come from the addon's aliases.
+# Which of the three sources this language has. `vmangos` is null where the dump carries no
+# text at all; place names still come from the addon's aliases. A language no client runs in
+# (Italian) has neither: its text is the QuestIT community's (make quests-import-questit) and
+# what is written on the site.
 vmangos=$(node --input-type=module -e '
   const { localeInfo, BASE_LOCALE } = await import("./pipelines/lib/locales.mjs");
   const info = localeInfo(process.argv[1]);
   if (!info || info.code === BASE_LOCALE) { console.error(`not a language to import: ${process.argv[1]}`); process.exit(2); }
-  console.log(info.vmangos ?? "none");
+  console.log(info.client === false ? "client" : (info.vmangos ?? "none"));
 ' "$LOCALE")
+if [ "$vmangos" = "client" ]; then
+  echo "$LOCALE: no game client runs in it, so the game has no text to import."
+  echo "Its quest text comes from QuestIT (make quests-import-questit); the rest is written on the site."
+  exit 0
+fi
 
 # The quests import reads MySQL through pandas and PyMySQL (requirements-extract.txt), which
 # the everyday venv does not carry, and the pinned pandas does not build on a new Python. A
