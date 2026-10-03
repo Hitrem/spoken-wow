@@ -740,7 +740,10 @@ rule: it fires once per character and is the only place left that infers a first
 visit instead of being told about one. The greeting queues immediately and the
 queue holds it until the intro ends — but two seconds is not always before the intro
 starts, so `CINEMATIC_START` and `PLAY_MOVIE` also stop a greeting already speaking
-and keep it queued, to replay from the start once the intro is over.
+and keep it queued, to replay from the start once the intro is over. The greeting's
+attempts are not spent while an intro plays: on clients that play it somewhere else,
+with a loading screen after it, every answer during it is wrong, and a player who
+watched it to the end used to arrive after the last attempt.
 
 The flag is set *after* the enabled check, so turning autoplay on later still
 greets rather than having silently spent its turn. `/spz forget` clears it.

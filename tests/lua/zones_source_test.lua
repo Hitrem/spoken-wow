@@ -281,6 +281,43 @@ Expect("a client that restored nothing is not greeted", GreetingAsked(false, 60)
 Expect("...unless the character is new", GreetingAsked(false, 1), true)
 Expect("a greeting runs as before once something was restored", GreetingAsked(true, 60), true)
 
+-- An intro that outlasts the greeting's attempts. On a client that plays it somewhere else,
+-- with a loading screen after, every attempt during it resolves nothing; a player who
+-- watched it to the end arrived after the last one and was greeted by nothing.
+do
+    stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
+    stub.ldbObjects = {}; stub.dbIcons = {}
+    world.inCombat = false
+    world.playerLevel = 1
+    local pending = {}
+    local env = stub.LoadSpoken(SPOKEN)
+    env.Addon:Enable()
+    _G.C_Timer.After = function(_, fn) table.insert(pending, fn) end
+    local Z = stub.LoadZones(ZONES, NewZoneLore())
+    Z.savedVariablesRestored = true
+    local asked = 0
+    Z.GetPlayerMapID = function() asked = asked + 1 end
+    Z.GetLoreWithFallback = function() return nil, nil end
+    local cinematic = true
+    _G.InCinematic = function() return cinematic end
+    Z:SetupAudio()
+    Z:SetupAutoplay()
+    _G.SpokenZonesCharDB = nil
+    local function Tick()
+        local due = pending
+        pending = {}
+        for _, fn in ipairs(due) do fn() end
+    end
+    for _ = 1, 20 do Tick() end
+    Expect("the greeting does not ask where the player is during an intro", asked, 0)
+    Expect("...and keeps waiting rather than giving up", pending[1] ~= nil, true)
+    cinematic = false
+    for _ = 1, 20 do Tick() end
+    Expect("once it is over, the greeting gets all its attempts", asked, 8)
+    _G.InCinematic = nil
+    _G.SpokenZonesCharDB = nil
+end
+
 ---------------------------------------------------------------- the pack this repo ships
 -- The shipped Data/Sounds.lua, loaded for real. Everything above uses hand-built tables, so
 -- nothing until here notices if the generator writes a registry name the addon does not read

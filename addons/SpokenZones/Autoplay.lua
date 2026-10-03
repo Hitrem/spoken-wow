@@ -118,6 +118,16 @@ end
 -- competes with everything the player actually needs to hear. The queue holds
 -- rather than drops, and retries once the pull or the movie ends.
 --
+-- Whether an intro cinematic or a movie is up. InCinematic as well as the frame: it is
+-- already true while CINEMATIC_START is being delivered, when CinematicFrame may not
+-- have shown itself yet.
+local function CinematicUp()
+	return (InCinematic and InCinematic())
+		or (CinematicFrame and CinematicFrame:IsShown())
+		or (MovieFrame and MovieFrame:IsShown())
+		or false
+end
+
 -- The item is inspected, not just the moment, because none of this applies to a
 -- player who pressed Play: clicking Play mid-pull means now. Only what this file
 -- queued waits.
@@ -133,11 +143,8 @@ local function HoldReason(item)
 	end
 	-- A starting-zone cinematic is the one moment a new character is guaranteed to
 	-- be discovering things, so narrating over it is the likeliest collision there
-	-- is. InCinematic as well as the frame: it is already true while CINEMATIC_START
-	-- is being delivered, when CinematicFrame may not have shown itself yet.
-	if (InCinematic and InCinematic())
-		or (CinematicFrame and CinematicFrame:IsShown())
-		or (MovieFrame and MovieFrame:IsShown()) then
+	-- is.
+	if CinematicUp() then
 		return SpokenZones.L.QUEUE_HELD_CINEMATIC
 	end
 	return nil
@@ -582,6 +589,15 @@ function SpokenZones:SetupAutoplay()
 	local attempts = 0
 	local seed
 	seed = function()
+		-- An intro does not spend the greeting's attempts. The character is not standing
+		-- in its valley while it plays -- on some clients the intro is somewhere else
+		-- entirely, with a loading screen after it -- so every answer is wrong, and a
+		-- player who watched it to the end arrived after the last attempt and was greeted
+		-- by nothing. The attempts start counting once it is over.
+		if CinematicUp() then
+			C_Timer.After(LOGIN_SEED_DELAY, seed)
+			return
+		end
 		attempts = attempts + 1
 		local settled = SeedLoginArea(attempts)
 		-- Logging in is not a zone change, so without this a player who logs out
