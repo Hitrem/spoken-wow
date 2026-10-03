@@ -1,4 +1,5 @@
 ---
+curseforge: 1723282
 release: books-audio-esMX
 section: books
 lang: esMX

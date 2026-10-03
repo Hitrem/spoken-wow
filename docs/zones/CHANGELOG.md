@@ -28,6 +28,25 @@ section with no kind in its heading is the addon's. A language's pack numbers it
   version; on 2.1.0 they install but stay silent. Each installs beside the English pack.
 - The sound pack dropdown names each pack by its language rather than by its quality.
 
+## 2.0.0 — zones-audio-koKR — 2026-10-03
+
+- **The first Korean sound pack**, `SpokenZonesAudio_koKR`: every zone and subzone
+  Spoken Zones has lore for, read aloud in Korean. It plays only while Spoken Zones is
+  showing Korean text, and installs beside the English pack rather than over it.
+
+## 2.0.0 — zones-audio-zhCN — 2026-10-03
+
+- **The first Simplified Chinese sound pack**, `SpokenZonesAudio_zhCN`: every zone and subzone
+  Spoken Zones has lore for, read aloud in Simplified Chinese. It plays only while Spoken Zones is
+  showing Simplified Chinese text, and installs beside the English pack rather than over it.
+  Agol'watha is not voiced yet and stays silent.
+
+## 2.0.0 — zones-audio-zhTW — 2026-10-03
+
+- **The first Traditional Chinese sound pack**, `SpokenZonesAudio_zhTW`: every zone and subzone
+  Spoken Zones has lore for, read aloud in Traditional Chinese. It plays only while Spoken Zones is
+  showing Traditional Chinese text, and installs beside the English pack rather than over it.
+
 ## 2.0.0 — zones-audio-deDE — 2026-09-26
 
 - **The first German sound pack**, `SpokenZonesAudio_deDE`: every zone and subzone

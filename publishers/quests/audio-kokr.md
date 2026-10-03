@@ -1,4 +1,5 @@
 ---
+curseforge: 1719018
 release: quests-audio-koKR
 section: quests
 lang: koKR

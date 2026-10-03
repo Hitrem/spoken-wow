@@ -21,6 +21,31 @@ existing compatible sound pack unless the release notes say otherwise.
 - The language choice's follow-the-game entry is **Auto (<language>)**, the same words as
   in Spoken Quests and Spoken Zones, and error messages follow the game client's language.
 
+## 2.0.0 — books-audio-ptBR — 2026-10-03
+
+- **The first Portuguese sound pack**, `SpokenBooksAudio_ptBR`: 474 pages read aloud from the
+  Portuguese text players' clients sent in: Classic's world database has none of its own, so
+  this pack covers only the pages someone has contributed so far. It plays on a ptBR client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
+## 2.0.0 — books-audio-koKR — 2026-10-03
+
+- **The first Korean sound pack**, `SpokenBooksAudio_koKR`: 552 of the 559 Korean pages read
+  aloud from the game's own Korean text. It plays on a koKR client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
+## 2.0.0 — books-audio-zhCN — 2026-10-03
+
+- **The first Simplified Chinese sound pack**, `SpokenBooksAudio_zhCN`: 1134 of the 1159 Simplified
+  Chinese pages read aloud from the game's own text. It plays on a zhCN client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
+## 2.0.0 — books-audio-zhTW — 2026-10-03
+
+- **The first Traditional Chinese sound pack**, `SpokenBooksAudio_zhTW`: 1081 of the 1102 Traditional
+  Chinese pages read aloud from the game's own text. It plays on a zhTW client, and installs beside
+  the English pack rather than over it. Needs Spoken Books 2.1.0 or later.
+
 ## 2.0.0 — books-audio-deDE — 2026-09-27
 
 - **The first German sound pack**, `SpokenBooksAudio_deDE`: 1143 pages read aloud from

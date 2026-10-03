@@ -1,4 +1,5 @@
 ---
+curseforge: 1723284
 release: books-audio-frFR
 section: books
 lang: frFR
