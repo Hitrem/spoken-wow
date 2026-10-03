@@ -207,9 +207,14 @@ Expect("...probing it on the source's channel", world.playedChannels[1], "Master
 local function Cues()
     local n = 0
     for _, s in ipairs(world.kitSounds) do
-        if s.kit == 845 then n = n + 1 end
+        if s.kit == _G.SOUNDKIT.IG_QUEST_LOG_CLOSE then n = n + 1 end
     end
     return n
+end
+
+local function FreshCued()
+    Fresh()
+    env.Addon.db.profile.Audio.CueBetweenItems = true
 end
 
 Fresh()
@@ -218,8 +223,7 @@ stub.Advance(1.55)
 Expect("off by default: no cue", Cues(), 0)
 Expect("...and the next line starts straight after the gap", #world.played, 2)
 
-Fresh()
-env.Addon.db.profile.Audio.CueBetweenItems = true
+FreshCued()
 local first, second = H.Clip(), H.Clip()
 quests:Enqueue(first); quests:Enqueue(second)
 Expect("no cue before the first line", Cues(), 0)
@@ -233,8 +237,7 @@ Expect("...then starts", world.played[2], second.path)
 stub.Advance(1.55)
 Expect("no cue after the last line", Cues(), 1)
 
-Fresh()
-env.Addon.db.profile.Audio.CueBetweenItems = true
+FreshCued()
 quests:Enqueue(H.Clip())
 stub.Advance(1.55)
 stub.Advance(5)
@@ -242,8 +245,7 @@ quests:Enqueue(H.Clip())
 Expect("a line after the queue drained gets no cue", Cues(), 0)
 Expect("...and plays at once", #world.played, 2)
 
-Fresh()
-env.Addon.db.profile.Audio.CueBetweenItems = true
+FreshCued()
 quests:Enqueue(H.Clip({ group = "book:1" })); quests:Enqueue(H.Clip({ group = "book:1" }))
 quests:Enqueue(H.Clip({ group = "book:2" }))
 stub.Advance(1.55)
@@ -252,15 +254,13 @@ Expect("...the next page follows after the gap", #world.played, 2)
 stub.Advance(1.55)
 Expect("a different book gets the cue", Cues(), 1)
 
-Fresh()
-env.Addon.db.profile.Audio.CueBetweenItems = true
+FreshCued()
 quests:Enqueue(H.Clip()); quests:Enqueue(H.Clip())
 Q:Skip()
 Expect("skipping moves on without a cue", Cues(), 0)
 Expect("...straight to the next line", #world.played, 2)
 
-Fresh()
-env.Addon.db.profile.Audio.CueBetweenItems = true
+FreshCued()
 quests:Enqueue(H.Clip()); quests:Enqueue(H.Clip())
 stub.Advance(1.55)
 Q:PauseQueue()
@@ -270,8 +270,7 @@ Q:ResumeQueue()
 Expect("...and resuming starts it without a second cue", #world.played, 2)
 Expect("...cue heard once", Cues(), 1)
 
-Fresh()
-env.Addon.db.profile.Audio.CueBetweenItems = true
+FreshCued()
 quests:Enqueue(H.Clip()); quests:Enqueue(H.Clip())
 stub.Advance(1.55)
 local clicked2 = H.Clip()
@@ -280,8 +279,7 @@ Expect("PlayNow during the cue plays the clicked clip at once", world.played[2],
 stub.Advance(1)
 Expect("...and the cue's timer does not start another over it", #world.played, 2)
 
-Fresh()
-env.Addon.db.profile.Audio.CueBetweenItems = true
+FreshCued()
 local gateHeld = true
 zones:AddGate(function() return gateHeld and "in combat" or nil end)
 quests:Enqueue(H.Clip()); zones:Enqueue(H.Clip())
