@@ -5,6 +5,7 @@
  * The arithmetic stays here.
  */
 import { langParam, worksHere } from "@/lib/lang-server";
+import { recordingsFor } from "@/lib/recordings/store";
 import { catalogue, isCorpusEmpty, loadContext } from "@/lib/zones/catalogue";
 import { filtersFromParams, PAGE_SIZE } from "@/lib/zones/filters";
 import { search } from "@/lib/zones/search";
@@ -47,7 +48,15 @@ export async function GET(request: Request) {
   let entries;
   let context;
   try {
-    [entries, context] = await Promise.all([catalogue(lang), loadContext(lang, seesMadeBy)]);
+    let recordings;
+    [entries, context, recordings] = await Promise.all([
+      catalogue(lang),
+      loadContext(lang, seesMadeBy),
+      recordingsFor("zones", lang),
+    ]);
+    // Dropped for anybody who may not see recordings, as the made-by filters are above.
+    if (!recordings) filters.recorded = undefined;
+    context = { ...context, recordings };
   } catch (error) {
     if (isCorpusEmpty(error)) return corpusEmpty(error);
     throw error;

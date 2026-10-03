@@ -25,6 +25,7 @@ import { usd } from "@/lib/generation/money";
 import { isProvider, PROVIDER_NAME } from "@/lib/generation/providers";
 import { localeHref, withLang } from "@/lib/lang";
 import { explorerHref, lexiconHref } from "@/lib/links";
+import { capabilityLabel, isCapability } from "@/lib/permissions";
 import { SOURCE_LABELS } from "@/lib/reports/reports";
 import { SOURCES, type Source } from "@/lib/sections";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,11 @@ function day(at: string): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+/** A capability the way /admin names it, or the raw string when a later release wrote one. */
+function grantName(value: unknown): string | null {
+  return isCapability(value) ? capabilityLabel(value) : str(value);
 }
 
 function str(value: unknown): string | null {
@@ -109,6 +115,10 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
         what: num(d.from) ? `restored take v${version} over v${num(d.from)}` : `restored take v${version}`,
         quote: null,
       };
+    case "recording.uploaded":
+      return { what: `recorded v${version}`, quote: null };
+    case "recording.removed":
+      return { what: `removed recording v${version}`, quote: null };
     case "take.acked":
       return { what: "marked the audio fine after a pronunciation change", quote: row.lineId ? null : row.subject };
     case "marks.cleared":
@@ -192,9 +202,9 @@ function describe(row: ActivityRow): { what: string; quote: string | null } {
         quote: [str(d.race), str(d.gender), str(d.flavor)].filter(Boolean).join(" · ") || null,
       };
     case "grant.added":
-      return { what: `gave ${row.subjectName ?? "someone"} ${str(d.capability)}`, quote: null };
+      return { what: `gave ${row.subjectName ?? "someone"} ${grantName(d.capability)}`, quote: null };
     case "grant.removed":
-      return { what: `took ${str(d.capability)} from ${row.subjectName ?? "someone"}`, quote: null };
+      return { what: `took ${grantName(d.capability)} from ${row.subjectName ?? "someone"}`, quote: null };
     case "language.toggled":
       return { what: d.enabled ? "switched the language on" : "switched the language off", quote: null };
     case "contribution.resolved":

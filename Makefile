@@ -102,7 +102,7 @@ contribute-fixtures:
 
 test: test-player ## Everything: both webs, the Python pipeline, the addons
 	@pnpm -r test
-	@node --test scripts/lib/*.test.mjs
+	@node --test scripts/lib/*.test.mjs scripts/audio/*.test.mjs
 	@[ -x pipelines/quests/.venv/bin/python ] || { \
 	  echo "No venv at pipelines/quests/.venv -- see the comment above 'test' in the Makefile"; \
 	  exit 1; }

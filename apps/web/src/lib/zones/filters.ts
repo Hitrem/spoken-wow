@@ -5,6 +5,8 @@
 // code does not. Everything both sides need lives here. lib/line-fields.ts is the quests
 // side's version of the same rule.
 
+import { RECORDED, type Recorded } from "@/lib/recordings/live";
+
 export const FIELDS = ["any", "name", "zone", "text"] as const;
 export const KINDS = ["zone", "subzone"] as const;
 export const STATES = ["missing", "stale", "current"] as const;
@@ -48,6 +50,8 @@ export type LineFilters = {
    */
   model?: string;
   author?: string;
+  /** Whether a voice actor has recorded it. Honoured only for somebody who records here. */
+  recorded?: Recorded;
 };
 
 // Below this, ElevenLabs documents v3 as unreliable, and 305 of the 1353 entries are
@@ -74,6 +78,7 @@ export function filterParams(filters: LineFilters): URLSearchParams {
   if (filters.generatedAfter) params.set("after", filters.generatedAfter);
   if (filters.model) params.set("model", filters.model);
   if (filters.author) params.set("author", filters.author);
+  if (filters.recorded) params.set("rec", filters.recorded);
   return params;
 }
 
@@ -105,6 +110,7 @@ export function filtersFromParams(params: URLSearchParams): LineFilters {
     generatedAfter: after && DATE.test(after) ? after : undefined,
     model: params.get("model") || undefined,
     author: params.get("author") || undefined,
+    recorded: oneOf(params.get("rec"), RECORDED),
   };
 }
 
@@ -127,5 +133,6 @@ export function activeFilterCount(filters: LineFilters): number {
     filters.generatedAfter,
     filters.model,
     filters.author,
+    filters.recorded,
   ].filter(Boolean).length;
 }

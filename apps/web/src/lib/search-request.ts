@@ -12,6 +12,7 @@
 import { audioStateFromParams } from "./audio-state";
 import { facets } from "./facets";
 import { NPC_TYPES, SOURCES } from "./line-fields";
+import { RECORDED } from "./recordings/live";
 import type { Filter, LineFilters } from "./search";
 
 const FILTERS: Filter[] = ["any", "npc", "quest", "text"];
@@ -56,6 +57,7 @@ export async function filtersFromParams(params: URLSearchParams): Promise<LineFi
     // One nothing made matches nothing, which is the truthful answer.
     model: params.get("model") || undefined,
     author: params.get("author") || undefined,
+    recorded: oneOf(params.get("rec"), RECORDED),
   };
 }
 

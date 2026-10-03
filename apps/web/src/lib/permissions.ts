@@ -69,12 +69,30 @@ export function canConfigureGeneration(role: string | null | undefined): boolean
  * What a grant lets somebody do in one language. See migration 0037 for each.
  *
  * `admin` in a language is every other capability there, plus handing out `edit` and
- * `regenerate` in it -- never `configure`, `ignore` or `admin`, which only a global admin
- * grants, since those decide things for everybody working in the language.
+ * `regenerate` in it -- never `configure`, `ignore`, `record` or `admin`, which only a global
+ * admin grants: the first three decide things for everybody working in the language, and
+ * `record` puts somebody's voice in a pack under their name (0061).
  */
-export const CAPABILITIES = ["edit", "regenerate", "configure", "ignore", "admin"] as const;
+export const CAPABILITIES = ["edit", "regenerate", "configure", "ignore", "admin", "record"] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
+
+/**
+ * What /admin calls each capability: its own name, except where that would not say who holds
+ * it. Total, so a capability added above without a label is a type error.
+ */
+const CAPABILITY_LABELS: Record<Capability, string> = {
+  edit: "edit",
+  regenerate: "regenerate",
+  configure: "configure",
+  ignore: "ignore",
+  admin: "admin",
+  record: "voice actor",
+};
+
+export function capabilityLabel(capability: Capability): string {
+  return CAPABILITY_LABELS[capability];
+}
 
 export function isCapability(value: unknown): value is Capability {
   return typeof value === "string" && (CAPABILITIES as readonly string[]).includes(value);

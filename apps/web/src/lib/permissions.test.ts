@@ -121,6 +121,20 @@ describe("per-language permissions", () => {
     expect(canGrant(lead, "edit", "deDE")).toBe(false);
   });
 
+  it("lets a voice actor record their language, and only a global admin make one", () => {
+    const actor = member([{ lang: "deDE", capability: "record" }]);
+    expect(can(actor, "record", "deDE")).toBe(true);
+    expect(can(actor, "record", "frFR")).toBe(false);
+    expect(can(actor, "edit", "deDE")).toBe(false);
+    expect(can(actor, "regenerate", "deDE")).toBe(false);
+    // A language's admin may record in it, as they may do everything there...
+    const lead = member([{ lang: "deDE", capability: "admin" }]);
+    expect(can(lead, "record", "deDE")).toBe(true);
+    // ...but whose voice ships under the language's name is not theirs to decide.
+    expect(canGrant(lead, "record", "deDE")).toBe(false);
+    expect(canGrant({ role: "admin", grants: [] }, "record", "deDE")).toBe(true);
+  });
+
   it("lists the languages somebody may act in", () => {
     expect(langsWhere({ role: "admin", grants: [] }, "regenerate")).toHaveLength(CODES.length);
     expect(langsWhere(member([{ lang: "enUS", capability: "regenerate" }]), "regenerate")).toEqual([

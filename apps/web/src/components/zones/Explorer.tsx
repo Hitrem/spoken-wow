@@ -31,6 +31,7 @@ import {
 } from "@/lib/generation/client";
 import { noApiKeyMessage } from "@/lib/no-api-key";
 import type { ZoneFacet } from "@/lib/zones/catalogue";
+import RecordingDropZone from "@/components/RecordingDropZone";
 import { filterParams, filtersFromParams, PAGE_SIZE, type LineFilters } from "@/lib/zones/filters";
 import type { ResultLine, SearchResult } from "@/lib/zones/search";
 import { useClearDirty } from "@/lib/generation/use-clear-dirty";
@@ -553,6 +554,7 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
   const pages = result ? Math.max(1, Math.ceil(result.total / PAGE_SIZE)) : 1;
   // The search sends facets only to somebody working in the language; see MadeBy.tsx.
   const showMadeBy = result?.madeBy !== undefined;
+  const showRecordings = result?.recordable === true;
 
   return (
     <div className="pb-24">
@@ -562,6 +564,7 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
           filters={filters}
           canTriage={canTriage}
           madeBy={result?.madeBy}
+          recordable={showRecordings}
           query={query}
           inputRef={searchInput}
           onQueryChange={setQuery}
@@ -569,6 +572,8 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
           onChange={updateFilters}
           onClearAll={() => replaceQuery(new URLSearchParams())}
         />
+
+        {showRecordings && <RecordingDropZone source="zones" onUploaded={refetch} />}
 
         {/* A line id has no dropdown to sit in - it arrives by link from /reports - so
             without this the list would be narrowed with nothing on the page saying so. */}
@@ -638,6 +643,7 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
             <col className="w-28" />
             {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
             {showMadeBy && <col className="w-36" />}
+            {showRecordings && <col className="w-32" />}
             {/* Wide enough for what the cell actually holds: icon buttons are 32px and an
                 editor can have three side by side - report, edit, regenerate - plus the
                 report count. Anything narrower and the row overflows left over the prose.
@@ -652,6 +658,7 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
               <th className="px-2 pb-1 font-medium">Lore</th>
               <th className="px-2 pb-1 font-medium">Audio</th>
               {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
+              {showRecordings && <th className="px-2 pb-1 font-medium">Voice actor</th>}
               <th className="sr-only">Actions</th>
             </tr>
           </thead>
@@ -662,6 +669,8 @@ export function Explorer({ zones }: { zones: ZoneFacet[] }) {
                 line={withEdits(line)}
                 current={line.id === current?.id}
                 showMadeBy={showMadeBy}
+                showRecordings={showRecordings}
+                onRecordingChanged={refetch}
                 canRegenerate={canRegenerate}
                 canEdit={canEdit}
                 canTriage={canTriage}

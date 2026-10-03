@@ -6,6 +6,7 @@
  */
 import { catalogue, isCorpusEmpty, loadContext } from "@/lib/books/catalogue";
 import { langParam, worksHere } from "@/lib/lang-server";
+import { recordingsFor } from "@/lib/recordings/store";
 import { filtersFromParams, PAGE_SIZE } from "@/lib/books/filters";
 import { search } from "@/lib/books/search";
 
@@ -40,7 +41,15 @@ export async function GET(request: Request) {
   let pages;
   let context;
   try {
-    [pages, context] = await Promise.all([catalogue(lang), loadContext(lang, seesMadeBy)]);
+    let recordings;
+    [pages, context, recordings] = await Promise.all([
+      catalogue(lang),
+      loadContext(lang, seesMadeBy),
+      recordingsFor("books", lang),
+    ]);
+    // Dropped for anybody who may not see recordings, as the made-by filters are above.
+    if (!recordings) filters.recorded = undefined;
+    context = { ...context, recordings };
   } catch (error) {
     if (isCorpusEmpty(error)) return corpusEmpty(error);
     throw error;

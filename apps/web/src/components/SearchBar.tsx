@@ -4,6 +4,7 @@ import { forwardRef, useCallback, useMemo } from "react";
 
 import DateChip from "@/components/DateChip";
 import { MadeByChips } from "@/components/MadeBy";
+import RecordedChip from "@/components/RecordedChip";
 import type { MadeByFacets } from "@/lib/takes/made-by";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ type Props = {
   canTriage: boolean;
   /** The model and author chips' options; present only for somebody working in the language. */
   madeBy?: MadeByFacets;
+  /** The viewer records here, so the search answers whether each line is recorded. */
+  recordable?: boolean;
 };
 
 /** Corpus values, which label themselves. */
@@ -48,7 +51,7 @@ const SCOPE_OPTIONS: ChipOption[] = [
 ];
 
 const SearchBar = forwardRef<HTMLInputElement, Props>(function SearchBar(
-  { query, filters, facets, onQuery, onFilters, onClearAll, canTriage, madeBy },
+  { query, filters, facets, onQuery, onFilters, onClearAll, canTriage, madeBy, recordable },
   ref,
 ) {
   const active = activeFilterCount({ ...filters, q: query });
@@ -168,6 +171,9 @@ const SearchBar = forwardRef<HTMLInputElement, Props>(function SearchBar(
             author={filters.author}
             onChange={onFilters}
           />
+        )}
+        {recordable && (
+          <RecordedChip value={filters.recorded} onChange={(recorded) => onFilters({ recorded })} />
         )}
 
         <div className="flex items-center gap-2 whitespace-nowrap">

@@ -6,7 +6,8 @@
 #
 # Production is upstream for everything the site writes -- corpus edits and takes -- so
 # data only ever flows droplet -> here. This is the one recipe for all three sections: the
-# section's corpus tables whole, and its rows of the shared `take` table. It replaced a
+# section's corpus tables whole, and its rows of the shared tables -- `take`, and the voice
+# actors' `recording` (migration 0062), which the acted packs are built from. It replaced a
 # quests `sync`, a books `db-pull` that fetched takes but not the text they were cut from,
 # and a zones `db-pull`/`db-push` pair written against a table and a Docker database that
 # no longer exist.
@@ -26,8 +27,12 @@ tables=("$@")
 
 : "${LOCAL_DB:?LOCAL_DB is not set}"
 
+# Keyed on `source` and synced per section, unlike the corpus tables, which are copied whole.
+shared=(take recording)
+
 counts="select (select count(*) from \"${tables[0]}\") || ' ${tables[0]} rows, '
-               || (select count(*) from \"take\" where \"source\" = '$source_name') || ' $source_name takes'"
+               || (select count(*) from \"take\" where \"source\" = '$source_name') || ' $source_name takes, '
+               || (select count(*) from \"recording\" where \"source\" = '$source_name') || ' recordings'"
 echo "local:    $(psql "$LOCAL_DB" -tAc "$counts")"
 # On stdin rather than inside the command, so the query's quotes never pass through ssh.
 echo "upstream: $(upstream 'psql "$DATABASE_URL" -tA -f -' <<<"$counts")"
@@ -47,25 +52,29 @@ quoted=$(printf '"%s", ' "${tables[@]}")
 # reference this machine cannot satisfy is left blank. Production keeps the link; this copy
 # is for building and testing.
 staging=sync_staging
-take_columns=$(psql "$LOCAL_DB" -tAc "select string_agg(quote_ident(column_name), ', '
-                                          order by ordinal_position)
-                                     from information_schema.columns
-                                    where table_schema = 'public' and table_name = 'take'")
+columns_of() {
+  psql "$LOCAL_DB" -tAc "select string_agg(quote_ident(column_name), ', ' order by ordinal_position)
+                           from information_schema.columns
+                          where table_schema = 'public' and table_name = '$1'"
+}
 {
   echo 'begin;'
   echo "drop schema if exists $staging cascade; create schema $staging;"
-  for table in "${tables[@]}" take; do
+  for table in "${tables[@]}" "${shared[@]}"; do
     echo "create table $staging.\"$table\" (like public.\"$table\");"
   done
   upstream "pg_dump \"\$DATABASE_URL\" --data-only ${dump_tables[*]}" \
     | unrestrict | sed -E "s/^COPY public\./COPY $staging./"
-  # This section's rows of the shared take table, selected on production with a WHERE
-  # rather than grepped out of a dump. Named columns, in this machine's order: a local table
-  # whose columns were added in a different order still gets each value in its place.
-  echo "copy $staging.\"take\" ($take_columns) from stdin;"
-  upstream 'psql "$DATABASE_URL" -X -q -f -' \
-    <<<"copy (select $take_columns from \"take\" where \"source\" = '$source_name') to stdout;"
-  echo '\.'
+  # This section's rows of each shared table, selected on production with a WHERE rather
+  # than grepped out of a dump. Named columns, in this machine's order: a local table whose
+  # columns were added in a different order still gets each value in its place.
+  for table in "${shared[@]}"; do
+    columns=$(columns_of "$table")
+    echo "copy $staging.\"$table\" ($columns) from stdin;"
+    upstream 'psql "$DATABASE_URL" -X -q -f -' \
+      <<<"copy (select $columns from \"$table\" where \"source\" = '$source_name') to stdout;"
+    echo '\.'
+  done
   # pg_dump's output empties search_path for the session; put it back for what follows.
   echo 'set search_path = public;'
   cat <<SQL
@@ -96,29 +105,34 @@ end
 \$\$;
 SQL
   echo "truncate ${quoted%, };"
-  echo "delete from \"take\" where \"source\" = '$source_name';"
+  for table in "${shared[@]}"; do
+    echo "delete from \"$table\" where \"source\" = '$source_name';"
+  done
   # Take ids are one sequence across all three sections, so another section's local row can
   # hold an id production has since given to one of these -- a quests take here sitting on
   # production's books take 10049 failed the whole sync on the primary key. Such a row is not
   # production's anyway: that section's own sync replaces every row it has. So it goes, and
   # the count says which section to sync next. A warning, not a notice: the dump sets
   # client_min_messages to warning, and a notice would never be seen.
-  cat <<SQL
+  # The same holds for recording ids, which are one sequence too.
+  for table in "${shared[@]}"; do
+    cat <<SQL
 do \$\$
 declare r record;
 begin
   for r in
     with gone as (
-      delete from public."take" t using $staging."take" s where t."id" = s."id" returning t."source")
+      delete from public."$table" t using $staging."$table" s where t."id" = s."id" returning t."source")
     select "source", count(*) as n from gone group by 1
   loop
-    raise warning '% local % takes held ids production uses for $source_name; run make %-sync',
+    raise warning '% local % $table rows held ids production uses for $source_name; run make %-sync',
       r.n, r."source", r."source";
   end loop;
 end
 \$\$;
 SQL
-  for table in "${tables[@]}" take; do
+  done
+  for table in "${tables[@]}" "${shared[@]}"; do
     echo "insert into public.\"$table\" select * from $staging.\"$table\";"
   done
   echo "drop schema $staging cascade;"
@@ -127,7 +141,7 @@ SQL
 
 # --data-only carries no sequences, so the next insert would reuse an id the dump already
 # holds. Tables with no serial id get a null here, which setval ignores.
-for table in "${tables[@]}" take; do
+for table in "${tables[@]}" "${shared[@]}"; do
   psql "$LOCAL_DB" -q -c "select setval(pg_get_serial_sequence('public.$table', 'id'),
                                         (select coalesce(max(\"id\"), 1) from \"$table\"))" \
     >/dev/null 2>&1 || true

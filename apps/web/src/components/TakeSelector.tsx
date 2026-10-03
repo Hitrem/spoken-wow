@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import type { Source } from "@/lib/sections";
 import { usd } from "@/lib/generation/money";
 
-function when(iso: string): string {
+export function when(iso: string): string {
   const date = new Date(iso);
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }

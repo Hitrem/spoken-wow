@@ -4,6 +4,8 @@
 // pipeline and the database, so a client component may import types from it but never a
 // runtime value. Everything both sides need lives here.
 
+import { RECORDED, type Recorded } from "@/lib/recordings/live";
+
 export const FIELDS = ["any", "title", "text"] as const;
 export const OWNER_KINDS = ["object", "item"] as const;
 export const STATES = ["missing", "stale", "current"] as const;
@@ -57,6 +59,8 @@ export type PageFilters = {
    */
   model?: string;
   author?: string;
+  /** Whether a voice actor has recorded it. Honoured only for somebody who records here. */
+  recorded?: Recorded;
 };
 
 export const PAGE_SIZE = 100;
@@ -94,6 +98,7 @@ export function filterParams(filters: PageFilters): URLSearchParams {
   if (filters.line) params.set("line", filters.line);
   if (filters.model) params.set("model", filters.model);
   if (filters.author) params.set("author", filters.author);
+  if (filters.recorded) params.set("rec", filters.recorded);
   return params;
 }
 
@@ -119,6 +124,7 @@ export function filtersFromParams(params: URLSearchParams): PageFilters {
     line: params.get("line") || undefined,
     model: params.get("model") || undefined,
     author: params.get("author") || undefined,
+    recorded: oneOf(params.get("rec"), RECORDED),
   };
 }
 
@@ -136,5 +142,6 @@ export function activeFilterCount(filters: PageFilters): number {
     filters.line,
     filters.model,
     filters.author,
+    filters.recorded,
   ].filter(Boolean).length;
 }

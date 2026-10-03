@@ -21,6 +21,8 @@ import { Loading, Refreshing } from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { audioStateFromParams } from "@/lib/audio-state";
 import { useSession } from "@/lib/auth-client";
+import RecordingDropZone from "@/components/RecordingDropZone";
+import { RECORDED, type Recorded } from "@/lib/recordings/live";
 import type { Facets } from "@/lib/facets";
 import { NARRATOR_VOICE } from "@/lib/generation/narration";
 import { PROVIDER_NAME } from "@/lib/generation/providers";
@@ -79,6 +81,7 @@ function filterParams(filters: LineFilters): URLSearchParams {
   if (filters.generatedAfter) params.set("after", filters.generatedAfter);
   if (filters.model) params.set("model", filters.model);
   if (filters.author) params.set("author", filters.author);
+  if (filters.recorded) params.set("rec", filters.recorded);
   return params;
 }
 
@@ -128,6 +131,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
       generatedAfter: params.get("after") ?? undefined,
       model: params.get("model") ?? undefined,
       author: params.get("author") ?? undefined,
+      recorded: RECORDED.find((value) => value === params.get("rec")),
     }),
     [params, urlQuery],
   );
@@ -290,6 +294,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
         ...("generatedAfter" in next ? { after: next.generatedAfter } : {}),
         ...("model" in next ? { model: next.model } : {}),
         ...("author" in next ? { author: next.author } : {}),
+        ...("recorded" in next ? { rec: next.recorded } : {}),
       });
     },
     [updateUrl],
@@ -755,6 +760,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
 
   // The search sends facets only to somebody working in the language; see MadeBy.tsx.
   const showMadeBy = result?.madeBy !== undefined;
+  const showRecordings = result?.recordable === true;
 
   return (
     <>
@@ -769,7 +775,10 @@ export default function Explorer({ facets }: { facets: Facets }) {
           onClearAll={clearAll}
           canTriage={showRegenerate}
           madeBy={result?.madeBy}
+          recordable={showRecordings}
         />
+
+        {showRecordings && <RecordingDropZone source="quests" onUploaded={refetch} />}
 
         {/* No dropdown to sit in: a line id arrives by link from /reports, so without this
             the list would be narrowed with nothing on the page saying so. */}
@@ -840,6 +849,8 @@ export default function Explorer({ facets }: { facets: Facets }) {
               <col className="w-28" />
               {/* Made by: "fish:2.1-pro-free" over a name. Only when the search sent it. */}
               {showMadeBy && <col className="w-36" />}
+              {/* Voice actor: play, the version, upload; the credit under them. */}
+              {showRecordings && <col className="w-32" />}
               {/* Wide enough for what the cell actually holds, which the old w-20 was not:
                   icon buttons are 32px, and a collaborator can have four side by side --
                   report, edit, ignore, regenerate -- plus the report count. Anything narrower
@@ -855,6 +866,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
                 <th className="px-2 pb-1 font-medium">Line</th>
                 <th className="px-2 pb-1 font-medium">Audio</th>
                 {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
+                {showRecordings && <th className="px-2 pb-1 font-medium">Voice actor</th>}
                 <th className="sr-only">Actions</th>
               </tr>
             </thead>
@@ -865,6 +877,8 @@ export default function Explorer({ facets }: { facets: Facets }) {
                   line={line}
                   current={line.key === current?.key}
                   showMadeBy={showMadeBy}
+                  showRecordings={showRecordings}
+                  onRecordingChanged={refetch}
                   canRegenerate={showRegenerate}
                   canEdit={canEdit}
                   canTriage={canEdit}

@@ -40,9 +40,11 @@ export function serveFile(
     cacheControl,
     headers: extra = {},
     revalidate = true,
+    contentType = "audio/mpeg",
   }: {
     etag: string;
     cacheControl: string;
+    contentType?: string;
     headers?: Record<string, string>;
     /** False for a URL whose bytes never change, where a conditional request is never sent. */
     revalidate?: boolean;
@@ -61,7 +63,7 @@ export function serveFile(
   }
 
   const headers: Record<string, string> = {
-    "Content-Type": "audio/mpeg",
+    "Content-Type": contentType,
     "Accept-Ranges": "bytes",
     "Cache-Control": cacheControl,
     ETag: etag,
