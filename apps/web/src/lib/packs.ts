@@ -45,6 +45,7 @@ export const PACKS: readonly Pack[] = [
   { section: "quests", lang: "esES", curseforge: "spoken-quests-audio-eses", release: "quests-audio-esES" },
   { section: "quests", lang: "esMX", curseforge: "spoken-quests-audio-esmx", release: "quests-audio-esMX" },
   { section: "quests", lang: "frFR", curseforge: "spoken-quests-audio-frfr", release: "quests-audio-frFR" },
+  { section: "quests", lang: "itIT", curseforge: null, release: "quests-audio-itIT" },
   { section: "quests", lang: "ptBR", curseforge: "spoken-quests-audio-ptbr", release: "quests-audio-ptBR" },
   { section: "quests", lang: "ruRU", curseforge: "spoken-quests-audio-ruru", release: "quests-audio-ruRU" },
   { section: "quests", lang: "koKR", curseforge: "spoken-quests-audio-kokr", release: "quests-audio-koKR" },
