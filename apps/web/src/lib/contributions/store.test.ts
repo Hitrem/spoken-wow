@@ -112,6 +112,20 @@ describe("createContribution", () => {
     expect(rows[0].count).toBe(2);
   });
 
+  it("lists most sent first by default, and in a column's order when asked", async () => {
+    // The older row is sent twice, so the two orders disagree about which comes first.
+    await createContribution(submission());
+    await createContribution(submission());
+    await db().query(`update "contribution" set "createdAt" = now() - interval '1 day' where "ip" = $1`, [ip]);
+    await createContribution(submission({ text: "Kill six.", dedup: `${dedup}-two` }));
+
+    expect(ours(await listContributions("new")).map((row) => row.text)).toEqual(["Убей шестерых.", "Kill six."]);
+    const filed = (direction: "asc" | "desc") =>
+      listContributions("new", undefined, { column: "filed", direction }).then((rows) => ours(rows).map((row) => row.text));
+    expect(await filed("desc")).toEqual(["Kill six.", "Убей шестерых."]);
+    expect(await filed("asc")).toEqual(["Убей шестерых.", "Kill six."]);
+  });
+
   it("keeps different text for the same key as its own row", async () => {
     await createContribution(submission());
     await createContribution(submission({ text: "Kill six.", dedup: `${dedup}-two` }));

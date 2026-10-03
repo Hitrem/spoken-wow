@@ -22,6 +22,7 @@
  */
 import { useLang } from "@/components/LangProvider";
 import { localeHref, type Lang } from "@/lib/lang";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useState } from "react";
 
@@ -45,9 +46,12 @@ import {
   MISSING,
   NEEDS_DECISION,
   QUEST_STAGES,
+  nextSort,
   type ClientFilter,
+  type ContributionSort,
   type FilterChange,
   type QuestStage,
+  type SortColumn,
   type SourceFilter,
   type SpeakerFilter,
   type StageFilter,
@@ -157,6 +161,44 @@ const CLIENT_CHIP_OPTIONS: ChipOption[] = CLIENT_FAMILIES.map((option) => ({
   label: CLIENT_FAMILY_LABELS[option],
 }));
 
+/**
+ * A column header that orders the queue: a click sorts on it, a second click flips it. The
+ * column in force shows its direction; the others show a faint both-ways arrow, so which
+ * headers can be clicked is visible without hovering each one.
+ */
+function SortHeader({
+  column,
+  sort,
+  onSort,
+  children,
+}: {
+  column: SortColumn;
+  sort: ContributionSort;
+  onSort: (column: SortColumn) => void;
+  children: React.ReactNode;
+}) {
+  const active = sort.column === column;
+  const Icon = !active ? ArrowUpDownIcon : sort.direction === "asc" ? ArrowUpIcon : ArrowDownIcon;
+  return (
+    <th
+      aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
+      className="border-b py-2 pr-3 font-normal"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={cn(
+          "hover:text-foreground inline-flex items-center gap-1 transition-colors",
+          active && "text-foreground font-medium",
+        )}
+      >
+        {children}
+        <Icon className={cn("size-3", !active && "opacity-40")} />
+      </button>
+    </th>
+  );
+}
+
 /** The day and the clock time, short enough to sit in a column, matching ReportTable's `when`. */
 function when(at: string): string {
   return new Date(at).toLocaleString(undefined, {
@@ -178,6 +220,7 @@ export default function ContributionTable({
   client,
   source,
   stage,
+  sort,
   existing,
   books,
   flavorScopes,
@@ -194,6 +237,7 @@ export default function ContributionTable({
   client: ClientFilter;
   source: SourceFilter;
   stage: StageFilter;
+  sort: ContributionSort;
   /** id -> corpus text, present only where the row's key resolves to something on file. */
   existing: Record<number, string>;
   /** The English books, for matching a translated page to one. Empty when no row here needs it. */
@@ -500,7 +544,7 @@ export default function ContributionTable({
    * lib/contributions/query.ts so it can be tested without rendering FilterChip or this table.
    */
   function go(next: FilterChange, toPage = 1) {
-    push(localeHref(lang, contributionsHref({ status, provenance, client, source, stage }, next, toPage)));
+    push(localeHref(lang, contributionsHref({ status, provenance, client, source, stage, sort }, next, toPage)));
   }
 
   return (
@@ -627,14 +671,22 @@ export default function ContributionTable({
                   onCheckedChange={(on) => setSelected(on === true ? new Set(rows.map((row) => row.id)) : new Set())}
                 />
               </th>
-              <th className="border-b py-2 pr-3 font-normal">Filed</th>
-              <th className="border-b py-2 pr-3 font-normal">Source</th>
+              <SortHeader column="filed" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
+                Filed
+              </SortHeader>
+              <SortHeader column="source" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
+                Source
+              </SortHeader>
               <th className="border-b py-2 pr-3 font-normal">NPC</th>
               <th className="border-b py-2 pr-3 font-normal">Quest / Book</th>
               <th className="border-b py-2 pr-3 font-normal">Client</th>
-              <th className="border-b py-2 pr-3 font-normal">Count</th>
+              <SortHeader column="count" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
+                Count
+              </SortHeader>
               <th className="border-b py-2 pr-3 font-normal">What they sent</th>
-              <th className="border-b py-2 pr-3 font-normal">Status</th>
+              <SortHeader column="status" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
+                Status
+              </SortHeader>
               <th className="border-b py-2 font-normal" />
             </tr>
           </thead>

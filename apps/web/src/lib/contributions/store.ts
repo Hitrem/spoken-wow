@@ -17,6 +17,7 @@ import type { NpcKind } from "@/lib/npc/npc";
 
 import type { ContributionStatus, Submission } from "./contributions";
 import type { EnvelopeSource } from "./envelope";
+import { DEFAULT_SORT, type ContributionSort, type SortColumn } from "./query";
 
 /** Exported for accept.ts, whose row lock reads the same shape inside its own transaction. */
 export const CONTRIBUTION_COLUMNS = `"id", "source", "key", "locale", "build", "text", "meta", "raw", "count",
@@ -265,6 +266,20 @@ export async function countRecentContributions(ip: string, withinMs: number): Pr
   return Number(rows[0]?.count ?? 0);
 }
 
+/** Each sortable column's own name, spelled out rather than interpolated from the caller's string. */
+const SORT_EXPRESSIONS: Record<SortColumn, string> = {
+  filed: `"createdAt"`,
+  source: `"source"`,
+  count: `"count"`,
+  status: `"status"`,
+};
+
+/** Ties fall back to most sent, then newest, then id -- the default order, made total so a page cut is stable. */
+function orderBy(sort: ContributionSort): string {
+  const direction = sort.direction === "asc" ? "asc" : "desc";
+  return `${SORT_EXPRESSIONS[sort.column]} ${direction}, "count" desc, "createdAt" desc, "id" desc`;
+}
+
 /**
  * `locale`, when given, is one language's: the contributions page lists the ones sent in
  * the language it is shown in, since accepting one writes that language's text.
@@ -272,11 +287,12 @@ export async function countRecentContributions(ip: string, withinMs: number): Pr
 export async function listContributions(
   status: ContributionStatus | "all",
   locale?: string,
+  sort: ContributionSort = DEFAULT_SORT,
 ): Promise<Contribution[]> {
   const { rows } = await db().query<Contribution>(
     `select ${COLUMNS} from "contribution"
       where ($1 = 'all' or "status" = $1) and ($2::text is null or "locale" = $2)
-      order by "count" desc, "createdAt" desc`,
+      order by ${orderBy(sort)}`,
     [status, locale ?? null],
   );
   return rows;

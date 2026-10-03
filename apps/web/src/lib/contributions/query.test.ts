@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { MISSING, NEEDS_DECISION, contributionsHref, matchesSpeaker, matchesStage, nextContributionFilters, pageOf } from "./query";
+import { DEFAULT_SORT, MISSING, NEEDS_DECISION, contributionsHref, nextSort, sortOf, matchesSpeaker, matchesStage, nextContributionFilters, pageOf } from "./query";
 
 describe("nextContributionFilters", () => {
-  const current = { status: "new", provenance: "all", client: "all", source: "all", stage: "all" } as const;
+  const current = { status: "new", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
 
   it("changes the dimension named in `next` and keeps the other", () => {
     expect(nextContributionFilters(current, { provenance: "corpus" })).toEqual({
@@ -12,14 +12,15 @@ describe("nextContributionFilters", () => {
       client: "all",
       source: "all",
       stage: "all",
+      sort: DEFAULT_SORT,
     });
   });
 
   it("resets a dimension to 'all' when `next` names it with no value", () => {
     // FilterChip's reset button calls onChange(undefined) -- the key is present, the value
     // isn't, and that must read as "clear this filter", not "leave it alone".
-    expect(nextContributionFilters({ status: "accepted", provenance: "moderator", client: "forever", source: "books", stage: "all" }, { provenance: undefined })).toEqual(
-      { status: "accepted", provenance: "all", client: "forever", source: "books", stage: "all" },
+    expect(nextContributionFilters({ status: "accepted", provenance: "moderator", client: "forever", source: "books", stage: "all", sort: DEFAULT_SORT }, { provenance: undefined })).toEqual(
+      { status: "accepted", provenance: "all", client: "forever", source: "books", stage: "all", sort: DEFAULT_SORT },
     );
   });
 
@@ -38,7 +39,7 @@ describe("nextContributionFilters", () => {
 
 describe("contributionsHref", () => {
   it("builds a query string carrying every dimension", () => {
-    expect(contributionsHref({ status: "new", provenance: "all", client: "era", source: "all", stage: "all" }, { status: "rejected" })).toBe(
+    expect(contributionsHref({ status: "new", provenance: "all", client: "era", source: "all", stage: "all", sort: DEFAULT_SORT }, { status: "rejected" })).toBe(
       "/contributions?status=rejected&provenance=all&client=era&source=all&stage=all",
     );
   });
@@ -47,14 +48,46 @@ describe("contributionsHref", () => {
   // encoding, just the same string page.tsx's own parsing compares rawProvenance against.
   it("round-trips the NEEDS_DECISION sentinel through the href", () => {
     expect(
-      contributionsHref({ status: "all", provenance: "all", client: "all", source: "all", stage: "all" }, { provenance: NEEDS_DECISION }),
+      contributionsHref({ status: "all", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT }, { provenance: NEEDS_DECISION }),
     ).toBe(`/contributions?status=all&provenance=${NEEDS_DECISION}&client=all&source=all&stage=all`);
+  });
+});
+
+describe("sort", () => {
+  const filters = { status: "new", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
+
+  it("starts a newly clicked column in its own direction, and flips the one in force", () => {
+    expect(nextSort(DEFAULT_SORT, "filed")).toEqual({ column: "filed", direction: "desc" });
+    expect(nextSort(DEFAULT_SORT, "source")).toEqual({ column: "source", direction: "asc" });
+    expect(nextSort(DEFAULT_SORT, "count")).toEqual({ column: "count", direction: "asc" });
+    expect(nextSort({ column: "count", direction: "asc" }, "count")).toEqual({ column: "count", direction: "desc" });
+  });
+
+  it("reads the query string, falling back to most sent first", () => {
+    expect(sortOf("filed", "asc")).toEqual({ column: "filed", direction: "asc" });
+    expect(sortOf("filed", undefined)).toEqual({ column: "filed", direction: "desc" });
+    expect(sortOf("filed", "sideways")).toEqual({ column: "filed", direction: "desc" });
+    for (const column of [undefined, "", "npc", "createdAt; drop table"]) expect(sortOf(column, "asc")).toEqual(DEFAULT_SORT);
+  });
+
+  it("carries a sort in the href and leaves the default out", () => {
+    expect(contributionsHref(filters, { sort: { column: "filed", direction: "asc" } })).toBe(
+      "/contributions?status=new&provenance=all&client=all&source=all&stage=all&sort=filed&dir=asc",
+    );
+    expect(contributionsHref({ ...filters, sort: { column: "filed", direction: "asc" } }, { sort: DEFAULT_SORT })).toBe(
+      "/contributions?status=new&provenance=all&client=all&source=all&stage=all",
+    );
+  });
+
+  it("keeps the sort across a filter change", () => {
+    const sort = { column: "status", direction: "desc" } as const;
+    expect(nextContributionFilters({ ...filters, sort }, { status: "accepted" }).sort).toEqual(sort);
   });
 });
 
 describe("paging", () => {
   it("carries a page past the first, and leaves the first page bare", () => {
-    const filters = { status: "new", provenance: "all", client: "all", source: "all", stage: "all" } as const;
+    const filters = { status: "new", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
     expect(contributionsHref(filters, {}, 3)).toBe("/contributions?status=new&provenance=all&client=all&source=all&stage=all&page=3");
     expect(contributionsHref(filters, {}, 1)).toBe("/contributions?status=new&provenance=all&client=all&source=all&stage=all");
     // A filter change starts again from the first page.
