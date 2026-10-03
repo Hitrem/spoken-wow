@@ -713,6 +713,23 @@ local function CmdPlay()
 	SpokenZones:Print("playing lore for %s", what)
 end
 
+-- Voice-acted overlays are listed after the packs, as information only: they are not
+-- something to switch to, and offering them as a choice is how a player ends up on an
+-- install that narrates a dozen areas and nothing else. Named with their credits,
+-- because this listing is the one place in the game a voice actor's name can appear.
+local function PrintOverlays()
+	local overlays = SpokenZones:GetAudioOverlays()
+	if #overlays == 0 then
+		return
+	end
+	SpokenZones:Print("voice-acted overlays (played over the sound pack where they have a line):")
+	for _, overlay in ipairs(overlays) do
+		local credits = type(overlay.credits) == "table" and table.concat(overlay.credits, ", ") or ""
+		SpokenZones:Print("    %s -- %s%s", overlay.addon, SpokenZones:GetAudioPackLabel(overlay),
+			credits ~= "" and (", voiced by " .. credits) or "")
+	end
+end
+
 -- `/spz audio` lists installed sound packs; `/spz audio <folder>` switches to one.
 -- Worth a command of its own because having two tiers installed at once is the
 -- case where the addon's behaviour is otherwise invisible: both play, and only
@@ -727,6 +744,7 @@ local function CmdAudioPack(arg)
 		-- ZoneLoreAudio folder, and saying that name sends them looking for a project that no
 		-- longer exists.
 		SpokenZones:Print("  install Spoken Zones Audio alongside Spoken Zones")
+		PrintOverlays()
 		return
 	end
 
@@ -757,6 +775,7 @@ local function CmdAudioPack(arg)
 	if #packs > 1 then
 		SpokenZones:Print("  /spz audio <name> to switch")
 	end
+	PrintOverlays()
 end
 
 -- `/spz lang` lists the languages that can be read; `/spz lang <code>` switches;

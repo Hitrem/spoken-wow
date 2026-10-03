@@ -21,6 +21,10 @@
 -- only the English pack installed hears English narration rather than nothing.
 -- When several packs are installed the player picks one; unpicked,
 -- the language being read wins, then the client's own locale.
+--
+-- Beside the packs sit voice-acted overlays: addons holding a human recording of some
+-- lines and nothing else. They register into SpokenZonesAudioOverlays, a registry of
+-- their own, and are never a pack -- see GetAudioOverlays.
 
 local ADDON_NAME, SpokenZones = ...
 
@@ -249,6 +253,19 @@ end
 -- rather than on every lookup.
 local warnedFormat = {}
 
+-- How much a pack's or an overlay's language suits what the player is doing: the
+-- language being read first, then the client's own locale, then anything else. The
+-- one definition, for choosing a pack and for choosing an overlay-only install's
+-- language alike.
+local function languageRank(self, language)
+	if language == self:GetLanguage() then
+		return 0
+	elseif language == self.clientLocale then
+		return 1
+	end
+	return 2
+end
+
 -- Every installed pack this version can read, best match first. Packs are
 -- registered by the data addons themselves at load time, so this is cheap enough
 -- to walk on demand and always reflects what is loaded.
@@ -313,22 +330,10 @@ function SpokenZones:GetAudioPacks(lang)
 		end
 	end
 
-	-- Best default first: the language being read, then the client's own locale,
-	-- then bitrate descending, then folder name so the order is stable when two
-	-- packs report the same bitrate (or none at all).
-	local reading = self:GetLanguage()
-	local client = self.clientLocale
-	local function rank(pack)
-		local language = pack.language
-		if language == reading then
-			return 0
-		elseif language == client then
-			return 1
-		end
-		return 2
-	end
+	-- Best default first: by languageRank, then bitrate descending, then folder name
+	-- so the order is stable when two packs report the same bitrate (or none at all).
 	table.sort(packs, function(a, b)
-		local ra, rb = rank(a), rank(b)
+		local ra, rb = languageRank(self, a.language), languageRank(self, b.language)
 		if ra ~= rb then
 			return ra < rb
 		end
@@ -418,6 +423,71 @@ function SpokenZones:GetAudioPackLabel(pack)
 end
 
 --------------------------------------------------------------------------------
+-- Voice-acted overlays
+--------------------------------------------------------------------------------
+
+-- The overlay table shape this version knows how to read. Separate from PACK_FORMAT
+-- because the two registries are versioned apart: an overlay is not a pack.
+local OVERLAY_FORMAT = 1
+
+-- Every installed voice-acted overlay this version can read, by folder name. An
+-- overlay is an addon holding a voice actor's recordings for *some* lines -- the same
+-- entry shape as a pack, covering a handful of areas -- so it can only ever be heard
+-- over a pack, never instead of one.
+--
+-- They have a registry of their own rather than a flag inside SpokenZonesAudioPacks.
+-- Every release before this one picks its active pack from that registry, and would
+-- happily pick an overlay: a player who installed one would then hear a few acted
+-- areas and silence everywhere the overlay has nothing, with no way to tell why. A
+-- table those releases never read cannot be chosen by them. For the same reason
+-- nothing here feeds GetAudioPacks, the options dropdown or /spz audio <name>.
+--
+-- An overlay in a format this build cannot read is skipped without a word. Unlike a
+-- pack, nothing goes silent for it: every line it would have covered still plays from
+-- the pack underneath, and a warning on each lookup would be noise about a bonus.
+function SpokenZones:GetAudioOverlays(lang)
+	local overlays = {}
+	local registry = _G.SpokenZonesAudioOverlays
+	if type(registry) ~= "table" then
+		return overlays
+	end
+	for name, overlay in pairs(registry) do
+		if type(overlay) == "table" and overlay.version == OVERLAY_FORMAT then
+			-- Keyed by folder name, which is all a clip path needs; the overlay is not
+			-- asked to repeat it.
+			overlay.addon = overlay.addon or name
+			overlay.language = overlay.language or "enUS"
+			if lang == nil or overlay.language == lang then
+				table.insert(overlays, overlay)
+			end
+		end
+	end
+	-- By languageRank, the way packs are, then by folder: pairs() order is not stable
+	-- across sessions, and two overlays holding the same line would otherwise take
+	-- turns answering it from one /reload to the next.
+	table.sort(overlays, function(a, b)
+		local ra, rb = languageRank(self, a.language), languageRank(self, b.language)
+		if ra ~= rb then
+			return ra < rb
+		end
+		return tostring(a.addon) < tostring(b.addon)
+	end)
+	return overlays
+end
+
+-- The language narration plays in, given the active pack (nil when none is
+-- installed). With a pack it is the pack's. With only overlays it is the best-ranked
+-- overlay's, chosen the way a pack would be: an overlay-only install narrates what it
+-- has rather than nothing, just as an English pack does under German text.
+local function NarrationLanguage(self, active)
+	if active then
+		return active.language
+	end
+	local best = self:GetAudioOverlays()[1]
+	return best and best.language
+end
+
+--------------------------------------------------------------------------------
 -- Lookup
 --------------------------------------------------------------------------------
 
@@ -436,16 +506,29 @@ function SpokenZones:GetAudioClip(mapID, areaKey)
 	end
 
 	local active = self:GetActiveAudioPack()
-	if not active then
+	local language = NarrationLanguage(self, active)
+	if not language then
 		return nil, nil
 	end
 
-	-- The active pack, then English, entry by entry: a German pack that has not narrated an
-	-- area yet leaves it to the English one rather than to silence, the way a quest line falls
-	-- back. The entry keys are the same in every language, so any pack names the area alike.
-	-- No other language is tried: a player reading German does not want French.
-	local candidates = { active }
-	if active.language ~= "enUS" then
+	-- The narration language, then English, entry by entry: a German pack that has not
+	-- narrated an area yet leaves it to the English one rather than to silence, the way a
+	-- quest line falls back. The entry keys are the same in every language, so any pack
+	-- names the area alike. No other language is tried: a player reading German does not
+	-- want French.
+	--
+	-- Within each language a voice-acted overlay answers before the pack, since a human
+	-- reading is what its installer asked for -- but only for the lines it holds; the rest
+	-- fall through to the pack. Language still comes first: an English recording does not
+	-- outrank the German pack's reading of the same area.
+	local candidates = self:GetAudioOverlays(language)
+	if active then
+		table.insert(candidates, active)
+	end
+	if language ~= "enUS" then
+		for _, overlay in ipairs(self:GetAudioOverlays("enUS")) do
+			table.insert(candidates, overlay)
+		end
 		for _, pack in ipairs(self:GetAudioPacks("enUS")) do
 			table.insert(candidates, pack)
 		end
@@ -468,11 +551,11 @@ function SpokenZones:GetAudioClip(mapID, areaKey)
 	return nil, nil
 end
 
---- The language narration plays in: the active pack's, or the one being read when there is
---- no pack. What a contribution says the player was hearing.
+--- The language narration plays in: the active pack's, an overlay's when only overlays are
+--- installed, or the one being read when there is neither. What a contribution says the
+--- player was hearing.
 function SpokenZones:GetPackLanguage()
-	local pack = self:GetActiveAudioPack()
-	return pack and pack.language or self:GetLanguage()
+	return NarrationLanguage(self, self:GetActiveAudioPack()) or self:GetLanguage()
 end
 
 -- The button the player shows under a lore clip: this addon's own Report, told which

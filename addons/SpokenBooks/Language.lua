@@ -108,9 +108,11 @@ end
 --- The language the player's packs speak to them: the first in LanguageOrder that an
 --- installed pack is recorded in, or the voice language when none is. What a report is filed
 --- under when there is no clip to ask, and what a contribution says the player was hearing.
+---
+--- Overlays count: on an install with only a German overlay, German is what is heard.
 function SpokenBooks:GetPackLanguage()
 	local order = self:LanguageOrder()
-	local packs = self:GetAudioPacks()
+	local packs = self:GetAudioSources()
 	for _, language in ipairs(order) do
 		for _, pack in ipairs(packs) do
 			if self:PackLanguage(pack) == language then

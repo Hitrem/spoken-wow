@@ -9,6 +9,13 @@ is the pack's, and `scripts/zones/release.sh` matches on the kind as well as the
 section with no kind in its heading is the addon's. A language's pack numbers itself too, from
 2.0.0 in step with the English pack (Spanish (AL) shipped first, as 1.0.0), and its sections are headed by its release tag: `## <version> — zones-audio-esMX`.
 
+## 2.2.2 — 2026-10-03
+
+- **Voice-acted packs.** A voice-acted pack holds a person's recordings of some zones and
+  subzones. Where it has an area, you hear that recording instead of the sound pack's; for
+  every other area the sound pack still plays. It installs beside your sound pack and is
+  never chosen as one, and `/spz audio` lists it, with the names of its voice actors.
+
 ## 2.2.1 — 2026-09-29
 
 - Zone and subzone narration now supplies captions to Spoken Player 2.2.3.

@@ -38,7 +38,12 @@ local function Install(packs, locale)
     VO.Addon:OnInitialize()
     VO.DataModules:EnumerateAddons(false)
     for _, pack in ipairs(packs) do
-        VO.DataModules:Register(pack.folder, {
+        -- A voice-acted overlay is the bare minimum a module can be: lengths and a path,
+        -- none of the text tables the lookups walk.
+        VO.DataModules:Register(pack.folder, pack.bare and {
+            SoundLengthLookupByFileName = pack.lines,
+            GetSoundPath = function(_, fileName) return "Sounds\\" .. fileName .. ".mp3" end,
+        } or {
             SoundLengthLookupByFileName = pack.lines,
             GossipLookupByNPCID = pack.gossip,
             LookupLocale = pack.lookupLocale,
@@ -282,6 +287,59 @@ Expect("a language this addon does not know reads as English",
 local questsCodes = {}
 for _, locale in ipairs(VO.Language.LOCALES) do table.insert(questsCodes, locale.code) end
 Expect("the language list matches SpokenZones'", table.concat(questsCodes, " "), H.ZonesLocaleCodes(here))
+
+---------------------------------------------------------------- K. voice-acted overlays
+-- An overlay is an ordinary module at priority 200 holding a voice actor's recordings of
+-- some lines; the packs are 100. Within a language it answers first for what it has and
+-- the packs answer the rest -- but language still outranks priority.
+VO = Install({
+    { folder = "PortuguesePack", language = "ptBR", priority = 100, lines = { ["1-accept"] = 5.5, ["2-accept"] = 6.5 } },
+    { folder = "PortugueseActed", language = "ptBR", priority = 200, bare = true, lines = { ["1-accept"] = 9.0 } },
+}, "ptBR")
+pack, sound = Resolve(VO, 1)
+Expect("K. an overlay answers a line it holds over the pack", pack, "PortugueseActed")
+Expect("K. ...from its own folder", sound.filePath, [[Interface\AddOns\PortugueseActed\Sounds\1-accept.mp3]])
+Expect("K. ...with its own length", sound.length, 9.0)
+Expect("K. a line it lacks falls through to the pack", (Resolve(VO, 2)), "PortuguesePack")
+
+VO = Install({
+    { folder = "EnglishPack", priority = 100, lines = { ["2-accept"] = 6.0 } },
+    { folder = "PortuguesePack", language = "ptBR", priority = 100, lines = { ["1-accept"] = 5.5 } },
+    { folder = "EnglishActed", priority = 200, bare = true, lines = { ["1-accept"] = 9.0, ["2-accept"] = 9.0 } },
+}, "ptBR")
+Expect("K. an overlay in the fallback language does not outrank the selected language",
+    (Resolve(VO, 1)), "PortuguesePack")
+Expect("K. ...but answers the fallback before the fallback's pack", (Resolve(VO, 2)), "EnglishActed")
+
+-- The player here is male (the stub's UnitSex), so a module is asked for m-<line> before
+-- <line>. That is asked module by module, in priority order: an overlay's one reading of a
+-- line beats the pack's gendered take of it, and a gendered take beats a module below it.
+VO = Install({
+    { folder = "EnglishPack", priority = 100, lines = { ["m-3-accept"] = 6.0, ["5-accept"] = 6.0, ["m-6-accept"] = 6.0 } },
+    { folder = "EnglishActed", priority = 200, bare = true, lines = { ["3-accept"] = 9.0, ["m-5-accept"] = 9.0 } },
+}, "enUS")
+pack, sound = Resolve(VO, 3)
+Expect("K. an overlay's plain line beats the pack's gendered one", pack, "EnglishActed")
+Expect("K. ...and plays under its plain name", sound.fileName, "3-accept")
+pack, sound = Resolve(VO, 5)
+Expect("K. an overlay's gendered line is preferred for the player's gender", sound.fileName, "m-5-accept")
+pack, sound = Resolve(VO, 6)
+Expect("K. a line the overlay lacks falls to the pack's gendered take", pack, "EnglishPack")
+Expect("K. ...under its gendered name", sound.fileName, "m-6-accept")
+
+-- Nothing in the lookups assumes a module carries the text tables. An overlay installed on
+-- its own must not turn every gossip dialog and quest log into a Lua error.
+VO = Install({ { folder = "EnglishActed", priority = 200, bare = true, lines = { ["1-accept"] = 9.0 } } }, "enUS")
+local D = VO.DataModules
+Expect("K. an overlay alone still plays its line", (Resolve(VO, 1)), "EnglishActed")
+Expect("K. ...gossip lookup tolerates its missing tables",
+    pcall(ResolveGossip, VO, GOSSIP_TEXT), true)
+Expect("K. ...as does asking whether anyone has gossip",
+    pcall(D.HasGossipFor, D, { unitGUID = "Creature-0-0-0-0-6929-0" }), true)
+Expect("K. ...and the quest lookups",
+    pcall(D.GetQuestID, D, "accept", "A Title", "Someone", "Some text"), true)
+Expect("K. ...the quest giver lookup", pcall(D.GetQuestLogQuestGiverTypeAndID, D, 1), true)
+Expect("K. ...and the name lookup", pcall(D.GetObjectName, D, VO.Enums.GUID.Creature, 1), true)
 
 stub.SetLocale("enUS")
 stub.ResetAddOns()

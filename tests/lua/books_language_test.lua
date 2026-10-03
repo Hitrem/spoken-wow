@@ -10,11 +10,13 @@ local Expect, Failures = H.Expecter(print)
 
 local PAGE, ONLY_ENGLISH = 15, 16
 
---- Load the addon on a client in `locale`, with the given packs installed.
-local function Install(packs, locale)
+--- Load the addon on a client in `locale`, with the given packs (and voice-acted overlays,
+--- keyed by folder as an overlay registers itself) installed.
+local function Install(packs, locale, overlays)
     stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
     stub.SetLocale(locale or "enUS")
     _G.SpokenBooksDB = nil
+    _G.SpokenBooksAudioOverlays = overlays
     _G.SpokenBooksAudioPacks = {}
     for _, pack in ipairs(packs) do
         _G.SpokenBooksAudioPacks[pack.addon] = { version = 1, addon = pack.addon,
@@ -114,6 +116,49 @@ Expect("E. an English report keeps its address", B:ReportURL(PAGE, "enUS"),
 Expect("E. ...as does one with no language", B:ReportURL(PAGE), "https://spoken.rusty.one/books/r/15")
 Expect("E. a German report goes to the German page", B:ReportURL(PAGE, "deDE"),
     "https://spoken.rusty.one/deDE/books/r/15")
+
+---------------------------------------------------------------- F. voice-acted overlays
+-- An overlay holds a voice actor's recording of some pages, registered under its folder
+-- with no `addon` field of its own.
+local function Overlay(language, pages)
+    return { version = 1, language = language, pages = pages, credits = { "Name A", "Name B" } }
+end
+local ACTED_DE, ACTED_EN = "SpokenBooksActed_deDE", "SpokenBooksActed"
+
+B = Install({ ENGLISH, GERMAN }, "deDE", { [ACTED_DE] = Overlay("deDE", { [PAGE] = { file = "15", len = 7 } }) })
+clip = B:ClipFor(PAGE)
+Expect("F. an overlay's recording wins over the pack for a page it has",
+    clip and clip.path, [[Interface\AddOns\SpokenBooksActed_deDE\Sounds\15.mp3]])
+Expect("F. ...with its own length", clip and clip.length, 7)
+Expect("F. ...filed under its language", clip and clip.language, "deDE")
+Expect("F. a page it lacks falls through to the packs", B:ClipFor(ONLY_ENGLISH).path,
+    [[Interface\AddOns\SpokenBooksAudio\Sounds\16.mp3]])
+for _, listed in ipairs(B:GetAudioPacks()) do
+    Expect("F. an overlay is never listed as a pack", listed.addon ~= ACTED_DE, true)
+end
+
+-- Language before overlay: an English recording does not outrank the German pack.
+B = Install({ ENGLISH, GERMAN }, "deDE", { [ACTED_EN] = Overlay("enUS", {
+    [PAGE] = { file = "15", len = 7 }, [ONLY_ENGLISH] = { file = "16", len = 7 } }) })
+Expect("F. an English overlay does not outrank the German pack", B:ClipFor(PAGE).path,
+    [[Interface\AddOns\SpokenBooksAudio_deDE\Sounds\15.mp3]])
+Expect("F. ...but answers the English fallback before the English pack", B:ClipFor(ONLY_ENGLISH).path,
+    [[Interface\AddOns\SpokenBooksActed\Sounds\16.mp3]])
+
+-- No pack at all: the overlay's pages play, and the player is still told to get a pack.
+B = Install({}, "enUS", { [ACTED_EN] = Overlay("enUS", { [PAGE] = { file = "15", len = 7 } }) })
+Expect("F. an overlay plays with no pack installed", B:HasAudio(PAGE), true)
+Expect("F. ...a page it lacks is silent", B:ClipFor(ONLY_ENGLISH), nil)
+Expect("F. ...and the overlay does not count as a pack", B:DescribeMissingAudio(), B.L.OPT_NO_PACK_INSTALLED)
+B = Install({}, "deDE", { [ACTED_EN] = Overlay("enUS", { [PAGE] = { file = "15", len = 7 } }) })
+Expect("F. on an overlay-only install the overlay's language is the one heard", B:GetPackLanguage(), "enUS")
+
+local future = Overlay("enUS", { [PAGE] = { file = "15", len = 7 } })
+future.version = 2
+B = Install({ ENGLISH }, "enUS", { [ACTED_EN] = future })
+Expect("F. an overlay in an unknown format is ignored", B:ClipFor(PAGE).path,
+    [[Interface\AddOns\SpokenBooksAudio\Sounds\15.mp3]])
+_G.SpokenBooksAudioOverlays = nil
 
 ---------------------------------------------------------------- in step with SpokenZones
 local booksCodes = {}

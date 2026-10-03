@@ -3,6 +3,13 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
+## 2.1.3 — 2026-10-03
+
+- **Voice-acted packs.** A voice-acted pack holds a person's recordings of some pages.
+  Where it has a page, you hear that recording instead of the sound pack's; every other
+  page still plays from the sound pack. It installs beside your sound pack rather than
+  replacing it.
+
 ## 2.1.2 — Spoken Books Audio — 2026-10-01
 
 - About 300 pages re-recorded.

@@ -21,10 +21,11 @@ local PACK_FORMAT = 1
 -- second copy of the same texture is a second thing to keep in step.
 local BOOK_TEXTURE = [[Interface\AddOns\SpokenPlayer\Textures\Book]]
 
---- Every installed pack this version can read, newest format first.
-function SpokenBooks:GetAudioPacks()
+--- What one registry holds in a format this version can read, by folder name. The packs and
+--- the overlays register the same entry shape into two tables (see GetAudioOverlays).
+local function readRegistry(registry)
 	local packs = {}
-	for name, pack in pairs(_G.SpokenBooksAudioPacks or {}) do
+	for name, pack in pairs(registry or {}) do
 		if type(pack) == "table" and pack.version == PACK_FORMAT and type(pack.pages) == "table" then
 			pack.addon = pack.addon or name
 			table.insert(packs, pack)
@@ -32,6 +33,36 @@ function SpokenBooks:GetAudioPacks()
 	end
 	table.sort(packs, function(a, b) return (a.addon or "") < (b.addon or "") end)
 	return packs
+end
+
+--- Every installed pack this version can read, newest format first.
+function SpokenBooks:GetAudioPacks()
+	return readRegistry(_G.SpokenBooksAudioPacks)
+end
+
+--- Every installed voice-acted overlay this version can read, by folder name.
+---
+--- An overlay holds a voice actor's recordings for some pages and nothing else -- the same
+--- entry shape as a pack, covering a handful of pages. It registers into a table of its own
+--- rather than SpokenBooksAudioPacks because every earlier release treats anything in that
+--- table as a whole pack: it would count an overlay as "a pack installed", stop telling a
+--- player with nothing else that they need one, and then read almost nothing. A table those
+--- releases never read cannot mislead them.
+---
+--- One in a format this build cannot read is skipped quietly: the pages it would have
+--- covered still play from the pack underneath, so nothing goes silent for it.
+function SpokenBooks:GetAudioOverlays()
+	return readRegistry(_G.SpokenBooksAudioOverlays)
+end
+
+--- Everything that can voice a page, overlays before packs: within a language a human
+--- reading is what installing an overlay asked for.
+function SpokenBooks:GetAudioSources()
+	local sources = self:GetAudioOverlays()
+	for _, pack in ipairs(self:GetAudioPacks()) do
+		table.insert(sources, pack)
+	end
+	return sources
 end
 
 -- The buttons the player shows under a book clip: Report, and nothing else. There is no Read
@@ -75,13 +106,17 @@ local ACTIONS = {
 --- Language before pack order: a pack in the voice language answers before any other, and a
 --- page it lacks falls back to the fallback language's packs -- page by page, so a partial
 --- translation still reads what it has.
+---
+--- Within a language, voice-acted overlays come before the packs: a human reading is what
+--- installing one asked for. Only within it, though -- an English recording does not
+--- outrank the German pack's reading of the same page for a player who chose German.
 function SpokenBooks:ClipFor(pageId)
 	local place = self:Data() and self:Data().pages[pageId]
 	if not place then
 		return nil
 	end
 
-	local packs = self:GetAudioPacks()
+	local packs = self:GetAudioSources()
 	for _, language in ipairs(self:LanguageOrder()) do
 		for _, pack in ipairs(packs) do
 			local entry = self:PackLanguage(pack) == language and pack.pages[pageId]

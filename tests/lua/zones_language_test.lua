@@ -16,10 +16,11 @@ stub.SetAddOns({ { folder = "SpokenZones", meta = { Version = "9.9.9" } } })
 
 local MAP, BOTH, ONLY_ENGLISH = 1411, "valley of trials", "sen'jin village"
 
---- Load the addon with these packs installed.
-local function Install(packs)
+--- Load the addon with these packs, and these voice-acted overlays, installed.
+local function Install(packs, overlays)
     _G.SpokenZonesDB = {}
     _G.SpokenZonesAudioPacks = {}
+    _G.SpokenZonesAudioOverlays = overlays
     for _, pack in ipairs(packs) do
         _G.SpokenZonesAudioPacks[pack.addon] = pack
     end
@@ -131,6 +132,90 @@ Z = InstallOn("frFR", saved)
 Expect("F. going back to Auto follows the client again", Z:GetLanguage(), "frFR")
 
 stub.SetLocale("enUS")
+
+---------------------------------------------------------------- G. voice-acted overlays
+-- An overlay holds a voice actor's recording of some entries and nothing else. It is
+-- registered the way a pack's build writes it: keyed by folder, no `addon` field.
+local function Overlay(language, subzones, zones)
+    return { version = 1, language = language, zones = zones or {}, subzones = { [MAP] = subzones },
+        credits = { "Name A", "Name B" } }
+end
+local ACTED_DE = "SpokenZonesActed_deDE"
+local ACTED_EN = "SpokenZonesActed"
+
+Z = Install({ ENGLISH, GERMAN }, { [ACTED_DE] = Overlay("deDE", { [BOTH] = { file = "acted-valley", len = 4 } }) })
+Z:SetActiveAudioPack("SpokenZonesAudio_deDE")
+local path, length
+path, length, pack = Z:GetAudioClip(MAP, BOTH)
+Expect("G. an overlay's recording wins over the pack for an entry it has",
+    path, [[Interface\AddOns\SpokenZonesActed_deDE\Sounds\acted-valley.mp3]])
+Expect("G. ...with the overlay's own length", length, 4)
+Expect("G. ...and the clip names the overlay's language, which its report is filed under",
+    pack and pack.language, "deDE")
+_, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)
+Expect("G. an entry the overlay lacks falls through to the packs", pack and pack.addon, "SpokenZonesAudio")
+_, _, pack = Z:GetAudioClip(MAP, nil)
+Expect("G. ...zone lore too", pack and pack.addon, "SpokenZonesAudio")
+
+-- The registry old clients read never holds an overlay, and this one keeps it out of every
+-- list a pack is chosen from.
+for _, listed in ipairs(Z:GetAudioPacks()) do
+    Expect("G. an overlay is never listed as a pack", listed.addon ~= ACTED_DE, true)
+end
+Expect("G. an overlay cannot be made the active pack", Z:SetActiveAudioPack(ACTED_DE), false)
+Expect("G. ...and the active pack stays the pack", Z:GetActiveAudioPack().addon, "SpokenZonesAudio_deDE")
+Expect("G. overlays are listed on their own", Z:GetAudioOverlays()[1].addon, ACTED_DE)
+
+-- Language before overlay: an English recording does not outrank the German pack.
+Z = Install({ ENGLISH, GERMAN }, { [ACTED_EN] = Overlay("enUS", {
+    [BOTH] = { file = "acted-en-valley", len = 4 }, [ONLY_ENGLISH] = { file = "acted-en-senjin", len = 4 } }) })
+Z:SetActiveAudioPack("SpokenZonesAudio_deDE")
+_, _, pack = Z:GetAudioClip(MAP, BOTH)
+Expect("G. an English overlay does not outrank the German pack", pack and pack.addon, "SpokenZonesAudio_deDE")
+_, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)
+Expect("G. ...but answers the English fallback before the English pack", pack and pack.addon, ACTED_EN)
+
+-- No pack at all: the overlay's few entries play, the rest say a pack is missing.
+Z = Install({}, { [ACTED_EN] = Overlay("enUS", { [BOTH] = { file = "acted-en-valley", len = 4 } }) })
+_, _, pack = Z:GetAudioClip(MAP, BOTH)
+Expect("G. an overlay plays with no pack installed", pack and pack.addon, ACTED_EN)
+Expect("G. ...and HasAudio says so, so the button shows", Z:HasAudio(MAP, BOTH), true)
+Expect("G. ...an entry it lacks is silent", Z:GetAudioClip(MAP, ONLY_ENGLISH), nil)
+Expect("G. ...and the overlay is still not a pack", Z:GetActiveAudioPack(), nil)
+Expect("G. ...so the player is told to get one",
+    Z:DescribeMissingAudio():match("no sound pack installed") ~= nil, true)
+Expect("G. an overlay-only install narrates in the overlay's language", Z:GetPackLanguage(), "enUS")
+
+-- An overlay-only install in a language other than the one being read still plays, the way
+-- an English pack plays under German text.
+Z = Install({}, { [ACTED_DE] = Overlay("deDE", { [BOTH] = { file = "acted-valley", len = 4 } }) })
+_, _, pack = Z:GetAudioClip(MAP, BOTH)
+Expect("G. an overlay in another language still plays alone", pack and pack.addon, ACTED_DE)
+Expect("G. ...and is the language a contribution names", Z:GetPackLanguage(), "deDE")
+
+-- A format this build cannot read is skipped, and the pack answers.
+local future = Overlay("enUS", { [BOTH] = { file = "acted-en-valley", len = 4 } })
+future.version = 2
+Z = Install({ ENGLISH }, { [ACTED_EN] = future })
+_, _, pack = Z:GetAudioClip(MAP, BOTH)
+Expect("G. an overlay in an unknown format is ignored", pack and pack.addon, "SpokenZonesAudio")
+Expect("G. ...and not listed", #Z:GetAudioOverlays(), 0)
+
+-- /spz audio names an overlay and its voice actors, but never offers it as a switch.
+Z = Install({ ENGLISH }, { [ACTED_DE] = Overlay("deDE", { [BOTH] = { file = "acted-valley", len = 4 } }) })
+local chat = {}
+local addMessage = DEFAULT_CHAT_FRAME.AddMessage
+DEFAULT_CHAT_FRAME.AddMessage = function(_, message) table.insert(chat, message) end
+SlashCmdList["SPOKENZONES"]("audio")
+SlashCmdList["SPOKENZONES"]("audio " .. ACTED_DE)
+DEFAULT_CHAT_FRAME.AddMessage = addMessage
+local said = table.concat(chat, "\n")
+Expect("G. /spz audio lists the overlay with its credits",
+    said:find(ACTED_DE .. " -- Deutsch, voiced by Name A, Name B", 1, true) ~= nil, true)
+Expect("G. ...and will not switch to it", said:find("is not an installed sound pack", 1, true) ~= nil, true)
+Expect("G. ...leaving the pack active", Z:GetActiveAudioPack().addon, "SpokenZonesAudio")
+
+_G.SpokenZonesAudioOverlays = nil
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones language tests passed")
