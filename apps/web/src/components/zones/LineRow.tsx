@@ -1,5 +1,6 @@
 "use client";
 
+import ActorTakeCell from "@/components/ActorTakeCell";
 import { MadeByCell } from "@/components/MadeBy";
 import { RenameButton } from "@/components/RenameButton";
 import { Untranslated, UntranslatedMark } from "@/components/Untranslated";
@@ -29,6 +30,9 @@ type Props = {
   current: boolean;
   /** Whether to draw the "Made by" cell: the search sent it, so the viewer works here. */
   showMadeBy: boolean;
+  /** Whether to draw the voice actor cell: the search sent recordings, so the viewer records here. */
+  showRecordings: boolean;
+  onRecordingChanged: () => void;
   /** Editor and up: the rewrite and regenerate controls. */
   canRegenerate: boolean;
   /** May write this line's text in the page's language, which a translator may do without
@@ -68,6 +72,8 @@ export function LineRow({
   line,
   current,
   showMadeBy,
+  showRecordings,
+  onRecordingChanged,
   canRegenerate,
   canEdit,
   canTriage,
@@ -220,6 +226,14 @@ export function LineRow({
       </td>
 
       {showMadeBy && <MadeByCell madeBy={line.madeBy} />}
+      {showRecordings && (
+        <ActorTakeCell
+          source="zones"
+          file={line.file}
+          recording={line.recording ?? null}
+          onChanged={onRecordingChanged}
+        />
+      )}
 
       <td className="py-1.5 pr-1 pl-2">
         <span className="flex items-center justify-end gap-1 whitespace-nowrap">

@@ -21,6 +21,7 @@ import type { LineOverride } from "./quests/override";
 import type { AudioState } from "./audio-state";
 import { isVoiceable } from "./text-gate";
 import { madeByFacets, madeByMatches, type MadeBy, type MadeByFacets } from "./takes/made-by";
+import { recordedMatches, type LiveRecording, type Recorded } from "./recordings/live";
 
 /** Which field the free-text query is matched against. */
 export type Filter = "any" | "npc" | "quest" | "text";
@@ -106,6 +107,11 @@ export type LineFilters = {
    */
   model?: string;
   author?: string;
+  /**
+   * Whether a voice actor has recorded the line's file. Needs `recordings` in the context,
+   * which only somebody who records in the language gets; the route drops it otherwise.
+   */
+  recorded?: Recorded;
 };
 
 /** Midnight local at the start of a "YYYY-MM-DD", or null when it is not one. */
@@ -154,6 +160,8 @@ export type SearchContext = {
   takes?: Map<string, { version: number; takes: number }>;
   /** file -> who and what made the live take. Absent for anybody not working in the language. */
   madeBy?: Map<string, MadeBy>;
+  /** file -> its live voice-actor recording. Absent for anybody who does not record here. */
+  recordings?: Map<string, LiveRecording>;
 };
 
 export const NO_CONTEXT: SearchContext = { overrides: new Map() };
@@ -202,6 +210,12 @@ export type ResultLine = CorpusLine & {
   ignored: string | null;
   /** Who and what made the live take. Null with no take, or when the viewer may not know. */
   madeBy: MadeBy | null;
+  /**
+   * The file's live voice-actor recording, or null when nobody has recorded it. Absent for
+   * anybody who does not record in the language, which is how the row knows to leave the
+   * column out.
+   */
+  recording?: LiveRecording | null;
 };
 
 export type SearchResult = {
@@ -215,6 +229,12 @@ export type SearchResult = {
   limit: number;
   /** What the model and author chips offer. Absent when the context carried no `madeBy`. */
   madeBy?: MadeByFacets;
+  /**
+   * The viewer records in this language, so every row carries `recording` and the page draws
+   * the voice actor column. The server's answer rather than a grant check in the browser,
+   * for the reason components/MadeBy.tsx gives.
+   */
+  recordable?: true;
 };
 
 export const PAGE_SIZE = 50;
@@ -379,6 +399,7 @@ export function matchingLines(
     generatedAfter,
     model,
     author,
+    recorded,
   }: LineFilters = {},
   {
     overrides,
@@ -388,6 +409,7 @@ export function matchingLines(
     ignores,
     reports: reportsOf,
     madeBy,
+    recordings,
   }: SearchContext = NO_CONTEXT,
 ): CorpusLine[] {
   const query = q.trim();
@@ -474,6 +496,7 @@ export function matchingLines(
   if (model || author) {
     lines = lines.filter((line) => madeByMatches(madeBy?.get(audioRelPath(line)), { model, author }));
   }
+  if (recorded) lines = lines.filter((line) => recordedMatches(recordings?.get(audioRelPath(line)), recorded));
 
   return [...lines].sort(order);
 }
@@ -508,6 +531,7 @@ export function search(
       narrationRestored: override !== null && restoresOnlyNarration(override, line.text),
       ignored: context.ignores?.get(line.lineId)?.reason ?? null,
       madeBy: context.madeBy?.get(audioPath) ?? null,
+      ...(context.recordings && { recording: context.recordings.get(audioPath) ?? null }),
     };
   });
 
@@ -518,5 +542,6 @@ export function search(
     offset: start,
     limit,
     ...(context.madeBy && { madeBy: madeByFacets(context.madeBy.values()) }),
+    ...(context.recordings && { recordable: true as const }),
   };
 }

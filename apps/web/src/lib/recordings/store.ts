@@ -27,6 +27,11 @@ import { archiveName, writeAtomic } from "@/lib/takes/bytes";
 import type { TakeBytes } from "@/lib/takes/store";
 import { catalogue as zonesCatalogue } from "@/lib/zones/catalogue";
 
+import { can } from "@/lib/permissions";
+import { currentSession } from "@/lib/session";
+import { viewerOf } from "@/lib/grants/store";
+
+import type { LiveRecording } from "./live";
 import type { RecordingFormat } from "./match";
 import { probeRecording } from "./probe";
 
@@ -42,11 +47,6 @@ export type Recording = {
   deletedAt: string | null;
 };
 
-/** What an explorer row shows of a file's live recording. */
-export type LiveRecording = Pick<
-  Recording,
-  "version" | "format" | "durationSec" | "credit" | "createdBy" | "createdAt"
->;
 
 const COLUMNS = `"version", "format", "durationSec"::float8 as "durationSec", "bytes",
   "originalName", "credit", "createdAt", "createdBy", "deletedAt"`;
@@ -97,6 +97,17 @@ export async function liveRecordings(source: Source, lang: Lang): Promise<Map<st
     [source, lang],
   );
   return new Map(rows.map(({ file, ...live }) => [file, live]));
+}
+
+/**
+ * The live recordings for an explorer, or undefined for somebody who may not see them.
+ *
+ * Undefined rather than empty, so that a row can tell "nobody recorded this" from "you may
+ * not know", and the search can drop the filter rather than answer it from nothing.
+ */
+export async function recordingsFor(source: Source, lang: Lang): Promise<Map<string, LiveRecording> | undefined> {
+  if (!can(await viewerOf(await currentSession()), "record", lang)) return undefined;
+  return liveRecordings(source, lang);
 }
 
 /**

@@ -5,6 +5,7 @@ import { corpus, isCorpusEmpty } from "@/lib/quests/catalogue";
 import { searchContext } from "@/lib/quests/context";
 import { dirtyQuestFiles } from "@/lib/quests/dirtiness";
 import { staleFiles } from "@/lib/quests/staleness";
+import { recordingsFor } from "@/lib/recordings/store";
 import { filtersFromParams, needsDirty, needsStale, withoutMadeBy } from "@/lib/search-request";
 import { PAGE_SIZE, search } from "@/lib/search";
 
@@ -28,12 +29,13 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Math.floor(Number(params.get("page")) || 1));
 
   // Only the context depends on the filters, so the corpus is fetched alongside them.
-  let filters, lines, seesMadeBy;
+  let filters, lines, seesMadeBy, recordings;
   try {
-    [filters, lines, seesMadeBy] = await Promise.all([
+    [filters, lines, seesMadeBy, recordings] = await Promise.all([
       filtersFromParams(params),
       corpus(lang),
       worksHere(lang),
+      recordingsFor("quests", lang),
     ]);
   } catch (error) {
     // The zones and books searches answer an empty table the same way: a page can say "no
@@ -42,12 +44,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: (error as Error).message, code: "corpus_empty" }, { status: 503 });
   }
   if (!seesMadeBy) filters = withoutMadeBy(filters);
-  const { voiced, context } = await searchContext(
+  if (!recordings) filters = { ...filters, recorded: undefined };
+  const { voiced, context: base } = await searchContext(
     needsStale(filters),
     needsDirty(filters),
     lang,
     seesMadeBy,
   );
+  const context = { ...base, recordings };
 
   // "Clear all" needs every dirty file the filter matches, not a page of rows. The same
   // shape the zones search route answers for its own explorer.

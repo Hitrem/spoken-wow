@@ -2,6 +2,7 @@
 
 import DateChip from "@/components/DateChip";
 import { MadeByChips } from "@/components/MadeBy";
+import RecordedChip from "@/components/RecordedChip";
 import type { MadeByFacets } from "@/lib/takes/made-by";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,8 @@ type Props = {
   canTriage: boolean;
   /** The model and author chips' options; present only for somebody working in the language. */
   madeBy?: MadeByFacets;
+  /** The viewer records here, so the search answers whether each line is recorded. */
+  recordable?: boolean;
   query: string;
   inputRef: React.RefObject<HTMLInputElement | null>;
   onQueryChange: (value: string) => void;
@@ -62,6 +65,7 @@ export function SearchBar({
   filters,
   canTriage,
   madeBy,
+  recordable,
   query,
   inputRef,
   onQueryChange,
@@ -140,6 +144,7 @@ export function SearchBar({
             onChange={onChange}
           />
         )}
+        {recordable && <RecordedChip value={filters.recorded} onChange={(recorded) => onChange({ recorded })} />}
 
         {/* A checkbox rather than a value of `state`, because a line can be current and
             carry this at once: as a state it would hide whichever answer came second. */}

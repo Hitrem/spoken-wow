@@ -19,6 +19,9 @@ import type { Source } from "@/lib/sections";
 export const RECORDING_FORMATS = ["mp3", "ogg"] as const;
 export type RecordingFormat = (typeof RECORDING_FORMATS)[number];
 
+/** What a file picker offers. */
+export const RECORDING_ACCEPT = ".mp3,.ogg,audio/mpeg,audio/ogg";
+
 /** Per file. A ten-minute line at 320 kbps is 23 MiB; anything larger is not one line. */
 export const MAX_RECORDING_BYTES = 25 * 1024 * 1024;
 

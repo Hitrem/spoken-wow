@@ -13,6 +13,7 @@
 import "server-only";
 
 import { query } from "@/lib/db";
+import type { LiveRecording } from "@/lib/recordings/live";
 import { memoByLang } from "@/lib/memo";
 import { nameStamp, versionStamp } from "@/lib/stamp";
 import { loadDirtyContext, NO_DIRT, type DirtyContext } from "@/lib/generation/dirty";
@@ -113,6 +114,8 @@ export type SearchContext = {
    * language: the author is a person's name, and a visitor has no use for it.
    */
   madeBy?: Map<string, MadeBy>;
+  /** file -> its live voice-actor recording. Absent for anybody who does not record here. */
+  recordings?: Map<string, LiveRecording>;
 };
 
 export const EMPTY_CONTEXT: SearchContext = {

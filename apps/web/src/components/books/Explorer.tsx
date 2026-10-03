@@ -12,6 +12,7 @@ import Pagination from "@/components/Pagination";
 import RegenerateDialog from "@/components/RegenerateDialog";
 import RegenerationPanel from "@/components/RegenerationPanel";
 import { BookList } from "@/components/books/BookList";
+import RecordingDropZone from "@/components/RecordingDropZone";
 import ReportDialog from "@/components/ReportDialog";
 import { PageTextDialog } from "@/components/books/PageTextDialog";
 import type { RowState } from "@/components/books/PageRow";
@@ -449,7 +450,10 @@ export function Explorer({ books }: { books: BookFacet[] }) {
           onClearAll={() => replaceQuery(new URLSearchParams())}
           canTriage={canEdit}
           madeBy={result?.madeBy}
+          recordable={result?.recordable === true}
         />
+
+        {result?.recordable && <RecordingDropZone source="books" onUploaded={refetch} />}
 
         {/* A line id has no dropdown to sit in - it arrives by link from /reports - so
             without this the list would be narrowed with nothing on the page saying so. */}
@@ -516,6 +520,8 @@ export function Explorer({ books }: { books: BookFacet[] }) {
                 })}
                 current={current}
                 showMadeBy={result.madeBy !== undefined}
+                showRecordings={result.recordable === true}
+                onRecordingChanged={refetch}
                 canRegenerate={canRegenerate}
                 canEdit={canEdit}
                 rowStates={rowStates}

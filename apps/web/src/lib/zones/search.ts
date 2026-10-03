@@ -12,6 +12,7 @@
 // needs regenerating.
 
 import { isDirty } from "@/lib/generation/dirty";
+import { recordedMatches, type LiveRecording } from "@/lib/recordings/live";
 import { madeByFacets, madeByMatches, type MadeBy, type MadeByFacets } from "@/lib/takes/made-by";
 
 import type { CatalogueEntry, SearchContext, Take } from "./catalogue";
@@ -56,6 +57,8 @@ export type ResultLine = {
   englishName?: string;
   /** Who and what made the live take. Null with no take, or when the viewer may not know. */
   madeBy: MadeBy | null;
+  /** The live voice-actor recording, or null. Absent for anybody who does not record here. */
+  recording?: LiveRecording | null;
 };
 
 export type SearchResult = {
@@ -71,6 +74,12 @@ export type SearchResult = {
   limit: number;
   /** What the model and author chips offer. Absent when the context carried no `madeBy`. */
   madeBy?: MadeByFacets;
+  /**
+   * The viewer records in this language, so every row carries `recording` and the page draws
+   * the voice actor column. The server's answer rather than a grant check in the browser,
+   * for the reason components/MadeBy.tsx gives.
+   */
+  recordable?: true;
 };
 
 export function stateOf(entry: CatalogueEntry, take: Take | undefined): State {
@@ -95,6 +104,7 @@ export function decorate(entry: CatalogueEntry, context: SearchContext): ResultL
     take: take ?? null,
     reportsOpen: context.reports.get(entry.id) ?? 0,
     madeBy: context.madeBy?.get(entry.id) ?? null,
+    ...(context.recordings && { recording: context.recordings.get(entry.file) ?? null }),
     ...(entry.english === undefined
       ? {}
       : {
@@ -159,6 +169,7 @@ export function matching(lines: ResultLine[], filters: LineFilters = {}): Result
   if (filters.line) out = out.filter((l) => l.id === filters.line);
 
   if (filters.model || filters.author) out = out.filter((l) => madeByMatches(l.madeBy ?? undefined, filters));
+  if (filters.recorded) out = out.filter((l) => recordedMatches(l.recording, filters.recorded));
 
   if (filters.generatedAfter) {
     const at = dayStart(filters.generatedAfter);
@@ -214,5 +225,6 @@ export function search(
     offset,
     limit,
     ...(context.madeBy && { madeBy: madeByFacets(context.madeBy.values()) }),
+    ...(context.recordings && { recordable: true as const }),
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { MadeByChips } from "@/components/MadeBy";
+import RecordedChip from "@/components/RecordedChip";
 import type { MadeByFacets } from "@/lib/takes/made-by";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,8 @@ type Props = {
   canTriage: boolean;
   /** The model and author chips' options; present only for somebody working in the language. */
   madeBy?: MadeByFacets;
+  /** The viewer records here, so the search answers whether each line is recorded. */
+  recordable?: boolean;
 };
 
 export function SearchBar({
@@ -64,6 +67,7 @@ export function SearchBar({
   onClearAll,
   canTriage,
   madeBy,
+  recordable,
 }: Props) {
   const active = activeFilterCount(filters);
 
@@ -120,6 +124,7 @@ export function SearchBar({
           onChange={onChange}
         />
       )}
+      {recordable && <RecordedChip value={filters.recorded} onChange={(recorded) => onChange({ recorded })} />}
 
       {/* A checkbox rather than a chip: it is the one filter people leave on, and 88 of the
           1191 pages are the ones it hides. */}

@@ -32,9 +32,5 @@ export async function POST(request: Request) {
   }
 
   const files = await recordableFiles(body.source, lang);
-  return Response.json({
-    matches: matchUploads(body.source, names, files.keys()).map((match) =>
-      match.file ? { ...match, lineId: files.get(match.file) } : match,
-    ),
-  });
+  return Response.json({ matches: matchUploads(body.source, names, files.keys()) });
 }

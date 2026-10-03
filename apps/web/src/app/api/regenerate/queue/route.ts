@@ -29,6 +29,7 @@ import { createBatch, enqueue, snapshot } from "@/lib/generation/queue";
 import { searchContext } from "@/lib/quests/context";
 import { batchJobs, matchingLines } from "@/lib/search";
 import { filtersFromParams, needsStale } from "@/lib/search-request";
+import { recordingsFor } from "@/lib/recordings/store";
 import { ensureQueueRunning, queueWorker } from "@/lib/generation/boot";
 import { catalogue as bookCatalogue } from "@/lib/books/catalogue";
 import type { Lang } from "@/lib/lang";
@@ -83,14 +84,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const filters = await filtersFromParams(new URLSearchParams(body.filters));
-  const [catalogue, { voiced, context }] = await Promise.all([
+  let filters = await filtersFromParams(new URLSearchParams(body.filters));
+  const [catalogue, { voiced, context }, recordings] = await Promise.all([
     corpus(lang),
     // Behind `regenerate`, which is working in the language, so the model and author
     // filters narrow the batch exactly as they narrowed the page it was quoted from.
     searchContext(needsStale(filters), false, lang, true),
+    // And the recorded filter, as /api/quests/search/lines narrowed the quote: without the
+    // recordings "not recorded" would queue every line and "recorded" none.
+    filters.recorded ? recordingsFor("quests", lang) : undefined,
   ]);
-  const lines = matchingLines(catalogue, voiced, filters, context);
+  if (!recordings) filters = { ...filters, recorded: undefined };
+  const lines = matchingLines(catalogue, voiced, filters, { ...context, recordings });
   // The same overrides the estimate was built from, so what is queued is what was quoted.
   const jobs = batchJobs(lines, context.overrides);
 

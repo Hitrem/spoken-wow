@@ -18,6 +18,9 @@ type Props = {
   current: ResultLine | null;
   /** Whether to draw "Made by": the search sent it, so the viewer works in the language. */
   showMadeBy: boolean;
+  /** Whether to draw the voice actor column: the search sent recordings. */
+  showRecordings: boolean;
+  onRecordingChanged: () => void;
   canRegenerate: boolean;
   canEdit: boolean;
   rowStates: Record<string, RowState>;
@@ -64,6 +67,8 @@ export function BookList({
   lines,
   current,
   showMadeBy,
+  showRecordings,
+  onRecordingChanged,
   canRegenerate,
   canEdit,
   rowStates,
@@ -91,6 +96,7 @@ export function BookList({
         <col />
         <col className="w-28" />
         {showMadeBy && <col className="w-36" />}
+        {showRecordings && <col className="w-32" />}
         <col className="w-16" />
         {/* Wide enough for what the cell actually holds, now that the controls sit on one
             line: icon buttons are 32px and an editor can have three side by side -- report,
@@ -108,6 +114,7 @@ export function BookList({
           <th className="px-2 pb-1 font-medium">Text</th>
           <th className="px-2 pb-1 font-medium">Audio</th>
           {showMadeBy && <th className="px-2 pb-1 font-medium">Made by</th>}
+          {showRecordings && <th className="px-2 pb-1 font-medium">Voice actor</th>}
           <th className="px-2 pb-1 text-right font-medium">Chars</th>
           <th className="sr-only">Actions</th>
         </tr>
@@ -119,6 +126,8 @@ export function BookList({
             line={line}
             current={current?.id === line.id}
             showMadeBy={showMadeBy}
+            showRecordings={showRecordings}
+            onRecordingChanged={onRecordingChanged}
             canRegenerate={canRegenerate}
             canEdit={canEdit}
             groupRows={groupRows.get(line.id) ?? 0}
