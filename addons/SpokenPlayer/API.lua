@@ -245,6 +245,13 @@ function Spoken:AddGate(fn)
     SoundQueue:AddGate(fn)
 end
 
+--- Gates are asked before a clip starts. Call this when one may have closed on the clip
+--- already speaking -- a cinematic starting -- and it is stopped and kept, to replay from
+--- the start once the gate opens. Returns whether a clip was cut off.
+function Spoken:RecheckGates()
+    return SoundQueue:RecheckGates()
+end
+
 --------------------------------------------------------------------------------
 -- Callbacks
 --------------------------------------------------------------------------------

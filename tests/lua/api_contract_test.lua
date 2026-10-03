@@ -36,7 +36,7 @@ local METHODS = {
     -- player-wide queue
     "GetCurrent", "GetNowPlaying", "GetQueue", "GetQueueSize", "GetWaitingCount",
     "IsPlaying", "IsPaused", "GetHeldReason",
-    "Pause", "Resume", "TogglePause", "Skip", "StopAll", "AddGate", "MuteChannel", "MuteGameDialogueAhead",
+    "Pause", "Resume", "TogglePause", "Skip", "StopAll", "AddGate", "RecheckGates", "MuteChannel", "MuteGameDialogueAhead",
     -- callbacks
     "RegisterCallback", "UnregisterCallback",
     -- packs

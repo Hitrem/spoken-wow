@@ -121,6 +121,56 @@ Z:EnqueueLore(held)
 world.inCombat = false
 stub.Advance(1)
 Expect("leaving combat, the retry tick starts it", Spoken:IsPlaying(held), true)
+Spoken:StopAll()
+
+---------------------------------------------------------------- the cinematic gate
+-- The greeting fires two seconds after load, and a new character's intro can start after
+-- that. Holding at the door is not enough: a clip already speaking must stop for it.
+env, Z = Boot(); Spoken = _G.Spoken
+local cinematic = false
+_G.InCinematic = function() return cinematic end
+local greeting = Z:NewLoreSound(1411, "valley of trials"); greeting.autoplay = true
+Z:EnqueueLore(greeting)
+Expect("before the intro, the greeting speaks", Spoken:IsPlaying(greeting), true)
+cinematic = true
+stub.FireEvent("CINEMATIC_START")
+Expect("CINEMATIC_START stops an autoplayed clip already speaking", Spoken:IsPlaying(), false)
+Expect("...and keeps it queued", Spoken:GetCurrent(), greeting)
+Expect("...held for the cinematic", Spoken:GetHeldReason(greeting), "Waiting for the cinematic to end.")
+stub.Advance(60)
+Expect("...for as long as the cinematic runs", Spoken:IsPlaying(), false)
+cinematic = false
+stub.Advance(1)
+Expect("the intro over, it replays", Spoken:IsPlaying(greeting), true)
+Spoken:StopAll()
+
+-- A movie is shown by MovieFrame's own PLAY_MOVIE handler, which may run after this
+-- addon's, so the recheck is repeated a frame later.
+env, Z = Boot(); Spoken = _G.Spoken
+_G.InCinematic = function() return false end
+local movie = Z:NewLoreSound(1411, nil); movie.autoplay = true
+Z:EnqueueLore(movie)
+local nextFrame = {}
+_G.C_Timer.After = function(_, fn) table.insert(nextFrame, fn) end
+_G.MovieFrame = CreateFrame("Frame")
+_G.MovieFrame:Hide()
+stub.FireEvent("PLAY_MOVIE", 1)
+Expect("PLAY_MOVIE before the movie frame is up stops nothing yet", Spoken:IsPlaying(movie), true)
+_G.MovieFrame:Show()
+for _, fn in ipairs(nextFrame) do fn() end
+Expect("...the recheck a frame later does", Spoken:IsPlaying(), false)
+Spoken:StopAll()
+_G.MovieFrame = nil
+
+env, Z = Boot(); Spoken = _G.Spoken
+cinematic = false
+_G.InCinematic = function() return cinematic end
+Expect("a clicked clip plays", Z:PlayLore(1411, nil), true)
+cinematic = true
+stub.FireEvent("CINEMATIC_START")
+Expect("...and is not cut off by a cinematic", Spoken:IsPlaying(), true)
+Spoken:StopAll()
+_G.InCinematic = nil
 
 ---------------------------------------------------------------- refusals
 env, Z = Boot(); Spoken = _G.Spoken

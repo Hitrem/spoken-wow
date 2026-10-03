@@ -7,15 +7,17 @@ setfenv(1, SpokenEnv)
 -- The policy, in one place:
 --
 --  * ONE FIFO, IN ADMISSION ORDER, ACROSS EVERY SOURCE. A new clip is appended. Nothing
---    interrupts, displaces or reorders a clip that is already speaking. There is no
---    cross-source priority.
+--    interrupts, displaces or reorders a clip that is already speaking, except a gate
+--    closing on it (below). There is no cross-source priority.
 --  * A LOW-PRIORITY CLIP YIELDS AT THE DOOR, both ways: refused if a normal clip is
 --    queued or speaking, and a waiting low clip is dropped when a normal one arrives.
 --    Never the one speaking -- that would be an interruption. This generalises
 --    VoiceOverRedux's "no gossip while a quest line is queued" and closes its hole,
 --    where a quest arriving after gossip did nothing.
 --  * GATES HOLD, THEY DO NOT DROP. A gate is a reason the head may not start yet --
---    combat, a cinematic. Held clips are retried once a second.
+--    combat, a cinematic. Held clips are retried once a second. Gates are asked before a
+--    clip starts; a source that knows one has just closed calls RecheckGates, and the
+--    clip speaking is stopped and kept, to replay from the start once it opens.
 --  * A HELD HEAD IS SKIPPED, NOT BLOCKING. The first clip no gate holds moves to the
 --    front and plays; the held one plays when its gate clears. Without this a zone
 --    narration held for combat would keep a quest line waiting behind it.
@@ -174,6 +176,19 @@ local function StartRetryTicker()
     retryTicker = Addon:ScheduleRepeatingTimer(function()
         SoundQueue:Advance()
     end, RETRY_INTERVAL)
+end
+
+-- Silence the head but keep its place: it replays from the start when Advance next
+-- reaches it, since the client has no seek. Shared by the two things allowed to cut a
+-- clip off without ending it -- a human pressing Play, and a gate closing on it.
+local function StopKeeping(head)
+    SoundUtils:StopSound(head)
+    Addon:CancelTimer(head.nextSoundTimer)
+    head.nextSoundTimer = nil
+    if head.stopCallback then
+        head.stopCallback(head, false)
+    end
+    Callbacks:Fire("CLIP_STOPPED", head, false)
 end
 
 --------------------------------------------------------------------------------
@@ -425,6 +440,24 @@ function SoundQueue:Advance()
     Callbacks:Fire("AUDIO_CHANGED")
 end
 
+--- Ask the gates again about the clip that is speaking. They are otherwise asked only
+--- before a clip starts, so a cinematic that begins a second after a greeting did is
+--- talked over to its end. A clip a gate now holds is stopped and kept at the head;
+--- whatever no gate holds plays meanwhile, and it replays once its gate opens.
+---@return boolean stopped  whether a speaking clip was cut off
+function SoundQueue:RecheckGates()
+    local head = self.sounds[1]
+    if not head or not head.nextSoundTimer or not self:GetHeldReason(head) then
+        return false
+    end
+    StopKeeping(head)
+    -- Nothing of ours is speaking now. Advance mutes again if something else starts.
+    self:MuteGameDialogue(nil)
+    self:Advance()
+    Callbacks:Fire("AUDIO_CHANGED")
+    return true
+end
+
 --------------------------------------------------------------------------------
 -- Admission
 --------------------------------------------------------------------------------
@@ -561,13 +594,7 @@ function SoundQueue:PlayNow(clip, source)
 
     local head = self:GetCurrentSound()
     if head and head.nextSoundTimer then
-        SoundUtils:StopSound(head)
-        Addon:CancelTimer(head.nextSoundTimer)
-        head.nextSoundTimer = nil
-        if head.stopCallback then
-            head.stopCallback(head, false)
-        end
-        Callbacks:Fire("CLIP_STOPPED", head, false)
+        StopKeeping(head)
     end
 
     -- Resuming is what a paused player expects from pressing Play on something new.
