@@ -545,7 +545,7 @@ export function namesSeenIn(
  * Conflict-free rather than locked: two rows of a batch may name the same thing, and whichever
  * lands first is the one kept.
  */
-export async function nameIfUnnamed(
+async function nameIfUnnamed(
   client: PoolClient,
   args: { kind: string; entityId: string; lang: Lang; name: string; userId: string | null; note: string },
 ): Promise<boolean> {
