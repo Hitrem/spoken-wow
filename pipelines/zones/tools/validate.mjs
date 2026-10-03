@@ -16,7 +16,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ROOT, normaliseKey } from "./lib/wiki.mjs";
 import { loadClientAreas } from "./lib/era.mjs";
-import { BASE_LOCALE, CODES } from "./lib/locales.mjs";
+import { BASE_LOCALE, CODES, LOCALES } from "./lib/locales.mjs";
 import { slugFor } from "./voice/naming.mjs";
 
 const DATA = join(ROOT, "addons/SpokenZones/Data");
@@ -391,6 +391,19 @@ for (const lang of languages) {
       `Language.lua LOCALES and lib/locales.mjs LOCALES have drifted:\n` +
         `      Lua: ${luaCodes.join(" ")}\n` +
         `      JS:  ${CODES.join(" ")}`
+    );
+  }
+
+  // Which languages no client runs in. The addon keeps Auto off them and the pipelines
+  // build nothing client-keyed for them; one side thinking a client exists and the other
+  // not is aliases built for nobody, or Auto landing on a language with none.
+  const luaNonClient = [...languageLua.matchAll(/\{ code = "(\w+)"[^}]*client = false/g)].map((m) => m[1]);
+  const jsNonClient = LOCALES.filter((l) => l.client === false).map((l) => l.code);
+  if (luaNonClient.join(",") !== jsNonClient.join(",")) {
+    note(
+      `Language.lua and lib/locales.mjs disagree on which languages no client runs in:\n` +
+        `      Lua: ${luaNonClient.join(" ") || "(none)"}\n` +
+        `      JS:  ${jsNonClient.join(" ") || "(none)"}`
     );
   }
 

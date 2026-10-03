@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { LOCALES as PIPELINE_LOCALES } from "@tools/lib/locales.mjs";
 
-import { BASE_LANG, CODES, isLang, LOCALES, langTag } from "./lang";
+import { BASE_LANG, CODES, clientLang, isClientLang, isLang, LOCALES, langTag } from "./lang";
 
 describe("the site's language list", () => {
   // The site restates the list as a literal to get a type out of it. A code added to the
@@ -10,10 +10,36 @@ describe("the site's language list", () => {
   // show; one added here and not there, a URL prefix with nothing behind it.
   it("is the pipeline's list, in the pipeline's order", () => {
     expect(
-      LOCALES.map(({ code, name, bcp47, elevenLabs }) => ({ code, name, bcp47, elevenLabs })),
+      LOCALES.map((locale) => ({
+        code: locale.code,
+        name: locale.name,
+        bcp47: locale.bcp47,
+        elevenLabs: locale.elevenLabs,
+        client: isClientLang(locale.code),
+      })),
     ).toEqual(
-      PIPELINE_LOCALES.map(({ code, name, bcp47, elevenLabs }) => ({ code, name, bcp47, elevenLabs })),
+      PIPELINE_LOCALES.map(({ code, name, bcp47, elevenLabs, client }) => ({
+        code,
+        name,
+        bcp47,
+        elevenLabs,
+        client: client !== false,
+      })),
     );
+  });
+
+  it("knows Italian as a language no client runs in", () => {
+    expect(isLang("itIT")).toBe(true);
+    expect(isClientLang("itIT")).toBe(false);
+    expect(isClientLang("ptBR")).toBe(true);
+  });
+
+  it("takes a contribution's language only from a client that exists", () => {
+    expect(clientLang("enGB")).toBe("enUS");
+    expect(clientLang("ptBR")).toBe("ptBR");
+    // Nothing the game wrote says itIT: an envelope that does was made by hand.
+    expect(clientLang("itIT")).toBeNull();
+    expect(clientLang("xxYY")).toBeNull();
   });
 
   it("starts from English", () => {

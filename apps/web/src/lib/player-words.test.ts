@@ -30,6 +30,12 @@ describe("speakPlayerTokens", () => {
     expect(speakPlayerTokens("Merci, $N.", "frFR", "f")).toBe("Merci, aventurière.");
   });
 
+  it("speaks QuestIT's Italian, agreeing with the reader where the line has a gender", () => {
+    const line = "Sì, possente $C. Sei $Gun:una; $R coraggioso.";
+    expect(speakPlayerTokens(line, "itIT")).toBe("Sì, possente avventuriero. Sei un viaggiatore coraggioso.");
+    expect(speakPlayerTokens("Grazie, $N.", "itIT", "f")).toBe("Grazie, avventuriera.");
+  });
+
   it("resolves ruRU's three-field $g by the player gender, agreeing with the noun", () => {
     const line = "Привет тебе, $gюный:юная:r; $r.";
     expect(speakPlayerTokens(line, "ruRU")).toBe("Привет тебе, юный странник.");

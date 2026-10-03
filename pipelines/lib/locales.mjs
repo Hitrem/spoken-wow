@@ -7,9 +7,10 @@
 // addons/SpokenZones/Language.lua); pipelines/zones/tools/validate.mjs fails the build if
 // they drift, and apps/web/src/lib/lang.test.ts does the same for the site.
 //
-// The clients the Classic-family addons run on, and no others. Italian was here and went on
-// 2026-09-23: no Classic client has ever shipped it, so no player could run it and no
-// vanilla-era Italian text or audio exists to import.
+// The clients the Classic-family addons run on, plus the languages a community translates
+// into that no client ships. Italian is the one: no Classic client has ever run in it, so its
+// text comes from the QuestIT translators (pipelines/quests/tools/import_questit.py) and the
+// site, and a player hears it by choosing it, never because the client is in it.
 
 export const BASE_LOCALE = "enUS";
 
@@ -27,13 +28,20 @@ export const BASE_LOCALE = "enUS";
 //
 // `vmangos` is the N in the world database's *_locN columns. 1 to 8 are vmangos's own; 9 is
 // Portuguese, which 1.12 never shipped and the Classic Era client does -- a fresh dump has no
-// *_loc9 column, and pipelines/quests/tools/fill_locales_from_tdb.py adds and fills it.
+// *_loc9 column, and pipelines/quests/tools/fill_locales_from_tdb.py adds and fills it. Null is
+// a language the world database has no text for at all.
+//
+// `client: false` is a language no game client runs in. GetLocale() never returns it, so
+// everything keyed by what the client shows is never built for it -- area-name aliases,
+// gossip locale text, a books page index, giver names, interface strings -- and nothing
+// that follows the client ("auto", contributions) ever lands on it. Absent means true.
 export const LOCALES = [
   { code: "enUS", name: "English", script: "latin", elevenLabs: "en", bcp47: "en-US", vmangos: 0 },
   { code: "deDE", name: "German", script: "latin", elevenLabs: "de", bcp47: "de-DE", vmangos: 3 },
   { code: "esES", name: "Spanish (EU)", script: "latin", elevenLabs: "es", bcp47: "es-ES", vmangos: 6 },
   { code: "esMX", name: "Spanish (AL)", script: "latin", elevenLabs: "es", bcp47: "es-MX", vmangos: 7 },
   { code: "frFR", name: "French", script: "latin", elevenLabs: "fr", bcp47: "fr-FR", vmangos: 2 },
+  { code: "itIT", name: "Italian", script: "latin", elevenLabs: "it", bcp47: "it-IT", vmangos: null, client: false },
   { code: "ptBR", name: "Portuguese", script: "latin", elevenLabs: "pt", bcp47: "pt-BR", vmangos: 9 },
   { code: "ruRU", name: "Russian", script: "cyrillic", elevenLabs: "ru", bcp47: "ru-RU", vmangos: 8 },
   { code: "koKR", name: "Korean", script: "korean", elevenLabs: "ko", bcp47: "ko-KR", vmangos: 1 },
@@ -49,6 +57,12 @@ export function localeInfo(code) {
 
 export function isLocale(code) {
   return CODES.includes(code);
+}
+
+/** Whether a game client runs in this language -- see `client` above. */
+export function isClientLocale(code) {
+  const info = localeInfo(code);
+  return info !== null && info.client !== false;
 }
 
 /** The language_code a synthesis request for this language sends. */

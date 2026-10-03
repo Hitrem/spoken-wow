@@ -130,6 +130,25 @@ Z:SetLanguage(nil)
 Z = InstallOn("frFR", saved)
 Expect("F. going back to Auto follows the client again", Z:GetLanguage(), "frFR")
 
+---------------------------------------------------------------- G. a language no client runs in
+-- Italian is ready on its lore alone (no client, so no aliases) and is read by choosing it.
+-- Auto never lands on it, even on a client that claimed it.
+local WITH_ITALIAN = { { code = "enUS", ready = true }, { code = "itIT", ready = true } }
+local function InstallItalian(locale, db)
+    stub.SetLocale(locale)
+    _G.SpokenZonesDB = db
+    _G.SpokenZonesAudioPacks = {}
+    return H.LoadZones(ZONES, { Languages = WITH_ITALIAN })
+end
+Z = InstallItalian("enUS", {})
+Expect("G. Italian is offered once its lore is in", Z:IsLanguageSelectable("itIT"), true)
+Expect("G. ...but Auto on an English client reads English", Z:GetLanguage(), "enUS")
+Expect("G. Italian is not a client language", Z:IsClientLanguage("itIT"), false)
+Z = InstallItalian("enUS", { language = "itIT" })
+Expect("G. picked, an English client reads Italian", Z:GetLanguage(), "itIT")
+Z = InstallItalian("itIT", {})
+Expect("G. a client claiming Italian still reads English on Auto", Z:GetAutoLanguage(), "enUS")
+
 stub.SetLocale("enUS")
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end

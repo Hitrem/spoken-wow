@@ -102,8 +102,13 @@ fi
 # A language's Gossip pack - or its All pack, when it ships as one - also carries that language's
 # gossip text, so a client in it matches the NPC's words (tts_cli/locale_text.py). make writes
 # the file first (export-locale-text).
+# A language no client runs in has none: no client shows its words to match.
 LOCALE_TEXT="$REPO/build/quests/$LANGUAGE/locale-text.json.gz"
-if [ "$LANGUAGE" != enUS ] && [[ " $PACKS " == *" gossip "* || " $PACKS " == *" all "* ]] \
+CLIENT_LANGUAGE="$(node --input-type=module -e 'const { isClientLocale } = await import(process.argv[1]); console.log(isClientLocale(process.argv[2]) ? "yes" : "no")' "$REPO/pipelines/lib/locales.mjs" "$LANGUAGE")"
+if [ "$CLIENT_LANGUAGE" = no ]; then
+  LOCALE_TEXT=""
+fi
+if [ "$LANGUAGE" != enUS ] && [ -n "$LOCALE_TEXT" ] && [[ " $PACKS " == *" gossip "* || " $PACKS " == *" all "* ]] \
     && [ ! -f "$LOCALE_TEXT" ]; then
   echo "error: no $LANGUAGE gossip text at $LOCALE_TEXT -- run: make quests-export-locale-text LOCALE=$LANGUAGE" >&2
   exit 1
@@ -304,7 +309,7 @@ for pack in $PACKS; do
     title="$(pack_field "$pack" name)"
     version="$(pack_field "$pack" version)"
     language_args=(--language "$LANGUAGE")
-    if [ "$pack" = gossip ] || [ "$pack" = all ]; then language_args+=(--locale-text "$LOCALE_TEXT"); fi
+    if [ -n "$LOCALE_TEXT" ] && { [ "$pack" = gossip ] || [ "$pack" = all ]; }; then language_args+=(--locale-text "$LOCALE_TEXT"); fi
   fi
 
   echo

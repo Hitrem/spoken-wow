@@ -38,12 +38,17 @@ Language = {}
 -- Kept deliberately in step with SpokenZones.LOCALES in addons/SpokenZones/Language.lua:
 -- the two addons are installed side by side and a player who sets Portuguese in one and
 -- finds no such option in the other has found a bug.
+--
+-- `client = false` is a language no game client runs in -- Italian, which a community
+-- translates. A pack may declare it and a player may choose it; "auto" never lands on it,
+-- and nothing that reads the client's own text (gossip tables, contributions) is ever in it.
 Language.LOCALES = {
     { code = "enUS", name = "English", native = "English" },
     { code = "deDE", name = "German", native = "Deutsch" },
     { code = "esES", name = "Spanish (EU)", native = "Español (España)" },
     { code = "esMX", name = "Spanish (AL)", native = "Español (América Latina)" },
     { code = "frFR", name = "French", native = "Français" },
+    { code = "itIT", name = "Italian", native = "Italiano", client = false },
     { code = "ptBR", name = "Portuguese", native = "Português" },
     { code = "ruRU", name = "Russian", native = "Русский" },
     { code = "koKR", name = "Korean", native = "한국어" },
@@ -109,7 +114,18 @@ end
 ---@return string code
 function Language:GetClientLanguage()
     local locale = GetLocale and GetLocale()
-    return self:Normalize(locale)
+    if self:IsClientLanguage(locale) then
+        return locale
+    end
+    return self.BASE
+end
+
+--- Whether a game client runs in this language. See `client` on LOCALES.
+---@param code string|nil
+---@return boolean
+function Language:IsClientLanguage(code)
+    local locale = code and byCode[code]
+    return locale ~= nil and locale.client ~= false
 end
 
 --- The language the player wants to hear, resolved. `auto` becomes the client's locale.
