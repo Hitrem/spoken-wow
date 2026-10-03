@@ -111,13 +111,6 @@ end
 -- Queue
 --------------------------------------------------------------------------------
 
--- Why a queued clip may not start yet. Registered onto the queue at setup, and
--- consulted every time it tries to advance.
---
--- Combat is worth waiting out rather than skipping: a clip starting mid-pull
--- competes with everything the player actually needs to hear. The queue holds
--- rather than drops, and retries once the pull or the movie ends.
---
 -- Whether an intro cinematic or a movie is up. InCinematic as well as the frame: it is
 -- already true while CINEMATIC_START is being delivered, when CinematicFrame may not
 -- have shown itself yet.
@@ -128,6 +121,13 @@ local function CinematicUp()
 		or false
 end
 
+-- Why a queued clip may not start yet. Registered onto the queue at setup, and
+-- consulted every time it tries to advance.
+--
+-- Combat is worth waiting out rather than skipping: a clip starting mid-pull
+-- competes with everything the player actually needs to hear. The queue holds
+-- rather than drops, and retries once the pull or the movie ends.
+--
 -- The item is inspected, not just the moment, because none of this applies to a
 -- player who pressed Play: clicking Play mid-pull means now. Only what this file
 -- queued waits.
@@ -516,8 +516,8 @@ local DISCOVERY_EVENTS = {
 -- starts, and the login greeting fires two seconds after load -- before a new
 -- character's intro, often enough -- so without these it narrates over the whole thing.
 local CINEMATIC_EVENTS = {
-	"CINEMATIC_START",
-	"PLAY_MOVIE",
+	CINEMATIC_START = true,
+	PLAY_MOVIE = true,
 }
 
 -- Stops our clip if the hold now applies to it, keeping it queued to replay once the
@@ -525,9 +525,9 @@ local CINEMATIC_EVENTS = {
 -- from its own PLAY_MOVIE handler and the order frames receive an event in is not
 -- defined. InCinematic covers CINEMATIC_START on the first ask.
 local function RecheckForCinematic()
-	local Spoken = _G.Spoken
-	if Spoken and Spoken.RecheckGates then
-		Spoken:RecheckGates()
+	local source = SpokenZones.source
+	if source and source.RecheckGates then
+		source:RecheckGates()
 	end
 end
 
@@ -554,12 +554,12 @@ function SpokenZones:SetupAutoplay()
 	for _, event in ipairs(DISCOVERY_EVENTS) do
 		frame:RegisterEvent(event)
 	end
-	for _, event in ipairs(CINEMATIC_EVENTS) do
+	for event in pairs(CINEMATIC_EVENTS) do
 		frame:RegisterEvent(event)
 	end
 
 	frame:SetScript("OnEvent", function(_, event, ...)
-		if event == "CINEMATIC_START" or event == "PLAY_MOVIE" then
+		if CINEMATIC_EVENTS[event] then
 			OnCinematicStart()
 			return
 		end

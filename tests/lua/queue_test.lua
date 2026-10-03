@@ -107,10 +107,12 @@ hold = nil
 zones:AddGate(function(clip) return hold end)
 local talking = H.Clip()
 zones:Enqueue(talking)
-Expect("RecheckGates leaves a clip no gate holds speaking", Q:RecheckGates(), false)
+Expect("RecheckGates leaves a clip no gate holds speaking", zones:RecheckGates(), false)
 Expect("...still speaking", Q:IsPlaying(talking), true)
 hold = "cinematic"
-Expect("RecheckGates stops a speaking clip a gate now holds", Q:RecheckGates(), true)
+Expect("another source's recheck leaves it alone", quests:RecheckGates(), false)
+Expect("...still speaking", Q:IsPlaying(talking), true)
+Expect("RecheckGates stops its source's speaking clip a gate now holds", zones:RecheckGates(), true)
 Expect("...the sound is stopped", #world.stopped, 1)
 Expect("...reported stopped, not finished", rec:Has("CLIP_STOPPED " .. talking.key .. " false"), true)
 Expect("...kept at the head", Q:GetCurrentSound(), talking)
@@ -130,14 +132,16 @@ local other = H.Clip()
 zones:Enqueue(interrupted)
 quests:Enqueue(other)
 hold = "cinematic"
-Q:RecheckGates()
+local changes = rec:Count("AUDIO_CHANGED")
+zones:RecheckGates()
 Expect("a clip waiting behind an interrupted one plays in its place", world.played[2], other.path)
+Expect("...announced once", rec:Count("AUDIO_CHANGED") - changes, 1)
 Expect("...the interrupted one still queued", Q:GetQueueSize(), 2)
 
 Fresh()
 quests:Enqueue(H.Clip())
 Q:PauseQueue()
-Expect("RecheckGates on a paused player stops nothing", Q:RecheckGates(), false)
+Expect("RecheckGates on a paused player stops nothing", quests:RecheckGates(), false)
 
 ---------------------------------------------------------------- per-source queue limit
 Fresh()

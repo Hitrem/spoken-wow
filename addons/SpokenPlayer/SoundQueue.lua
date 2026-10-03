@@ -16,8 +16,8 @@ setfenv(1, SpokenEnv)
 --    where a quest arriving after gossip did nothing.
 --  * GATES HOLD, THEY DO NOT DROP. A gate is a reason the head may not start yet --
 --    combat, a cinematic. Held clips are retried once a second. Gates are asked before a
---    clip starts; a source that knows one has just closed calls RecheckGates, and the
---    clip speaking is stopped and kept, to replay from the start once it opens.
+--    clip starts; a source that knows one of its own has just closed calls RecheckGates,
+--    and its clip speaking is stopped and kept, to replay from the start once it opens.
 --  * A HELD HEAD IS SKIPPED, NOT BLOCKING. The first clip no gate holds moves to the
 --    front and plays; the held one plays when its gate clears. Without this a zone
 --    narration held for combat would keep a quest line waiting behind it.
@@ -440,21 +440,27 @@ function SoundQueue:Advance()
     Callbacks:Fire("AUDIO_CHANGED")
 end
 
---- Ask the gates again about the clip that is speaking. They are otherwise asked only
---- before a clip starts, so a cinematic that begins a second after a greeting did is
---- talked over to its end. A clip a gate now holds is stopped and kept at the head;
---- whatever no gate holds plays meanwhile, and it replays once its gate opens.
+--- Ask the gates again about the clip that is speaking, if it is `source`'s. They are
+--- otherwise asked only before a clip starts, so a cinematic that begins a second after a
+--- greeting did is talked over to its end. A clip a gate now holds is stopped and kept at
+--- the head; whatever no gate holds plays meanwhile, and it replays once its gate opens.
+---
+--- Scoped to the caller's own clip: a source knows its own gate just closed, not why
+--- another source's clip is still speaking -- one that kept going into a pull, say.
 ---@return boolean stopped  whether a speaking clip was cut off
-function SoundQueue:RecheckGates()
+function SoundQueue:RecheckGates(source)
     local head = self.sounds[1]
-    if not head or not head.nextSoundTimer or not self:GetHeldReason(head) then
+    if not head or head.source ~= source or not head.nextSoundTimer or not self:GetHeldReason(head) then
         return false
     end
     StopKeeping(head)
     -- Nothing of ours is speaking now. Advance mutes again if something else starts.
     self:MuteGameDialogue(nil)
     self:Advance()
-    Callbacks:Fire("AUDIO_CHANGED")
+    -- Advance announces a clip it starts; silence is this call's to announce.
+    if not self:IsPlaying() then
+        Callbacks:Fire("AUDIO_CHANGED")
+    end
     return true
 end
 

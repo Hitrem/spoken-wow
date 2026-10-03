@@ -21,6 +21,10 @@ _G.ZoneLoreAudioPacks = {
         subzones = { [1411] = { ["valley of trials"] = { file = "1411\\valley-of-trials", len = 35 } } } },
 }
 
+-- The stub's timers, which stub.Advance drives. Boot swaps them out; a test that wants the
+-- addon's own C_Timer calls to run puts them back.
+local StubAfter = _G.C_Timer.After
+
 local function Boot()
     stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
     stub.ldbObjects = {}; stub.dbIcons = {}
@@ -150,14 +154,13 @@ env, Z = Boot(); Spoken = _G.Spoken
 _G.InCinematic = function() return false end
 local movie = Z:NewLoreSound(1411, nil); movie.autoplay = true
 Z:EnqueueLore(movie)
-local nextFrame = {}
-_G.C_Timer.After = function(_, fn) table.insert(nextFrame, fn) end
+_G.C_Timer.After = StubAfter
 _G.MovieFrame = CreateFrame("Frame")
 _G.MovieFrame:Hide()
 stub.FireEvent("PLAY_MOVIE", 1)
 Expect("PLAY_MOVIE before the movie frame is up stops nothing yet", Spoken:IsPlaying(movie), true)
 _G.MovieFrame:Show()
-for _, fn in ipairs(nextFrame) do fn() end
+stub.Advance(0.05)
 Expect("...the recheck a frame later does", Spoken:IsPlaying(), false)
 Spoken:StopAll()
 _G.MovieFrame = nil
@@ -251,28 +254,34 @@ _G.ZoneLoreAudioPacks = savedPacks
 -- Asked by the question the greeting puts first, rather than by what ends up in the queue:
 -- reaching GetPlayerMapID is exactly "the gate let me through", and stubbing it to nil ends
 -- the attempt there without needing lore, audio or a map behind it.
-local function GreetingAsked(restored, level)
+-- Boots the greeting with GetPlayerMapID counting how often it is asked. Answering nil ends
+-- each attempt on the next line, which is all these need: the question is whether the gate
+-- let an attempt get this far, not what it would have narrated.
+local function BootGreeting(restored, level)
     stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
     stub.ldbObjects = {}; stub.dbIcons = {}
     world.inCombat = false
     world.playerLevel = level
-    local seed
     local env = stub.LoadSpoken(SPOKEN)
     env.Addon:Enable()
-    _G.C_Timer.After = function(_, fn) seed = seed or fn end
+    _G.C_Timer.After = StubAfter
     local Z = stub.LoadZones(ZONES, NewZoneLore())
     Z.savedVariablesRestored = restored
-    local asked = false
-    Z.GetPlayerMapID = function() asked = true end
-    -- Answering nil ends the attempt on the next line, which is all this needs: the
-    -- question is whether the gate let it get this far, not what it would have narrated.
+    local counter = { asked = 0 }
+    Z.GetPlayerMapID = function() counter.asked = counter.asked + 1 end
     Z.GetLoreWithFallback = function() return nil, nil end
     Z:SetupAudio()
     Z:SetupAutoplay()
     _G.SpokenZonesCharDB = nil
-    seed()
+    return counter
+end
+
+-- One attempt: the first runs two seconds after setup.
+local function GreetingAsked(restored, level)
+    local counter = BootGreeting(restored, level)
+    stub.Advance(2)
     _G.SpokenZonesCharDB = nil
-    return asked
+    return counter.asked > 0
 end
 
 Expect("a client that restored nothing is not greeted", GreetingAsked(false, 60), false)
@@ -284,39 +293,16 @@ Expect("a greeting runs as before once something was restored", GreetingAsked(tr
 -- An intro that outlasts the greeting's attempts. On a client that plays it somewhere else,
 -- with a loading screen after, every attempt during it resolves nothing; a player who
 -- watched it to the end arrived after the last one and was greeted by nothing.
-do
-    stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
-    stub.ldbObjects = {}; stub.dbIcons = {}
-    world.inCombat = false
-    world.playerLevel = 1
-    local pending = {}
-    local env = stub.LoadSpoken(SPOKEN)
-    env.Addon:Enable()
-    _G.C_Timer.After = function(_, fn) table.insert(pending, fn) end
-    local Z = stub.LoadZones(ZONES, NewZoneLore())
-    Z.savedVariablesRestored = true
-    local asked = 0
-    Z.GetPlayerMapID = function() asked = asked + 1 end
-    Z.GetLoreWithFallback = function() return nil, nil end
-    local cinematic = true
-    _G.InCinematic = function() return cinematic end
-    Z:SetupAudio()
-    Z:SetupAutoplay()
-    _G.SpokenZonesCharDB = nil
-    local function Tick()
-        local due = pending
-        pending = {}
-        for _, fn in ipairs(due) do fn() end
-    end
-    for _ = 1, 20 do Tick() end
-    Expect("the greeting does not ask where the player is during an intro", asked, 0)
-    Expect("...and keeps waiting rather than giving up", pending[1] ~= nil, true)
-    cinematic = false
-    for _ = 1, 20 do Tick() end
-    Expect("once it is over, the greeting gets all its attempts", asked, 8)
-    _G.InCinematic = nil
-    _G.SpokenZonesCharDB = nil
-end
+local cinematic = true
+_G.InCinematic = function() return cinematic end
+local counter = BootGreeting(true, 1)
+stub.Advance(60)
+Expect("the greeting does not ask where the player is during an intro", counter.asked, 0)
+cinematic = false
+stub.Advance(60)
+Expect("once it is over, the greeting gets all its attempts", counter.asked, 8)
+_G.InCinematic = nil
+_G.SpokenZonesCharDB = nil
 
 ---------------------------------------------------------------- the pack this repo ships
 -- The shipped Data/Sounds.lua, loaded for real. Everything above uses hand-built tables, so

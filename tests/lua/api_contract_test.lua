@@ -36,7 +36,7 @@ local METHODS = {
     -- player-wide queue
     "GetCurrent", "GetNowPlaying", "GetQueue", "GetQueueSize", "GetWaitingCount",
     "IsPlaying", "IsPaused", "GetHeldReason",
-    "Pause", "Resume", "TogglePause", "Skip", "StopAll", "AddGate", "RecheckGates", "MuteChannel", "MuteGameDialogueAhead",
+    "Pause", "Resume", "TogglePause", "Skip", "StopAll", "AddGate", "MuteChannel", "MuteGameDialogueAhead",
     -- callbacks
     "RegisterCallback", "UnregisterCallback",
     -- packs
@@ -54,7 +54,7 @@ Expect("Spoken.Packs.Get exists", type(Spoken.Packs and Spoken.Packs.Get), "func
 Expect("Spoken.Minimap.AddEntry exists", type(Spoken.Minimap and Spoken.Minimap.AddEntry), "function")
 Expect("Spoken.Minimap.RemoveEntry exists", type(Spoken.Minimap and Spoken.Minimap.RemoveEntry), "function")
 
-local SOURCE_METHODS = { "Enqueue", "PlayNow", "Remove", "StopAll", "AddGate", "CanPlay", "SetQueueLimit", "SetInterClipGap" }
+local SOURCE_METHODS = { "Enqueue", "PlayNow", "Remove", "StopAll", "AddGate", "RecheckGates", "CanPlay", "SetQueueLimit", "SetInterClipGap" }
 local src = Spoken:RegisterSource("contract", { title = "Contract", addon = "X", order = 1 })
 for _, name in ipairs(SOURCE_METHODS) do
     Expect("source:" .. name .. " exists", type(src[name]), "function")
