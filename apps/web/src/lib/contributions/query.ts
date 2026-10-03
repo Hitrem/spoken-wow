@@ -84,12 +84,64 @@ export function matchesStage(quest: QuestSummary | null, filter: StageFilter): b
   return quest.stage === filter;
 }
 
+/**
+ * The columns the table can be ordered by -- only the ones that are columns of the stored row,
+ * so the database does the ordering before the page is cut. NPC, quest and client are worked
+ * out per row after the query, and paging a list sorted on them would mean resolving every row
+ * in the queue first.
+ */
+export const SORT_COLUMNS = ["filed", "source", "count", "status"] as const;
+
+export type SortColumn = (typeof SORT_COLUMNS)[number];
+
+export type SortDirection = "asc" | "desc";
+
+export type ContributionSort = { column: SortColumn; direction: SortDirection };
+
+export function isSortColumn(value: unknown): value is SortColumn {
+  return SORT_COLUMNS.includes(value as SortColumn);
+}
+
+export function isSortDirection(value: unknown): value is SortDirection {
+  return value === "asc" || value === "desc";
+}
+
+/**
+ * Most sent first: what triage works down, since a line many players pasted is one many
+ * players are missing.
+ */
+export const DEFAULT_SORT: ContributionSort = { column: "count", direction: "desc" };
+
+/**
+ * The direction a column starts in when its header is first clicked: biggest and newest first
+ * for the numbers and dates, alphabetical for the words.
+ */
+const FIRST_DIRECTION: Record<SortColumn, SortDirection> = {
+  filed: "desc",
+  source: "asc",
+  count: "desc",
+  status: "asc",
+};
+
+/** A header click: the column already sorted on flips, any other starts in its own direction. */
+export function nextSort(current: ContributionSort, column: SortColumn): ContributionSort {
+  if (current.column === column) return { column, direction: current.direction === "asc" ? "desc" : "asc" };
+  return { column, direction: FIRST_DIRECTION[column] };
+}
+
+/** The `sort` and `dir` query parameters as a sort, falling back to DEFAULT_SORT. */
+export function sortOf(column: unknown, direction: unknown): ContributionSort {
+  if (!isSortColumn(column)) return DEFAULT_SORT;
+  return { column, direction: isSortDirection(direction) ? direction : FIRST_DIRECTION[column] };
+}
+
 export type ContributionFilters = {
   status: ContributionStatus | "all";
   provenance: SpeakerFilter;
   client: ClientFilter;
   source: SourceFilter;
   stage: StageFilter;
+  sort: ContributionSort;
 };
 
 export type FilterChange = {
@@ -98,6 +150,7 @@ export type FilterChange = {
   client?: ClientFilter;
   source?: SourceFilter;
   stage?: StageFilter;
+  sort?: ContributionSort;
 };
 
 /**
@@ -105,7 +158,8 @@ export type FilterChange = {
  *
  * A key present in `next` always wins, even set to `undefined` -- FilterChip's own way of
  * saying "reset to any", which this maps back to "all". A key simply absent from `next` (the
- * dimensions that did not change) is the only case that falls back to `current`.
+ * dimensions that did not change) is the only case that falls back to `current`. `sort` is not
+ * a filter and has no "all": unset, it goes back to DEFAULT_SORT.
  */
 export function nextContributionFilters(
   current: ContributionFilters,
@@ -117,6 +171,7 @@ export function nextContributionFilters(
     client: "client" in next ? (next.client ?? "all") : current.client,
     source: "source" in next ? (next.source ?? "all") : current.source,
     stage: "stage" in next ? (next.stage ?? "all") : current.stage,
+    sort: "sort" in next ? (next.sort ?? DEFAULT_SORT) : current.sort,
   };
 }
 
@@ -133,7 +188,8 @@ export function pageOf(value: unknown): number {
  * nextContributionFilters, turned into the href /contributions's own rows read back.
  *
  * `page` only when asked for: a filter change starts again from the first page, since the
- * page it was on may not exist in the new view.
+ * page it was on may not exist in the new view. `sort` and `dir` likewise only when they
+ * are not the default, so a link from before there was a choice still reads the same.
  */
 export function contributionsHref(current: ContributionFilters, next: FilterChange, page = 1): string {
   const filters = nextContributionFilters(current, next);
@@ -144,6 +200,10 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
     source: filters.source,
     stage: filters.stage,
   });
+  if (filters.sort.column !== DEFAULT_SORT.column || filters.sort.direction !== DEFAULT_SORT.direction) {
+    params.set("sort", filters.sort.column);
+    params.set("dir", filters.sort.direction);
+  }
   if (page > 1) params.set("page", String(page));
   return `/contributions?${params}`;
 }

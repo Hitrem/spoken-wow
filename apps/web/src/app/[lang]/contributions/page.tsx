@@ -20,7 +20,9 @@ import {
   matchesStage,
   pageOf,
   PAGE_SIZE,
+  sortOf,
   type ClientFilter,
+  type ContributionSort,
   type SourceFilter,
   type SpeakerFilter,
   type StageFilter,
@@ -187,7 +189,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ status?: string; provenance?: string; client?: string; source?: string; stage?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; provenance?: string; client?: string; source?: string; stage?: string; sort?: string; dir?: string; page?: string }>;
 }) {
   const lang = await pageLang(params);
   const session = await auth.api.getSession({ headers: await headers() });
@@ -204,6 +206,8 @@ export default async function Page({
     client: rawClient,
     source: rawSource,
     stage: rawStage,
+    sort: rawSort,
+    dir: rawDir,
     page: rawPage,
   } = await searchParams;
   const status: ContributionStatus | "all" = isStatus(rawStatus)
@@ -237,9 +241,12 @@ export default async function Page({
   // Which quest panel the text was read off -- accept, progress or complete -- or gossip.
   const stage: StageFilter = isStageFilter(rawStage) ? rawStage : "all";
 
+  // Whichever column header was last clicked; most sent first until one is.
+  const sort: ContributionSort = sortOf(rawSort, rawDir);
+
   // Lines the corpus already has are not this queue's: a different text is a correction, on
   // its own tab, and the same text is nothing to triage at all (known.ts's tabOf).
-  const listed = await listContributions(status, lang);
+  const listed = await listContributions(status, lang, sort);
   const states = await lineStates(listed);
   const contributions = listed.filter((row, index) => tabOf(row.status, states[index]) === "contributions");
   // Every row's NPC, not just this page's: the Speaker filter reads it, and it is one query
@@ -321,6 +328,7 @@ export default async function Page({
           client={client}
           source={source}
           stage={stage}
+          sort={sort}
           existing={existing}
           books={books}
           flavorScopes={facetValues.flavorScopes}
