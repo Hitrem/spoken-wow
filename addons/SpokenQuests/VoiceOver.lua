@@ -4,26 +4,19 @@ setfenv(1, VoiceOver)
 ---@field db VoiceOverConfig|AceDBObject-3.0
 local AceAddon = LibStub("AceAddon-3.0")
 
--- Every player of this lineage, oldest first: the AceAddon name it registers under, and the
--- folder it installs into. Upstream's, and this fork's own two names before the rename -- a
--- rename uninstalls nothing, so a former name is as much of a duplicate as upstream's. Names
--- are only ever added to this list.
+-- Upstream's players, oldest first: the AceAddon name each registers under, and the folder it
+-- installs into. This project's own old folders are found by Spoken (Core.lua, OLD_FOLDERS).
 local SUPERSEDED_PLAYERS = {
     { name = "VoiceOver", folder = "AI_VoiceOver" },
     { name = "VoiceOverContinued", folder = "AI_VoiceOver_Continued" },
-    { name = "VoiceOverRedux", folder = "VoiceOverRedux" },
 }
 
 -- The folders of the players that actually registered. Two players handle the same events and
 -- queue the same line, so each is stopped here for this session and its folder disabled for
 -- the next login further down; loading two also used to cause a duplicate AceAddon error.
 --
--- Registering is what makes a folder a duplicate, rather than merely existing. A folder that
--- registered nothing is either an old install already switched off, or the TOC-only tombstone
--- this release ships under the old name -- which holds no code at all and exists only to keep
--- the old SavedVariables file loading for AdoptSavedVariables below. On a fresh install that
--- tombstone arrives inside this addon's own zip, so treating an installed folder as a
--- duplicate opened every first login with a dialog about an addon nobody installed.
+-- Registering is what makes a folder a duplicate, rather than merely existing: a folder that
+-- registered nothing is an old install already switched off.
 local supersededFolders = {}
 for _, player in ipairs(SUPERSEDED_PLAYERS) do
     local supersededAddon = AceAddon:GetAddon(player.name, true)
@@ -218,6 +211,12 @@ function Addon:InvokeQuestHandler(event, source, manual)
     return true
 end
 
+--- Whether the player has this part of Spoken switched on (Spoken's settings). Off, none of
+--- its buttons show on the game's frames.
+function Addon:IsPartOn()
+    return not (Spoken and Spoken.IsPartOn) or Spoken:IsPartOn("quests")
+end
+
 function Addon:IsAutoplayOn()
     return self.db.profile.Audio.Autoplay ~= false
 end
@@ -307,7 +306,7 @@ local defaults = {
             GossipFrequency = Enums.GossipFrequency.OncePerNPC,
             -- The sound channel and the muting of the client's own NPC dialogue used to
             -- live here. They describe how anything is played rather than what this addon
-            -- reads, so they are the player's settings now; Spoken's Migrate lifts them.
+            -- reads, so they are Spoken's settings now.
             StopAudioOnDisengage = false,
             -- Off, no quest dialog, greeting or gossip reads itself: nothing plays until
             -- the Play button on the window is pressed (UI/DialogPlayButton.lua) or
@@ -337,31 +336,6 @@ local selectedGossipOption
 local currentQuestSoundData
 local currentGossipSoundData
 
--- The addon was VoiceOverRedux, and the client names a SavedVariables file after the folder:
--- VoiceOverDB lives in VoiceOverRedux.lua, which only loads because a tombstone folder of
--- that name still declares it. Copied once into this addon's own file, before AceDB claims
--- it and before the tombstone is disabled for next login -- disabling first would mean the
--- old file never loads again and nothing to copy.
-local function DeepCopy(value)
-    if type(value) ~= "table" then return value end
-    local copy = {}
-    for key, item in pairs(value) do copy[key] = DeepCopy(item) end
-    return copy
-end
-
-local function AdoptSavedVariables()
-    local old = rawget(_G, "VoiceOverDB")
-    local new = rawget(_G, "SpokenQuestsDB")
-    local adopted = type(new) == "table" and type(new.global) == "table" and new.global.migratedFrom
-    if type(old) ~= "table" or adopted then
-        return
-    end
-    new = DeepCopy(old)
-    new.global = new.global or {}
-    new.global.migratedFrom = "VoiceOverRedux"
-    _G.SpokenQuestsDB = new
-end
-
 --------------------------------------------------------------------------------
 -- The player, when it is installed but switched off
 --------------------------------------------------------------------------------
@@ -375,7 +349,7 @@ end
 -- lives in the player, which is the addon that is not there. They coordinate through two
 -- globals instead: one collects the names to say, the other makes sure only one dialog is
 -- raised however many addons are waiting on it.
-local PLAYER_FOLDER = "SpokenPlayer"
+local PLAYER_FOLDER = "Spoken"
 local PLAYER_DIALOG = "SPOKEN_PLAYER_REQUIRED"
 
 --- Say that this addon needs the player. Called whether or not the player is there, since
@@ -438,7 +412,7 @@ function Addon:PromptForPlayer()
     _G.SpokenPlayerPrompted = true
     StaticPopupDialogs[PLAYER_DIALOG] =
     {
-        text = format("|cffffd200Spoken Player|r is required to use %s.", ListNames(names)),
+        text = format("|cffffd200Spoken|r is required to use %s.", ListNames(names)),
         button1 = ENABLE or "Enable",
         button2 = CANCEL or "Cancel",
         timeout = 0,
@@ -454,8 +428,7 @@ function Addon:PromptForPlayer()
 end
 
 function Addon:OnInitialize()
-    AdoptSavedVariables()
-    self.db = LibStub("AceDB-3.0"):New("SpokenQuestsDB", defaults)
+    self.db = LibStub("AceDB-3.0"):New("SpokenQuestsSettings", defaults)
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
     self.db.RegisterCallback(self, "OnProfileReset", "RefreshConfig")
 
@@ -896,9 +869,8 @@ function Addon:OnInitialize()
     end
 
     -- The folders of the players that registered this session, stopped at the top of this
-    -- file. Disabling one takes effect on the next login only, which is why it waits until
-    -- here: the saved variables of the folder carrying this addon's own former name were
-    -- adopted above, this login, so there is nothing left in it to lose.
+    -- file. Disabling one takes effect on the next login only. Nothing is read from their
+    -- saved variables: every player starts this release with settings of its own.
     --
     -- Through pcall because current clients reserve enabling and disabling an addon for their
     -- own UI. A client that refuses raises its own "blocked from an action only available to

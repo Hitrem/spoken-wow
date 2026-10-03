@@ -32,8 +32,7 @@ def test_the_stub_is_not_a_data_module(tmp_path):
 
 def test_the_stub_nests_under_the_addon_that_plays_the_packs(tmp_path):
     # Group and X-Child-Of name a folder, and the folder they named was renamed. Left
-    # pointing at VoiceOverRedux they nest the stub under the tombstone, which is a
-    # greyed-out row the player is told to delete.
+    # pointing at VoiceOverRedux they nest the stub under a folder that no longer ships.
     toc = build(tmp_path)
 
     assert "## Group: SpokenQuests\n" in toc

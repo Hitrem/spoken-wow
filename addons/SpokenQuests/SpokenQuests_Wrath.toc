@@ -1,25 +1,23 @@
 ## Interface: 30403
 ## Title: Spoken Quests
-## Notes: Quest and gossip dialogue read aloud, through the Spoken player. Formerly VoiceOver Redux. Restores quest and gossip voiceovers on supported Classic clients.
-## Notes-deDE: Quest- und Tratschdialoge, vorgelesen durch den Spoken-Player. Ehemals VoiceOver Redux. Stellt die Quest- und Tratsch-Vertonungen auf unterstützten Classic-Clients wieder her.
-## Notes-esES: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en clientes Classic compatibles.
-## Notes-esMX: Diálogos de misiones y charlas leídos en voz alta a través del reproductor Spoken. Anteriormente VoiceOver Redux. Restaura las voces de misiones y charlas en clientes Classic compatibles.
-## Notes-frFR: Dialogues de quêtes et de discussions lus à voix haute grâce au lecteur Spoken. Anciennement VoiceOver Redux. Restaure les voix des quêtes et discussions sur les clients Classic pris en charge.
-## Notes-ptBR: Diálogos de missões e conversas lidos em voz alta através do reprodutor Spoken. Anteriormente VoiceOver Redux. Restaura as vozes de missões e conversas em clientes Classic suportados.
-## Notes-ruRU: Диалоги заданий и сплетен, озвученные через проигрыватель Spoken. Ранее — VoiceOver Redux. Возвращает озвучку заданий и сплетен на поддерживаемых клиентах Classic.
-## Notes-koKR: Spoken 플레이어로 퀘스트와 잡담 대사를 소리내어 읽습니다. 이전 이름은 VoiceOver Redux. 지원되는 Classic 클라이언트에서 퀘스트와 잡담 음성을 복원합니다.
-## Notes-zhCN: 通过 Spoken 播放器朗读任务和闲聊对话。前身为 VoiceOver Redux。 在受支持的经典怀旧服客户端上恢复任务和闲聊语音。
-## Notes-zhTW: 透過 Spoken 播放器朗讀任務和閒聊對話。前身為 VoiceOver Redux。 在受支援的經典客戶端上恢復任務和閒聊語音。
+## Notes: Quest and gossip dialogue read aloud through Spoken. Restores quest and gossip voiceovers on supported Classic clients.
+## Notes-deDE: Quest- und Tratschdialoge, vorgelesen durch Spoken. Stellt die Quest- und Tratsch-Vertonungen auf unterstützten Classic-Clients wieder her.
+## Notes-esES: Diálogos de misiones y charlas leídos en voz alta a través de Spoken. Restaura las voces de misiones y charlas en clientes Classic compatibles.
+## Notes-esMX: Diálogos de misiones y charlas leídos en voz alta a través de Spoken. Restaura las voces de misiones y charlas en clientes Classic compatibles.
+## Notes-frFR: Dialogues de quêtes et de discussions lus à voix haute grâce à Spoken. Restaure les voix des quêtes et discussions sur les clients Classic pris en charge.
+## Notes-ptBR: Diálogos de missões e conversas lidos em voz alta através do Spoken. Restaura as vozes de missões e conversas em clientes Classic suportados.
+## Notes-ruRU: Диалоги заданий и сплетен, озвученные через Spoken. Возвращает озвучку заданий и сплетен на поддерживаемых клиентах Classic.
+## Notes-koKR: Spoken으로 퀘스트와 잡담 대사를 소리내어 읽습니다. 지원되는 Classic 클라이언트에서 퀘스트와 잡담 음성을 복원합니다.
+## Notes-zhCN: 通过 Spoken 朗读任务和闲聊对话。在受支持的经典怀旧服客户端上恢复任务和闲聊语音。
+## Notes-zhTW: 透過 Spoken 朗讀任務和閒聊對話。在受支援的經典客戶端上恢復任務和閒聊語音。
 ## Version: 2.2.2
 ## IconTexture: Interface\AddOns\SpokenQuests\icon.tga
-## SavedVariables: SpokenQuestsDB
-## OptionalDeps: SpokenPlayer, VoiceOverRedux
+## SavedVariables: SpokenQuestsSettings
+## OptionalDeps: Spoken
 # Spoken is the player this addon speaks through: optional, so a hand-installed copy
 # without it loads and says what is missing; addon managers install it from the
-# CurseForge dependency. VoiceOverRedux is this addon's old name: a TOC-only tombstone
-# that keeps the old SavedVariables file loading, listed so it loads first and the
-# migration in VoiceOver.lua finds it.
-## Group: SpokenQuests
+# CurseForge dependency.
+## Group: Spoken
 ## X-Part-Of: Spoken
 ## X-VoiceOver-Player: 1
 

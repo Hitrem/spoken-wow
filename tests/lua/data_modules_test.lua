@@ -9,7 +9,7 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local QUESTS = here .. "/../../addons/SpokenQuests/"
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
 local OLD, NEW = "X-VoiceOver-DataModule-", "X-SpokenQuests-DataModule-"

@@ -6,7 +6,7 @@ See the repository's [third-party notice](../../THIRD_PARTY.md).
 
 - Native textures were referenced through the `classic` branch of
   [Gethe/wow-ui-textures](https://github.com/Gethe/wow-ui-textures/tree/classic)
-  and the textures shipped with SpokenPlayer/SpokenQuests.
+  and the textures shipped with Spoken/SpokenQuests.
 - `MinimalBackground.tga` uses the darkened `FrameGeneral/UI-Background-Rock`
   material.
 - `MinimalPortraitRing.tga` uses a cleaned target-frame ring, with its old

@@ -14,7 +14,7 @@ VERSION := $(shell sed -n 's/^\#\# Version:[[:space:]]*//p' addons/SpokenZones/S
 ZIP := dist/SpokenZones-$(VERSION).zip
 
 help: ## Show this help
-	@echo "ZoneLore $(VERSION)"
+	@echo "SpokenZones $(VERSION)"
 	@echo
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'

@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Builds the Spoken player's zip for Blizzard's clients.
+# Builds Spoken's zip for Blizzard's clients: Spoken itself and its modules, Quests, Books
+# and Zones, in one download.
 #
 #   ./scripts/spoken/package.sh                 # dist/Spoken-<version>.zip
 #   ALLOW_DIRTY=1 ./scripts/spoken/package.sh   # build from an uncommitted tree
 #
-# One zip, four flavor-suffixed .toc files, and the client picks. There are no legacy-client
-# zips of the player on its own: those clients have no addon manager, so the quests addon's
-# 1.12/2.4.3/3.3.5 zips carry the player inside them (scripts/quests/package.sh). This zip
-# is what the CurseForge project ships, and what every other Spoken addon's required
-# dependency resolves to.
+# One zip, flavor-suffixed .toc files, and the client picks. Every module comes installed; a
+# player who does not want one switches it off on its card in Spoken's settings or deletes its
+# folder. The sound packs stay separate downloads: 280-452 MB each, one per language.
+#
+# There are no legacy-client zips of Spoken: those clients have no addon manager, so the quests
+# addon's 1.12/2.4.3/3.3.5 zips carry Spoken inside them (scripts/quests/package.sh).
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-NAME="SpokenPlayer"
+NAME="Spoken"
 SRC="$REPO/addons/$NAME"
 TOC="$SRC/$NAME.toc"
 DIST="${DIST:-$REPO/dist}"
@@ -68,5 +70,30 @@ excludes=()
 for client in "${LEGACY_CLIENTS[@]}"; do
   excludes+=("$NAME/$client/*" "$NAME/${NAME}_$client.toc")
 done
-(cd "$staging" && zip -r -q -X "$zip_path" "$NAME" "$STORE" -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig' "${excludes[@]}")
-echo "built $(basename "$zip_path")   files: $(unzip -Z1 "$zip_path" | grep -cv '/$')   size: $(du -h "$zip_path" | cut -f1)"
+# The modules, each built by its own packager, so this zip carries nothing a module's own
+# checks would refuse. A case rather than an associative array: macOS still ships bash 3.2.
+module_packager() {
+  case "$1" in
+    SpokenQuests) echo "$REPO/scripts/quests/package.sh" ;;
+    SpokenBooks) echo "$REPO/scripts/books/package.sh" ;;
+    SpokenZones) echo "$REPO/scripts/zones/package.sh" ;;
+  esac
+}
+modules_dist="$(mktemp -d)"
+trap 'rm -rf "$staging" "$modules_dist"' EXIT
+folders=("$NAME" "$STORE")
+for module in SpokenQuests SpokenBooks SpokenZones; do
+  module_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$REPO/addons/$module/$module.toc" | head -1 | tr -d '')"
+  DIST="$modules_dist" "$(module_packager "$module")" >/dev/null
+  module_zip="$modules_dist/$module-$module_version.zip"
+  [ -f "$module_zip" ] || { echo "error: $(module_packager "$module") did not produce $module_zip" >&2; exit 1; }
+  # Two zips holding the same folder would mean one silently overwrote the other's copy.
+  for folder in $(unzip -Z1 "$module_zip" | cut -d/ -f1 | sort -u); do
+    [ ! -e "$staging/$folder" ] || { echo "error: $folder is in more than one addon's zip" >&2; exit 1; }
+    folders+=("$folder")
+  done
+  unzip -q "$module_zip" -d "$staging"
+done
+
+(cd "$staging" && zip -r -q -X "$zip_path" "${folders[@]}" -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig' "${excludes[@]}")
+echo "built $(basename "$zip_path")   folders: ${folders[*]}   files: $(unzip -Z1 "$zip_path" | grep -cv '/$')   size: $(du -h "$zip_path" | cut -f1)"

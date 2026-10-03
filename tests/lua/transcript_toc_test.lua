@@ -9,7 +9,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local Expect, Failures = H.Expecter(stub.print)
-local PLAYER = here .. "/../../addons/SpokenPlayer/"
+local PLAYER = here .. "/../../addons/Spoken/"
 
 local function Read(path) return assert(io.open(path)):read("*a") end
 
@@ -18,12 +18,12 @@ local function Lists(path, file)
     return toc:find("\n" .. pattern .. "%s*\n") ~= nil or toc:find("\n" .. pattern .. "%s*$") ~= nil
 end
 
-local legacy = PLAYER .. "SpokenPlayer_1.12.toc"
-Expect("SpokenPlayer_1.12.toc does not load captions", Lists(legacy, "Transcript.xml"), false)
+local legacy = PLAYER .. "Spoken_1.12.toc"
+Expect("Spoken_1.12.toc does not load captions", Lists(legacy, "Transcript.xml"), false)
 Expect("...but loads the stub in their place", Lists(legacy, "1.12\\Transcript.lua"), true)
 for _, flavor in ipairs({ "", "_Mainline", "_Vanilla", "_TBC", "_Wrath", "_2.4.3", "_3.3.5" }) do
-    Expect("SpokenPlayer" .. flavor .. ".toc loads captions",
-        Lists(PLAYER .. "SpokenPlayer" .. flavor .. ".toc", "Transcript.xml"), true)
+    Expect("Spoken" .. flavor .. ".toc loads captions",
+        Lists(PLAYER .. "Spoken" .. flavor .. ".toc", "Transcript.xml"), true)
 end
 Expect("addon.xml, which every client loads, carries no caption file",
     Read(PLAYER .. "addon.xml"):find("Transcript") == nil, true)

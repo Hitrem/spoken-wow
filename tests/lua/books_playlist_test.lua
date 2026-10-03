@@ -5,7 +5,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local BOOKS = here .. "/../../addons/SpokenBooks/"
 local Expect, Failures = H.Expecter(print)
 
@@ -37,7 +37,7 @@ local function LoadBooks()
 end
 
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
-_G.SpokenBooksDB = nil
+_G.SpokenBooksSettings = nil
 local env = stub.LoadSpoken(SPOKEN)
 env.Addon:Enable()
 local B = LoadBooks()
@@ -129,18 +129,18 @@ B:StopReading()
 Expect("stopping drops this source's narration", #QueuedPages(), 0)
 
 ---------------------------------------------------------------- reading one page only
-SpokenBooksDB.readWholeBook = false
+SpokenBooksSettings.readWholeBook = false
 B:PlayFrom(261)
 Expect("with whole-book reading off, only the page on screen is queued",
     Same(QueuedPages(), { 261 }), true)
-SpokenBooksDB.readWholeBook = true
+SpokenBooksSettings.readWholeBook = true
 B:StopReading()
 
 ---------------------------------------------------------------- with no pack at all
 _G.SpokenBooksAudioPacks = {}
 Expect("no pack means no clips", B:ClipFor(261), nil)
 Expect("...and a message that names the download rather than blaming the page",
-    B:DescribeMissingAudio(), "No Spoken Books sound pack is installed.")
+    B:DescribeMissingAudio(), "No Books voice pack is installed.")
 
 print(Failures() == 0 and "All books playlist tests passed" or (Failures() .. " failed"))
 os.exit(Failures() == 0 and 0 or 1)

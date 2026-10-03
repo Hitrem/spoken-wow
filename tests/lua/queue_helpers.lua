@@ -101,10 +101,20 @@ function M.NewZoneLore()
     -- The addon's real English strings, so a label a file reads (a minimap entry, a button,
     -- a settings row) is the one the client would show rather than nil. Language.lua is what
     -- normally takes the table, and it is not loaded here.
-    local english
-    Z.RegisterStrings = function(_, _, strings) english = strings end
-    assert(loadfile(ZONES .. "Locale/enUS.lua"))("SpokenZones", Z)
+    -- The client's own language over English, the way Language.lua resolves them, when the
+    -- stub's GetLocale names one: each translation file returns early for any other.
+    local registered = {}
+    Z.RegisterStrings = function(_, code, strings) registered[code] = strings end
+    for _, code in ipairs({ "enUS", "deDE", "esES", "frFR", "ptBR", "ruRU", "koKR", "zhCN", "zhTW" }) do
+        assert(loadfile(ZONES .. "Locale/" .. code .. ".lua"))("SpokenZones", Z)
+    end
     Z.RegisterStrings = nil
+    local english = registered.enUS
+    for code, strings in pairs(registered) do
+        if code ~= "enUS" then
+            for key, value in pairs(strings) do english[key] = value end
+        end
+    end
     Z.L = english
     Z.Subzones = { [1411] = { ["valley of trials"] = { name = "Valley of Trials" } } }
     function Z:Get(key) return cfg[key] end

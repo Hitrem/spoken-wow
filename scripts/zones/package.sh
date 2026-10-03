@@ -1,29 +1,23 @@
 #!/usr/bin/env bash
 # Builds a distributable zip for CurseForge / WoWInterface / Wago.
 #
-#   ./scripts/package.sh              # dist/ZoneLore-<version>.zip
-#   ALLOW_DIRTY=1 ./scripts/package.sh  # build from an uncommitted tree
+#   ./scripts/zones/package.sh              # dist/SpokenZones-<version>.zip
+#   ALLOW_DIRTY=1 ./scripts/zones/package.sh  # build from an uncommitted tree
 #
 # The version comes from `## Version:` in the .toc, so bumping the addon and
 # naming the zip stay one edit rather than two.
 #
 # Addon hosts unpack the zip straight into Interface/AddOns, so its root must
-# contain the ZoneLore/ folder itself -- hence the staging copy before zipping.
-#
-# The zip also carries a ZoneLore/ tombstone: one .toc and no code, which keeps the old
-# SavedVariables file loading for Migration.lua to read and overwrites the old addon's
-# code when a manager installs this release over it. See scripts/quests/package.sh.
+# contain the SpokenZones/ folder itself -- hence the staging copy before zipping.
 
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ADDON="${ADDON:-addons/SpokenZones}"
 NAME="${NAME:-SpokenZones}"
-TOMBSTONE="ZoneLore"
-TOMBSTONE_SRC="$REPO/addons/tombstones/$TOMBSTONE"
 SRC="$REPO/$ADDON"
 TOC="$SRC/$NAME.toc"
-DIST="$REPO/dist"
+DIST="${DIST:-$REPO/dist}"
 
 if [[ ! -f "$TOC" ]]; then
   echo "error: $TOC not found" >&2
@@ -69,11 +63,9 @@ trap 'rm -rf "$staging"' EXIT
 mkdir -p "$staging/$NAME"
 (cd "$SRC" && tar -cf - --exclude '.DS_Store' --exclude '*.bak' --exclude '*.orig' .) \
   | (cd "$staging/$NAME" && tar -xf -)
-mkdir -p "$staging/$TOMBSTONE"
-cp "$TOMBSTONE_SRC/$TOMBSTONE.toc" "$staging/$TOMBSTONE/"
 
 # -X drops the extra macOS attributes that otherwise ride along.
-(cd "$staging" && zip -r -q -X "$zip_path" "$NAME" "$TOMBSTONE" \
+(cd "$staging" && zip -r -q -X "$zip_path" "$NAME" \
   -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig')
 
 files="$(unzip -Z1 "$zip_path" | grep -cv '/$')"

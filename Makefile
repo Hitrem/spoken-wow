@@ -20,7 +20,7 @@
 LUA ?= $(shell command -v luajit || command -v lua5.1)
 
 .PHONY: help test test-player contribute-fixtures lint package-all \
-        package-spoken-all release-spoken-all release-spoken-all-dry \
+        package-spoken package-spoken-all release-spoken-all release-spoken-all-dry \
         descriptions descriptions-check descriptions-published \
         character-models \
         audio-release audio-release-dry
@@ -55,6 +55,12 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/quest_followup_test.lua
 	@$(LUA) tests/lua/easter_egg_test.lua
 	@$(LUA) tests/lua/sound_utils_test.lua
+	@$(LUA) tests/lua/other_sounds_test.lua
+	@$(LUA) tests/lua/parts_test.lua
+	@$(LUA) tests/lua/settings_ux_test.lua
+	@$(LUA) tests/lua/settings_art_test.lua
+	@for lang in enUS deDE esES frFR ptBR ruRU koKR zhCN zhTW; do $(LUA) tests/lua/settings_fit_test.lua $$lang || exit 1; done
+	@$(LUA) tests/lua/settings_audit_test.lua
 	@$(LUA) tests/lua/queue_test.lua
 	@$(LUA) tests/lua/sources_test.lua
 	@$(LUA) tests/lua/api_contract_test.lua
@@ -73,6 +79,11 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/player_required_test.lua
 	@$(LUA) tests/lua/duplicate_player_test.lua
 	@$(LUA) tests/lua/zones_options_test.lua
+	@$(LUA) tests/lua/zones_lore_ui_test.lua
+	@$(LUA) tests/lua/subtitle_pages_test.lua
+	@$(LUA) tests/lua/defaults_test.lua
+	@$(LUA) tests/lua/names_test.lua
+	@$(LUA) tests/lua/packs_test.lua
 	@$(LUA) tests/lua/quests_options_test.lua
 	@$(LUA) tests/lua/books_source_test.lua
 	@$(LUA) tests/lua/books_options_test.lua
@@ -84,7 +95,6 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/gather_test.lua
 	@$(LUA) tests/lua/zones_contribute_test.lua
 	@$(LUA) tests/lua/zones_language_test.lua
-	@$(LUA) tests/lua/migration_test.lua
 	@$(LUA) tests/lua/minimap_compartment_test.lua
 
 # Rewrite the envelope fixtures the TypeScript reader is tested against. A diff here is the
@@ -162,10 +172,15 @@ audio-release: ## Publish the built sound packs as GitHub releases (needs gh; SE
 	$(require_section_for_locale)
 	@./scripts/audio-github-release.sh $(SECTION) $(if $(SECTION),$(LOCALE))
 
-package-all: ## Build every addon zip: the player, quests, zones
+package-all: ## Build every addon zip: Spoken with its modules, then quests and zones on their own
 	@./scripts/spoken/package.sh
 	@$(MAKE) --no-print-directory -f make/quests.mk package
 	@$(MAKE) --no-print-directory -f make/zones.mk  package
+
+# Spoken's download: Spoken and its three modules in one zip, each module built by its own
+# packager. No sound packs; scripts/spoken/package.sh says why.
+package-spoken: ## Zip Spoken with its modules, Quests, Books and Zones, without the sound packs
+	@./scripts/spoken/package.sh
 
 # Spoken Everything: Quests, Zones, Books AI Voiceover, CurseForge project `spoken`: a few kilobytes naming every Spoken addon
 # and English sound pack as required dependencies, so the CurseForge app installs the lot.

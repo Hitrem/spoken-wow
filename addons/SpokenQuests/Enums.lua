@@ -80,15 +80,6 @@ function Enum:GetName(value)
     end
 end
 
----@return table<number, string>
-function Enum:GetValueToNameMap()
-    local result = {}
-    for k, v in pairs(self) do
-        result[v] = k
-    end
-    return result
-end
-
 for name, enum in pairs(Enums) do
     if type(enum) == "table" then
         local metatable

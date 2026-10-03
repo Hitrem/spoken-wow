@@ -5,7 +5,7 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local QUESTS = here .. "/../../addons/SpokenQuests/"
 local Expect, Failures = H.Expecter(print)
 
@@ -107,7 +107,7 @@ stub.FireEvent("QUEST_DETAIL")
 Expect("the button appears on the quest detail panel when there is a gap",
     VoiceOver.ContributeButton.button:IsShown(), true)
 
--- The Spoken Player setting that hides every Contribute button. Toggling it fires no game
+-- The Spoken setting that hides every Contribute button. Toggling it fires no game
 -- event, so the button must hear about it through the player's own callback.
 SpokenEnv.Addon.db.profile.Contribute.HideButtons = true
 SpokenEnv.Callbacks:Fire("CONTRIBUTE_SETTINGS_CHANGED")
@@ -211,7 +211,7 @@ Expect("Show() puts a link in the box, not the raw envelope",
 Expect("...with the link hint", box.hint:GetText(), "Copy this and open it in your browser:")
 Spoken.Contribute.Encode = realEncode
 
--- The fallback an older bundled SpokenPlayer still gets: no Encode at all.
+-- The fallback an older bundled Spoken still gets: no Encode at all.
 Spoken.Contribute.Encode = nil
 VoiceOver.Contribute:Show()
 Expect("...falls back to the raw envelope when Encode is absent",

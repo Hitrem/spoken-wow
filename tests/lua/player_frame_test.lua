@@ -9,7 +9,7 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
 local function Boot(client)
@@ -29,8 +29,48 @@ stub.settingsCategories = {}; stub.ldbObjects = {}; stub.dbIcons = {}
 local early = stub.LoadSpoken(SPOKEN)
 _G.Spoken:AddSettingsLink("Quests settings", function() end)
 early.Addon:Enable()
+-- On a client that nests each part's page under Spoken's, the settings list is the way there.
+Expect("no link buttons where the parts' pages are nested", #_G.SpokenOptionsPanel.links, 0)
+-- The legacy clients have no settings list, only Spoken's own window, and keep the links.
+stub.SetClient("1.12"); stub.ResetSound(); stub.ResetTimers(); stub.ResetFrames()
+_G.SpokenOptionsPanel = nil
+early = stub.LoadSpoken(SPOKEN)
+_G.Spoken:AddSettingsLink("Quests settings", function() end)
+early.Addon:Enable()
 Expect("a link registered before the panel is built with it", #_G.SpokenOptionsPanel.links, 1)
 Expect("...with its text", _G.SpokenOptionsPanel.links[1]:GetText(), "Quests settings")
+
+-- 1.12 hands a script nothing: the frame is in `this` and its arguments in `arg1`. UI/Layout.lua
+-- has no environment, so no Compat wrapper, and its controls read them from there themselves.
+do
+    local layout = _G.SpokenOptionsPanel.layout
+    local function Row(label)
+        for _, entry in ipairs(layout.entries) do if entry.label == label then return entry.frame end end
+    end
+    local L, profile = early.L, early.Addon.db.profile
+    local locked, scaled = profile.Frame.LockFrame, profile.Frame.FrameScale
+    local lock = Row(L.OPT_LOCK_FRAME)
+    lock:SetChecked(true)
+    _G.this, _G.arg1 = lock, "LeftButton"
+    lock.scripts.OnClick()
+    Expect("on 1.12 a settings checkbox finds itself in `this`", profile.Frame.LockFrame, true)
+    local scale = Row(L.OPT_SCALE)
+    _G.this, _G.arg1 = scale.layoutSlider, 1.5
+    scale.layoutSlider.scripts.OnValueChanged()
+    Expect("...and a slider its value in `arg1`", profile.Frame.FrameScale, 1.5)
+    _G.this, _G.arg1 = nil, nil
+    -- Put back: the saved variables outlive this load, and later scenarios read them.
+    profile.Frame.LockFrame, profile.Frame.FrameScale = locked, scaled
+    -- 2.4.3's and 3.3.5's sliders have no SetEnabled, and Refresh greys a slider out with it.
+    local test = _G.SpokenLayout.New(CreateFrame("Frame"), 25, -16)
+    local live = false
+    local slider = test:Slider("Test", 0, 1, 0.1, function() return 0.5 end, function() end)
+    test:Requires(slider, function() return live end, "off")
+    stub.absentAPI.SetEnabled = true
+    local ok = pcall(test.Refresh, test)
+    stub.absentAPI.SetEnabled = nil
+    Expect("...a slider greys out where sliders have no SetEnabled", ok and slider.layoutSlider.enabled, false)
+end
 
 ---------------------------------------------------------------- loads, shows, hides
 local env, quests, zones = Boot()
@@ -68,15 +108,15 @@ _G.Spoken:RegisterBullet("quest-accept", [[Interface\AddOns\SpokenQuests\Texture
 quests:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "quest-accept", portrait = { kind = "none" } } }))
 Expect("a row uses its registered bullet", F.frame.container.buttons[1].iconWidget:GetTexture(), [[Interface\AddOns\SpokenQuests\Textures\Accept]])
 quests:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "nope", portrait = { kind = "none" } } }))
-Expect("an unknown bullet falls back to the queue bullet", F.frame.container.buttons[2].iconWidget:GetTexture(), [[Interface\AddOns\SpokenPlayer\Textures\SoundQueueBulletQueue]])
+Expect("an unknown bullet falls back to the queue bullet", F.frame.container.buttons[2].iconWidget:GetTexture(), [[Interface\AddOns\Spoken\Textures\SoundQueueBulletQueue]])
 
 ---------------------------------------------------------------- portrait dispatch
 env, quests, zones = Boot(); F = env.PlayerFrame
 local P = env.Portrait
 zones:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b",
-    portrait = { kind = "texture", texture = [[Interface\AddOns\SpokenPlayer\Textures\Book]] } } }))
+    portrait = { kind = "texture", texture = [[Interface\AddOns\Spoken\Textures\Book]] } } }))
 Expect("kind=texture shows a texture", F.frame.portrait.active, "texture")
-Expect("...the one asked for", F.frame.portrait.texture:GetTexture(), [[Interface\AddOns\SpokenPlayer\Textures\Book]])
+Expect("...the one asked for", F.frame.portrait.texture:GetTexture(), [[Interface\AddOns\Spoken\Textures\Book]])
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
 quests:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b",
@@ -87,7 +127,7 @@ env.SoundQueue:RemoveAllSoundsFromQueue()
 
 quests:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b",
     portrait = { kind = "model", creatureID = nil,
-        fallback = { kind = "texture", texture = [[Interface\AddOns\SpokenPlayer\Textures\Book]] } } } }))
+        fallback = { kind = "texture", texture = [[Interface\AddOns\Spoken\Textures\Book]] } } } }))
 Expect("a model with nothing to load falls back", F.frame.portrait.active, "texture")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
@@ -208,8 +248,10 @@ Expect("...and that click closes the menu", frame:IsShown(), false)
 
 ---------------------------------------------------------------- settings
 env = Boot()
-Expect("a Settings category is registered, named for the addon and not the family",
-    stub.settingsCategories[1] and stub.settingsCategories[1].name, "Spoken Player")
+-- Spoken's one entry in the game's settings: this page is its Home, and each feature addon's
+-- page is nested under it.
+Expect("a Settings category is registered, named for the whole family",
+    stub.settingsCategories[1] and stub.settingsCategories[1].name, "Spoken")
 Expect("...and exposed for feature addons to nest under", _G.Spoken:GetSettingsCategory(), stub.settingsCategories[1])
 
 ---------------------------------------------------------------- 1.12 loads too
@@ -232,7 +274,11 @@ for _, child in ipairs(host.children) do
         if child.layoutHeading then
             table.insert(headings, { y = child.layoutY, height = child.layoutHeight })
         elseif child.layoutHeight then
-            table.insert(rows, { y = child.layoutY, height = child.layoutHeight, anchor = child.anchor.y })
+            -- A cell -- a module, a narrator style -- reaches past its row on every side, as a
+            -- row's hover band does.
+            local reach = (child.layoutCard or child.layoutTile) and 5 or 0
+            table.insert(rows, { y = child.layoutY, height = child.layoutHeight, anchor = child.anchor.y, reach = reach,
+                cell = reach > 0, own = child.GetHeight and child:GetHeight() or 0 })
         end
     end
 end
@@ -261,7 +307,8 @@ for index = 2, #rows do
     -- Top-anchored and downward, so the gap is the drop less the height already used.
     local gap = previous.y - rows[index].y - previous.height
     -- Only within a section: a heading in between adds its own space.
-    local crossesHeading = false
+    -- Two settings side by side share one line: there is no gap between them to measure.
+    local crossesHeading = previous.y == rows[index].y
     for _, heading in ipairs(headings) do
         if heading.y < previous.y and heading.y > rows[index].y then crossesHeading = true end
     end
@@ -269,16 +316,23 @@ for index = 2, #rows do
 end
 Expect("every row sits the same distance below the one above it", Distinct(gaps), 1)
 
--- A control may sit inside its row: a slider's bar hangs below its own label. None may sit
--- outside it, which is how the scale slider's label used to land on the row above.
+-- Each control sits on its own row, centred on it as the game's settings centre theirs -- the 3
+-- they nudge a slider and a dropdown up by aside (SettingsSliderControlMixin) -- which is how the
+-- scale slider's label used to land on the row above. A card is its row, reaching past it.
+local NUDGE = 3
 local escaped = 0
 for _, row in ipairs(rows) do
-    if row.anchor > row.y or row.anchor < row.y - row.height then escaped = escaped + 1 end
+    if row.cell then
+        if row.anchor > row.y + row.reach or row.anchor < row.y - row.height - row.reach then escaped = escaped + 1 end
+    else
+        local centre, middle = row.anchor - row.own / 2, row.y - row.height / 2
+        if math.abs(centre - middle) > NUDGE + 1 then escaped = escaped + 1 end
+    end
 end
 Expect("no control escapes the row it was given", escaped, 0)
 
--- Label on the left, control on the right, at the same column for every row: a panel
--- whose controls start at different places reads as several panels.
+-- Label on the left, control on the right, ending at the same edge for every row: a panel
+-- whose controls end at different places reads as several panels.
 local columns, captioned = {}, 0
 for _, child in ipairs(host.children) do
     if child.layoutColumn then
@@ -289,30 +343,35 @@ end
 Expect("there are labelled controls to line up", captioned > 1, true)
 local distinctColumns = 0
 for _ in pairs(columns) do distinctColumns = distinctColumns + 1 end
-Expect("...and every one of them starts at the same column", distinctColumns, 1)
+Expect("...and every one of them ends at the same edge", distinctColumns, 1)
 
-local headingGaps = {}
-for _, heading in ipairs(headings) do
-    local above
-    for _, row in ipairs(rows) do
-        if row.y > heading.y and (not above or row.y < above.y) then above = row end
+-- From where each section ends -- the bottom of its box, or of its cards where it has no box --
+-- to the next one's title.
+local headingGaps, last = {}, nil
+for _, item in ipairs(_G.SpokenOptionsPanel.layout.items) do
+    if item.kind == "section" and item.shown then
+        if last and last.bottom and item.heading then
+            table.insert(headingGaps, last.bottom - item.heading.layoutY)
+        end
+        last = item
     end
-    if above then table.insert(headingGaps, above.y - heading.y - above.height) end
 end
 Expect("every section heading the same distance below the section above", Distinct(headingGaps), 1)
 
 -- A heading introduces the section under it. Sit it midway and it reads as belonging to
--- neither: the space above it has to be clearly the larger of the two.
+-- neither: the space above its words has to be the larger of the two. As the game's section
+-- header has them, its words start 16 down its 45 and run 16 tall, so to 32.
 local below
 for _, heading in ipairs(headings) do
     local first
     for _, row in ipairs(rows) do
         if row.y < heading.y and (not first or row.y > first.y) then first = row end
     end
-    if first then below = below or (heading.y - heading.height - first.y) end
+    if first then below = below or (heading.y - 32 - first.y) end
 end
+local above = headingGaps[1] and (headingGaps[1] + 16)
 Expect("a heading sits nearer its own section than the one above",
-    below ~= nil and headingGaps[1] >= below * 3, true)
+    below ~= nil and above ~= nil and above > below, true)
 
 ---------------------------------------------------------------- every sound setting is on this panel
 -- The two feature addons each used to carry a channel control of their own, so a player
@@ -349,30 +408,35 @@ end
 
 local labels = PanelLabels("11509")
 -- "Up next" is the queue window's own title. As a settings heading it named nothing.
-Expect("the window settings are headed as such", labels["Player window"], true)
+Expect("the window settings are headed as such", labels["Window"], true)
 Expect("...not by the queue's title", labels["Up next"], nil)
 -- The scale slider was built with no height and no orientation, so it drew nothing: the
 -- setting sat on the panel invisible, with a gap where it should have been. The zones
 -- addon's own sliders, which do render, set both.
 -- Label on the left, control on the right, value beside it: one row, not two.
-Expect("the scale slider is labelled", labels["Player scale"], true)
+Expect("the scale slider is labelled", labels["Window Size"], true)
 Expect("...with its value beside the bar", labels["70%"], true)
 local scale
 for _, child in ipairs(_G.SpokenOptionsPanel.content.children) do
-    if child.frameType == "Slider" then scale = scale or child end
+    if child.layoutSlider and child.layoutSlider.frameType == "Slider" then scale = scale or child.layoutSlider end
 end
 Expect("the scale slider is a slider", scale ~= nil, true)
 Expect("...with a height, or it draws nothing", scale and scale.height, 16)
 Expect("...and an orientation", scale and scale:GetOrientation(), "HORIZONTAL")
-Expect("an optional action is named on the panel", labels["Hide the Report button"], true)
--- Hiding one button and hiding the whole window are the same kind of choice, so they sit
--- together, with the largest of them last.
+Expect("an optional action is named on the panel", labels["Hide Report Button"], true)
+-- Hiding the portrait and hiding one button are the same kind of choice, so they sit together.
 local order = table.concat(PanelOrder("11509"), "|")
-Expect("...above hiding the window entirely", string.find(order,
-    "Hide the portrait|Hide the Report button|Hide the player entirely", 1, true) ~= nil, true)
-Expect("the channel is chosen here", labels["Sound channel"], true)
+Expect("...beside hiding the portrait", string.find(order,
+    "Hide Portrait|Hide Report Button", 1, true) ~= nil, true)
+-- Nothing on screen at all is a way of showing lines, chosen with the others, not a switch
+-- among the window's settings.
+Expect("voice only is still one of the ways to show lines", _G.SpokenEnv.Options:Styles()[4], "none")
+Expect("...and a narrator card of its own, a sound's bars rising and falling", labels["Voice Only"], true)
+Expect("...and there is no separate switch to hide the window", labels["Hide Window"], nil)
+Expect("the channel is chosen here", labels["Volume Follows"], true)
+Expect("...and the voice language, once for every module", labels["Voice Language"], true)
 Expect("...and so is silencing the game's own dialogue",
-    labels["Silence the game's own dialogue while speaking"], true)
+    labels["Silence NPC Voices"], true)
 Expect("a current client is offered nothing about the music channel",
     labels["Play through the music channel"], nil)
 
@@ -403,7 +467,8 @@ quests:Enqueue(CornerClip())
 env.PlayerFrame:Update()
 local corner = env.PlayerFrame.frame.actions.buttons[1]
 Expect("the action is a button", corner ~= nil, true)
-Expect("...showing its icon, not a word", corner:GetNormalTexture():GetTexture(), ICON)
+Expect("...showing its icon, not a word, in the player's round button", corner.glyph:GetTexture(), ICON)
+Expect("...the ring round it, as the subtitle's controls have", corner.ring ~= nil, true)
 Expect("...with no label", corner:GetText() or "", "")
 Expect("...in the corner", corner.anchor and corner.anchor.point, "TOPRIGHT")
 -- Sized to be aimed at. Pinned as a floor rather than a number, so it can be tuned but
@@ -555,17 +620,17 @@ Expect("the layout survives the logout's stripped settings", ok and "no error" o
 -- AceDB keys the profile by the name UnitName gave when its file loaded, and the Forever
 -- client answers "Unknown" there on some logins and the name on others. A place, a width or
 -- an expanded caption kept in the profile came back on one login and not the next.
-_G.SpokenPlayerDB = nil
+_G.SpokenSettings = nil
 env = Boot()
 local frame = env.PlayerFrame.frame
 frame:SetWidth(500)
 frame.mover.hooks.OnMouseUp[1]()
-local saved = _G.SpokenPlayerDB.global.Layout.Player
+local saved = _G.SpokenSettings.global.Layout.Player
 Expect("a drag saves where the player sits", saved and saved.left .. "," .. saved.top, "0,100")
 Expect("...and its width", saved and saved.width, 500)
 env.Transcript:ToggleExpanded()
-Expect("expanding the captions is saved account-wide", _G.SpokenPlayerDB.global.Layout.CaptionsExpanded, true)
-_G.SpokenPlayerDB.profiles = {}   -- the next login's profile is a different one
+Expect("expanding the captions is saved account-wide", _G.SpokenSettings.global.Layout.CaptionsExpanded, true)
+_G.SpokenSettings.profiles = {}   -- the next login's profile is a different one
 env = Boot()
 frame = env.PlayerFrame.frame
 local point, relative, relativePoint, x, y = frame:GetPoint()
@@ -575,14 +640,84 @@ Expect("...at the saved width", frame:GetWidth(), 500)
 Expect("...with the captions still expanded", env.Transcript.expand:GetNormalTexture():GetTexture(),
     [[Interface\Buttons\UI-MinusButton-Up]])
 env.PlayerFrame:Reset()
-Expect("reset forgets the saved place", _G.SpokenPlayerDB.global.Layout.Player, nil)
+Expect("reset forgets the saved place", _G.SpokenSettings.global.Layout.Player, nil)
 -- The minimal player saves its own place beside this one: tests/minimal-classic.
 
--- A player who expanded the captions before the setting moved keeps them expanded.
-_G.SpokenPlayerDB = { profiles = { Default = { Transcript = { Expanded = true } } } }
-env = Boot()
-Expect("the old profile setting carries over", env.Addon:Layout().CaptionsExpanded, true)
-_G.SpokenPlayerDB = nil
+---------------------------------------------------------------- a sample line, for the welcome window
+-- Choosing a window as the narrator style shows it at once with a sample line in it, as the
+-- subtitles show theirs; the first real line puts the sample away.
+local quests
+env, quests = Boot()
+local F = env.PlayerFrame
+local function Shown(f) return f:IsShown() and true or false end
+Expect("with nothing playing the window is hidden", Shown(F.frame), false)
+F:ShowSample(true)
+Expect("a sample shows the window", Shown(F.frame), true)
+Expect("...with the sample speaker", F.frame.container.name:GetText(), env.L.SAMPLE_SPEAKER)
+quests:Enqueue(H.Clip({ present = { header = "Thrall", label = "Warchief", portrait = { kind = "none" } } }))
+Expect("a real line puts the sample away", F:IsShowingSample(), false)
+Expect("...and the window shows the line", F.frame.container.name:GetText(), "Thrall")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+Expect("...and closes after it, with no sample left to come back to", Shown(F.frame), false)
+
+_G.UISpecialFrames = _G.UISpecialFrames or {}
+env.Addon:SetPlayerStyle("minimal")
+F:RefreshConfig()
+F:ShowSample(true)
+Expect("the small window shows the sample too", env.MinimalPlayer.clip == F.sample, true)
+Expect("...its speaker", env.MinimalPlayer.name:GetText(), env.L.SAMPLE_SPEAKER)
+F:ShowSample(false)
+Expect("...and puts it away", env.MinimalPlayer.wanted, false)
+
+-- The welcome window's narrator tiles: a click chooses, and a Preview button on each style but
+-- Voice Only shows that style with a sample line, whichever is chosen, until it is hidden again,
+-- a style is chosen or the window closes.
+local W = env.Welcome
+-- The subtitle's own sample is drawn in tests/captions; here only what the welcome asks of it.
+local subtitleSample = false
+env.Subtitle.ShowSample = function(_, shown) subtitleSample = shown and true or false end
+env.Subtitle.IsShowingSample = function() return subtitleSample end
+W:Build()
+local tiles = W.tiles
+local function Tile(value)
+    for _, tile in ipairs(tiles) do if tile.layoutTile.value == value then return tile end end
+end
+local preview = W.preview
+local function Label() return preview:GetText() end
+Expect("one Preview button for the styles", preview ~= nil and Tile("classic").previewButton == nil, true)
+Expect("...between their question and the tiles, as far from each", (function()
+    local section = W.layout.items[#W.layout.items]
+    local heading, tiles = section.heading, section.rows[1]
+    if section.button ~= preview or not (heading and tiles and preview.anchor) then return false end
+    local above = (heading.anchor.y - 17) - preview.anchor.y
+    local below = (preview.anchor.y - 22) - section.top
+    return above == below and above > 0
+end)(), true)
+env.Addon:SetPlayerStyle("subtitle")
+W.layout:Refresh()
+Expect("...reading Preview", Label(), env.L.STYLE_PREVIEW)
+Tile("classic"):Click()
+Expect("choosing a style shows no sample", F:IsShowingSample() or subtitleSample, false)
+preview:Click()
+Expect("Preview turns preview mode on: the chosen style with a sample line", F:IsShowingSample() and Shown(F.frame), true)
+Expect("...and the button turns it off again", Label(), env.L.STYLE_PREVIEW_HIDE)
+Tile("subtitle"):Click()
+Expect("in preview mode, choosing another style swaps to it", subtitleSample and not F:IsShowingSample(), true)
+Expect("...and the mode stays on", Label(), env.L.STYLE_PREVIEW_HIDE)
+Tile("none"):Click()
+Expect("Voice Only in preview mode shows nothing", subtitleSample or F:IsShowingSample(), false)
+Expect("...and the button can still turn the mode off", preview:IsEnabled() and true or false, true)
+Tile("minimal"):Click()
+Expect("...until another style is chosen", env.MinimalPlayer.clip == F.sample and F:IsShowingSample(), true)
+preview:Click()
+Expect("Hide Preview turns the mode off and the samples go", F:IsShowingSample() or subtitleSample or env.Addon.previewStyle ~= nil, false)
+Expect("...and it reads Preview again", Label(), env.L.STYLE_PREVIEW)
+Tile("none"):Click()
+Expect("with Voice Only chosen and the mode off there is nothing to preview", preview:IsEnabled() and true or false, false)
+Tile("classic"):Click()
+preview:Click()
+W.frame:GetScript("OnHide")(W.frame)
+Expect("closing the welcome turns preview mode off", env.Options.previewing or env.Addon.previewStyle ~= nil or F:IsShowingSample(), false)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll player frame tests passed")

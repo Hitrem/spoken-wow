@@ -15,10 +15,10 @@ the client loads what is in the folder. They are unmodified copies, and are foun
 |---|---|---|
 | LibStub | every addon | Public domain (stated in the file header) |
 | CallbackHandler-1.0 | Ace3 consumers, LibDataBroker | [Ace3 license](https://www.wowace.com/projects/ace3) — BSD-style, free use with attribution |
-| Ace3 (AceAddon, AceConsole, AceDB, AceDBOptions, AceEvent, AceTimer, AceGUI-3.0, AceConfig-3.0, AceCore-3.0) | SpokenQuests, SpokenPlayer | [Ace3 license](https://www.wowace.com/projects/ace3) |
-| LibDataBroker-1.1 | SpokenPlayer, SpokenZones | Public domain / CC0, per its project page |
-| LibDBIcon-1.0 | SpokenPlayer, SpokenZones | Public domain, by Rabbit |
-| [LibDeflate](https://github.com/SafeteeWoW/LibDeflate) 1.0.2-release | SpokenPlayer | zlib License (`Libs/LibDeflate/LICENSE.txt`) |
+| Ace3 (AceAddon, AceConsole, AceDB, AceDBOptions, AceEvent, AceTimer, AceGUI-3.0, AceConfig-3.0, AceCore-3.0) | SpokenQuests, Spoken | [Ace3 license](https://www.wowace.com/projects/ace3) |
+| LibDataBroker-1.1 | Spoken, SpokenZones | Public domain / CC0, per its project page |
+| LibDBIcon-1.0 | Spoken, SpokenZones | Public domain, by Rabbit |
+| [LibDeflate](https://github.com/SafeteeWoW/LibDeflate) 1.0.2-release | Spoken | zlib License (`Libs/LibDeflate/LICENSE.txt`) |
 
 If you are vendoring a new library, put its upstream license text beside it rather than
 only adding a row here.
@@ -32,7 +32,7 @@ global addon-management APIs to `C_AddOns` and the gossip APIs to `C_GossipInfo`
 renamed `VoiceOverRedux`, and is `SpokenQuests` today. Its sound packs deliberately
 stay loadable by upstream's player, and upstream's packs stay loadable by this one.
 
-**SpokenPlayer**'s sound queue is a port of that same queue, generalised so that
+**Spoken**'s sound queue is a port of that same queue, generalised so that
 several feature addons share one window.
 
 ## Game text, lore and artwork
@@ -59,7 +59,15 @@ None of this is the project's to license, and the MIT grant does not reach it.
   apply to it.
 - **Map images, portrait frames and icons** derived from game assets
   (`PortraitFrameAtlas`, the continent maps) are Blizzard's.
-- **Minimal Classic player textures** (`addons/SpokenPlayer/Textures/Minimal*.tga`)
+- **Lore page art** (`addons/SpokenZones/Textures/Art/*.tga`): the spellbook's parchment,
+  divider and backplate, and the quest log's details page and frame, cut from the game's UI
+  files (Forever client) so the page looks the same on every client. They are Blizzard's.
+- **Link icons** (`addons/Spoken/Textures/Link*.tga`): the GitHub, Discord and CurseForge logos,
+  each white on a square of its brand colour. GitHub's and Discord's shapes come from
+  [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons), CurseForge's from
+  [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0). The logos are trademarks of
+  GitHub, Inc., Discord Inc. and Overwolf (CurseForge), used only to link to those sites.
+- **Minimal Classic player textures** (`addons/Spoken/Textures/Minimal*.tga`)
   also derive from Blizzard UI artwork. Sources and adaptations are listed in
   [`docs/minimal-classic/ARTWORK.md`](docs/minimal-classic/ARTWORK.md).
 - **The generated audio** is synthesised by [ElevenLabs](https://elevenlabs.io) and

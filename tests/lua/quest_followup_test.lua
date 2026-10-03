@@ -11,7 +11,7 @@ local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
 local QUESTS = here .. "/../../addons/SpokenQuests/"
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
 local SPEAKER = 500
@@ -141,7 +141,7 @@ local function Boot(client, packs, locale)
     stub.SetAddOns(addons)
     -- The saved variables outlive a reload in this harness, so a scenario that changed the
     -- fallback language would otherwise hand it to the next one.
-    _G.SpokenQuestsDB = nil
+    _G.SpokenQuestsSettings = nil
     local VO, env = stub.LoadQuests(QUESTS, SPOKEN)
     VO.FollowupLines = FIXTURE
     dofile(QUESTS .. "Followup.lua")

@@ -1,0 +1,336 @@
+setfenv(1, SpokenEnv)
+
+-- The object the ported queue code reaches timers and settings through, under the name
+-- upstream gave it. A plain table with AceTimer embedded, not an AceAddon: the player has
+-- no options table to register, no console commands of its own, and every client from
+-- 1.12 up can embed AceTimer into anything. Reproducing the name is what keeps the
+-- ported bodies diffable against upstream.
+Addon = LibStub("AceTimer-3.0"):Embed({})
+
+-- What feature addons register through API.lua and the UI reads back.
+Bullets = {}
+Renderers = {}
+
+-- The red a queue line turns when a click will take it out, in either player layout.
+RemoveColor = { 225 / 255, 20 / 255, 8 / 255 }
+
+-- Player-wide settings only. Anything a single domain cares about -- gossip frequency,
+-- autoplay, which pack to prefer -- stays in that feature addon's own saved variables.
+Defaults = {
+    profile = {
+        Frame = {
+            LockFrame = false,
+            FrameScale = 0.7,
+            FrameStrata = "HIGH",
+            HidePortrait = false,
+            HideFrame = false,
+            MinimalPlayer = true,
+            -- Subtitles in place of either window. A switch of its own rather than a third
+            -- value of MinimalPlayer, so the window a player chose is still remembered when
+            -- they go back to one. Addon:PlayerStyle reads the two together. The default only
+            -- on the modern clients: the legacy ones start in the window they always had.
+            SubtitlePlayer = not Version.IsAnyLegacy or false,
+            -- Forever only: the bronze its own frames wear, on the minimal player's metal.
+            BronzeTint = true,
+            MinimalWidth = 380,
+            -- Per action id, for the ones an addon declared optional. Absent means shown.
+            HiddenActions = {},
+        },
+        -- The voice language and its fallback, for every module at once (Spoken:GetLanguageChoice).
+        -- Unset, each module keeps the choice it had before there was one setting for all.
+        Language = {},
+        Audio = {
+            -- A string, because that is what PlaySoundFile takes. The quests addon keeps
+            -- its enum internally and converts at the boundary.
+            SoundChannel = "Master",
+            -- The client speaks its own NPC barks on the Dialog channel, over the top of a
+            -- line being read. Muting it while we speak belongs to the player: any addon's
+            -- clip is the one being talked over. Not on clients without the channel, where
+            -- Compat.lua interrupts the bark a different way.
+            AutoToggleDialog = (Version.IsLegacyVanilla or Version:IsRetailOrAboveLegacyVersion(60100)) or false,
+            -- The other channels turned down while a line is spoken (OtherSounds.lua), each to
+            -- this share of the player's own volume, for the length of a line. Not on the legacy
+            -- clients, where speech itself goes out on the music channel.
+            LowerOthers = (not Version.IsAnyLegacy or nil) and {
+                Enabled = true,
+                Music = 0.3,
+                Ambience = 0.4,
+                SFX = 0.6,
+                Dialog = 1,
+            },
+            -- 2.4.3 and 3.3.5 only. Those clients cannot stop a sound once started, so the
+            -- player routes speech through the music channel, which can be stopped. This
+            -- moved here from the quests addon because it is how the *player* plays on those
+            -- clients, whichever addon queued the line.
+            LegacyMusicChannel = (Version.IsLegacyWrath or Version.IsLegacyBurningCrusade or nil) and {
+                Enabled = true,
+                Volume = 1,
+                FadeOutMusic = 0.5,
+            },
+            -- 2.4.3 and 3.3.5 with HD model patches: which set the portrait's animation
+            -- durations are looked up in.
+            LegacyHDModels = (Version.IsLegacyWrath or Version.IsLegacyBurningCrusade or nil) and false,
+        },
+        -- Parts of Spoken switched off in the settings, by source key, as false. Absent means on.
+        -- See Sources:IsTurnedOff for why this is the player's switch and not the client's.
+        Parts = {},
+        Contribute = {
+            -- One switch for every feature addon's Contribute button, since they all hand
+            -- the player the same box and a player who does not want one wants none.
+            HideButtons = false,
+        },
+        Transcript = {
+            Enabled = true,
+            AutoScroll = true,
+            Lines = 2,
+            HighlightWord = false,
+            FontSize = 16,
+            -- The subtitle player's own (UI/Subtitle.lua).
+            Typewriter = true,
+            -- "letter": each word typed in; "word": each word appears whole.
+            TypewriterBy = "letter",
+            SubtitleShadow = 0.6,
+            SubtitleScale = 1,
+        },
+        Minimap = {
+            -- LibDBIcon's own: minimapPos, lock, hide, and -- on the modern clients that
+            -- have one -- the addon compartment flag. On by default, as it is for the
+            -- minimap button; AceDB fills the new key into profiles that predate it.
+            LibDBIcon = { showInCompartment = true },
+            -- What each mouse button does. "Menu" opens the list; any other value is a
+            -- menu entry id, the player's or a source's.
+            Commands = {
+                LeftButton = "Menu",
+                MiddleButton = "PlayPause",
+                RightButton = "Settings",
+            },
+        },
+    },
+    char = {
+        IsPaused = false,
+    },
+}
+
+--- Idempotent, so the test harness and ADDON_LOADED can both call it.
+function Addon:InitDB()
+    if self.db then
+        return
+    end
+    self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults)
+    -- Another profile chosen, copied over this one or reset, from Spoken's page or anywhere
+    -- else: its settings apply now rather than at the next reload.
+    if self.db.RegisterCallback then
+        local function Apply() Addon:ApplyProfile() end
+        self.db.RegisterCallback(self, "OnProfileChanged", Apply)
+        self.db.RegisterCallback(self, "OnProfileCopied", Apply)
+        self.db.RegisterCallback(self, "OnProfileReset", Apply)
+    end
+end
+
+--- Put the profile's settings into effect: the window or subtitles, the captions, the minimap
+--- button, the other sounds' levels and the settings page. Each only where it is loaded on this
+--- client, and only once Enable has built them.
+function Addon:ApplyProfile()
+    if not self.enabled then return end
+    if PlayerFrame and PlayerFrame.RefreshConfig then PlayerFrame:RefreshConfig() end
+    if Transcript and Transcript.RefreshConfig then Transcript:RefreshConfig() end
+    if Subtitle and Subtitle.Update then Subtitle:Update() end
+    -- Hands LibDBIcon the new profile's table: it keeps the one it was given.
+    if Minimap and Minimap.Refresh then Minimap:Refresh() end
+    if OtherSounds and OtherSounds.IsAvailable and OtherSounds:IsAvailable() then OtherSounds:RefreshConfig() end
+    -- Which modules are on is the profile's too: each puts its buttons back or takes them off,
+    -- and what one now off had queued goes, as switching it off on Spoken's page does.
+    for key, source in Sources:Iterate() do
+        local off = Sources:IsTurnedOff(source)
+        if off then SoundQueue:RemoveSource(source) end
+        Callbacks:Fire("PART_SWITCHED", key, not off)
+    end
+    if Options and Options.UpdateRows then Options:UpdateRows() end
+end
+
+--- Where each player window sits, how wide it is, and whether the captions are expanded.
+--- Account-wide, in global rather than the profile: AceDB names the profile after
+--- UnitName("player") when its file loads, and the Forever client answers "Unknown" (in
+--- the client's language) there on some logins and the name on others, so a window
+--- placed on one login came back on the default spot the next. The client's own
+--- SetUserPlaced cache fared no better, since the frames are built at PLAYER_LOGIN and
+--- anchored to their defaults straight after.
+function Addon:Layout()
+    local global = self.db.global
+    if type(global.Layout) ~= "table" then global.Layout = {} end
+    return global.Layout
+end
+
+--- Record a frame's place and width under key. The top-left corner, not the anchor the
+--- client left after a drag: both players grow downwards as captions and the queue come
+--- and go, and a saved BOTTOM anchor would put the frame back at the height it had then.
+function Addon:SaveLayout(key, frame, width)
+    local left, top = frame:GetLeft(), frame:GetTop()
+    if not left or not top then return end
+    self:Layout()[key] = { left = left, top = top, width = width or frame:GetWidth() }
+end
+
+--- Put a frame back where SaveLayout left it. False when nothing was saved.
+function Addon:RestoreLayout(key, frame)
+    local saved = self:Layout()[key]
+    if type(saved) ~= "table" or not saved.left or not saved.top then return false end
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", saved.left, saved.top)
+    return true
+end
+
+--- Which of the four ways of showing a line is in use: "minimal" (the Minimal Classic
+--- window), "classic" (the original window), "subtitle" (no window, subtitles only) or "none"
+--- (nothing on screen at all, the voice alone -- what HideFrame always meant). Neither
+--- alternative to the original window exists everywhere: the minimal one is not built on the
+--- legacy clients, and 1.12 has no captions, so no subtitles either.
+--- What is on screen: the chosen style, or one previewed from the welcome window or the settings
+--- (Options:Preview). The windows and the subtitles ask this; the settings ask PlayerStyle.
+function Addon:DisplayStyle()
+    return self.previewStyle or self:PlayerStyle()
+end
+
+function Addon:PlayerStyle()
+    local frame = self.db and self.db.profile.Frame or Defaults.profile.Frame
+    if frame.SubtitlePlayer and not Transcript.unavailable then return "subtitle" end
+    if frame.HideFrame then return "none" end
+    if frame.MinimalPlayer and not Version.IsAnyLegacy then return "minimal" end
+    return "classic"
+end
+
+-- The window a player last chose is kept whichever style replaces it, so going back to a
+-- window finds the one they had.
+function Addon:SetPlayerStyle(style)
+    local frame = self.db.profile.Frame
+    frame.SubtitlePlayer = style == "subtitle"
+    frame.HideFrame = style == "none"
+    if style == "minimal" or style == "classic" then frame.MinimalPlayer = style == "minimal" end
+end
+
+--- Everything that needs the world: the frame, the button, the settings, the slash
+--- command. Idempotent, so the harness and PLAYER_LOGIN can both call it.
+function Addon:Enable()
+    if self.enabled then return end
+    self:InitDB()
+    self.enabled = true
+    PlayerFrame:Initialize()
+    Transcript:Initialize()
+    Minimap:Setup()
+    Options:Setup()
+
+    -- Through _G, not bare. Every file here runs inside a private environment whose
+    -- metatable falls back to _G: reads fall through, writes do not. A bare assignment
+    -- lands in the environment, and the client never hears of the command.
+    -- One scheme across the three addons: the long name and a two-or-three letter short
+    -- form. /sp here, /spq for quests, /spz for zones.
+    _G.SLASH_SPOKEN1 = "/spoken"
+    _G.SLASH_SPOKEN2 = "/sp"
+    SlashCmdList.SPOKEN = function(input)
+        local command = strlower(strtrim(input or ""))
+        if command == "play" or command == "pause" or command == "" then
+            SoundQueue:TogglePauseQueue()
+        elseif command == "stop" then
+            SoundQueue:RemoveAllSoundsFromQueue()
+        elseif command == "skip" then
+            SoundQueue:Skip()
+        elseif command == "transcript" then
+            Transcript:SetEnabled(not Addon.db.profile.Transcript.Enabled)
+        elseif command == "transcript on" then
+            Transcript:SetEnabled(true)
+        elseif command == "transcript off" then
+            Transcript:SetEnabled(false)
+        elseif command == "transcript reset" then
+            Transcript:Reset()
+        elseif command == "transcript 1" or command == "transcript 2" then
+            Addon.db.profile.Transcript.Lines = tonumber(string.sub(command, -1))
+            Transcript:RefreshConfig()
+        elseif command == "player minimal" or command == "player classic" or command == "player subtitle"
+            or command == "player none" then
+            Addon:SetPlayerStyle(string.sub(command, 8))
+            PlayerFrame:RefreshConfig()
+            Transcript:RefreshConfig()
+        elseif command == "options" or command == "settings" then
+            Options:Open()
+        elseif command == "share" and Gather then
+            Spoken:ShowGatherInstructions()
+        elseif command == "reset" then
+            PlayerFrame:Reset()
+            -- Not on 1.12, which has no captions and so no subtitles to move.
+            if Subtitle then Subtitle:Reset() end
+        elseif command == "diagnostics" then
+            print(format("Spoken %s, API %d, %d queued, %s", AddonVersion, Spoken.API_VERSION,
+                SoundQueue:GetQueueSize(), SoundQueue:IsPaused() and "paused" or "playing"))
+            for key, source in Sources:Iterate() do
+                print(format("  source %s (%s)", key, source.addon or "?"))
+            end
+            for _, line in ipairs(PlayerFrame:Describe()) do print("  " .. line) end
+            print("  " .. Transcript:Describe())
+            for _, err in ipairs(Callbacks.errors) do print("  callback error: " .. err) end
+        else
+            print("Spoken: /spoken play | stop | skip | player [minimal|classic|subtitle|none] | transcript [on|off|1|2|reset] | options | reset | diagnostics")
+        end
+    end
+end
+
+-- Pause is kept per character across logins, so a character paused last session is silent this
+-- one. Said at login, and again the first time a line waits behind it while nothing is on
+-- screen to say so: with subtitles only or voice only, a paused queue and a broken addon look
+-- the same.
+local pauseReminded = false
+local function RemindPaused()
+    print("|cff66bbffSpoken:|r " .. L.PAUSED_REMINDER)
+end
+-- Registered from Enable, not here: this file loads before Callbacks.lua does.
+local function WatchPausedQueue()
+    Callbacks:Register("CLIP_QUEUED", function()
+        if pauseReminded or not SoundQueue:IsPaused() then return end
+        local style = Addon:PlayerStyle()
+        if style == "none" or style == "subtitle" and not Addon.db.profile.Transcript.Enabled then
+            pauseReminded = true
+            RemindPaused()
+        end
+    end)
+end
+
+-- Folders an older release installed, which nothing ships any more: Spoken's own before it was
+-- renamed, and the old names of Quests and Zones, whether the addons themselves or the empty
+-- folders that stood in for them. Loaded beside this release, the old code narrates over it and
+-- the empty ones only clutter the AddOns list. The player is asked to delete them. Not disabled
+-- from here: current clients answer an addon that tries with a dialog of their own.
+local OLD_FOLDERS = { "SpokenPlayer", "VoiceOverRedux", "ZoneLore" }
+function Addon:FindOldFolders()
+    local found = {}
+    if not IsAddOnLoaded then return found end
+    for _, folder in ipairs(OLD_FOLDERS) do
+        if IsAddOnLoaded(folder) then table.insert(found, folder) end
+    end
+    return found
+end
+local function WarnOldFolders()
+    local found = Addon:FindOldFolders()
+    if not found[1] then return end
+    local text = format(L.OLD_FOLDERS_FMT, table.concat(found, ", "))
+    print("|cff66bbffSpoken:|r " .. text)
+    if StaticPopupDialogs and StaticPopup_Show then
+        StaticPopupDialogs.SPOKEN_OLD_FOLDERS = { text = text, button1 = OKAY, timeout = 0, whileDead = 1 }
+        StaticPopup_Show("SPOKEN_OLD_FOLDERS")
+    end
+end
+
+-- AceDB needs the saved variable to exist, which is only true once the client has loaded
+-- this addon's file. 1.12 hands an OnEvent handler nothing and sets the globals `event`
+-- and `arg1` instead, hence the fallback.
+local loader = CreateFrame("Frame")
+loader:RegisterEvent("ADDON_LOADED")
+loader:RegisterEvent("PLAYER_LOGIN")
+loader:SetScript("OnEvent", function(_, ev, name)
+    ev = ev or event
+    if ev == "ADDON_LOADED" and (name or arg1) == AddonFolder then
+        Addon:InitDB()
+    elseif ev == "PLAYER_LOGIN" then
+        Addon:Enable()
+        WarnOldFolders()
+        WatchPausedQueue()
+        if SoundQueue:IsPaused() then RemindPaused() end
+    end
+end)

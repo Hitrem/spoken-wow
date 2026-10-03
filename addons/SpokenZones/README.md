@@ -1,6 +1,6 @@
 <!-- GENERATED from publishers/zones/spoken-zones.md by scripts/descriptions.mjs. Do not edit by hand. -->
 
-**Zone lore on the world map, for WoW Classic Era.** Formerly ZoneLore — now one of the Spoken addons, narrating through the [Spoken Player](https://www.curseforge.com/wow/addons/spoken-player) shared with Spoken Quests, which your addon manager installs alongside.
+**Zone lore on the world map, for WoW Classic Era.** One of [Spoken](https://www.curseforge.com/wow/addons/spoken-player)'s modules: it comes in Spoken's download, beside Spoken Quests and Spoken Books, and narrates through it.
 
 Open the map and the lore of the zone you're looking at appears beside it. Click a named subzone and you get that place's story instead. Optionally, it's read aloud.
 
@@ -10,10 +10,10 @@ Open the map and the lore of the zone you're looking at appears beside it. Click
 
 ## What it does
 
-- **World map panel** — the current zone's lore beside the map. Dock it left or right, resize it, set the font size.
+- **Zone Lore** — the current zone's story in a panel of its own beside the map, on the quest log's parchment. Resize it, set the font size, or close it until the map is next opened.
 - **Subzone lore** — click any named area on the map to read about it.
 - **Hover preview** — point at a subzone for the first lines in a tooltip, without disturbing the panel.
-- **Lore window** — browse zones without opening the map, from the minimap button or `/spz window`.
+- **Lore of Azeroth** — browse every story without opening the map: Azeroth, its two continents, their zones and each zone's areas, with a search box. From the minimap button, `/spz window`, or the button on Zone Lore.
 - **Narration** — a play button beside the lore; what is being read, and what is waiting, shows in the Spoken player with Read and Report beside it.
 - **Autoplay** — walking into an area you've never discovered narrates it once, tracked per character. Already explored the world? A setting narrates those areas too, still once each.
 - **Works on non-English clients** — subzone lore is found by the name your client reports, so a German, French, Spanish, Portuguese, Russian, Korean or Chinese client reaches it too. The lore text itself is English for now.
@@ -21,7 +21,7 @@ Open the map and the lore of the zone you're looking at appears beside it. Click
 
 ## When there is no lore at all
 
-Every place in the game is on the panel, but some of them nobody has written about yet. Open one and the panel says so, with a **Contribute** button right under it. Press it and it gives you a link naming the place; open it in your browser, describe the place in your own words -- what it is, who lives there, what happened there -- and press Send. Rather not see the button? **Hide the Contribute buttons** in the Spoken Player settings turns it off.
+Every place in the game is on the panel, but some of them nobody has written about yet. Open one and the panel says so, with a **Contribute** button right under it. Press it and it gives you a link naming the place; open it in your browser, describe the place in your own words -- what it is, who lives there, what happened there -- and press Send. Rather not see the button? **Hide the Contribute buttons** in the Spoken settings turns it off.
 
 ## Narration needs a sound pack
 
@@ -66,10 +66,6 @@ Built for **Classic Era 1.15.9** and the **Anniversary client (2.5.6)**. Not bui
 The lore covers vanilla Azeroth, which is where an Anniversary character spends most of their levelling. Outland and the blood elf and draenei starting zones have no lore yet — the panel is empty there rather than wrong.
 
 Spoken Zones and a sound pack work together as long as they share a major version.
-
-## Upgrading from ZoneLore
-
-Nothing to do. Your settings and per-character narration history carry over on the first login, and the old `ZoneLore` folder is replaced by an empty placeholder that keeps them loading until then — it shows greyed in the AddOns list and can be deleted afterwards. The sound packs are unchanged. The player window and minimap button are Spoken's now; this addon's entries are on that button.
 
 ## Support
 

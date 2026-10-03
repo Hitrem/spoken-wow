@@ -66,7 +66,7 @@ function SpokenBooks:HasContributionGap()
 	if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution) then
 		return false
 	end
-	-- Hidden in the Spoken Player settings. Guarded: an older bundled player lacks the method.
+	-- Hidden in the Spoken settings. Guarded: an older bundled player lacks the method.
 	if Spoken.AreContributeButtonsHidden and Spoken:AreContributeButtonsHidden() then
 		return false
 	end
@@ -87,7 +87,7 @@ function SpokenBooks:ShowContribution()
 	end
 	local gather = { key = key, envelope = envelope }
 	local address = format("%s/contribute", self.SITE_URL)
-	-- Encode is absent on an older SpokenPlayer a legacy-client zip can still bundle; Link
+	-- Encode is absent on an older Spoken a legacy-client zip can still bundle; Link
 	-- returns nil for that or for an oversized result, and the two-copy fallback still works.
 	local link = Spoken.Contribute.Encode and Spoken.Contribute:Link(address, envelope)
 	if link then

@@ -6,7 +6,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local ZONES = here .. "/../../addons/SpokenZones/"
 local Expect, Failures = H.Expecter(print)
 
@@ -18,7 +18,7 @@ local MAP, BOTH, ONLY_ENGLISH = 1411, "valley of trials", "sen'jin village"
 
 --- Load the addon with these packs installed.
 local function Install(packs)
-    _G.SpokenZonesDB = {}
+    _G.SpokenZonesSettings = {}
     _G.SpokenZonesAudioPacks = {}
     for _, pack in ipairs(packs) do
         _G.SpokenZonesAudioPacks[pack.addon] = pack
@@ -105,7 +105,7 @@ local READY = { { code = "enUS", ready = true }, { code = "esES", ready = true }
     { code = "frFR", ready = true } }
 local function InstallOn(locale, db)
     stub.SetLocale(locale)
-    _G.SpokenZonesDB = db
+    _G.SpokenZonesSettings = db
     _G.SpokenZonesAudioPacks = {}
     return H.LoadZones(ZONES, { Languages = READY })
 end
@@ -136,7 +136,7 @@ Expect("F. going back to Auto follows the client again", Z:GetLanguage(), "frFR"
 local WITH_ITALIAN = { { code = "enUS", ready = true }, { code = "itIT", ready = true } }
 local function InstallItalian(locale, db)
     stub.SetLocale(locale)
-    _G.SpokenZonesDB = db
+    _G.SpokenZonesSettings = db
     _G.SpokenZonesAudioPacks = {}
     return H.LoadZones(ZONES, { Languages = WITH_ITALIAN })
 end

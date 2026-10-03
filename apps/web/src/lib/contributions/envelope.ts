@@ -1,5 +1,5 @@
 /**
- * The reader for the envelope addons/SpokenPlayer/Contribute.lua writes.
+ * The reader for the envelope addons/Spoken/Contribute.lua writes.
  *
  * THE TWO MUST AGREE EXACTLY, and the fixtures under tests/fixtures/contributions are what
  * holds them together -- the Lua writes them, this reads them, and a format change that
@@ -119,7 +119,7 @@ export type DecodeError = "malformed" | "corrupt" | "unsupported";
 type DecodeResult = { ok: true; text: string } | { ok: false; error: DecodeError };
 
 /**
- * The reader for the `#e1=` fragment addons/SpokenPlayer/Contribute.lua's Link builds:
+ * The reader for the `#e1=` fragment addons/Spoken/Contribute.lua's Link builds:
  * base64url -> raw deflate -> the same plaintext parseEnvelope already reads.
  *
  * Deliberately stops at plaintext rather than also calling parseEnvelope: ContributeForm feeds
