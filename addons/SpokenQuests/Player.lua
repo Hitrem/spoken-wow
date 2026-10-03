@@ -106,7 +106,7 @@ local STOP_GOSSIP = {
             self:SetHighlightTexture(texture, "ADD")
             self:SetNormalTexture(texture)
             self:SetPushedTexture(texture)
-            self.tooltip = gossipCount > 1 and "Next Gossip" or "Stop Gossip"
+            self.tooltip = gossipCount > 1 and L.OPT_NEXT_GOSSIP or L.OPT_STOP_GOSSIP
             if GameTooltip:GetOwner() == self then
                 GameTooltip:SetText(self.tooltip)
                 GameTooltip:Show()
@@ -147,13 +147,12 @@ local REPORT = {
     -- icon postdates the three legacy clients, where the texture is missing and
     -- the button would be a blank square; `text` is what they draw instead.
     icon = [[Interface\HelpFrame\HelpIcon-Bug]],
-    label = "Report a problem",
+    label = L.OPT_REPORT_PROBLEM,
     text = "R",
     anchor = "topright",
     tooltip = function(tooltip)
-        tooltip:SetText("Report a problem")
-        tooltip:AddLine("A wrong reading, a mispronounced name -- this gives you a link to say so.",
-            1, 0.8, 0.2, true)
+        tooltip:SetText(L.OPT_REPORT_PROBLEM)
+        tooltip:AddLine(L.OPT_REPORT_LINE_TIP, 1, 0.8, 0.2, true)
     end,
     onClick = function(clip)
         local target = ReportButton:CurrentTarget()

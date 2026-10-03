@@ -350,6 +350,8 @@ Check(#E.Callbacks.errors==0,table.concat(E.Callbacks.errors,'\n'))
 
 -- Exercise the actual quest adapter and log-text helper, including reward text.
 dofile(addons .. 'SpokenQuests/Environment.lua')
+-- Player.lua names its report action at load time, so it needs the string table.
+dofile(addons .. 'SpokenQuests/Strings.lua')
 VoiceOver.Version=E.Version
 dofile(addons .. 'SpokenQuests/Enums.lua')
 dofile(addons .. 'SpokenQuests/Contribute.lua')

@@ -48,13 +48,12 @@ local ACTIONS = {
 		-- simply missing and the button would be a blank square; `text` is what those draw
 		-- instead.
 		icon = [[Interface\HelpFrame\HelpIcon-Bug]],
-		label = "Report a problem",
+		label = L.REPORT_PROBLEM,
 		text = "R",
 		anchor = "topright",
 		tooltip = function(tooltip)
-			tooltip:SetText("Report a problem")
-			tooltip:AddLine("A bad reading, a mispronounced name, narration that does not "
-				.. "match the page -- this gives you a link to say so.", 1, 0.8, 0.2, true)
+			tooltip:SetText(L.REPORT_PROBLEM)
+			tooltip:AddLine(L.REPORT_LINE_TIP, 1, 0.8, 0.2, true)
 		end,
 		onClick = function(clip)
 			if not clip then
@@ -62,9 +61,7 @@ local ACTIONS = {
 			end
 			local url = SpokenBooks:ReportURL(clip.pageId, clip.language)
 			if url and SpokenBooks.ShowCopyLink then
-				SpokenBooks:ShowCopyLink(url,
-					"Copy this address and open it in your browser to report a problem with "
-						.. "this page.")
+				SpokenBooks:ShowCopyLink(url, L.REPORT_LINE_ADDRESS)
 			end
 		end,
 	},
