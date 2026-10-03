@@ -136,8 +136,14 @@ def _write(cur, label: str, sql: str, rows: list, template: str | None = None) -
         print(file=sys.stderr)
 
 
-def import_locale(conn, lang: str, lines: list, names: dict) -> Counter:
-    """Write a language's lines and names. Returns what happened, counted."""
+def import_locale(conn, lang: str, lines: list, names: dict,
+                  origin: str = "extracted", note: str | None = None) -> Counter:
+    """Write a language's lines and names. Returns what happened, counted.
+
+    `origin` is what the rows are: the dump's ('extracted'), or a translation community's
+    ('community', tools/import_questit.py), with `note` saying which release. Either way an
+    import replaces what it wrote before and only records beside what was edited here.
+    """
     counts = Counter()
     with conn, conn.cursor() as cur:
         cur.execute(
@@ -184,9 +190,9 @@ def import_locale(conn, lang: str, lines: list, names: dict) -> Counter:
                 retire.append(key)
             highest[key] = highest.get(key, 0) + 1
             insert.append((line["lineId"], variant, lang, highest[key], action == "promote",
-                           source, quest_id, player_gender, file_name, line["text"],
+                           origin, source, quest_id, player_gender, file_name, line["text"],
                            line["originalText"], line["localeText"], line["generatable"],
-                           line["skipReason"]))
+                           line["skipReason"], note))
 
         # Retired first, all of them: the one-live-row index would refuse an insert that
         # landed beside a row still current.
@@ -198,9 +204,8 @@ def import_locale(conn, lang: str, lines: list, names: dict) -> Counter:
         _write(cur, "lines", """insert into "quest_line"
                  ("lineId", "variant", "lang", "version", "isCurrent", "origin",
                   "source", "questId", "playerGender", "fileName", "text",
-                  "originalText", "localeText", "generatable", "skipReason")
-               values %s""", insert,
-               template="(%s, %s, %s, %s, %s, 'extracted', %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                  "originalText", "localeText", "generatable", "skipReason", "note")
+               values %s""", insert)
 
         cur.execute(
             """select "kind", "entityId", "origin", "name" from "entity_name"
@@ -225,7 +230,8 @@ def import_locale(conn, lang: str, lines: list, names: dict) -> Counter:
             if action == "promote" and key in live_names:
                 retire.append(key)
             highest_names[key] = highest_names.get(key, 0) + 1
-            insert.append((kind, entity_id, lang, highest_names[key], action == "promote", name))
+            insert.append((kind, entity_id, lang, highest_names[key], action == "promote", origin,
+                           name, note))
 
         _write(cur, "names retired", """update "entity_name" as e set "isCurrent" = false
                  from (values %s) as r("kind", "entityId")
@@ -233,9 +239,8 @@ def import_locale(conn, lang: str, lines: list, names: dict) -> Counter:
                   and e."lang" = """ + cur.mogrify("%s", (lang,)).decode() + """ and e."isCurrent" """,
                retire)
         _write(cur, "names", """insert into "entity_name"
-                 ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name")
-               values %s""", insert,
-               template="(%s, %s, %s, %s, %s, 'extracted', %s)")
+                 ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name", "note")
+               values %s""", insert)
     return counts
 
 

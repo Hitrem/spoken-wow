@@ -59,7 +59,7 @@ endef
         package-audio-complete package-meta push-complete icon \
         downloads-status \
         factions followup-lines release release-audio release-audio-dry release-wago release-curse \
-        release-dry import-corpus import-locale fill-locales export-corpus export-ignores export-locale-text export-giver-names \
+        release-dry import-corpus import-locale fill-locales import-questit export-corpus export-ignores export-locale-text export-giver-names \
         sync check-synced full-release
 
 help: ## Show this help
@@ -384,6 +384,13 @@ fill-locales: ## Fill vmangos's empty *_locN columns from TrinityCore (TDB335= T
 	@cd $(QUESTS_DIR) && $(abspath $(PYTHON)) tools/fill_locales_from_tdb.py \
 	  --tdb335 "$(abspath $(TDB335))" --tdb-world "$(abspath $(TDB_WORLD))" \
 	  --tdb-hotfixes "$(abspath $(TDB_HOTFIXES))" $(ARGS)
+
+# Italian, which no client runs in, from the QuestIT community's addon: quest text, quest
+# titles and the few book pages it has, as 'community' rows. Run again on each of their
+# releases; an edit made on the site is kept. ARGS=--dry-run counts instead.
+import-questit: ## Import a QuestIT release into itIT (QUESTIT=~/Downloads/QuestIT)
+	@test -n "$(QUESTIT)" || { echo "import-questit: set QUESTIT to a QuestIT release folder"; exit 2; }
+	@cd $(QUESTS_DIR) && $(abspath $(PYTHON)) tools/import_questit.py "$(abspath $(patsubst ~/%,$(HOME)/%,$(QUESTIT)))" $(ARGS)
 
 export-corpus: check-synced ## quest_line -> corpus/corpus.json.gz (ARGS=--check to compare instead)
 	@$(QUESTS_CLI) export-corpus $(ARGS)
