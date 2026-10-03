@@ -93,24 +93,41 @@ export type LiveTake = {
  * generation/versions.ts, zones and books in their catalogues -- and all three as a count
  * subquery per live row. Postgres does not flatten a scalar subquery in the select list,
  * so at eleven thousand quests files that was eleven thousand index scans on every
- * search. A grouped count joined once does the same in one pass.
+ * search.
+ *
+ * Two queries joined here rather than one joined in Postgres. The single query joined
+ * `take` to a grouped count of itself, and its plan rested on the row estimate for the
+ * language: a language whose takes all arrive between two autoanalyzes is estimated at one
+ * row, Postgres picked a nested loop that re-grouped every itIT take once per live take,
+ * and the itIT explorer spent 18 seconds here on every search (2026-10-03). Each query
+ * below is one index scan whatever the estimate says, so a stale one costs nothing. A
+ * window count avoids the join too, but reads every column of every take to do it and was
+ * four times slower than either half.
  *
  * Counted by file, which is what take_current_idx is on. For zones and books a file and a
  * line are the same thing; a quests file is shared by every NPC who speaks it.
  */
 export async function liveTakes(source: Source, lang: Lang = BASE_LANG): Promise<LiveTake[]> {
-  return query<LiveTake>(
-    `select t."lineId", t."file", t."version", c."takes", t."spokenHash", t."characters",
-            t."credits", t."durationSec"::float8 as "durationSec", t."bytes"::float8 as "bytes",
-            t."provider", t."modelId", t."voiceId", t."createdAt", t."createdBy",
-            u."name" as "createdByName"
-       from "take" t
-       join (select "file", count(*)::int as "takes" from "take"
-              where "source" = $1 and "lang" = $2 group by "file") c using ("file")
-       left join "user" u on u."id" = t."createdBy"
-      where t."source" = $1 and t."lang" = $2 and t."isCurrent"`,
-    [source, lang],
-  );
+  const [live, counts] = await Promise.all([
+    query<Omit<LiveTake, "takes">>(
+      `select t."lineId", t."file", t."version", t."spokenHash", t."characters",
+              t."credits", t."durationSec"::float8 as "durationSec", t."bytes"::float8 as "bytes",
+              t."provider", t."modelId", t."voiceId", t."createdAt", t."createdBy",
+              u."name" as "createdByName"
+         from "take" t
+         left join "user" u on u."id" = t."createdBy"
+        where t."source" = $1 and t."lang" = $2 and t."isCurrent"`,
+      [source, lang],
+    ),
+    query<{ file: string; takes: number }>(
+      `select "file", count(*)::int as "takes" from "take"
+        where "source" = $1 and "lang" = $2 group by "file"`,
+      [source, lang],
+    ),
+  ]);
+  const takes = new Map(counts.map((row) => [row.file, row.takes]));
+  // Never zero: the live take is one of the rows it was counted from.
+  return live.map((row) => ({ ...row, takes: takes.get(row.file) ?? 1 }));
 }
 
 /** The version of the live take of one file, or null when it has never been generated. */

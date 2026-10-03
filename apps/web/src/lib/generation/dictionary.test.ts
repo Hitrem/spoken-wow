@@ -76,7 +76,8 @@ let snapshot: Record<string, unknown> | undefined;
 
 /**
  * When this run began, by the database's clock: the activity case looks for its row after
- * it. The rows every save here logs, as nobody's, are dropped by vitest.activity.ts.
+ * it. The activity rows every save here logs, as nobody's, are dropped by vitest.activity.ts;
+ * the lexicon_change rows by afterEach below.
  */
 let startedAt: string;
 
@@ -95,6 +96,16 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
+  // Every save here diffs ENTRIES against the real lexicon and logs the other ~145 words as
+  // removed, and the restore below is a raw write that logs nothing to say they came back.
+  // Left behind, those rows told the dirty check every word had just moved -- marking most of
+  // the corpus -- and one row per word per save made the check itself take 26 seconds a page
+  // (2026-10-03: 78,000 rows on spoken_dev). Nobody's, because the site never saves as
+  // nobody.
+  await db().query(
+    `delete from "lexicon_change" where "changedBy" is null and "changedAt" >= $1::timestamptz`,
+    [startedAt],
+  );
   if (!snapshot) {
     await db().query(`delete from "pronunciation_lexicon" where "id"`);
     return;
