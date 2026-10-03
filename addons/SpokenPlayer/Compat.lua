@@ -854,8 +854,8 @@ if Version.IsLegacyWrath then
             if self.frame.portrait.model and self.frame.portrait.model._awaitingModel then
                 GameTooltip:SetOwner(self.frame.portrait.pause, "ANCHOR_NONE")
                 GameTooltip:SetPoint("BOTTOMLEFT", self.frame.portrait.pause, "BOTTOMRIGHT", 4, -4)
-                GameTooltip:SetText("Uncached NPC", HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
-                GameTooltip:AddLine("Encounter this NPC in the world again to be able to see their model.", NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1)
+                GameTooltip:SetText(L.UNCACHED_NPC, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+                GameTooltip:AddLine(L.UNCACHED_NPC_TIP, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1)
                 GameTooltip:Show()
             end
         end)
