@@ -99,6 +99,50 @@ hold = nil
 stub.Advance(1.55)
 Expect("...and plays once released and the other has finished", world.played[2], held.path)
 
+---------------------------------------------------------------- a gate closing on a clip already speaking
+-- Gates are asked before a clip starts. A cinematic that begins a second after a greeting
+-- started would otherwise be talked over to its end.
+Fresh()
+hold = nil
+zones:AddGate(function(clip) return hold end)
+local talking = H.Clip()
+zones:Enqueue(talking)
+Expect("RecheckGates leaves a clip no gate holds speaking", zones:RecheckGates(), false)
+Expect("...still speaking", Q:IsPlaying(talking), true)
+hold = "cinematic"
+Expect("another source's recheck leaves it alone", quests:RecheckGates(), false)
+Expect("...still speaking", Q:IsPlaying(talking), true)
+Expect("RecheckGates stops its source's speaking clip a gate now holds", zones:RecheckGates(), true)
+Expect("...the sound is stopped", #world.stopped, 1)
+Expect("...reported stopped, not finished", rec:Has("CLIP_STOPPED " .. talking.key .. " false"), true)
+Expect("...kept at the head", Q:GetCurrentSound(), talking)
+Expect("...making no sound", Q:GetNowPlaying(), nil)
+stub.Advance(2)
+Expect("...its finish timer is cancelled, so it is still queued", Q:GetCurrentSound(), talking)
+Expect("...and not restarted while held", world.played[2], nil)
+hold = nil
+stub.Advance(1)
+Expect("released, it replays from the start", world.played[2], talking.path)
+
+Fresh()
+hold = nil
+zones:AddGate(function(clip) return hold end)
+local interrupted = H.Clip()
+local other = H.Clip()
+zones:Enqueue(interrupted)
+quests:Enqueue(other)
+hold = "cinematic"
+local changes = rec:Count("AUDIO_CHANGED")
+zones:RecheckGates()
+Expect("a clip waiting behind an interrupted one plays in its place", world.played[2], other.path)
+Expect("...announced once", rec:Count("AUDIO_CHANGED") - changes, 1)
+Expect("...the interrupted one still queued", Q:GetQueueSize(), 2)
+
+Fresh()
+quests:Enqueue(H.Clip())
+Q:PauseQueue()
+Expect("RecheckGates on a paused player stops nothing", quests:RecheckGates(), false)
+
 ---------------------------------------------------------------- per-source queue limit
 Fresh()
 local head = H.Clip()

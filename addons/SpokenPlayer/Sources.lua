@@ -101,6 +101,13 @@ function SourceMethods:AddGate(fn)
     table.insert(self.gates, fn)
 end
 
+--- Gates are asked before a clip starts. Call this when one of this source's may have
+--- closed on its clip already speaking -- a cinematic starting -- and it is stopped and
+--- kept, to replay from the start once the gate opens. Returns whether it was cut off.
+function SourceMethods:RecheckGates()
+    return SoundQueue:RecheckGates(self)
+end
+
 ---@return boolean audible
 ---@return string|nil reason
 function SourceMethods:CanPlay()

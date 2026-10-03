@@ -111,6 +111,16 @@ end
 -- Queue
 --------------------------------------------------------------------------------
 
+-- Whether an intro cinematic or a movie is up. InCinematic as well as the frame: it is
+-- already true while CINEMATIC_START is being delivered, when CinematicFrame may not
+-- have shown itself yet.
+local function CinematicUp()
+	return (InCinematic and InCinematic())
+		or (CinematicFrame and CinematicFrame:IsShown())
+		or (MovieFrame and MovieFrame:IsShown())
+		or false
+end
+
 -- Why a queued clip may not start yet. Registered onto the queue at setup, and
 -- consulted every time it tries to advance.
 --
@@ -134,8 +144,7 @@ local function HoldReason(item)
 	-- A starting-zone cinematic is the one moment a new character is guaranteed to
 	-- be discovering things, so narrating over it is the likeliest collision there
 	-- is.
-	if (CinematicFrame and CinematicFrame:IsShown())
-		or (MovieFrame and MovieFrame:IsShown()) then
+	if CinematicUp() then
 		return SpokenZones.L.QUEUE_HELD_CINEMATIC
 	end
 	return nil
@@ -503,6 +512,30 @@ local DISCOVERY_EVENTS = {
 	"UI_ERROR_MESSAGE",
 }
 
+-- A cinematic can start after a clip has. The hold above is asked only before a clip
+-- starts, and the login greeting fires two seconds after load -- before a new
+-- character's intro, often enough -- so without these it narrates over the whole thing.
+local CINEMATIC_EVENTS = {
+	CINEMATIC_START = true,
+	PLAY_MOVIE = true,
+}
+
+-- Stops our clip if the hold now applies to it, keeping it queued to replay once the
+-- cinematic ends. Asked twice: now, and a frame later, because MovieFrame shows itself
+-- from its own PLAY_MOVIE handler and the order frames receive an event in is not
+-- defined. InCinematic covers CINEMATIC_START on the first ask.
+local function RecheckForCinematic()
+	local source = SpokenZones.source
+	if source and source.RecheckGates then
+		source:RecheckGates()
+	end
+end
+
+local function OnCinematicStart()
+	RecheckForCinematic()
+	C_Timer.After(0, RecheckForCinematic)
+end
+
 -- The payload is not in the same position across those events: CHAT_MSG_* put the
 -- text first, while UI_*_MESSAGE put a numeric messageType first and the text
 -- second. Rather than encode that per event, take whichever argument is a string.
@@ -521,8 +554,15 @@ function SpokenZones:SetupAutoplay()
 	for _, event in ipairs(DISCOVERY_EVENTS) do
 		frame:RegisterEvent(event)
 	end
+	for event in pairs(CINEMATIC_EVENTS) do
+		frame:RegisterEvent(event)
+	end
 
 	frame:SetScript("OnEvent", function(_, event, ...)
+		if CINEMATIC_EVENTS[event] then
+			OnCinematicStart()
+			return
+		end
 		local message = TextFrom(...)
 		local area = AreaFromMessage(message)
 		if area then
@@ -544,11 +584,20 @@ function SpokenZones:SetupAutoplay()
 
 	-- Delayed because GetSubZoneText is not reliably populated the instant the
 	-- world finishes loading, and repeated because on a new character the map is not
-	-- either. The cinematic needs no handling of its own: the greeting queues as soon
-	-- as it can and the hold above keeps it there until the intro ends.
+	-- either. The greeting queues as soon as it can; the hold above keeps it there
+	-- until the intro ends, and the cinematic events stop it if the intro starts late.
 	local attempts = 0
 	local seed
 	seed = function()
+		-- An intro does not spend the greeting's attempts. The character is not standing
+		-- in its valley while it plays -- on some clients the intro is somewhere else
+		-- entirely, with a loading screen after it -- so every answer is wrong, and a
+		-- player who watched it to the end arrived after the last attempt and was greeted
+		-- by nothing. The attempts start counting once it is over.
+		if CinematicUp() then
+			C_Timer.After(LOGIN_SEED_DELAY, seed)
+			return
+		end
 		attempts = attempts + 1
 		local settled = SeedLoginArea(attempts)
 		-- Logging in is not a zone change, so without this a player who logs out

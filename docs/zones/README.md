@@ -737,8 +737,13 @@ should ever have to say.
 So the spawn area is seeded two seconds after entering the world, guarded by one
 per-character boolean (`ZoneLoreCharDB.greeted`). This is a greeting rather than a
 rule: it fires once per character and is the only place left that infers a first
-visit instead of being told about one. The cinematic needs no special handling —
-the greeting queues immediately and the queue holds it until the intro ends.
+visit instead of being told about one. The greeting queues immediately and the
+queue holds it until the intro ends — but two seconds is not always before the intro
+starts, so `CINEMATIC_START` and `PLAY_MOVIE` also stop a greeting already speaking
+and keep it queued, to replay from the start once the intro is over. The greeting's
+attempts are not spent while an intro plays: on clients that play it somewhere else,
+with a loading screen after it, every answer during it is wrong, and a player who
+watched it to the end used to arrive after the last attempt.
 
 The flag is set *after* the enabled check, so turning autoplay on later still
 greets rather than having silently spent its turn. `/spz forget` clears it.
@@ -801,7 +806,8 @@ is describing somewhere already left.
 Combat and cinematics hold the queue rather than dropping it: the retry ticker
 plays them once the pull or the intro movie ends. A starting-zone cinematic is the
 one moment a character is guaranteed to be discovering things, so it is the
-likeliest collision there is.
+likeliest collision there is, and the only hold that also interrupts: a cinematic
+starting stops a narration already speaking, which replays once it ends.
 
 **Stop clears the queue.** Stop has to mean silence, not "skip to the next place I
 discovered on the way here".
