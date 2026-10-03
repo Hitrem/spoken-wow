@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { GrantRow } from "@/lib/grants/store";
 import { CODES, isLang, langName, type Lang } from "@/lib/lang";
-import { CAPABILITIES, canGrant, type Capability, type Viewer } from "@/lib/permissions";
+import { CAPABILITIES, canGrant, capabilityLabel, type Capability, type Viewer } from "@/lib/permissions";
 
 /**
  * One person's languages: what they hold in each, every capability removable, and a way to
@@ -52,12 +52,12 @@ export default function GrantCell({
             const removable = canGrant(viewer, capability, lang);
             return (
               <Badge key={capability} variant="outline" className={removable ? "pr-0.5" : undefined}>
-                {capability}
+                {capabilityLabel(capability)}
                 {removable ? (
                   <button
                     type="button"
                     disabled={busy}
-                    aria-label={`Remove ${capability} in ${langName(lang)}`}
+                    aria-label={`Remove ${capabilityLabel(capability)} in ${langName(lang)}`}
                     className="text-muted-foreground hover:text-foreground rounded-full px-1 disabled:opacity-50"
                     onClick={() => onRevoke(lang, capability)}
                   >
@@ -144,13 +144,13 @@ export function GrantPicker({
         </SelectContent>
       </Select>
       <Select value={capability} onValueChange={(value) => setCapability(value as Capability)}>
-        <SelectTrigger className="w-32" aria-label="Capability">
+        <SelectTrigger className="w-36" aria-label="Capability">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {(lang ? offer(lang) : []).map((cap) => (
             <SelectItem key={cap} value={cap}>
-              {cap}
+              {capabilityLabel(cap)}
             </SelectItem>
           ))}
         </SelectContent>
