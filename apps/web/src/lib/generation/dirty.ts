@@ -130,6 +130,12 @@ export function isDirty(take: SpokenTake, context: DirtyContext): boolean {
  * The changes and the acknowledgements, for one section in one language. Two selects, both
  * small.
  *
+ * Only the newest change of each word, because it is the only one the rule can turn on: an
+ * older change to the same word is newer than a take only when the newest one is too, and it
+ * matches exactly the same text. The log itself grows by every save, so without this the
+ * sweep grows with it -- 78,000 rows for 145 words once made the dirty check of one page
+ * take 26 seconds (2026-10-03). Grouped by the case the matcher ignores.
+ *
  * Both halves are per language: a German lexicon edit says nothing about how an English take
  * sounds, and clearing the English take of a file does not clear the German one.
  */
@@ -139,7 +145,11 @@ export async function loadDirtyContext(
 ): Promise<DirtyContext> {
   const [changes, acks] = await Promise.all([
     db().query<{ grapheme: string; changedAt: Date }>(
-      `select "grapheme", "changedAt" from "lexicon_change" where "lang" = $1
+      `select "grapheme", "changedAt" from (
+         select distinct on (lower("grapheme")) "grapheme", "changedAt"
+           from "lexicon_change" where "lang" = $1
+          order by lower("grapheme"), "changedAt" desc
+       ) newest
         order by "changedAt" desc`,
       [lang],
     ),
