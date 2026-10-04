@@ -1,7 +1,9 @@
 setfenv(1, SpokenEnv)
 
--- Captions as a subtitle: the speaker's name, and the line typed in beneath it, centred low
--- on the screen over a soft shadow. Ported from LoreTeller Forever's subtitle style.
+-- Captions as a subtitle: the speaker's picture and name, what the line belongs to, and the line
+-- typed in beneath, centred low on the screen over a soft shadow. Ported from LoreTeller
+-- Forever's subtitle style; the picture and the grey title after the name follow shorley's
+-- Spoken Subtitles.
 --
 -- One of the narrator styles (Addon:PlayerStyle), the one with no window: the two windows
 -- hide while it is chosen. This file owns only its frame and how the text is revealed. The
@@ -11,7 +13,7 @@ Subtitle = {}
 
 -- The widest a line runs, padding included. LoreTeller matched Plumber's talking head.
 local WIDTH = 512
-local PAD, TOP_PAD, TITLE_GAP, BOTTOM_PAD, LINE_GAP = 16, 12, 4, 12, 2
+local PAD, TOP_PAD, TITLE_GAP, BOTTOM_PAD, LINE_GAP = 16, 12, 8, 12, 2
 -- The most lines shown at once. Longer text is split into pages of up to this many, at sentence
 -- ends where a sentence fits, and each page replaces the last once its share of the clip has
 -- played.
@@ -24,8 +26,11 @@ local SHADOW_ROOM = 26        -- how far the shadow reaches past the subtitle's 
 local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 -- A page fades out before the next fades in; the shadow eases to the new page's size.
 local PAGE_OUT, PAGE_IN = .18, .28
--- "(paused)" beside the title fades in and out over this long.
+-- "(paused)" fades in over the title after the name, and out again, over this long.
 local PAUSED_FADE = .25
+-- The picture before the name: the Small Window's round frame at this size, with a face, a zone's
+-- icon or a book in it. The name starts PICTURE_GAP after it; what follows the name, LABEL_GAP on.
+local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
 local SIZE_EASE = 10
 -- The controls shown on hover: the windows' round pause button, skip, and Report.
 local CONTROL_SIZE, CONTROL_GAP = 24, 4
@@ -221,21 +226,35 @@ function Subtitle:Build()
     self.shadow:SetPoint("TOP", frame, "TOP", 0, SHADOW_ROOM - 2)
 
     self.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    self.title:SetPoint("TOP", 0, -TOP_PAD)
-    self.title:SetJustifyH("CENTER")
+    self.title:SetJustifyH("LEFT")
     self.title:SetTextColor(1, .82, 0)
     self.title:SetShadowColor(0, 0, 0, 1)
     self.title:SetShadowOffset(1, -1)
-    -- With no window there is no paused portrait to say so: "(paused)" beside the title says it
-    -- instead, fading in and out (Subtitle:Animate) rather than snapping onto the title.
+    -- A grey dot between the name and what follows it, as Spoken Subtitles parts them.
+    self.dot = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    self.dot:SetTextColor(.62, .62, .62)
+    self.dot:SetShadowColor(0, 0, 0, 1)
+    self.dot:SetShadowOffset(1, -1)
+    self.dot:SetText("•")
+    -- What the line belongs to, in grey after the name: the quest's title, the area a zone's story
+    -- is about, the book's page. Cut short with an ellipsis where the row would run too wide.
+    self.label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    self.label:SetJustifyH("LEFT")
+    self.label:SetWordWrap(false)
+    self.label:SetTextColor(.62, .62, .62)
+    self.label:SetShadowColor(0, 0, 0, 1)
+    self.label:SetShadowOffset(1, -1)
+    -- With no window there is no paused portrait to say so: "(paused)" takes the label's place
+    -- instead, the two fading across (Subtitle:Animate) rather than snapping.
     self.pausedLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    self.pausedLabel:SetPoint("LEFT", self.title, "RIGHT", 6, 0)
+    self.pausedLabel:SetJustifyH("LEFT")
     self.pausedLabel:SetTextColor(.62, .62, .62)
     self.pausedLabel:SetShadowColor(0, 0, 0, 1)
     self.pausedLabel:SetShadowOffset(1, -1)
     self.pausedLabel:SetText(format("(%s)", L.SUBTITLE_PAUSED))
     self.pausedLabel:SetAlpha(0)
     self.pausedAlpha = 0
+    self:BuildPicture()
 
     -- Unwrapped, so its width is the true width of a candidate line.
     self.measure = frame:CreateFontString(nil, "OVERLAY", "QuestFont")
@@ -243,6 +262,89 @@ function Subtitle:Build()
     self.measure:Hide()
     self.lines = {}
     self:Place()
+end
+
+--- The picture before the name, built as the Small Window builds its portrait (MinimalPlayer:
+--- BuildPortrait), at PICTURE: the round background, the viewport the face or icon is drawn in,
+--- and over them the ring with its badge.
+function Subtitle:BuildPicture()
+    local k = PICTURE / 90
+    local host = CreateFrame("Frame", nil, self.frame)
+    host:SetSize(PICTURE, PICTURE)
+    local background = host:CreateTexture(nil, "BACKGROUND")
+    background:SetAllPoints()
+    background:SetTexture(TEXTURES .. "MinimalPortraitBackground")
+    local viewport = CreateFrame("Frame", nil, host)
+    viewport:SetSize(78 * k, 78 * k)
+    viewport:SetPoint("CENTER", host, "TOPLEFT", PICTURE * 35 / 71, -PICTURE * 34 / 71)
+    if viewport.SetClipsChildren then viewport:SetClipsChildren(true) end
+    local chrome = CreateFrame("Frame", nil, host)
+    chrome:SetAllPoints()
+    chrome:SetFrameLevel(host:GetFrameLevel() + 8)
+    -- The badge's socket is open in the ring: without its disc the face shows through it.
+    local disc = chrome:CreateTexture(nil, "BACKGROUND")
+    disc:SetSize(24 * k + 2, 24 * k + 2)
+    disc:SetPoint("CENTER", host, "TOPLEFT", PICTURE * 56.5 / 71, -PICTURE * 56.5 / 71)
+    disc:SetTexture(TEXTURES .. "MinimalPortraitMask")
+    disc:SetVertexColor(.04, .04, .035, 1)
+    local ring = chrome:CreateTexture(nil, "ARTWORK")
+    ring:SetAllPoints()
+    ring:SetTexture(TEXTURES .. "MinimalPortraitRing")
+    local badge = chrome:CreateTexture(nil, "OVERLAY")
+    badge:SetSize(16 * k + 2, 16 * k + 2)
+    badge:SetPoint("CENTER", disc, "CENTER", 0, 0)
+    self.picture, self.viewport, self.badge = host, viewport, badge
+end
+
+--- The clip's picture in the viewport: its speaker's face where one was captured, else the
+--- picture the clip names (a zone's icon, a book), round, with the badge for its kind of line.
+function Subtitle:ConfigurePicture(clip)
+    local viewport = self.viewport
+    if not StaticPortrait:Configure(viewport, clip) then Portrait:Configure(viewport, clip) end
+    if viewport.active == "texture" and viewport.texture then StaticPortrait:Mask(viewport, viewport.texture) end
+    local id = clip and clip.present and clip.present.bullet
+    local badges = MinimalPlayer and MinimalPlayer.BADGES or {}
+    local texture = badges[id] or (Bullets and Bullets[id] and Bullets[id].texture)
+    self.badge:SetTexture(texture)
+    self.badge:SetShown(texture ~= nil)
+end
+
+--- The title row's height: the picture's, or the name's where that is taller.
+function Subtitle:RowHeight()
+    return math.max(PICTURE, self.title:GetStringHeight() or 0)
+end
+
+--- The title row's width, picture to label, with room after the name and its dot for the wider of
+--- the label and "(paused)", so the row stays put as one fades into the other. The label is cut to
+--- keep the row within the subtitle's widest.
+function Subtitle:RowWidth()
+    local start = PICTURE + PICTURE_GAP + (self.title:GetStringWidth() or 0)
+        + LABEL_GAP + (self.dot:GetStringWidth() or 0)
+    local paused = self.pausedLabel:GetStringWidth() or 0
+    local label = 0
+    if self.labelText then
+        self.label:SetWidth(0)
+        label = math.min(self.label:GetStringWidth() or 0, math.max(0, WIDTH - PAD * 2 - start - LABEL_GAP))
+        self.label:SetWidth(math.max(1, label))
+    end
+    return start + LABEL_GAP + math.max(label, paused)
+end
+
+--- The row laid out across the frame's middle, `width` wide: the picture, the name level with its
+--- middle, the dot, and the label and "(paused)" in one place after it.
+function Subtitle:PlaceRow(width)
+    local left = -math.floor(width / 2)
+    local textY = -TOP_PAD - math.floor((self:RowHeight() - (self.title:GetStringHeight() or 0)) / 2)
+    self.picture:ClearAllPoints()
+    self.picture:SetPoint("TOPLEFT", self.frame, "TOP", left, -TOP_PAD)
+    self.title:ClearAllPoints()
+    self.title:SetPoint("TOPLEFT", self.frame, "TOP", left + PICTURE + PICTURE_GAP, textY)
+    self.dot:ClearAllPoints()
+    self.dot:SetPoint("LEFT", self.title, "RIGHT", LABEL_GAP, 0)
+    self.label:ClearAllPoints()
+    self.label:SetPoint("LEFT", self.dot, "RIGHT", LABEL_GAP, 0)
+    self.pausedLabel:ClearAllPoints()
+    self.pausedLabel:SetPoint("LEFT", self.dot, "RIGHT", LABEL_GAP, 0)
 end
 
 -- The centre and the top edge, not a corner: the frame is as wide as its longest line, so
@@ -291,7 +393,7 @@ end
 function Subtitle:Layout(text)
     self.measure:SetText("Ag")
     local lineHeight = self.measure:GetStringHeight()
-    local titleHeight, widest = self.title:GetStringHeight(), self.title:GetStringWidth()
+    local titleHeight, widest = self:RowHeight(), self:RowWidth()
     self.rows = {}
     for index, wrapped in ipairs(self:Wrap(text)) do
         local width = self:Width(wrapped)
@@ -323,12 +425,12 @@ function Subtitle:Layout(text)
     self.revealed = nil
 end
 
---- The frame and its shadow sized to the rows and the title, with room either side of the
---- centred title for "(paused)" while the queue is paused.
+--- The frame and its shadow sized to the rows and the title row, which goes across the middle.
 function Subtitle:Fit()
     if not self.rowsWidest then return end
-    local label = self.shownPaused and (self.pausedLabel:GetStringWidth() + 6) or 0
-    local widest = math.max(self.rowsWidest, self.title:GetStringWidth() + label * 2)
+    local row = self:RowWidth()
+    local widest = math.max(self.rowsWidest, row)
+    self:PlaceRow(row)
     local height = self.rowsHeight
     self.frame:SetSize(widest + PAD * 2, math.max(48, height))
     -- The shadow's soft edge is 30 of its 64 rows top and bottom, so it reaches well past the
@@ -379,10 +481,16 @@ function Subtitle:Prepare(clip, text)
     self.pageFade, self.shadowSize = nil, nil
     for _, line in ipairs(self.lines or {}) do line:SetAlpha(1) end
     local present = clip.present or {}
-    local title = present.header
-    if not title or title == "" then title = present.label or "" end
-    self.titleText, self.shownPaused = title, nil
+    local title, label = present.header, present.label
+    if not title or title == "" then title, label = label or "", nil end
+    -- A zone's own story names the zone twice; said once.
+    if label == "" or label == title then label = nil end
+    self.titleText, self.labelText, self.shownPaused = title, label, nil
     self.title:SetText(title)
+    self.label:SetText(label or "")
+    -- With nothing after the name, the dot only comes with "(paused)".
+    self.dot:SetAlpha(label and 1 or self.pausedAlpha)
+    self:ConfigurePicture(clip)
     -- A clip with no usable length still pages and types, at LoreTeller's reading pace.
     local duration = tonumber(clip.length)
     if not duration or duration <= 0 then duration = math.max(3, Characters(text) * .072) end
@@ -697,6 +805,8 @@ function Subtitle:Animate(elapsed)
         self.pausedAlpha = wantPaused > self.pausedAlpha and math.min(1, self.pausedAlpha + step)
             or math.max(0, self.pausedAlpha - step)
         self.pausedLabel:SetAlpha(self.pausedAlpha)
+        self.label:SetAlpha(1 - self.pausedAlpha)
+        if not self.labelText then self.dot:SetAlpha(self.pausedAlpha) end
     end
     for _, line in ipairs(self.lines) do line:SetAlpha(alpha) end
 

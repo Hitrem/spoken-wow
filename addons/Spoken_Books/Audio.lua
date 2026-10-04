@@ -21,6 +21,34 @@ local PACK_FORMAT = 1
 -- second copy of the same texture is a second thing to keep in step.
 local BOOK_TEXTURE = [[Interface\AddOns\Spoken\Textures\Book]]
 
+-- What the page is on, as its picture while it is read: a book or letter from the bags shows the
+-- item's own icon; a page on something in the world shows its material -- a stone tablet, a
+-- marble one, a bronze or silver plaque, a valentine -- and anything else the book.
+local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
+local MATERIALS = {
+	Stone = [[Interface\Icons\INV_Misc_StoneTablet_01]],
+	Marble = [[Interface\Icons\INV_Misc_StoneTablet_07]],
+	Bronze = [[Interface\Icons\INV_Misc_StoneTablet_03]],
+	Silver = [[Interface\Icons\INV_Misc_StoneTablet_11]],
+	Valentine = [[Interface\Icons\INV_Letter_15]],
+}
+SpokenBooks.MATERIALS = MATERIALS
+
+--- The picture for the page now open in the reading frame. A page queued with no frame open --
+--- from the settings -- has nothing to look at, and takes the book.
+function SpokenBooks:PagePicture()
+	if ItemTextFrame and ItemTextFrame.IsShown and ItemTextFrame:IsShown() then
+		local icon, crop
+		if Spoken and Spoken.BagItemIcon then icon, crop = Spoken:BagItemIcon(ItemTextGetItem and ItemTextGetItem()) end
+		if icon then return { kind = "texture", texture = icon, texCoord = crop } end
+		local material = ItemTextGetMaterial and ItemTextGetMaterial()
+		if material and MATERIALS[material] then
+			return { kind = "texture", texture = MATERIALS[material], texCoord = ICON_CROP }
+		end
+	end
+	return { kind = "texture", texture = BOOK_TEXTURE }
+end
+
 --- Every installed pack this version can read, newest format first.
 function SpokenBooks:GetAudioPacks()
 	local packs = {}
@@ -109,7 +137,7 @@ function SpokenBooks:ClipFor(pageId)
 							and format(L.OPT_PAGE_COUNT_FMT, place.number, #book.pages)
 							or nil,
 						bullet = "book",
-						portrait = { kind = "texture", texture = BOOK_TEXTURE },
+						portrait = self:PagePicture(),
 						actions = ACTIONS,
 					},
 				}

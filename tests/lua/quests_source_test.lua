@@ -66,6 +66,39 @@ Expect("...the original fields survive for the dispatcher", clip.questID .. "/" 
 Expect("the watcher's stage is recorded", VO.Debug.runtime.stage, "playing")
 Expect("the player shows it", env.PlayerFrame.frame.container.name:GetText(), "Innkeeper Test")
 
+---------------------------------------------------------------- a quest from an object or an item
+-- A wanted poster has no face: the game paints one as an empty black disc. Its line shows a posted
+-- notice, and the Small Window never captures the poster as a face. A quest from an item shows the
+-- item's own icon, found in the bags as the item that starts the quest.
+VO, env, Spoken = Boot()
+local unitExists = _G.UnitExists
+_G.UnitExists = function(unit) return unit ~= "npc" and unit ~= "questnpc" end
+world.npcGUID = "GameObject-0-0-0-0-5555-0"; world.playerMapID = 1429
+world.questID = 102
+stub.ShowPanel("QuestFrameDetailPanel")
+VO.Addon:QUEST_DETAIL()
+local poster = Spoken:GetCurrent()
+Expect("a quest from an object shows a posted notice", poster and poster.present.portrait.kind .. ":"
+    .. tostring(poster.present.portrait.texture), "texture:" .. [[Interface\Icons\INV_Misc_Note_01]])
+Expect("...not a face captured from the object", env.StaticPortrait:Capture(poster), nil)
+_G.C_Container = {
+    GetContainerNumSlots = function(bag) return bag == 1 and 3 or 0 end,
+    GetContainerItemInfo = function(bag, slot) return slot == 2 and { iconFileID = 134939, hyperlink = "|cffffffff|Hitem:1307::|h[Gold Pickup Schedule]|h|r" } or nil end,
+    GetContainerItemQuestInfo = function(bag, slot) return { isQuestItem = slot == 2, questID = slot == 2 and 103 or nil } end,
+}
+world.questID = 103
+VO.Addon:QUEST_DETAIL()
+local fromItem
+for _, queued in ipairs(env.SoundQueue.sounds) do if queued.questID == 103 then fromItem = queued end end
+Expect("a quest from an item shows the item's icon", fromItem and fromItem.present.portrait.texture, 134939)
+Expect("...the icon found by name too, for a book read from the bags", Spoken:BagItemIcon("Gold Pickup Schedule"), 134939)
+_G.C_Container = nil
+Expect("a city takes its zone's icon, as an area does", Spoken:ZoneIcon(1455), [[Interface\AddOns\Spoken\Textures\Zones\DunMorogh]])
+Expect("...Azeroth the world map's globe", Spoken:ZoneIcon(947), [[Interface\AddOns\Spoken\Textures\Zones\Azeroth]])
+Expect("...and a Forever zone whose icon is still to come, none", Spoken:ZoneIcon(2524), nil)
+_G.UnitExists = unitExists
+world.npcGUID = "Creature-0-0-0-0-1234-0"; world.playerMapID = nil
+
 ---------------------------------------------------------------- gossip yields at the door
 VO, env, Spoken = Boot()
 world.gossipText = "Greetings, traveller."

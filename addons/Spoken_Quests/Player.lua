@@ -91,6 +91,27 @@ local function CreatureFor(soundData)
     return nil
 end
 
+-- What a line from something with no face shows: a quest from an item shows the item's own icon,
+-- found in the bags as the item that starts the quest; one from a wanted poster or another
+-- object, which has no icon of its own, a posted notice.
+local NOTICE = [[Interface\Icons\INV_Misc_Note_01]]
+local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
+local function Faceless(soundData)
+    local icon, crop
+    if Spoken and Spoken.QuestItemIcon then icon, crop = Spoken:QuestItemIcon(soundData.questID) end
+    return { kind = "texture", texture = icon or NOTICE, texCoord = crop or ICON_CROP }
+end
+
+local function PortraitFor(soundData)
+    if soundData.unitIsObjectOrItem then return Faceless(soundData) end
+    return {
+        kind = "model",
+        creatureID = CreatureFor(soundData),
+        animation = 60,
+        fallback = { kind = "texture", texture = BOOK },
+    }
+end
+
 -- The Stop Gossip control, anchored to the header as it always was. The one place the
 -- domain-agnostic frame is asked to host something quest-shaped.
 local STOP_GOSSIP = {
@@ -191,12 +212,7 @@ function Player:Prepare(soundData)
         label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),
         bullet = BULLETS[event],
         tint = gossip and { 1, 1, 1 } or nil,
-        portrait = {
-            kind = "model",
-            creatureID = CreatureFor(soundData),
-            animation = 60,
-            fallback = { kind = "texture", texture = BOOK },
-        },
+        portrait = PortraitFor(soundData),
         actions = ACTIONS,
     }
     return soundData

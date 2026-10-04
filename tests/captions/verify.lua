@@ -437,6 +437,16 @@ Check(not T.frame:IsShown() and not M.frame:IsShown() and not E.PlayerFrame.fram
 Check(S.frame:IsShown() and S.frame:GetParent()==UIParent,'the subtitle is a frame of its own')
 Check(S.frame:GetFrameStrata()=='LOW','...drawn under the panels of the game, so a window opened over it covers it')
 Check(S.title:GetText()=='NPC sub','the speaker names the subtitle')
+-- As Spoken Subtitles has it: the speaker's picture before the name, and what the line belongs to
+-- in grey after it.
+Check(S.picture:IsShown() and S.viewport.active~=nil,"the subtitle shows the speaker's picture")
+do
+    local _,_,_,pictureX=S.picture:GetPoint(1)
+    local _,_,_,nameX=S.title:GetPoint(1)
+    Check(pictureX<nameX,'...before the name')
+end
+Check(S.dot:GetText()=='•' and select(2,S.dot:GetPoint(1))==S.title,'a dot follows the name')
+Check(S.label:GetText()=='Quest sub' and select(2,S.label:GetPoint(1))==S.dot,"...and the quest's title the dot")
 Check(S.frame:GetAlpha()==0 and Typed():gsub('%s','')=='','a new line fades in and types from nothing')
 Check(math.abs(S.frame:GetCenter()-UIParent:GetWidth()/2)<.001,'the subtitle is centred until moved')
 Play(1)
@@ -454,8 +464,11 @@ end
 for _,row in ipairs(S.rows) do Check(S:Width(row.text)<=480,'every subtitle line fits inside the padding') end
 Q:PauseQueue(); Play(2)
 Check(Typed()==partial,'pausing holds the typing where the voice stopped')
+Check(S.pausedLabel:GetAlpha()==1 and S.label:GetAlpha()==0,"paused, (paused) takes the title's place after the name")
 Q:ResumeQueue()
 Check(Typed():gsub('%s','')=='' and S.frame:GetAlpha()==1,'resuming types again from the start without fading again')
+Play(.5)
+Check(S.pausedLabel:GetAlpha()==0 and S.label:GetAlpha()==1,'...and the title comes back on resuming')
 Play(9.7)
 Check(Typed()==line,'the whole line is typed before the voice finishes')
 cfg.Typewriter=false; T:RefreshConfig()

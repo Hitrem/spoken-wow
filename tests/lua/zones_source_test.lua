@@ -53,7 +53,9 @@ Expect("...resolves the pack path", zone.path, [[Interface\AddOns\ZoneLoreAudio\
 Expect("...and the pack's duration", zone.length, 81.9)
 Expect("...header is the zone", zone.present.header, "Durotar")
 Expect("...label is the zone too", zone.present.label, "Durotar")
-Expect("...portrait is the book", zone.present.portrait.kind .. ":" .. zone.present.portrait.texture, "texture:" .. BOOK)
+Expect("...portrait is the zone's icon, trimmed of its border", zone.present.portrait.kind .. ":" .. zone.present.portrait.texture
+    .. ":" .. table.concat(zone.present.portrait.texCoord, ","), "texture:" .. [[Interface\AddOns\Spoken\Textures\Zones\Durotar]] .. ":0.08,0.92,0.08,0.92")
+Expect("...and the book for a map whose icon is still to come", Z:Portrait(2524).texture, BOOK)
 Expect("...with Report as its only action", zone.present.actions[1].id, "report")
 Expect("...and nothing else", zone.present.actions[2], nil)
 Expect("...remembers where it came from", zone.mapID, 1411)

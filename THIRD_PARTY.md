@@ -59,6 +59,9 @@ None of this is the project's to license, and the MIT grant does not reach it.
   apply to it.
 - **Map images, portrait frames and icons** derived from game assets
   (`PortraitFrameAtlas`, the continent maps) are Blizzard's.
+- **Zone icons** (`addons/Spoken/Textures/Zones/*.tga`): the game's zone achievement icons and the
+  world map's globe, copied from the game's files so every client has them; the pictures for
+  Spoken Zones' lines. They are Blizzard's.
 - **Lore page art** (`addons/Spoken_Zones/Textures/Art/*.tga`): the spellbook's parchment,
   divider and backplate, and the quest log's details page and frame, cut from the game's UI
   files (Forever client) so the page looks the same on every client. They are Blizzard's.

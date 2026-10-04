@@ -13,6 +13,9 @@ local function Identity(clip)
     local guid = spec.unitGUID or clip.unitGUID
     -- Quest-log playback can carry a synthetic GUID rather than a world unit.
     if guid and string.find(guid, "^Creature%-0%-0%-0%-0%-") then guid = nil end
+    -- Only a creature has a face to capture. The game paints a wanted poster or any other object
+    -- as an empty black disc, so such a line takes its own picture (Portrait) instead.
+    if guid and not (string.find(guid, "^Creature%-") or string.find(guid, "^Vehicle%-")) then return end
     return spec, guid, spec.creatureID
 end
 local function CreatureID(guid)
@@ -216,6 +219,7 @@ if not Version.IsAnyLegacy then
         local refreshGUID = (event == "UNIT_PORTRAIT_UPDATE" or event == "UNIT_MODEL_CHANGED") and unit and UnitGUID(unit)
         for _, clip in ipairs(SoundQueue.sounds) do StaticPortrait:Capture(clip, refreshGUID) end
         if MinimalPlayer and MinimalPlayer:HasClip() then MinimalPlayer:ConfigurePortrait() end
+        if Subtitle and Subtitle.wanted and Subtitle.clip then Subtitle:ConfigurePicture(Subtitle.clip) end
     end)
     StaticPortrait.watcher = watcher
 end
