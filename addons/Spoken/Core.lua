@@ -298,8 +298,7 @@ end
 -- Folders an older release installed, which nothing ships any more: Spoken's own before it was
 -- renamed, and the old names of Quests and Zones, whether the addons themselves or the empty
 -- folders that stood in for them. Loaded beside this release, the old code narrates over it and
--- the empty ones only clutter the AddOns list. The player is asked to delete them. Not disabled
--- from here: current clients answer an addon that tries with a dialog of their own.
+-- the empty ones only clutter the AddOns list.
 --
 -- SpokenQuests, SpokenZones and SpokenBooks are the modules' folders before 3.0.0-beta.3 moved
 -- them to Spoken_Quests and the rest, out of the way of the retired CurseForge projects that own
@@ -307,6 +306,10 @@ end
 -- globals and events, a second voice for every line. Their last releases, and the legacy zips,
 -- leave a tombstone there instead (addons/SpokenQuests/SpokenQuests.toc), which is LoadOnDemand
 -- and so never loaded, so it alone stays quiet here and only a full old copy is named.
+--
+-- Each one found is switched off for the next login, and the player is offered the reload that
+-- finishes it. The Forever client accepts DisableAddOn from an addon (checked 2026-10-04); the
+-- pcall is for a client that does not, where the popup still names the folders to delete.
 local OLD_FOLDERS = { "SpokenPlayer", "VoiceOverRedux", "ZoneLore", "SpokenQuests", "SpokenZones", "SpokenBooks" }
 function Addon:FindOldFolders()
     local found = {}
@@ -316,13 +319,20 @@ function Addon:FindOldFolders()
     end
     return found
 end
-local function WarnOldFolders()
-    local found = Addon:FindOldFolders()
+function Addon:RetireOldFolders()
+    local found = self:FindOldFolders()
     if not found[1] then return end
+    for _, folder in ipairs(found) do
+        if DisableAddOn then pcall(DisableAddOn, folder) end
+    end
     local text = format(L.OLD_FOLDERS_FMT, table.concat(found, ", "))
     print("|cff66bbffSpoken:|r " .. text)
     if StaticPopupDialogs and StaticPopup_Show then
-        StaticPopupDialogs.SPOKEN_OLD_FOLDERS = { text = text, button1 = OKAY, timeout = 0, whileDead = 1 }
+        StaticPopupDialogs.SPOKEN_OLD_FOLDERS = {
+            text = text, button1 = L.OLD_FOLDERS_RELOAD, button2 = L.OLD_FOLDERS_LATER,
+            OnAccept = function() ReloadUI() end,
+            timeout = 0, whileDead = 1, hideOnEscape = 1,
+        }
         StaticPopup_Show("SPOKEN_OLD_FOLDERS")
     end
 end
@@ -339,7 +349,7 @@ loader:SetScript("OnEvent", function(_, ev, name)
         Addon:InitDB()
     elseif ev == "PLAYER_LOGIN" then
         Addon:Enable()
-        WarnOldFolders()
+        Addon:RetireOldFolders()
         WatchPausedQueue()
         if SoundQueue:IsPaused() then RemindPaused() end
     end

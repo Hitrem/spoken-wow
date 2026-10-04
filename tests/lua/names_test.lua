@@ -69,8 +69,22 @@ loaded = { SpokenPlayer = true, VoiceOverRedux = true, ZoneLore = true,
 local found = env.Addon:FindOldFolders()
 Expect("every old folder is found, and no current one", table.concat(found, " "),
     "SpokenPlayer VoiceOverRedux ZoneLore SpokenQuests SpokenZones SpokenBooks")
-Expect("...and none is disabled from here: the client would answer with its own dialog",
-    table.getn(stub.disabledAddOns), 0)
+Expect("...and finding them disables nothing", table.getn(stub.disabledAddOns), 0)
+stub.popups = {}
+local reloads = stub.reloads
+env.Addon:RetireOldFolders()
+Expect("retiring them switches every old folder off for the next login", table.concat(stub.disabledAddOns, " "),
+    "SpokenPlayer VoiceOverRedux ZoneLore SpokenQuests SpokenZones SpokenBooks")
+local popup = stub.popups[1]
+Expect("...names them in a popup", popup and popup.key, "SPOKEN_OLD_FOLDERS")
+Expect("...that offers the reload which finishes it", popup and popup.dialog.button1, "Reload Now")
+popup.dialog.OnAccept()
+Expect("...and reloads when taken up on it", stub.reloads, reloads + 1)
+loaded = {}
+stub.disabledAddOns, stub.popups = {}, {}
+env.Addon:RetireOldFolders()
+Expect("with nothing old loaded, nothing is disabled and nothing pops up",
+    table.getn(stub.disabledAddOns) + table.getn(stub.popups), 0)
 _G.IsAddOnLoaded = realLoaded
 
 ---------------------------------------------------------------- one list of languages
