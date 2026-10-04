@@ -654,4 +654,25 @@ do
     Check(not S.reportButton:IsShown(),'...and goes once it has faded')
     E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
 end
+-- The progress bar follows the background as it eases, holds where the voice left it as the
+-- subtitle fades out, and the row counts what waits behind the line.
+do
+    local style=E.Addon:PlayerStyle()
+    E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+    source:Enqueue(Clip('pa','One two three four five six seven eight nine ten eleven twelve.',4))
+    source:Enqueue(Clip('pb','Next.',2))
+    Play(.7)
+    Check(S.waiting==1 and S.more:GetText()=='+1' and S.more:IsShown(),'a line waiting behind shows "+1" on the row')
+    local point,relativeTo=S.track:GetPoint(1)
+    Check(point=='BOTTOM' and relativeTo==S.shadow,'the progress bar hangs from the background, so it eases with it')
+    Check(math.abs(S.track:GetWidth()-math.floor(S.shadowSize.w*.45))<1,'...and is sized from its eased width')
+    Q:Skip(); Play(1.2)
+    Check(S.waiting==0 and not S.more:IsShown(),'with nothing waiting, no count')
+    Play(1.2)
+    local held=S.share
+    Q:RemoveAllSoundsFromQueue(); Play(.1)
+    Check(held>0 and S.share==held and not S.wanted,'when the line ends the bar holds where it was as the subtitle fades')
+    Play(.6)
+    E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+end
 print(string.format('PASS: %d checks using the real queue, both player layouts, captions, commands and quest adapter.',assertions))

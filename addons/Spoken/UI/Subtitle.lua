@@ -28,12 +28,17 @@ local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 local PAGE_OUT, PAGE_IN = .18, .28
 local PAUSED_FADE = .25
 local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
--- The progress line under the words, as Spoken Subtitles draws it: a dark hairline 1.5 tall, a
--- gold fill along it, and the cast bar's spark at the fill's end, PROGRESS_GAP under the last line
--- and PROGRESS_SHARE of the background's width.
-local PROGRESS_GAP, PROGRESS_SHARE = 9, 0.45
+-- The progress line under the words, laid out as Spoken Subtitles lays its own -- PROGRESS_GAP under
+-- the last line, PROGRESS_SHARE of the background's width, the cast bar's spark at the fill's end --
+-- and framed as the game frames a status bar (UIWidgetTemplateStatusBar, the module cards' meter):
+-- its border's ends and middle, its dark middle and its yellow fill, scaled to PROGRESS_HEIGHT.
+-- Without that art, Spoken Subtitles' own hairline and gold fill.
+local PROGRESS_GAP, PROGRESS_SHARE, PROGRESS_HEIGHT = 9, 0.45, 10
 local PROGRESS_LINE = [[Interface\AddOns\Spoken\Textures\SubtitleLine]]
 local SPARK = [[Interface\CastingBar\UI-CastingBar-Spark]]
+local function AtlasInfo(name)
+    return C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(name) or nil
+end
 local SIZE_EASE = 10
 -- The controls shown on hover: the windows' round pause button, skip, and Report.
 local CONTROL_SIZE, CONTROL_GAP = 24, 4
@@ -248,19 +253,18 @@ function Subtitle:Build()
     self.pausedAlpha = 0
     self:BuildPicture()
 
-    local track = frame:CreateTexture(nil, "ARTWORK")
-    if track.SetColorTexture then track:SetColorTexture(0, 0, 0, 0.5) end
-    track:SetHeight(1.5)
-    local fill = frame:CreateTexture(nil, "ARTWORK", nil, 1)
-    fill:SetTexture(PROGRESS_LINE)
-    fill:SetHeight(1.5)
-    fill:SetPoint("LEFT", track, "LEFT")
-    local spark = frame:CreateTexture(nil, "OVERLAY")
-    spark:SetTexture(SPARK)
-    if spark.SetBlendMode then spark:SetBlendMode("ADD") end
-    spark:SetSize(14, 14)
-    spark:SetPoint("CENTER", fill, "RIGHT")
-    self.track, self.fill, self.spark = track, fill, spark
+    self:BuildProgress()
+
+    -- What waits behind the line, at the row's end: a grey dot and "+2" (Subtitle:CountWaiting).
+    self.moreDot = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    self.more = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    for _, part in ipairs({ self.moreDot, self.more }) do
+        part:SetTextColor(.62, .62, .62)
+        part:SetShadowColor(0, 0, 0, 1)
+        part:SetShadowOffset(1, -1)
+    end
+    self.moreDot:SetText("•")
+    self.waiting = 0
 
     -- Unwrapped, so its width is the true width of a candidate line.
     self.measure = frame:CreateFontString(nil, "OVERLAY", "QuestFont")
@@ -270,6 +274,69 @@ function Subtitle:Build()
     self:Place()
 end
 
+--- The progress bar: the game's status bar frame where the client has its art, Spoken Subtitles'
+--- hairline where it has not. `self.track` is the frame it fills along, `self.fillRoom` how far in
+--- from each end the fill runs.
+function Subtitle:BuildProgress()
+    local frame = self.frame
+    local track = CreateFrame("Frame", nil, frame)
+    local fill = track:CreateTexture(nil, "ARTWORK")
+    local left, right, middle = AtlasInfo("widgetstatusbar-borderleft"), AtlasInfo("widgetstatusbar-borderright"),
+        AtlasInfo("widgetstatusbar-bordercenter")
+    local yellow = AtlasInfo("widgetstatusbar-fill-yellow")
+    self.fillRoom = 0
+    if left and right and middle and yellow and fill.SetAtlas then
+        -- As the cards' meter lays the art out: the fill 8 inside the border's ends and 2 short of
+        -- the background's, the border's own 31 rows scaled to PROGRESS_HEIGHT.
+        local k = PROGRESS_HEIGHT / (middle.height > 0 and middle.height or 31)
+        track:SetHeight(PROGRESS_HEIGHT)
+        local function Piece(atlas, layer, width)
+            local texture = track:CreateTexture(nil, layer)
+            texture:SetAtlas(atlas)
+            texture:SetHeight(PROGRESS_HEIGHT)
+            if width then texture:SetWidth(width * k) end
+            return texture
+        end
+        local l = Piece("widgetstatusbar-borderleft", "OVERLAY", left.width)
+        local r = Piece("widgetstatusbar-borderright", "OVERLAY", right.width)
+        local m = Piece("widgetstatusbar-bordercenter", "OVERLAY")
+        l:SetPoint("LEFT", track, "LEFT", 0, 0)
+        r:SetPoint("RIGHT", track, "RIGHT", 0, 0)
+        m:SetPoint("LEFT", l, "RIGHT", 0, 0)
+        m:SetPoint("RIGHT", r, "LEFT", 0, 0)
+        self.fillRoom = 8 * k
+        local back = track:CreateTexture(nil, "BACKGROUND")
+        if AtlasInfo("widgetstatusbar-bgcenter") then back:SetAtlas("widgetstatusbar-bgcenter")
+        elseif back.SetColorTexture then back:SetColorTexture(0, 0, 0, 0.6) end
+        back:SetPoint("TOPLEFT", track, "TOPLEFT", self.fillRoom - 2 * k, -2 * k)
+        back:SetPoint("BOTTOMRIGHT", track, "BOTTOMRIGHT", -(self.fillRoom - 2 * k), 2 * k)
+        fill:SetAtlas("widgetstatusbar-fill-yellow")
+        fill:SetHeight(math.min(yellow.height or 15, (middle.height or 31) - 4) * k)
+        self.progressHeight = PROGRESS_HEIGHT
+    else
+        local back = track:CreateTexture(nil, "BACKGROUND")
+        back:SetAllPoints()
+        if back.SetColorTexture then back:SetColorTexture(0, 0, 0, 0.5) end
+        track:SetHeight(1.5)
+        fill:SetTexture(PROGRESS_LINE)
+        fill:SetHeight(1.5)
+        self.progressHeight = 2
+    end
+    fill:SetPoint("LEFT", track, "LEFT", self.fillRoom, 0)
+    -- Hung from the background's foot and sized from its width, so the bar follows the background
+    -- as it eases to a new page's size instead of jumping there ahead of it (ShowProgress).
+    track:SetPoint("BOTTOM", self.shadow, "BOTTOM", 0, BOTTOM_PAD)
+    local spark = track:CreateTexture(nil, "OVERLAY", nil, 1)
+    spark:SetTexture(SPARK)
+    if spark.SetBlendMode then spark:SetBlendMode("ADD") end
+    spark:SetSize(14, 14)
+    spark:SetPoint("CENTER", fill, "RIGHT")
+    self.track, self.fill, self.spark = track, fill, spark
+end
+
+--- The picture before the name, built as the Small Window builds its portrait (MinimalPlayer:
+--- BuildPortrait), at PICTURE: the round background, the viewport the face or icon is drawn in,
+--- and over them the ring with its badge.
 function Subtitle:BuildPicture()
     local k = PICTURE / 90
     local host = CreateFrame("Frame", nil, self.frame)
@@ -318,14 +385,19 @@ end
 --- The row's visible width, so it centres on what shows. The title is cut to keep it within WIDTH.
 function Subtitle:RowWidth(paused)
     local start = PICTURE + PICTURE_GAP + (self.title:GetStringWidth() or 0)
+    -- The waiting count's room, taken first so a long title is cut rather than the count.
+    local more = 0
+    if (self.waiting or 0) > 0 then
+        more = LABEL_GAP + (self.moreDot:GetStringWidth() or 0) + LABEL_GAP + (self.more:GetStringWidth() or 0)
+    end
     if self.labelText then
         local lead = LABEL_GAP + (self.dot:GetStringWidth() or 0) + LABEL_GAP
         self.label:SetWidth(0)
-        local label = math.min(self.label:GetStringWidth() or 0, math.max(0, WIDTH - PAD * 2 - start - lead))
+        local label = math.min(self.label:GetStringWidth() or 0, math.max(0, WIDTH - PAD * 2 - start - lead - more))
         self.label:SetWidth(math.max(1, label))
-        return start + lead + (paused and (self.pausedLabel:GetStringWidth() or 0) or label)
+        return start + lead + (paused and (self.pausedLabel:GetStringWidth() or 0) or label) + more
     end
-    return start + (paused and LABEL_GAP + (self.pausedLabel:GetStringWidth() or 0) or 0)
+    return start + (paused and LABEL_GAP + (self.pausedLabel:GetStringWidth() or 0) or 0) + more
 end
 
 function Subtitle:PlaceRow(left)
@@ -341,6 +413,15 @@ function Subtitle:PlaceRow(left)
     self.label:SetPoint("LEFT", self.dot, "RIGHT", LABEL_GAP, 0)
     self.pausedLabel:ClearAllPoints()
     self.pausedLabel:SetPoint("LEFT", self.labelText and self.dot or self.title, "RIGHT", LABEL_GAP, 0)
+    -- The waiting count after whatever ends the row now.
+    local last = self.shownPaused and self.pausedLabel or (self.labelText and self.label or self.title)
+    local shown = (self.waiting or 0) > 0
+    self.moreDot:SetShown(shown)
+    self.more:SetShown(shown)
+    self.moreDot:ClearAllPoints()
+    self.moreDot:SetPoint("LEFT", last, "RIGHT", LABEL_GAP, 0)
+    self.more:ClearAllPoints()
+    self.more:SetPoint("LEFT", self.moreDot, "RIGHT", LABEL_GAP, 0)
 end
 
 -- The centre and the top edge, not a corner: the frame is as wide as its longest line, so
@@ -411,9 +492,7 @@ function Subtitle:Layout(text)
     -- The progress line under the words, where the setting has it.
     self.progressShown = Config().SubtitleProgress ~= false
     for _, part in ipairs({ self.track, self.fill, self.spark }) do part:SetShown(self.progressShown) end
-    self.track:ClearAllPoints()
-    self.track:SetPoint("TOP", self.frame, "TOP", 0, -(wordsBottom + PROGRESS_GAP))
-    if self.progressShown then wordsBottom = wordsBottom + PROGRESS_GAP + 2 end
+    if self.progressShown then wordsBottom = wordsBottom + PROGRESS_GAP + self.progressHeight end
     self.rowsWidest, self.rowsHeight = widest, wordsBottom + BOTTOM_PAD
     self:Fit()
     -- Where each word ends, for typing by word (WholeWords): found once, not every frame.
@@ -438,7 +517,6 @@ function Subtitle:Fit()
     local height = self.rowsHeight
     self.frame:SetSize(widest + PAD * 2, math.max(48, height))
     self.shadowWant = { w = widest + SHADOW_REACH * 2, h = math.max(48, height) }
-    self.track:SetWidth(math.floor(self.shadowWant.w * PROGRESS_SHARE))
     if not self.shadowSize then
         self.shadowSize = { w = self.shadowWant.w, h = self.shadowWant.h }
         self.shadow:SetSize(self.shadowSize.w, self.shadowSize.h)
@@ -489,7 +567,8 @@ function Subtitle:Prepare(clip, text)
     -- A zone's own story names the zone twice; said once.
     if label == "" or label == title then label = nil end
     self.titleText, self.labelText, self.shownPaused = title, label, nil
-    self.rowLeft = nil
+    self.rowLeft, self.share, self.waiting = nil, 0, 0
+    self.more:SetText("")
     self.title:SetText(title)
     self.label:SetText(label or "")
     self.dot:SetShown(label ~= nil)
@@ -787,6 +866,7 @@ function Subtitle:Tick(elapsed)
         end
     end
     if self.wanted and self.pages then self:Render() end
+    if self.wanted and self.pages then self:CountWaiting() end
     self:ShowProgress()
     self:Animate(elapsed)
     self:FadeControls(elapsed)
@@ -802,10 +882,30 @@ end
 --- stopped while the queue is stopped, as the words are.
 function Subtitle:ShowProgress()
     if not self.progressShown then return end
+    -- Read only while the line is the one speaking. Once it has ended the subtitle fades out with
+    -- the bar where the voice left it, rather than snapping back to the start as it goes.
     local length = self.clip and tonumber(self.clip.length) or 0
-    local share = 0
-    if length > 0 and not self.sample then share = math.max(0, math.min(1, Transcript:AudioElapsed() / length)) end
-    self.fill:SetWidth(math.max(0.01, (self.track:GetWidth() or 0) * share))
+    if self.wanted and not self.sample and length > 0 and Transcript.clip == self.clip then
+        self.share = math.max(0, math.min(1, Transcript:AudioElapsed() / length))
+    end
+    local size = self.shadowSize or self.shadowWant
+    if size then self.track:SetWidth(math.floor(size.w * PROGRESS_SHARE)) end
+    local room = math.max(0, (self.track:GetWidth() or 0) - 2 * self.fillRoom)
+    self.fill:SetWidth(math.max(0.01, room * (self.share or 0)))
+end
+
+--- How many lines wait behind the one on screen, shown at the row's end as "+2" after a dot. A
+--- change lays the row out again, and it slides to its new middle as for "(Stopped)".
+function Subtitle:CountWaiting()
+    local waiting = 0
+    if not self.sample and Transcript.clip == self.clip and self.clip then
+        waiting = math.max(0, SoundQueue:GetQueueSize() - 1)
+    end
+    if waiting ~= self.waiting then
+        self.waiting = waiting
+        self.more:SetText(waiting > 0 and ("+" .. waiting) or "")
+        self:Fit()
+    end
 end
 
 --- The page's fade between pages, and the shadow easing to a new page's size.
