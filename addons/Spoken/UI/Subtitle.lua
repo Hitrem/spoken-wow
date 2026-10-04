@@ -607,8 +607,11 @@ function Subtitle:Prepare(clip, text)
     -- A zone's own story names the zone twice; said once.
     if label == "" or label == title then label = nil end
     self.titleText, self.labelText, self.shownPaused = title, label, nil
-    self.rowLeft, self.share, self.waiting = nil, 0, 0
-    self.more:SetText("")
+    -- The waiting count as it is now, so a line that follows a skip lays its row out once, with
+    -- the count already in, rather than sliding as if lines had just been added.
+    self.rowLeft, self.share = nil, 0
+    self.waiting = self:Waiting()
+    self.more:SetText(self.waiting > 0 and ("+" .. self.waiting) or "")
     self.title:SetText(title)
     self.label:SetText(label or "")
     self.dot:SetShown(label ~= nil)
@@ -936,11 +939,13 @@ end
 
 --- How many lines wait behind the one on screen, shown at the row's end as "+2" after a dot. A
 --- change lays the row out again, and it slides to its new middle as for "(Stopped)".
+function Subtitle:Waiting()
+    if self.sample or not self.clip or Transcript.clip ~= self.clip then return 0 end
+    return math.max(0, SoundQueue:GetQueueSize() - 1)
+end
+
 function Subtitle:CountWaiting()
-    local waiting = 0
-    if not self.sample and Transcript.clip == self.clip and self.clip then
-        waiting = math.max(0, SoundQueue:GetQueueSize() - 1)
-    end
+    local waiting = self:Waiting()
     if waiting ~= self.waiting then
         self.waiting = waiting
         self.more:SetText(waiting > 0 and ("+" .. waiting) or "")

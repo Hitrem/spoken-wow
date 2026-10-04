@@ -679,11 +679,19 @@ do
     E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
     source:Enqueue(Clip('pa','One two three four five six seven eight nine ten eleven twelve.',4))
     source:Enqueue(Clip('pb','Next.',2))
+    source:Enqueue(Clip('pc','Last.',2))
     Play(.7)
-    Check(S.waiting==1 and S.more:GetText()=='+1' and S.more:IsShown(),'a line waiting behind shows "+1" on the row')
+    Check(S.waiting==2 and S.more:GetText()=='+2' and S.more:IsShown(),'lines waiting behind show "+2" on the row')
     local point,relativeTo=S.track:GetPoint(1)
     Check(point=='BOTTOM' and relativeTo==S.shadow,'the progress bar hangs from the background, so it eases with it')
     Check(math.abs(S.track:GetWidth()-math.floor(S.shadowSize.w*.45))<1,'...and is sized from its eased width')
+    Q:Skip()
+    local slid=false
+    for _=1,24 do
+        Play(.05)
+        if S.wanted and S.rowLeft and S.rowWant and S.rowLeft~=S.rowWant then slid=true end
+    end
+    Check(S.waiting==1 and S.more:GetText()=='+1' and not slid,'after a skip the next line comes with its count in, the row not sliding')
     Q:Skip(); Play(1.2)
     Check(S.waiting==0 and not S.more:IsShown(),'with nothing waiting, no count')
     Play(1.2)
