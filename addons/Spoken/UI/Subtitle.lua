@@ -30,10 +30,10 @@ local PAUSED_FADE = .25
 local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
 -- The progress line under the words, laid out as Spoken Subtitles lays its own -- PROGRESS_GAP under
 -- the last line, PROGRESS_SHARE of the background's width, the cast bar's spark at the fill's end --
--- and framed as the game frames a status bar (UIWidgetTemplateStatusBar, the module cards' meter):
--- its border's ends and middle, its dark middle and its yellow fill, scaled to PROGRESS_HEIGHT.
+-- and framed in the track of the game's settings slider (MinimalSliderWithSteppersTemplate): its
+-- rounded ends and its middle, scaled to PROGRESS_HEIGHT, with the status bar's yellow fill inside.
 -- Without that art, Spoken Subtitles' own hairline and gold fill.
-local PROGRESS_GAP, PROGRESS_SHARE, PROGRESS_HEIGHT = 9, 0.45, 7
+local PROGRESS_GAP, PROGRESS_SHARE, PROGRESS_HEIGHT = 9, 0.45, 5
 local PROGRESS_LINE = [[Interface\AddOns\Spoken\Textures\SubtitleLine]]
 local SPARK = [[Interface\CastingBar\UI-CastingBar-Spark]]
 -- Called from the global environment, not SpokenEnv: the client builds part of its answer from
@@ -297,13 +297,13 @@ function Subtitle:BuildProgress()
     local frame = self.frame
     local track = CreateFrame("Frame", nil, frame)
     local fill = track:CreateTexture(nil, "ARTWORK")
-    local left, right, middle = AtlasInfo("widgetstatusbar-borderleft"), AtlasInfo("widgetstatusbar-borderright"),
-        AtlasInfo("widgetstatusbar-bordercenter")
+    local left, right, middle = AtlasInfo("Minimal_SliderBar_Left"), AtlasInfo("Minimal_SliderBar_Right"),
+        AtlasInfo("_Minimal_SliderBar_Middle")
     local yellow = AtlasInfo("widgetstatusbar-fill-yellow")
     self.fillRoom = 0
     -- The game's frame where it can be built; anything failing on the way falls back to the plain
     -- line, said once, rather than stopping the subtitle being built at all.
-    local framed = left and right and middle and yellow and fill.SetAtlas
+    local framed = left and right and middle and fill.SetAtlas
         and tonumber(middle.height) and tonumber(left.width) and tonumber(right.width) and true or false
     if framed then
         local ok, err = pcall(self.FrameProgress, self, track, fill, left, right, middle, yellow)
@@ -331,42 +331,35 @@ function Subtitle:BuildProgress()
     if spark.SetBlendMode then spark:SetBlendMode("ADD") end
     -- Taller than the bar, so its glow reaches a little past the frame above and below, as it
     -- did past the plain hairline.
-    spark:SetSize(12, framed and self.progressHeight + 9 or 14)
+    spark:SetSize(12, 14)
     spark:SetPoint("CENTER", fill, "RIGHT")
     self.track, self.fill, self.spark = track, fill, spark
 end
 
---- The game's status bar frame round the progress bar (Subtitle:BuildProgress).
+--- The settings slider's track round the progress bar (Subtitle:BuildProgress): its rounded ends and
+--- middle, dark inside, drawn over the fill so its rim edges it; the fill 3 of the art's 17 rows in
+--- from each end and 2 from top and bottom.
 function Subtitle:FrameProgress(track, fill, left, right, middle, yellow)
-    do
-        -- As the cards' meter lays the art out: the fill 8 inside the border's ends and 2 short of
-        -- the background's, the border's own 31 rows scaled to PROGRESS_HEIGHT.
-        local k = PROGRESS_HEIGHT / (middle.height > 0 and middle.height or 31)
-        track:SetHeight(PROGRESS_HEIGHT)
-        local function Piece(atlas, layer, width)
-            local texture = track:CreateTexture(nil, layer)
-            texture:SetAtlas(atlas)
-            texture:SetHeight(PROGRESS_HEIGHT)
-            if width then texture:SetWidth(width * k) end
-            return texture
-        end
-        local l = Piece("widgetstatusbar-borderleft", "OVERLAY", left.width)
-        local r = Piece("widgetstatusbar-borderright", "OVERLAY", right.width)
-        local m = Piece("widgetstatusbar-bordercenter", "OVERLAY")
-        l:SetPoint("LEFT", track, "LEFT", 0, 0)
-        r:SetPoint("RIGHT", track, "RIGHT", 0, 0)
-        m:SetPoint("LEFT", l, "RIGHT", 0, 0)
-        m:SetPoint("RIGHT", r, "LEFT", 0, 0)
-        self.fillRoom = 8 * k
-        local back = track:CreateTexture(nil, "BACKGROUND")
-        if AtlasInfo("widgetstatusbar-bgcenter") then back:SetAtlas("widgetstatusbar-bgcenter")
-        elseif back.SetColorTexture then back:SetColorTexture(0, 0, 0, 0.6) end
-        back:SetPoint("TOPLEFT", track, "TOPLEFT", self.fillRoom - 2 * k, -2 * k)
-        back:SetPoint("BOTTOMRIGHT", track, "BOTTOMRIGHT", -(self.fillRoom - 2 * k), 2 * k)
-        fill:SetAtlas("widgetstatusbar-fill-yellow")
-        fill:SetHeight(math.min(tonumber(yellow.height) or 15, middle.height - 4) * k)
-        self.progressHeight = PROGRESS_HEIGHT
+    local k = PROGRESS_HEIGHT / (middle.height > 0 and middle.height or 17)
+    track:SetHeight(PROGRESS_HEIGHT)
+    local function Piece(atlas, width)
+        local texture = track:CreateTexture(nil, "OVERLAY")
+        texture:SetAtlas(atlas)
+        texture:SetHeight(PROGRESS_HEIGHT)
+        if width then texture:SetWidth(width * k) end
+        return texture
     end
+    local l = Piece("Minimal_SliderBar_Left", left.width)
+    local r = Piece("Minimal_SliderBar_Right", right.width)
+    local m = Piece("_Minimal_SliderBar_Middle")
+    l:SetPoint("LEFT", track, "LEFT", 0, 0)
+    r:SetPoint("RIGHT", track, "RIGHT", 0, 0)
+    m:SetPoint("LEFT", l, "RIGHT", 0, 0)
+    m:SetPoint("RIGHT", r, "LEFT", 0, 0)
+    self.fillRoom = 3 * k
+    if yellow then fill:SetAtlas("widgetstatusbar-fill-yellow") else fill:SetTexture(PROGRESS_LINE) end
+    fill:SetHeight(math.max(1, (middle.height - 4) * k))
+    self.progressHeight = PROGRESS_HEIGHT
 end
 
 --- The picture before the name, built as the Small Window builds its portrait (MinimalPlayer:
