@@ -1,9 +1,8 @@
 setfenv(1, SpokenEnv)
 
--- The frame's settings, or their defaults once AceDB has stripped them: it removes a subtable
--- that holds only defaults at logout, and the frame goes on updating while the UI is torn down.
+-- The frame's settings, or their defaults once AceDB has stripped them (Addon:Profile).
 local function FrameConfig()
-    return Addon.db.profile.Frame or Defaults.profile.Frame
+    return Addon:Profile("Frame")
 end
 
 -- The player: who is speaking, what is waiting, and the controls for both.

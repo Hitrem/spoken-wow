@@ -24,9 +24,8 @@ local BADGES = {
     zone = [[Interface\WorldMap\UI-World-Icon]],
 }
 local function Clamp(n, low, high) return math.max(low, math.min(high, n)) end
--- AceDB strips a subtable holding only defaults at PLAYER_LOGOUT, and the frame still
--- resizes while the UI is torn down after that, so the defaults stand in for it then.
-local function Config() return Addon.db.profile.Frame or Defaults.profile.Frame end
+-- The frame still resizes while the UI is torn down, after AceDB strips it (Addon:Profile).
+local function Config() return Addon:Profile("Frame") end
 local function Waiting() return math.max(0, SoundQueue:GetQueueSize() - 1) end
 local function Label(clip) return clip and (clip.present and clip.present.label or clip.key) or "" end
 local function Font(parent, size, r, g, b)

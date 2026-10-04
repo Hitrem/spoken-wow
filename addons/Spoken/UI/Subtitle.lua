@@ -34,11 +34,11 @@ local PORTRAIT_ATLAS_SIZE = 512
 local UTF8_CHAR = "[%z\1-\127\194-\244][\128-\191]*"
 
 local function Config()
-    return Addon.db and Addon.db.profile.Transcript or Defaults.profile.Transcript
+    return Addon:Profile("Transcript")
 end
 -- The player's lock covers this frame too: locked, it is click-through.
 local function Locked()
-    return (Addon.db and Addon.db.profile.Frame or Defaults.profile.Frame).LockFrame
+    return Addon:Profile("Frame").LockFrame
 end
 -- Whether the pointer is over a shown frame.
 local function Over(frame)
@@ -555,7 +555,7 @@ function Subtitle:BuildControls()
     pause.glyph:SetTexture(TEXTURES .. "PortraitFrameAtlas")
     pause:SetScript("OnClick", function()
         if not SoundQueue:CanBePaused() then return end
-        if PlaySound and SOUNDKIT then PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON) end
+        SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
         SoundQueue:TogglePauseQueue()
         self:UpdatePause()
     end)
@@ -580,7 +580,7 @@ function Subtitle:BuildControls()
     skip.bar:SetPoint("LEFT", skip.glyph, "RIGHT", 0, 0)
     if skip.bar.SetColorTexture then skip.bar:SetColorTexture(1, 0.82, 0, 0.85) end
     skip:SetScript("OnClick", function()
-        if PlaySound and SOUNDKIT then PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON) end
+        SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
         SoundQueue:Skip()
     end)
     skip:SetScript("OnEnter", function()
@@ -743,7 +743,7 @@ function Subtitle:ReportState()
     if not clip then return "no-line" end
     local actions = clip.present and clip.present.actions
     if not actions then return "line-has-no-actions" end
-    local hidden = (Addon.db.profile.Frame or Defaults.profile.Frame).HiddenActions or {}
+    local hidden = Addon:Profile("Frame").HiddenActions or {}
     if hidden.report then return "hidden-by-setting" end
     if not self.report then return "not-built" end
     return format("built parent=%s shown=%s", self.report:GetParent() == self.controls and "controls" or "other",

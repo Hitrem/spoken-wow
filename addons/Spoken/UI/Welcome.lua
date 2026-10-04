@@ -114,7 +114,7 @@ function Welcome:Build()
     for _, part in ipairs(Options.PARTS) do
         local key = part.key
         table.insert(cards, { icon = part.icon, title = part.label, text = part.text, tooltip = part.tip,
-            read = function() return not Sources:IsTurnedOff(Sources:Get(key) or { key = key }) end,
+            read = function() return Spoken:IsPartOn(key) end,
             write = function(v) Sources:SetTurnedOff(key, not v) end,
             apply = function() Options:UpdateRows(); layout:Refresh() end,
             disabled = function() if not Sources:Get(key) then return L.REASON_NOT_INSTALLED end end,
@@ -129,7 +129,7 @@ function Welcome:Build()
     -- Preview mode, centred between the question and the styles it shows, as far from each.
     self.preview = Options:PreviewButton(layout)
     local tiles = {}
-    for _, style in ipairs(Options:Styles(true)) do
+    for _, style in ipairs(Options:Styles()) do
         table.insert(tiles, { value = style, title = Options.STYLE_LABELS[style], text = Options.STYLE_TEXTS[style],
             tooltip = Options.STYLE_TIPS[style], art = Options.SKETCHES[style] })
     end

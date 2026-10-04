@@ -16,7 +16,7 @@
 -- they are built and placed by Reflow, top to bottom. Placing them all in one pass is what lets
 -- a row be hidden (ShowWhen) and everything under it close up, rather than leaving a hole.
 
-local VERSION = 55
+local VERSION = 56
 
 -- LibStub's contract, for LibStub's reason: several addons load this file and the newest
 -- copy must win, whichever of them the client happens to load last.
@@ -262,18 +262,6 @@ end
 -- game's checkboxes and sliders do, so every control on a page starts in one column.
 function Layout:Column()
     return self:Middle() + CONTROL_X
-end
-
--- How wide a label at the page's left may run: to 85 short of the middle.
-function Layout:LabelWidth()
-    return self:Middle() - LABEL_END - (self.left + LABEL_X)
-end
-
---- Record the row a control was given. A control may sit inside its row -- a slider's bar
---- hangs below its own label -- but never outside it.
-function Layout:Row(frame, top, height)
-    frame.layoutY, frame.layoutHeight = top, height
-    return frame
 end
 
 --- Step the following rows in, for options that qualify the one above them, and back out.
@@ -849,6 +837,16 @@ end
 --- A change that takes effect only after a reload: say so, and offer to do it now.
 function Layout.AskReload(message, reloadLabel, laterLabel)
     Layout.Confirm(message, reloadLabel, laterLabel, function() ReloadUI() end)
+end
+
+--- Open the settings window at a page. OpenToCategory takes the category's ID in some builds
+--- and the category object in others, so try the ID first and fall back rather than erroring.
+--- True when the window opened, so a caller can tell the player the way there when it did not.
+function Layout.OpenCategory(category)
+    if not (category and Settings and Settings.OpenToCategory) then return false end
+    local id = category.GetID and category:GetID() or nil
+    if id and pcall(Settings.OpenToCategory, id) then return true end
+    return pcall(Settings.OpenToCategory, category) and true or false
 end
 
 --- Prose, not a setting: wraps to `width`, and occupies a row like anything else.
@@ -1549,7 +1547,6 @@ local function InputFrame(parent)
         frame:SetBackdrop({ edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], edgeSize = 10,
             insets = { left = 2, right = 2, top = 2, bottom = 2 } })
         frame:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-        frame.layoutRim = true
     end
     return frame
 end
@@ -1664,7 +1661,6 @@ function Layout:Cards(items)
             rule:SetPoint("RIGHT", card, "RIGHT", -CARD_PAD, 0)
             card.rule = rule
             status = NewMeter(card)
-            status.layoutWide = true
             status:SetPoint("TOPLEFT", rule, "BOTTOMLEFT", 0, -CARD_RULE_GAP)
             status:SetPoint("RIGHT", card, "RIGHT", -CARD_PAD, 0)
             card.status = status
@@ -1715,7 +1711,6 @@ function Layout:Cards(items)
                 if usable then button:Enable() else button:Disable() end
             end
             card.layoutChecked = live
-            card.layoutStatus = status and { status.state, status.message } or {}
             card:Look()
         end
         self:Index(card, item.title, item.tooltip)

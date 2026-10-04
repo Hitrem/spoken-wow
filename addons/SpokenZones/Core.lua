@@ -98,21 +98,6 @@ local function InitConfig()
 		end
 	end
 
-	-- The panel was 300 wide by default, too narrow for most zones' names beside the header's
-	-- buttons. Whoever still has that width gets the new one, once.
-	if not SpokenZonesSettings.panelWidened then
-		if SpokenZonesSettings.panelWidth == 300 then SpokenZonesSettings.panelWidth = defaults.panelWidth end
-		SpokenZonesSettings.panelWidened = true
-	end
-
-	-- `audioPack` was a folder name back when there was only one language to
-	-- choose a pack for; it is now one folder name per content language. The type
-	-- check makes this idempotent, which is why no stored schema version is needed.
-	-- The old value was necessarily an English pack, so that is where it lands.
-	if type(SpokenZonesSettings.audioPack) == "string" then
-		SpokenZonesSettings.audioPack = { enUS = SpokenZonesSettings.audioPack }
-	end
-
 	SpokenZones.db = SpokenZonesSettings
 end
 
@@ -143,6 +128,13 @@ function SpokenZones:ResetOptions()
 	-- back, and the play buttons follow the voice being on again.
 	SpokenZones:ApplyMinimapButton()
 	SpokenZones:NotifyAudioChanged()
+end
+
+--- Whether the player has this part of Spoken switched on (Spoken's settings). Without the
+--- player there is no switch to read, and the part counts as on. Off, the map's panel and its
+--- play buttons stay hidden.
+function SpokenZones:IsPartOn()
+	return not (Spoken and Spoken.IsPartOn) or Spoken:IsPartOn("zones")
 end
 
 --------------------------------------------------------------------------------

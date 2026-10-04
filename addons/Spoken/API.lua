@@ -158,7 +158,7 @@ end
 --- Whether a part of Spoken is switched on in the settings (Sources:IsTurnedOff), for the
 --- switch each feature addon puts at the top of its own page. `key` is its source key.
 function Spoken:IsPartOn(key)
-    return not Sources:IsTurnedOff(Sources:Get(key) or { key = key })
+    return not Sources:IsTurnedOff(key)
 end
 
 --- How a part stands, as a state ("ok", "warn", "off") and the words for it: not installed,
@@ -167,15 +167,10 @@ function Spoken:PartStatus(key)
     return Options:PartStatus(key)
 end
 
---- A module's voice packs, as its card and its page show them: how many of them it has
---- (PartVoice, "Voice Pack ... 2/4"), and which, by name (PartVoiceNames). Each returns a kind,
---- the words, the value and the value's kind.
+--- A module's voice packs, as its card shows them: how many of them it has, "Voice Pack ... 2/4".
+--- Returns a kind, the words and the value.
 function Spoken:PartVoice(key)
     return Options:PartVoice(key)
-end
-
-function Spoken:PartVoiceNames(key)
-    return Options:PartVoiceNames(key)
 end
 
 --- How Spoken's settings are laid out: "pages", each page an entry nested under Spoken in the

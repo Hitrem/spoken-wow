@@ -73,7 +73,7 @@ local function OnUpdate(self, elapsed)
 	end
 	elapsedSince = 0
 
-	if not SpokenZones:Get("showHoverPreview") or (Spoken and Spoken.IsPartOn and not Spoken:IsPartOn("zones")) then
+	if not SpokenZones:Get("showHoverPreview") or not SpokenZones:IsPartOn() then
 		return HideTooltip()
 	end
 

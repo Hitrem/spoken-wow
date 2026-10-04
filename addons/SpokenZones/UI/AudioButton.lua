@@ -132,7 +132,7 @@ function SpokenZones:CreateAudioButton(parent)
 		end
 		if SpokenZones:IsPlayingLore(self.mapID, self.areaKey)
 			or (SpokenZones:IsLoreAtHead(self.mapID, self.areaKey) and SpokenZones:IsPaused()) then
-			if PlaySound and SOUNDKIT then PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON) end
+			SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
 			_G.Spoken:TogglePause()
 		else
 			SpokenZones:PlayLore(self.mapID, self.areaKey)

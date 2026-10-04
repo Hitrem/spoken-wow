@@ -174,8 +174,6 @@ L.PART_ONE_PACK = "Pack de voix installé"
 L.PART_PACKS_FMT = "%1$d packs de voix installés"
 L.PART_VOICE = "Pack de voix"
 L.PART_VOICE_COUNT_FMT = "%1$d/%2$d"
-L.PART_VOICE_NAMES = "Packs de voix"
-L.PART_VOICE_NONE = "Aucun installé"
 
 -- Language
 L.OPT_LANGUAGE_TITLE = "Langue"

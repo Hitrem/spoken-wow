@@ -74,7 +74,7 @@ function SpokenZones:SetupSubzoneClicks()
 		if button ~= "LeftButton" then
 			return
 		end
-		if Spoken and Spoken.IsPartOn and not Spoken:IsPartOn("zones") then
+		if not SpokenZones:IsPartOn() then
 			downX, downY = nil, nil
 			return
 		end

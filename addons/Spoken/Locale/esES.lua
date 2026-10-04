@@ -180,8 +180,6 @@ L.PART_ONE_PACK = "Paquete de voces instalado"
 L.PART_PACKS_FMT = "%1$d paquetes de voces instalados"
 L.PART_VOICE = "Paquete de voces"
 L.PART_VOICE_COUNT_FMT = "%1$d/%2$d"
-L.PART_VOICE_NAMES = "Paquetes de voces"
-L.PART_VOICE_NONE = "Ninguno instalado"
 
 -- Sound: other game sounds while Spoken talks
 L.OPT_LOWER_TITLE = "Bajar el juego mientras Spoken habla"

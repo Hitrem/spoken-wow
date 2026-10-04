@@ -73,13 +73,23 @@ function OtherSounds:FadeTo(targets, done)
     self:StopFade()
     Release()
     local from, progress = {}, 0
-    for channel in pairs(self.original) do from[channel] = Read(channel) end
+    for channel in pairs(self.original) do
+        local start = Read(channel)
+        -- A channel already where it is going -- the voice's own, or one left at 100% -- is not
+        -- rewritten every step. It is still marked as set at this level, so the player moving it
+        -- mid-line makes it theirs (Release) just as it would one that is fading.
+        if targets[channel] ~= nil and targets[channel] ~= start then
+            from[channel] = start
+        else
+            self.applied[channel] = start
+        end
+    end
     local function Step()
         progress = math.min(1, progress + STEP / FADE_SECONDS)
         Release()
         for channel, start in pairs(from) do
             if self.original[channel] then
-                Set(channel, start + ((targets[channel] or start) - start) * progress)
+                Set(channel, start + (targets[channel] - start) * progress)
             end
         end
         if progress >= 1 then

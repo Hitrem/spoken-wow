@@ -114,6 +114,12 @@ function SpokenBooks:PlayerAvailable()
 	return _G.Spoken ~= nil and Spoken.IsCompatible ~= nil and Spoken:IsCompatible(REQUIRED_API)
 end
 
+--- Whether the player has this part of Spoken switched on (Spoken's settings). Without the
+--- player there is no switch to read, and the part counts as on. Off, no play button shows.
+function SpokenBooks:IsPartOn()
+	return not (Spoken and Spoken.IsPartOn) or Spoken:IsPartOn("books")
+end
+
 --- Whether the player offers background gathering this panel can switch: present with
 --- the Gather table, absent on older players and where contributing is off.
 function SpokenBooks:GatherAvailable()

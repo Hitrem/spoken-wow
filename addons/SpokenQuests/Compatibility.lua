@@ -872,7 +872,7 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
                 -- since finished is no longer in the queue, and holding on to it left the button dead.
                 local clip = QueuedLine(button.questID)
                 if clip and Spoken:GetNowPlaying() == clip then
-                    if PlaySound and SOUNDKIT then PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON) end
+                    SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
                     Spoken:TogglePause()
                 elseif not clip and bound then
                     -- The bound handler queues the line it holds, so it starts from a fresh one.

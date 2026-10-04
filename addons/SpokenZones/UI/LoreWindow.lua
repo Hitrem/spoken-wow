@@ -35,7 +35,11 @@ local expandedZone = nil
 local worldOpen = true
 local continentOpen = { [1414] = true, [1415] = true }
 local selection = nil -- { mapID = , key = nil|string }
+-- Sorted once, as sortedZoneIDs is: the tree is rebuilt on every click and keystroke, and the
+-- data under it is fixed for the session (a language change reloads the interface).
 local sortedZoneIDs = nil
+local zonesOfContinent = {}
+local sortedSubzoneKeys = {}
 local filter = ""
 
 --------------------------------------------------------------------------------
@@ -124,10 +128,12 @@ end
 
 --- A continent's zones, alphabetical; nil for the zones on no continent the game names.
 local function ZonesOf(continent)
+	if zonesOfContinent[continent] then return zonesOfContinent[continent] end
 	local list = {}
 	for _, mapID in ipairs(ZoneIDs()) do
 		if ContinentOf(mapID) == continent then table.insert(list, mapID) end
 	end
+	zonesOfContinent[continent] = list
 	return list
 end
 
@@ -143,6 +149,7 @@ local function SubzoneKeys(mapID)
 	if not tbl then
 		return nil
 	end
+	if sortedSubzoneKeys[mapID] then return sortedSubzoneKeys[mapID] end
 	local keys = {}
 	for key in pairs(tbl) do
 		table.insert(keys, key)
@@ -150,6 +157,7 @@ local function SubzoneKeys(mapID)
 	table.sort(keys, function(a, b)
 		return (tbl[a].name or a) < (tbl[b].name or b)
 	end)
+	sortedSubzoneKeys[mapID] = keys
 	return keys
 end
 
@@ -196,10 +204,14 @@ local function BuildRowList()
 
 	local continents = {}
 	for _, continent in ipairs(Continents()) do
+		-- A closed continent's zones are never shown, and its count comes from ZonesOf: only
+		-- a search, which can open it, needs them built.
 		local zones = {}
-		for _, mapID in ipairs(ZonesOf(continent)) do
-			local rows = ZoneRows(mapID, 2)
-			for _, row in ipairs(rows) do table.insert(zones, row) end
+		if searching or continentOpen[continent] then
+			for _, mapID in ipairs(ZonesOf(continent)) do
+				local rows = ZoneRows(mapID, 2)
+				for _, row in ipairs(rows) do table.insert(zones, row) end
+			end
 		end
 		local name = ZoneName(continent)
 		if not searching or Matches(name) or #zones > 0 then
@@ -340,7 +352,7 @@ local function OnRowClick(self)
 	else
 		selection = { mapID = row.mapID, key = row.key }
 	end
-	if PlaySound and SOUNDKIT then PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON) end
+	SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
 	SpokenZones:RefreshLoreWindow()
 end
 

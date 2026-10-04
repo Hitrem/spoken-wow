@@ -320,15 +320,6 @@ function Player:Setup()
             if all then have = total end
             return math.min(have, total), total
         end,
-        -- ...and which, by name, for the top of this part's page.
-        packNames = function()
-            local names = {}
-            for _, module in DataModules:GetPresentModules() do
-                if module.AddonName == "SpokenQuestsAudioAll" then return { DataModules:GetPackLabel(module) } end
-                table.insert(names, DataModules:GetPackLabel(module))
-            end
-            return names
-        end,
     })
 
     -- What the watcher reads to know whether an event reached the speaker.

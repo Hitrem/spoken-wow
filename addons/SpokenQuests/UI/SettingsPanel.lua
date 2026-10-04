@@ -55,7 +55,7 @@ function SettingsPanel:Setup()
     -- The part's own switch first, as on Spoken's page: off, everything under it is greyed
     -- out and says why, rather than looking live and doing nothing.
     local switch
-    local function PartOn() return not (Spoken and Spoken.IsPartOn) or Spoken:IsPartOn("quests") end
+    local function PartOn() return Addon:IsPartOn() end
     -- Its own entry, nested under Spoken in the game's settings list and headed as the game's
     -- pages are, with its switch first: the page is there whether the part is on or not. The
     -- part's card on Spoken's page turns it on and off too.
@@ -252,14 +252,5 @@ function SettingsPanel:Open()
     -- Nested under Spoken's entry: Spoken opens this page.
     if self.page and self.page.Open and self.page.Open() then return true end
     local category = category or (self.page and self.page.category)
-    if category and Settings and Settings.OpenToCategory then
-        local id = category.GetID and category:GetID() or nil
-        if id and pcall(Settings.OpenToCategory, id) then
-            return true
-        end
-        if pcall(Settings.OpenToCategory, category) then
-            return true
-        end
-    end
-    return false
+    return SpokenLayout ~= nil and SpokenLayout.OpenCategory(category)
 end

@@ -112,7 +112,7 @@ end
 -- the panel only shows in windowed mode.
 local function ShouldShow()
 	-- Switched off in Spoken's settings, the part puts nothing on the map.
-	if Spoken and Spoken.IsPartOn and not Spoken:IsPartOn("zones") then
+	if not SpokenZones:IsPartOn() then
 		return false
 	end
 	if not SpokenZones:Get("showMapPanel") then

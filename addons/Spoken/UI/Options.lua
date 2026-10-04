@@ -270,7 +270,7 @@ local function Build(canvas)
     for _, part in ipairs(PARTS) do
         known[part.key] = true
         local key, order = part.key, part.order
-        local function On() return not Sources:IsTurnedOff(Sources:Get(key) or { key = key }) end
+        local function On() return Spoken:IsPartOn(key) end
         local function Write(v) Sources:SetTurnedOff(key, not v) end
         local function Missing() if not Sources:Get(key) then return L.REASON_NOT_INSTALLED end end
         if canvas then
@@ -306,10 +306,10 @@ local function Build(canvas)
     local styles = Options:Styles()
     -- Pictures on the canvas, where the three look different enough that a sketch says more
     -- than a name; a dropdown in the legacy window, which has room for neither.
-    if canvas and getn(styles) > 1 then
+    if canvas then
         layout:Section(L.OPT_PLAYER_STYLE, true)
         local tiles = {}
-        for _, style in ipairs(Options:Styles(true)) do
+        for _, style in ipairs(styles) do
             table.insert(tiles, { value = style, title = STYLE_LABELS[style], text = STYLE_TEXTS[style],
                 tooltip = STYLE_TIPS[style], art = SKETCHES[style] })
         end
@@ -321,14 +321,12 @@ local function Build(canvas)
             end,
             { choose = L.STYLE_CHOOSE })
         layout:Section(L.OPT_SHOW_TITLE)
-    elseif getn(styles) > 1 then
+    else
         layout:Section(L.OPT_SHOW_TITLE)
         layout:Dropdown(L.OPT_PLAYER_STYLE, L.OPT_PLAYER_STYLE_TIP, styles, Style,
             function(v) Addon:SetPlayerStyle(v) end,
             function() PlayerFrame:RefreshConfig(); refreshTranscript() end,
             function(v) return STYLE_LABELS[v] or v end)
-    else
-        layout:Section(L.OPT_SHOW_TITLE)
     end
     -- No captions on 1.12: its Transcript is a stub (see 1.12\Transcript.lua).
     if not Transcript.unavailable then
@@ -412,12 +410,15 @@ local function Build(canvas)
             Only(row, Subtitles)
             Requires(row, Words, L.REASON_WORDS)
         end
+        -- These two are the subtitle's alone: redrawing it is enough, on every step of a drag,
+        -- without the captions' full refresh and every row's.
+        local refreshSubtitle = function() Subtitle:Update() end
         ForSubtitles(layout:Slider(L.OPT_SUBTITLE_SIZE, 0.6, 1.6, 0.05,
             function() return transcript().SubtitleScale end,
-            function(v) transcript().SubtitleScale = v end, refreshTranscript, nil, L.OPT_SUBTITLE_SIZE_TIP))
+            function(v) transcript().SubtitleScale = v end, refreshSubtitle, nil, L.OPT_SUBTITLE_SIZE_TIP))
         ForSubtitles(layout:Slider(L.TRANSCRIPT_SHADOW, 0, 1, 0.05,
             function() return transcript().SubtitleShadow end,
-            function(v) transcript().SubtitleShadow = v end, refreshTranscript, nil, L.TRANSCRIPT_SHADOW_TIP))
+            function(v) transcript().SubtitleShadow = v end, refreshSubtitle, nil, L.TRANSCRIPT_SHADOW_TIP))
         panel.sampleButton = Only(layout:Button(L.SUBTITLE_SAMPLE_SHOW, 200, function()
             Subtitle:ShowSample(not Subtitle:IsShowingSample())
             Options:UpdateRows()
@@ -704,10 +705,9 @@ function Options:PackCount(source)
 end
 
 --- Whether a module has its voices, apart from whether it is enabled: "Voice Pack", and how
---- many of its packs are installed out of how many there are, as 2/4 -- the game's green tick
---- before it with all of them, its red cross with none. A module whose voices come in parts
---- counts them itself (`packCount`); otherwise its packs are one pack, there or not. Nothing for
---- a module that is not installed.
+--- many of its packs are installed out of how many there are, as 2/4. A module whose voices come
+--- in parts counts them itself (`packCount`); otherwise its packs are one pack, there or not.
+--- Nothing for a module that is not installed.
 function Options:PartVoice(key)
     local source = Sources:Get(key)
     if not source then return nil end
@@ -721,9 +721,7 @@ function Options:PartVoice(key)
         if not count then return nil end
         have, total = count > 0 and 1 or 0, 1
     end
-    -- The count in green with all of them, red with none.
-    local valueKind = (have >= total and "good") or (have == 0 and "bad") or "neutral"
-    return have == 0 and "muted" or "neutral", L.PART_VOICE, format(L.PART_VOICE_COUNT_FMT, have, total), valueKind
+    return have == 0 and "muted" or "neutral", L.PART_VOICE, format(L.PART_VOICE_COUNT_FMT, have, total)
 end
 
 --- Every AceDB object a profile choice applies to: the player's, then each installed part's
@@ -833,26 +831,6 @@ function Options:AddProfiles(layout)
     end
 end
 
---- Which voice packs a module has, by name, for the top of its own page, where there is room to
---- say: "Voice Packs ... Horde, Shared Quests". A module whose voices come in parts names them
---- itself (`packNames`); otherwise its packs' own names.
-function Options:PartVoiceNames(key)
-    local source = Sources:Get(key)
-    if not source then return nil end
-    local names
-    if source.packNames then
-        local ok, list = pcall(source.packNames)
-        if ok and type(list) == "table" then names = list end
-    end
-    if not names and source.packs then
-        local ok, list = pcall(source.packs)
-        if ok and type(list) == "table" then names = list end
-    end
-    if not names then return nil end
-    if getn(names) == 0 then return "muted", L.PART_VOICE_NAMES, L.PART_VOICE_NONE, "bad" end
-    return "neutral", L.PART_VOICE_NAMES, table.concat(names, ", ")
-end
-
 --- Open Spoken's page on a tab: Home's is 0, a feature addon's the order it was listed in.
 function Options:OpenPage(order)
     if self.category then
@@ -862,10 +840,7 @@ function Options:OpenPage(order)
             if page.order == order then category = page.category end
         end
         if not category then return false end
-        local id = category.GetID and category:GetID() or nil
-        if not (id and pcall(Settings.OpenToCategory, id)) then
-            pcall(Settings.OpenToCategory, category)
-        end
+        Layout.OpenCategory(category)
         return true
     end
     return false
@@ -885,13 +860,9 @@ function Options:Pages()
 end
 
 --- Open a page, and once the settings window has drawn it, scroll to `row` and light it up.
+--- `page` is one of Pages(), each of which OpenPage finds by its order.
 function Options:ShowRow(page, row)
-    if not self:OpenPage(page.order) then
-        local id = page.category.GetID and page.category:GetID() or nil
-        if not (id and pcall(Settings.OpenToCategory, id)) then
-            pcall(Settings.OpenToCategory, page.category)
-        end
-    end
+    self:OpenPage(page.order)
     local function Land()
         if page.scroller then
             page.scroller:Recalculate()
@@ -997,11 +968,7 @@ end
 
 function Options:Open()
     if self.category and Settings and Settings.OpenToCategory then
-        -- OpenToCategory takes an ID in some builds and the category in others.
-        local id = self.category.GetID and self.category:GetID() or nil
-        if not (id and pcall(Settings.OpenToCategory, id)) then
-            pcall(Settings.OpenToCategory, self.category)
-        end
+        Layout.OpenCategory(self.category)
     elseif panel then
         panel:SetShown(not panel:IsShown())
     else

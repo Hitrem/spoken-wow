@@ -43,9 +43,8 @@ function Sources:Register(key, info)
         onQueueEnter = info.onQueueEnter,
         onQueueEmpty = info.onQueueEmpty,
         packs = info.packs,
-        -- A part whose voices come in parts counts and names them itself (Options:PartVoice).
+        -- A part whose voices come in parts counts them itself (Options:PartVoice).
         packCount = info.packCount,
-        packNames = info.packNames,
         -- A part's settings kept in AceDB profiles: a function returning its AceDB object, so
         -- Spoken's own Profiles section switches it with the player's (Options:ProfileDBs).
         profiles = info.profiles,
@@ -71,15 +70,23 @@ end
 --- stays installed and loaded and nothing it sends is played. The player's own switch, not the
 --- client's addon list: current clients keep enabling and disabling an addon for their own UI
 --- and refuse it to addons (see the pcall around DisableAddOn in SpokenQuests' VoiceOver.lua),
---- and this one needs no reload either.
-function Sources:IsTurnedOff(source)
+--- and this one needs no reload either. `part` is a source or its key: the settings ask about a
+--- part by key whether or not it is installed.
+function Sources:IsTurnedOff(part)
+    local key = type(part) == "table" and part.key or part
     local parts = Addon.db and Addon.db.profile.Parts
-    return parts ~= nil and source ~= nil and parts[source.key] == false
+    return parts ~= nil and key ~= nil and parts[key] == false
 end
 
 function Sources:SetTurnedOff(key, off)
     -- Not `off and false or nil`, which is nil either way.
     if off then Addon.db.profile.Parts[key] = false else Addon.db.profile.Parts[key] = nil end
+    self:Apply(key)
+end
+
+--- Put a part's switch into effect, after it was flipped or a profile brought another one.
+function Sources:Apply(key)
+    local off = self:IsTurnedOff(key)
     local source = self.byKey[key]
     -- What it already queued goes too: switching a part off mid-line should silence it.
     if off and source then SoundQueue:RemoveSource(source) end

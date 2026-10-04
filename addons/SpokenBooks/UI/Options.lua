@@ -61,7 +61,7 @@ function SpokenBooks:SetupOptions()
 	-- The part's own switch first, as on Spoken's page: off, everything under it is greyed
 	-- out and says why, rather than looking live and doing nothing.
 	local switch
-	local function PartOn() return not (Spoken and Spoken.IsPartOn) or Spoken:IsPartOn("books") end
+	local function PartOn() return SpokenBooks:IsPartOn() end
 	-- Its own entry, nested under Spoken in the game's settings list and headed as the game's
 	-- pages are, with its switch first: the page is there whether the part is on or not. The
 	-- part's card on Spoken's page turns it on and off too.
@@ -224,19 +224,7 @@ function SpokenBooks:OpenOptions()
 	-- Nested under Spoken's entry: Spoken opens this page.
 	if self.optionsPage and self.optionsPage.Open and self.optionsPage.Open() then return end
 	local category = category or (self.optionsPage and self.optionsPage.category)
-	if not category or not (Settings and Settings.OpenToCategory) then
-		self:Print("open Game Menu -> Options -> AddOns -> Spoken Books")
-		return
-	end
-
-	-- OpenToCategory takes an ID in some builds and the category object in others, so try
-	-- the ID first and fall back rather than erroring. Same as the zones panel.
-	local id = category.GetID and category:GetID() or nil
-	local ok = id and pcall(Settings.OpenToCategory, id)
-	if not ok then
-		ok = pcall(Settings.OpenToCategory, category)
-	end
-	if not ok then
+	if not (SpokenLayout and SpokenLayout.OpenCategory(category)) then
 		self:Print("open Game Menu -> Options -> AddOns -> Spoken Books")
 	end
 end

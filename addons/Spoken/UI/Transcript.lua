@@ -13,7 +13,7 @@ local function Clamp(value, low, high)
     return math.max(low, math.min(high, value))
 end
 local function Config()
-    return Addon.db and Addon.db.profile.Transcript or Defaults.profile.Transcript
+    return Addon:Profile("Transcript")
 end
 -- In the account-wide layout with the players' places, not the profile: see Addon:Layout.
 local function Expanded()

@@ -170,32 +170,17 @@ local function BuildScrollBar(view, parent)
 			or (UIParent and UIParent:GetEffectiveScale()) or 1
 		return y / scale
 	end
-	-- Held from the press and where it was taken, so the thumb moves with the pointer rather than
-	-- jumping to centre on it.
-	thumb:SetScript("OnMouseDown", function(_, button)
-		if button and button ~= "LeftButton" then return end
-		view.grab = (thumb:GetTop() or 0) - CursorY()
-		view.dragging = true
-		view:PaintThumb()
-	end)
-	thumb:SetScript("OnMouseUp", function()
+	-- Following the pointer every frame only while the thumb is held: the bar is shown whenever
+	-- the text overflows, and an OnUpdate left on it would run for nothing all that time.
+	local function Release()
 		view.dragging = false
+		bar:SetScript("OnUpdate", nil)
 		view:PaintThumb()
-	end)
-	-- A click on the track pages toward it, as the game's bar does.
-	bar:SetScript("OnMouseDown", function()
-		local page = (view.frame:GetHeight() or 0) - SCROLL_STEP
-		local step = CursorY() > (thumb:GetTop() or 0) and -page or page
-		view:ScrollTo(view.frame:GetVerticalScroll() + step)
-	end)
-
-	bar:SetScript("OnUpdate", function()
-		if not view.dragging then
-			return
-		end
+	end
+	local function Follow()
+		-- Let go off the thumb, where its OnMouseUp never hears of it.
 		if IsMouseButtonDown and not IsMouseButtonDown("LeftButton") then
-			view.dragging = false
-			view:PaintThumb()
+			Release()
 			return
 		end
 		local barHeight = bar:GetHeight() or 0
@@ -206,6 +191,22 @@ local function BuildScrollBar(view, parent)
 		end
 		local offset = (bar:GetTop() or 0) - CursorY() - (view.grab or thumbHeight / 2)
 		view:ScrollTo((Clamp(offset, 0, travel) / travel) * (view.range or 0))
+	end
+	-- Held from the press and where it was taken, so the thumb moves with the pointer rather than
+	-- jumping to centre on it.
+	thumb:SetScript("OnMouseDown", function(_, button)
+		if button and button ~= "LeftButton" then return end
+		view.grab = (thumb:GetTop() or 0) - CursorY()
+		view.dragging = true
+		bar:SetScript("OnUpdate", Follow)
+		view:PaintThumb()
+	end)
+	thumb:SetScript("OnMouseUp", Release)
+	-- A click on the track pages toward it, as the game's bar does.
+	bar:SetScript("OnMouseDown", function()
+		local page = (view.frame:GetHeight() or 0) - SCROLL_STEP
+		local step = CursorY() > (thumb:GetTop() or 0) and -page or page
+		view:ScrollTo(view.frame:GetVerticalScroll() + step)
 	end)
 
 	view.bar = bar

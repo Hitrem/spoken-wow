@@ -140,12 +140,15 @@ function Addon:ApplyProfile()
     if OtherSounds and OtherSounds.IsAvailable and OtherSounds:IsAvailable() then OtherSounds:RefreshConfig() end
     -- Which modules are on is the profile's too: each puts its buttons back or takes them off,
     -- and what one now off had queued goes, as switching it off on Spoken's page does.
-    for key, source in Sources:Iterate() do
-        local off = Sources:IsTurnedOff(source)
-        if off then SoundQueue:RemoveSource(source) end
-        Callbacks:Fire("PART_SWITCHED", key, not off)
-    end
+    for key in Sources:Iterate() do Sources:Apply(key) end
     if Options and Options.UpdateRows then Options:UpdateRows() end
+end
+
+--- One of the profile's settings tables ("Frame", "Transcript"), or its defaults where there is
+--- none. AceDB strips a subtable holding only defaults at PLAYER_LOGOUT, and the frames go on
+--- updating while the UI is torn down after that; before InitDB there is no profile at all.
+function Addon:Profile(section)
+    return self.db and self.db.profile[section] or Defaults.profile[section]
 end
 
 --- Where each player window sits, how wide it is, and whether the captions are expanded.
@@ -191,7 +194,7 @@ function Addon:DisplayStyle()
 end
 
 function Addon:PlayerStyle()
-    local frame = self.db and self.db.profile.Frame or Defaults.profile.Frame
+    local frame = self:Profile("Frame")
     if frame.SubtitlePlayer and not Transcript.unavailable then return "subtitle" end
     if frame.HideFrame then return "none" end
     if frame.MinimalPlayer and not Version.IsAnyLegacy then return "minimal" end
