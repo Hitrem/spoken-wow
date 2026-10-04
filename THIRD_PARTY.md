@@ -61,7 +61,9 @@ None of this is the project's to license, and the MIT grant does not reach it.
   (`PortraitFrameAtlas`, the continent maps) are Blizzard's.
 - **Zone icons** (`addons/Spoken/Textures/Zones/*.tga`): the game's zone achievement icons and the
   world map's globe, copied from the game's files so every client has them; the pictures for
-  Spoken Zones' lines. They are Blizzard's.
+  Spoken Zones' lines. They are Blizzard's. Forever's own zones, which have no icon in the game
+  (Zephras Isle, Darkspear Islands, Riverglades, Shen'dralas), have icons made for this project
+  in the same style.
 - **Lore page art** (`addons/Spoken_Zones/Textures/Art/*.tga`): the spellbook's parchment,
   divider and backplate, and the quest log's details page and frame, cut from the game's UI
   files (Forever client) so the page looks the same on every client. They are Blizzard's.

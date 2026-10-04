@@ -210,8 +210,9 @@ end
 -- The game's zone icons -- its zone achievements' -- as copies shipped in Textures/Zones, so every
 -- client has them, and the world map's globe for Azeroth. Keyed by uiMapID. A city is part of its
 -- zone and takes the zone's icon, as an area does; Teldrassil, which has no icon of its own, takes
--- Darnassus's, its tree. A map not listed takes its parent's, up to the continent's
--- (Spoken:ZoneIcon); one listed as false has no icon yet and shows its line's own picture.
+-- Darnassus's, its tree. Forever's own zones, which the game has no icon for, have ones drawn for
+-- Spoken in the same style. A map not listed takes its parent's, up to the continent's
+-- (Spoken:ZoneIcon).
 local ZONE_ART = [[Interface\AddOns\Spoken\Textures\Zones\]]
 local ZONE_ICONS = {
     [947] = "Azeroth", [1414] = "Kalimdor", [1415] = "EasternKingdoms",
@@ -229,8 +230,8 @@ local ZONE_ICONS = {
     -- The cities, each its zone's.
     [1453] = "ElwynnForest", [1454] = "Durotar", [1455] = "DunMorogh", [1456] = "Mulgore",
     [1457] = "Teldrassil", [1458] = "TirisfalGlades",
-    -- Forever's own zones, whose icons are still to be drawn.
-    [2521] = false, [2524] = false, [2548] = false, [2652] = false,
+    -- Forever's own zones, drawn for Spoken.
+    [2521] = "ZephrasIsle", [2524] = "DarkspearIslands", [2548] = "Riverglades", [2652] = "Shendralas",
 }
 -- The icons' own bevelled border, trimmed as the game trims an icon in a round frame. The globe is
 -- round already, with nothing to trim.
@@ -239,12 +240,11 @@ local WHOLE = { 0, 1, 0, 1 }
 Spoken.ZONE_ICONS = ZONE_ICONS
 
 --- The icon for the map `mapID`, or for the nearest map above it that has one, with the crop to
---- draw it with; nil for a map whose icon is still to come.
+--- draw it with; nil for a map with none, itself or above it.
 function Spoken:ZoneIcon(mapID)
     local depth = 0
     while mapID and depth < 6 do
         local icon = ZONE_ICONS[mapID]
-        if icon == false then return nil end
         if icon then return ZONE_ART .. icon, icon == "Azeroth" and WHOLE or ICON_CROP end
         local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
         mapID = info and info.parentMapID

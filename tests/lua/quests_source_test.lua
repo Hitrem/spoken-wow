@@ -95,7 +95,8 @@ Expect("...the icon found by name too, for a book read from the bags", Spoken:Ba
 _G.C_Container = nil
 Expect("a city takes its zone's icon, as an area does", Spoken:ZoneIcon(1455), [[Interface\AddOns\Spoken\Textures\Zones\DunMorogh]])
 Expect("...Azeroth the world map's globe", Spoken:ZoneIcon(947), [[Interface\AddOns\Spoken\Textures\Zones\Azeroth]])
-Expect("...and a Forever zone whose icon is still to come, none", Spoken:ZoneIcon(2524), nil)
+Expect("...a Forever zone the icon drawn for it", Spoken:ZoneIcon(2524), [[Interface\AddOns\Spoken\Textures\Zones\DarkspearIslands]])
+Expect("...and a map with none, itself or above it, none", Spoken:ZoneIcon(9999), nil)
 _G.UnitExists = unitExists
 world.npcGUID = "Creature-0-0-0-0-1234-0"; world.playerMapID = nil
 
