@@ -1060,6 +1060,9 @@ function M.LoadSpoken(addonDirectory)
     end
     local env = _G.SpokenEnv
     env.Addon:InitDB()
+    -- The suites time the queue by each module's own gap; the player's pause between lines has
+    -- a test of its own (queue_test).
+    env.Addon.db.profile.Audio.LineGap = 0
     -- These suites exercise the original layout, not the subtitles a first install shows
     -- (defaults_test pins those). The Minimal Classic layout, including switching back to
     -- this one, has its own UI/timer fixture.

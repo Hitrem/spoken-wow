@@ -171,32 +171,50 @@ Expect("quests' 0.55 gap: not yet at 1.5s", world.played[2], nil)
 stub.Advance(0.1)
 Expect("...next at 1.55s", world.played[2], after2.path)
 
----------------------------------------------------------------- PlayNow: the one explicit front-insert
+---------------------------------------------------------------- PlayNow: a line asked for by hand
+-- Something speaking: the clicked line waits its turn behind it, rather than cutting it off.
 Fresh()
 local speaking = H.Clip()
 quests:Enqueue(speaking)
-local waiting = H.Clip({ key = "dup" })
-quests:Enqueue(waiting)
-local now = H.Clip({ key = "dup" })
-Expect("PlayNow returns whether it is playing", zones:PlayNow(now), true)
-Expect("...front-inserted", Q:GetCurrentSound(), now)
-Expect("...the speaking clip was stopped, not finished", rec:Has("CLIP_STOPPED " .. speaking.key .. " false"), true)
-Expect("...but kept, to resume after", Q:GetQueue()[2], speaking)
-Expect("...the waiting duplicate was removed", Q:GetQueueSize(), 2)
+local clicked = H.Clip()
+Expect("PlayNow while a line speaks queues the new one", zones:PlayNow(clicked), true)
+Expect("...behind the line speaking, which goes on", Q:GetCurrentSound() == speaking and Q:GetQueue()[2] == clicked, true)
+Expect("...nothing was stopped", rec:Has("CLIP_STOPPED " .. speaking.key .. " false"), false)
+Expect("...and one already waiting is not queued twice", zones:PlayNow(H.Clip({ key = clicked.key })) and Q:GetQueueSize(), 2)
+-- Stopped: the clicked line plays at once, and the stopped one waits behind it.
 Q:PauseQueue()
-zones:PlayNow(H.Clip())
-Expect("PlayNow on a paused player unpauses it", Q:IsPaused(), false)
+local now = H.Clip()
+zones:PlayNow(now)
+Expect("PlayNow on a stopped queue plays it at once", Q:GetCurrentSound() == now and not Q:IsPaused(), true)
+Expect("...the stopped line kept after it", Q:GetQueue()[2], speaking)
+-- Skipping a stopped line plays the next.
+Fresh()
+local first, second = H.Clip(), H.Clip()
+quests:Enqueue(first); quests:Enqueue(second)
+Q:PauseQueue()
+Q:Skip()
+Expect("Skip on a stopped queue plays the next line", Q:IsPaused() == false and world.played[2], second.path)
+
+---------------------------------------------------------------- the pause between lines
+Fresh()
+env.Addon.db.profile.Audio.LineGap = 1
+local a, b = H.Clip(), H.Clip()
+quests:Enqueue(a); quests:Enqueue(b)
+stub.Advance(1.5)
+Expect("the pause between lines holds the next back: not yet at 1.5s", world.played[2], nil)
+stub.Advance(1.1)
+Expect("...next after length, gap and the pause (2.55s)", world.played[2], b.path)
+env.Addon.db.profile.Audio.LineGap = 0
 
 ---------------------------------------------------------------- PlayNow past the backlog cap
 Fresh()
 local z1, z2, z3 = H.Clip(), H.Clip(), H.Clip()
 zones:SetQueueLimit(2)
 zones:Enqueue(z1); zones:Enqueue(z2); zones:Enqueue(z3)   -- z1 speaks, two wait: at the cap
-local clicked = H.Clip()
-Expect("PlayNow past the cap plays the clicked clip", zones:PlayNow(clicked), true)
-Expect("...at the head", Q:GetCurrentSound(), clicked)
-Expect("...trimming the oldest waiting clip", rec:Has("CLIP_DROPPED " .. z1.key .. " queue-limit"), true)
-Expect("...never the clicked one", rec:Has("CLIP_DROPPED " .. clicked.key .. " queue-limit"), false)
+local capped = H.Clip()
+Expect("PlayNow past the cap queues the clicked clip", zones:PlayNow(capped), true)
+Expect("...behind the line speaking", Q:GetCurrentSound(), z1)
+Expect("...never dropping the clicked one", rec:Has("CLIP_DROPPED " .. capped.key .. " queue-limit"), false)
 
 ---------------------------------------------------------------- StopAll per source, and for the player
 Fresh()

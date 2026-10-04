@@ -314,8 +314,10 @@ function SoundQueue:RemoveSource(source)
     end
 end
 
---- End the head and let the backlog run.
+--- End the head and let the backlog run. A stopped queue plays again: skipping is asking for
+--- the next line.
 function SoundQueue:Skip()
+    self:SetPaused(false)
     return self:RemoveSoundFromQueue(self:GetCurrentSound())
 end
 
@@ -381,6 +383,17 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
     end, MUTE_AHEAD_SECONDS)
 end
 
+--- How long after `clip` has spoken the next line starts: its source's own gap, and the pause the
+--- player set between lines (Audio.LineGap) -- not between a book's pages, which read on.
+function SoundQueue:GapAfter(clip)
+    local gap = clip.source.interClipGap or 0
+    if not clip.source.continuous then
+        local audio = Addon.db and Addon.db.profile.Audio
+        gap = gap + (audio and audio.LineGap or 0)
+    end
+    return gap
+end
+
 ---@param clip SpokenClip
 function SoundQueue:PlaySound(clip)
     local channel = clip.source:GetChannel()
@@ -409,7 +422,7 @@ function SoundQueue:PlaySound(clip)
     -- only signal that the clip is over.
     clip.nextSoundTimer = Addon:ScheduleTimer(function()
         self:RemoveSoundFromQueue(clip, true)
-    end, (clip.delay or 0) + clip.length + clip.source.interClipGap)
+    end, (clip.delay or 0) + clip.length + self:GapAfter(clip))
 end
 
 --- Start something if nothing is speaking and something may. Safe to call at any time;
@@ -600,6 +613,18 @@ function SoundQueue:PlayNow(clip, source)
         return false, inaudible
     end
 
+    -- Another line speaking, or waiting on a gate: this one takes its turn behind it, as anything
+    -- queued does, rather than cutting it off. Only an idle queue, or a stopped one, plays it at
+    -- once: pressing Play on something new is what takes a stopped queue out of its stop.
+    local current = self:GetCurrentSound()
+    if current and not self:IsPaused() then
+        for _, queued in ipairs(self.sounds) do
+            if queued.key == clip.key then return true end
+        end
+        local queued, why = self:Add(clip, source)
+        return queued and true or false, why
+    end
+
     -- Clicking Play on something already waiting should play it, not be swallowed by
     -- the dedup.
     for index = self:GetQueueSize(), 1, -1 do
@@ -613,7 +638,6 @@ function SoundQueue:PlayNow(clip, source)
         StopKeeping(head)
     end
 
-    -- Resuming is what a paused player expects from pressing Play on something new.
     self:SetPaused(false)
     local added, reason = self:Add(clip, source, true)
     if not added then
@@ -627,10 +651,10 @@ end
 -- Pause
 --------------------------------------------------------------------------------
 
--- Pause is stop, and resume replays from the beginning. The client can start and stop
--- a sound and nothing in between: there is no seek, and no way to ask how far into a
--- clip playback has reached. The tooltip says so rather than letting the player find
--- out forty seconds in.
+-- Stop and Replay. The client can start and stop a sound and nothing in between: there is
+-- no seek, and no way to ask how far into a clip playback has reached. So there is no pause:
+-- Stop ends the voice and keeps the line at the head, and Replay plays it again from the
+-- beginning. The functions keep their old names, which the public API carries.
 -- How long a paused voice takes to fade out.
 local PAUSE_FADE_MS = 400
 

@@ -29,10 +29,11 @@ local L = {}
 --------------------------------------------------------------------------------
 
 L.PLAY = "Play"
-L.PAUSE = "Pause"
+L.STOP = "Stop"
+L.STOP_TOOLTIP = "Stops the story. Replay starts it again from the beginning: the game cannot carry on a sound part-way through."
+L.REPLAY = "Replay"
+L.REPLAY_TOOLTIP = "Reads the story again from the beginning."
 
-L.PAUSE_TOOLTIP =
-	"The game cannot resume a sound part-way through, so playing again starts from the beginning."
 
 --------------------------------------------------------------------------------
 -- Queue

@@ -14,7 +14,7 @@ local ldbObject, menuFrame, minimapButton
 
 -- The player's own entries.
 local PLAYER_ENTRIES = {
-    { id = "PlayPause", text = L.PLAY_PAUSE, order = 1, onClick = function() SoundQueue:TogglePauseQueue() end },
+    { id = "PlayPause", text = L.STOP_REPLAY, order = 1, onClick = function() SoundQueue:TogglePauseQueue() end },
     { id = "Stop",      text = L.STOP,       order = 2, onClick = function() SoundQueue:RemoveAllSoundsFromQueue() end },
     { id = "Settings",  text = L.SETTINGS,   order = 3, onClick = function() Options:Open() end },
 }

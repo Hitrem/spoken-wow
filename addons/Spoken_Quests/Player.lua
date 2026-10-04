@@ -241,6 +241,25 @@ function Player:Enqueue(soundData)
     return self:EnqueuePrepared(soundData)
 end
 
+--- A line asked for by hand (a Play button): played at once where nothing is playing or the
+--- queue is stopped, queued behind the line speaking otherwise (Spoken's SoundQueue:PlayNow).
+---@param soundData SoundData
+---@return boolean queued
+function Player:PlayNow(soundData)
+    if not self.source then
+        Debug:Record("player-missing", "The Spoken player addon is not installed")
+        return false
+    end
+    if not DataModules:PrepareSound(soundData) then
+        Debug:Record("data-lookup-failed", format("No sound entry for event %s, quest ID %s",
+            Enums.SoundEvent:GetName(soundData.event) or tostring(soundData.event), tostring(soundData.questID or "none")))
+        return false
+    end
+    self:Prepare(soundData)
+    local queued = self.source:PlayNow(soundData)
+    return queued and true or false
+end
+
 --- Hand the player a line whose file DataModules has already resolved.
 ---@param soundData SoundData
 ---@return boolean queued
@@ -268,7 +287,7 @@ function Player:EnqueuePrepared(soundData)
     end
 
     if Spoken:IsPaused() then
-        Debug:Record("queue-paused", "The voiceover is queued, but playback is paused; run /spq play")
+        Debug:Record("queue-paused", "The voiceover is queued, but playback is stopped; run /spq play")
     end
     return true
 end

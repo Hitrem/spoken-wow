@@ -752,17 +752,27 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
                 if clip.questID == questID and clip.event == Enums.SoundEvent.QuestAccept then return clip end
             end
         end
-        -- Play's state off the player itself: Pause while this quest's line is the one speaking,
-        -- Play before it starts and while it is paused, as the subtitle's button shows.
+        -- The button's state off the player itself: Stop while this quest's line is the one
+        -- speaking, Replay while it is stopped at the head, Play otherwise -- not yet queued, or
+        -- waiting behind another line.
+        local function StateOf(questID)
+            local clip = QueuedLine(questID)
+            if not clip or Spoken:GetCurrent() ~= clip then return "play", clip end
+            if Spoken:IsPaused() then return "replay", clip end
+            if Spoken:GetNowPlaying() == clip then return "stop", clip end
+            return "play", clip
+        end
         local function SetRoundPlaying(button)
-            local clip = QueuedLine(button.questID)
-            button:SetPlaying(clip ~= nil and Spoken:GetNowPlaying() == clip and not Spoken:IsPaused())
+            button:SetState((StateOf(button.questID)))
         end
         -- The tooltip says what a click does now.
+        local TIPS = { play = { L.OPT_PLAY, L.OPT_PLAY_TIP }, stop = { L.OPT_STOP, L.OPT_STOP_TIP },
+            replay = { L.OPT_REPLAY, L.OPT_REPLAY_TIP } }
         local function PlayTooltip(button)
+            local tip = TIPS[button.state or "play"]
             GameTooltip:SetOwner(button, "ANCHOR_LEFT")
-            GameTooltip:SetText(button.playing and L.OPT_PAUSE or L.OPT_PLAY)
-            GameTooltip:AddLine(button.playing and L.OPT_PAUSE_TIP or L.OPT_PLAY_TIP, 1, 0.8, 0.2, true)
+            GameTooltip:SetText(tip[1])
+            GameTooltip:AddLine(tip[2], 1, 0.8, 0.2, true)
             GameTooltip:Show()
         end
 
@@ -870,8 +880,8 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
             playButton:SetScript("OnClick", function(button, mouse, down)
                 -- Looked up each click, never the copy kept when the panel opened: a line that has
                 -- since finished is no longer in the queue, and holding on to it left the button dead.
-                local clip = QueuedLine(button.questID)
-                if clip and Spoken:GetNowPlaying() == clip then
+                local state, clip = StateOf(button.questID)
+                if state == "stop" or state == "replay" then
                     SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
                     Spoken:TogglePause()
                 elseif not clip and bound then

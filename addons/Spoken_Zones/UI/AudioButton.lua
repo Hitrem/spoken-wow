@@ -4,8 +4,8 @@
 -- button yourself, then call SetTarget whenever the panel's content changes.
 --
 -- The player's own round button (Spoken:CreateRoundButton), the one its subtitle shows, so the
--- two are one button: Play to start the story, Pause while it is read, Play again to resume it,
--- as the subtitle's does. Report sits beside it (SpokenZones:CreateReportIcon).
+-- two are one button: Play to start the story, Stop while it is read, Replay once stopped, and
+-- Play again when it has ended. Report sits beside it (SpokenZones:CreateReportIcon).
 
 local ADDON_NAME, SpokenZones = ...
 
@@ -43,13 +43,13 @@ local function OwnRound(parent, kind, icon)
 		glyph:SetPoint("CENTER")
 		glyph:SetSize(12, 12)
 		glyph:SetTexture(PORTRAIT_ATLAS)
-		function button:SetPlaying(playing)
-			local left = playing and 93 or 0
-			glyph:SetTexCoord(left / PORTRAIT_ATLAS_SIZE, (left + 93) / PORTRAIT_ATLAS_SIZE,
-				419 / PORTRAIT_ATLAS_SIZE, 512 / PORTRAIT_ATLAS_SIZE)
-			self.playing = playing and true or false
+		-- Without the player nothing plays, so only Play is ever shown here.
+		function button:SetState(state)
+			glyph:SetTexCoord(0, 93 / PORTRAIT_ATLAS_SIZE, 419 / PORTRAIT_ATLAS_SIZE, 512 / PORTRAIT_ATLAS_SIZE)
+			self.state, self.playing = state, state == "stop"
 		end
-		button:SetPlaying(false)
+		function button:SetPlaying(playing) self:SetState(playing and "stop" or "play") end
+		button:SetState("play")
 	else
 		if kind == "icon" and icon then
 			-- Filling the ring's dark middle, cut round, as the player's own is (Actions.RoundPicture).
@@ -108,8 +108,14 @@ function AudioButton:Refresh()
 	end
 
 	self:Show()
-	-- Pause while this story is being read; Play before it starts and while it is paused.
-	self:SetPlaying(SpokenZones:IsPlayingLore(self.mapID, self.areaKey))
+	-- Stop while this story is read, Replay while it is stopped at the head, Play otherwise.
+	local state = "play"
+	if SpokenZones:IsLoreAtHead(self.mapID, self.areaKey) and SpokenZones:IsPaused() then
+		state = "replay"
+	elseif SpokenZones:IsPlayingLore(self.mapID, self.areaKey) then
+		state = "stop"
+	end
+	self:SetState(state)
 end
 
 --------------------------------------------------------------------------------
@@ -141,9 +147,12 @@ function SpokenZones:CreateAudioButton(parent)
 
 	button:HookScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-		if self.playing then
-			GameTooltip:SetText(L.PAUSE)
-			GameTooltip:AddLine(L.PAUSE_TOOLTIP, 1, 0.8, 0.2, true)
+		if self.state == "stop" then
+			GameTooltip:SetText(L.STOP)
+			GameTooltip:AddLine(L.STOP_TOOLTIP, 1, 0.8, 0.2, true)
+		elseif self.state == "replay" then
+			GameTooltip:SetText(L.REPLAY)
+			GameTooltip:AddLine(L.REPLAY_TOOLTIP, 1, 0.8, 0.2, true)
 		else
 			GameTooltip:SetText(L.PLAY)
 			GameTooltip:AddLine(L.AUDIO_READ_TIP, 1, 0.8, 0.2, true)

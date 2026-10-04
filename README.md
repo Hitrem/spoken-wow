@@ -55,7 +55,7 @@ settings page or in the welcome window on first login:
   low in the middle of the screen over a soft shadow, at most four lines at a time. A longer
   line turns its pages as the voice reaches them, one fading out before the next fades in.
   The words type in letter by letter (or whole words, in the settings), a little ahead of the
-  voice. Play or pause, skip and Report appear on hover.
+  voice. Stop or Replay, skip and Report appear on hover.
 - **Small Window** (Minimal Classic): a round portrait, the speaker's name, the title and a
   slim progress bar, with the controls and the queue on interaction. See
   [`docs/minimal-classic/`](docs/minimal-classic/README.md).

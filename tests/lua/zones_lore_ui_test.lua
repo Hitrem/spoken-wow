@@ -64,6 +64,7 @@ function Z:GetDisplayedMapID() return 1411 end
 function Z:IsVoiceEnabled() return true end
 function Z:HasAudio() return true end
 function Z:IsPlayingLore() return false end
+function Z:IsLoreAtHead() return false end
 function Z:OnAudioChanged() end
 function Z:OnMapChanged() end
 function Z:CanContribute() return true end

@@ -192,7 +192,7 @@ env, Z = Boot()
 local labels = {}
 for _, entry in ipairs(env.Minimap:BuildMenu()) do table.insert(labels, entry.text) end
 Expect("the zones addon adds its entries to the one button", table.concat(labels, "|"),
-    "Play/Pause|Stop|Settings|Open Lore of Azeroth|Zones Settings")
+    "Stop or Replay|Stop|Settings|Open Lore of Azeroth|Zones Settings")
 Expect("...and registers no button of its own", stub.ldbObjects.SpokenZones, nil)
 
 ---------------------------------------------------------------- without the player

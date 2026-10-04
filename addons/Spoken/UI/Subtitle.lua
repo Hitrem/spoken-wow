@@ -19,8 +19,10 @@ local PAGE_LINES = 4
 local FADE_IN, FADE_OUT = .6, .5
 -- Until it is dragged: the top edge, in UI units up from the bottom of the screen.
 local DEFAULT_TOP = 336
-local SHADOW = [[Interface\AddOns\Spoken\Textures\SubtitleShadow]]
-local SHADOW_ROOM = 26        -- how far the shadow reaches past the subtitle's frame, top and bottom
+-- The background is Spoken Subtitles' band shade (shorley, MIT): stretched over the subtitle from
+-- its top to its bottom and 40 past the words either side, as that addon lays it over its band.
+local SHADOW = [[Interface\AddOns\Spoken\Textures\SubtitleBand]]
+local SHADOW_REACH = 40
 local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 -- A page fades out before the next fades in; the shadow eases to the new page's size.
 local PAGE_OUT, PAGE_IN = .18, .28
@@ -209,16 +211,9 @@ function Subtitle:Build()
 
     self.shadow = frame:CreateTexture(nil, "BACKGROUND")
     self.shadow:SetTexture(SHADOW)
-    -- Nine-sliced where the client can, so the faded edges keep their width at any size.
-    -- Elsewhere the whole texture stretches, which softens the edges but still reads.
-    if self.shadow.SetTextureSliceMargins then
-        self.shadow:SetTextureSliceMargins(30, 30, 30, 30)
-        self.shadow:SetTextureSliceMode(0)
-    end
-    -- From the frame's top, a little low: the last line's descenders and text shadow sit lower
-    -- than the title's top. Hung from the top, an eased height grows it downward as the
-    -- subtitle does, rather than both ways from its middle.
-    self.shadow:SetPoint("TOP", frame, "TOP", 0, SHADOW_ROOM - 2)
+    -- Hung from the frame's top, so an eased height grows it downward as the subtitle does,
+    -- rather than both ways from its middle.
+    self.shadow:SetPoint("TOP", frame, "TOP", 0, 0)
 
     self.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     self.title:SetJustifyH("LEFT")
@@ -243,7 +238,7 @@ function Subtitle:Build()
     self.pausedLabel:SetTextColor(.62, .62, .62)
     self.pausedLabel:SetShadowColor(0, 0, 0, 1)
     self.pausedLabel:SetShadowOffset(1, -1)
-    self.pausedLabel:SetText(format("(%s)", L.SUBTITLE_PAUSED))
+    self.pausedLabel:SetText(format("(%s)", L.SUBTITLE_STOPPED))
     self.pausedLabel:SetAlpha(0)
     self.pausedAlpha = 0
     self:BuildPicture()
@@ -417,9 +412,7 @@ function Subtitle:Fit()
     self:PlaceRow(self.rowLeft)
     local height = self.rowsHeight
     self.frame:SetSize(widest + PAD * 2, math.max(48, height))
-    -- The shadow's soft edge is 30 of its 64 rows top and bottom, so it reaches well past the
-    -- words: 12 past, as LoreTeller had it, left the first and last lines on the faded part.
-    self.shadowWant = { w = widest + 64, h = height + SHADOW_ROOM * 2 }
+    self.shadowWant = { w = widest + SHADOW_REACH * 2, h = math.max(48, height) }
     if not self.shadowSize then
         self.shadowSize = { w = self.shadowWant.w, h = self.shadowWant.h }
         self.shadow:SetSize(self.shadowSize.w, self.shadowSize.h)
@@ -591,6 +584,14 @@ function Subtitle:Update()
     end
     local clip = speaking and Transcript.clip or self.sample
     if wanted and clip ~= self.clip then
+        -- A line still on screen goes first, faded out as when it ends on its own, and the new one
+        -- fades in after it (Tick). Skipping used to swap them at once.
+        if speaking and self.clip and self.frame:IsShown() and self.frame:GetAlpha() > 0 then
+            self.switching = true
+            self:SetWanted(false)
+            return
+        end
+        self.switching = nil
         self:Prepare(clip, speaking and Transcript.text or L.SUBTITLE_SAMPLE_TEXT)
         -- Every new line fades in from nothing, the way LoreTeller showed each narration.
         self.wanted, self.fadeFrom, self.fadeTime = true, 0, 0
@@ -640,11 +641,10 @@ function Subtitle:BuildControls()
     controls:Hide()
     self.controls, self.controlsAlpha = controls, 0
 
-    -- The windows' round pause button (PlayerFrame's mini pause): its ring, and the play or
-    -- pause glyph from the portrait atlas.
+    -- The windows' round button (PlayerFrame's mini pause): its ring, and Stop while the line
+    -- plays, Replay once it is stopped.
     local pause = RoundButton(controls, 12)
     pause:SetPoint("LEFT", controls, "LEFT", 0, 0)
-    pause.glyph:SetTexture(TEXTURES .. "PortraitFrameAtlas")
     pause:SetScript("OnClick", function()
         if not SoundQueue:CanBePaused() then return end
         SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
@@ -654,7 +654,7 @@ function Subtitle:BuildControls()
     pause:SetScript("OnEnter", function()
         pause.glyph:SetAlpha(1)
         GameTooltip:SetOwner(pause, "ANCHOR_TOP")
-        GameTooltip:SetText(SoundQueue:IsPaused() and L.PLAY or L.PAUSE)
+        GameTooltip:SetText(SoundQueue:IsPaused() and L.REPLAY or L.STOP)
         GameTooltip:Show()
     end)
     self.pause = pause
@@ -703,7 +703,7 @@ function Subtitle:BuildControls()
 end
 
 function Subtitle:UpdatePause()
-    Actions.SetPauseGlyph(self.pause, SoundQueue:IsPaused())
+    Actions.SetPlayGlyph(self.pause, Actions.HeadState())
 end
 
 -- Locked, the subtitle lets clicks through to the world but still knows the pointer is over
@@ -746,6 +746,8 @@ function Subtitle:Tick(elapsed)
             if not self.wanted then
                 self.frame:Hide()
                 self.clip = nil
+                -- Faded out to make way for the next line: bring it in.
+                if self.switching then self.switching = nil; self:Update() end
                 return
             end
         end

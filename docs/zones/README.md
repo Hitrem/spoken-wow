@@ -872,12 +872,11 @@ reachable while that description is on screen — and narration deliberately out
 both panels. Without this frame, closing the map would leave a clip running with no
 way to stop it short of `/spz stop`.
 
-**Pause restarts from the beginning.** The client can start and stop a sound file
-and nothing in between: there is no seek, and no way to ask how far into a clip
-playback has reached. Redux's pause button has the same limitation and the same
-implementation — `SoundQueue:PauseQueue` calls `Utils:StopSound`, and `ResumeQueue`
-calls `PlaySound` from the top. The tooltip says so, rather than letting the player
-find out forty seconds in.
+**Stop and Replay, not pause.** The client can start and stop a sound file and
+nothing in between: there is no seek, and no way to ask how far into a clip playback
+has reached. So the button says what it does: Stop while a story is read, Replay
+once it is stopped, which plays it from the beginning, and Play when it has ended
+(`SoundQueue:PauseQueue` and `ResumeQueue` keep their old names).
 
 #### What replaced the playback bar
 

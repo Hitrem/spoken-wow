@@ -486,6 +486,9 @@ local function Build(canvas)
                 end
             end, function() Options:UpdateRows() end)
     end
+    layout:Slider(L.OPT_LINE_GAP, 0, 5, 0.25,
+        function() return audio().LineGap or 0 end, function(v) audio().LineGap = v end,
+        nil, Layout.Seconds, L.OPT_LINE_GAP_TIP)
     if OtherSounds:IsAvailable() then
         local lower = function() return audio().LowerOthers end
         local apply = function() OtherSounds:RefreshConfig(); Options:UpdateRows() end

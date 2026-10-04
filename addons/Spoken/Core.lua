@@ -43,6 +43,9 @@ Defaults = {
             -- A string, because that is what PlaySoundFile takes. The quests addon keeps
             -- its enum internally and converts at the boundary.
             SoundChannel = "Master",
+            -- Seconds of quiet between one line and the next, on top of each module's own short
+            -- gap: back to back, a new line started before the last had settled.
+            LineGap = 1,
             -- The client speaks its own NPC barks on the Dialog channel, over the top of a
             -- line being read. Muting it while we speak belongs to the player: any addon's
             -- clip is the one being talked over. Not on clients without the channel, where
@@ -275,13 +278,12 @@ function Addon:Enable()
     end
 end
 
--- Pause is kept per character across logins, so a character paused last session is silent this
--- one. Said at login, and again the first time a line waits behind it while nothing is on
--- screen to say so: with subtitles only or voice only, a paused queue and a broken addon look
--- the same.
+-- A stopped queue holds new lines until Replay, Skip or a Play: said the first time a line waits
+-- behind the stop while nothing is on screen to say so. With subtitles only or voice only, a
+-- stopped queue and a broken addon look the same.
 local pauseReminded = false
 local function RemindPaused()
-    print("|cff66bbffSpoken:|r " .. L.PAUSED_REMINDER)
+    print("|cff66bbffSpoken:|r " .. L.STOPPED_REMINDER)
 end
 -- Registered from Enable, not here: this file loads before Callbacks.lua does.
 local function WatchPausedQueue()
@@ -364,6 +366,8 @@ loader:SetScript("OnEvent", function(_, ev, name)
         Addon:Enable()
         Addon:RetireOldFolders()
         WatchPausedQueue()
-        if SoundQueue:IsPaused() then RemindPaused() end
+        -- A stop belongs to the line it stopped. That line is gone after a reload, so a character
+        -- never starts a session stopped -- which used to leave one silent with nothing to say why.
+        SoundQueue:SetPaused(false)
     end
 end)

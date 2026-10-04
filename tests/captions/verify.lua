@@ -59,6 +59,7 @@ E.Minimap={Setup=function() end}; E.Options={Setup=function() end}
 -- below, and the defaults themselves are pinned in defaults_test.
 E.Addon:InitDB()
 E.Addon.db.profile.Frame.SubtitlePlayer=false
+E.Addon.db.profile.Audio.LineGap=0
 E.Addon.db.profile.Transcript.HighlightWord=true
 E.Addon:Enable()
 local T,Q,M=E.Transcript,E.SoundQueue,E.MinimalPlayer
@@ -498,8 +499,9 @@ Play(.2)
 Check(S.controls:GetAlpha()==1,'...all the way')
 S.pause:Fire('OnClick')
 Play(.3)
-Check(Q:IsPaused() and S.title:GetText()=='NPC sub' and S.pausedLabel:GetText()=='(Paused)'
-    and S.pausedLabel:GetAlpha()==1,'its pause button pauses the line, and "(Paused)" fades in beside the title')
+Check(Q:IsPaused() and S.title:GetText()=='NPC sub' and S.pausedLabel:GetText()=='(Stopped)'
+    and S.pausedLabel:GetAlpha()==1,'its Stop button stops the line, and "(Stopped)" fades in beside the title')
+Check(S.pause.state=='replay','...and the button turns to Replay')
 S.pause:Fire('OnClick')
 Play(.05)
 Check(not Q:IsPaused() and S.pausedLabel:GetAlpha()>0 and S.pausedLabel:GetAlpha()<1,'...and plays it again, the label fading out')
@@ -530,7 +532,9 @@ S.frame:Fire('OnDragStart'); cursor[2]=100; S.frame:Fire('OnDragStop'); cursor[2
 Check(math.abs(S.frame:GetTop()-500)<.001,'locking the window locks the subtitle')
 frameCfg.LockFrame=false; E.PlayerFrame:RefreshConfig()
 source:Enqueue(Clip('short','Aye.',2)); Q:Skip()
-Check(S.title:GetText()=='NPC short' and S.frame:GetAlpha()==0,'the next line replaces the last and fades in')
+Check(S.switching and S.title:GetText()~='NPC short','skipping fades the last line out first, as a line ending on its own does')
+Play(.55)
+Check(S.title:GetText()=='NPC short' and S.wanted and S.frame:GetAlpha()<1,'...then the next fades in')
 Check(math.abs(S.frame:GetCenter()-droppedCenter)<.001 and math.abs(S.frame:GetTop()-500)<.001,
     'a shorter line stays centred where the subtitle was put')
 Q:RemoveAllSoundsFromQueue()

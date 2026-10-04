@@ -34,7 +34,7 @@ visually. The expanded view and zone/book captions still need an in-game visual 
 - `/spoken transcript reset` restores the caption and subtitle defaults and
   moves the subtitles back to where they start.
 
-Pausing freezes the text. Resuming restarts it with the recording. Skipping
+Stopping freezes the text. Replay restarts it with the recording. Skipping
 shows the next clip's text, and a clip without text hides the captions.
 
 ## Settings language
