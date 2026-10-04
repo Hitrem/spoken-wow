@@ -629,4 +629,18 @@ do
         and S.rowWant==-plain/2,"a zone's story names it once, centred, with no dot")
     Check(select(2,S.pausedLabel:GetPoint(1))==S.title,'...and (paused) follows its name')
 end
+-- Report goes with the subtitle as it fades out after the last line, not ahead of it.
+do
+    local style=E.Addon:PlayerStyle()
+    E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+    local rc=Clip('rep','Report me.',5)
+    rc.present.actions={{id='report',icon='bug',anchor='topright',label='Report'}}
+    source:Enqueue(rc); Play(.7)
+    Check(S.report~=nil and S.report:IsShown(),'a line with Report shows the Report icon')
+    Q:RemoveAllSoundsFromQueue()
+    Check(not S.wanted and S.report~=nil and S.report:IsShown(),'...which stays while the subtitle fades out')
+    Play(.6)
+    Check(not S.reportButton:IsShown(),'...and goes once it has faded')
+    E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+end
 print(string.format('PASS: %d checks using the real queue, both player layouts, captions, commands and quest adapter.',assertions))

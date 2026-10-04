@@ -597,7 +597,9 @@ function Subtitle:Update()
         self.frame:Show()
     end
     self:SetWanted(wanted)
-    self:Corner(speaking and Transcript.clip or nil)
+    -- Report follows the line on screen. With none, it stays while the subtitle fades out, as the
+    -- other controls do, and goes with it (Tick): hidden here, it vanished ahead of everything else.
+    if speaking or self.sample then self:Corner(speaking and Transcript.clip or nil) end
     if self.wanted then
         self.revealed = nil
         self:Render()
@@ -627,7 +629,7 @@ local function RoundButton(parent, glyphSize)
     return Actions.RoundButton(parent, glyphSize)
 end
 
---- Play or pause, skip and Report, in a row beside the subtitle's top right, outside its words. They
+--- Stop or Replay, skip and Report, in a row beside the subtitle's top right, outside its words. They
 --- fade in while the pointer is over the subtitle or them, and out after it leaves (Tick).
 function Subtitle:BuildControls()
     local frame = self.frame
@@ -742,6 +744,7 @@ function Subtitle:Tick(elapsed)
             if not self.wanted then
                 self.frame:Hide()
                 self.clip = nil
+                self:Corner(nil)
                 -- Faded out to make way for the next line: bring it in.
                 if self.switching then self.switching = nil; self:Update() end
                 return
