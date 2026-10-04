@@ -463,12 +463,12 @@ Check(math.abs(S.frame:GetCenter()-UIParent:GetWidth()/2)<.001,'the subtitle is 
 Play(1)
 Check(S.frame:GetAlpha()==1,'the fade-in completes')
 -- Spoken Subtitles' progress line under the words, and the buttons in a row under the subtitle.
-Check(not S.progressBroken and S.progressHeight==10 and S.fill.atlas=='widgetstatusbar-fill-yellow','the progress bar is built in the game's status bar frame')
+Check(not S.progressBroken and S.progressHeight==10 and S.fill.atlas=='widgetstatusbar-fill-yellow',"the progress bar is built in the game's status bar frame")
 Check(S.track:IsShown() and S.fill:GetWidth()>0.01 and S.fill:GetWidth()<S.track:GetWidth(),'the progress line fills as the line is read')
 Check(math.abs(S.track:GetWidth()-math.floor(S.shadowWant.w*.45))<1,'...across 45% of the background, as Spoken Subtitles draws it')
 do
-    local point,_,relativePoint=S.controls:GetPoint(1)
-    Check(point=='TOP' and relativePoint=='BOTTOM','the buttons sit in a row under the subtitle')
+    local point,relativeTo,relativePoint=S.controls:GetPoint(1)
+    Check(point=='TOP' and relativeTo==S.shadow and relativePoint=='BOTTOM','the buttons sit in a row under the background, easing with it')
     local tall=S.frame:GetHeight()
     cfg.SubtitleProgress=false; S:Update()
     Check(not S.track:IsShown() and S.frame:GetHeight()<tall,'turned off, the progress line goes and the subtitle closes up')
