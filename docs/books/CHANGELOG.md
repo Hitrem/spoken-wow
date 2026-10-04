@@ -3,6 +3,11 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
+## 3.0.0-beta.1 — 2026-10-04
+
+- Ships inside Spoken 3.0.0-beta.1 as one of its modules, no longer as a download of its own.
+  See Spoken's changelog. Settings start fresh: nothing is carried over from 2.1.1.
+
 ## 2.1.2 — Spoken Books Audio — 2026-10-01
 
 - About 300 pages re-recorded.
