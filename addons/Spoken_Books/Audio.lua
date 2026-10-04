@@ -34,14 +34,18 @@ local MATERIALS = {
 }
 SpokenBooks.MATERIALS = MATERIALS
 
---- The picture for the page now open in the reading frame. A page queued with no frame open --
---- from the settings -- has nothing to look at, and takes the book.
+--- The picture for the page now open, whichever frame shows it: the game's reading frame, or one
+--- an addon such as DialogueUI draws in its place, which hides the game's. Open is what the item
+--- text events say (lastPage, Events.lua). A page queued with nothing open -- from the settings --
+--- has nothing to look at, and takes the book.
 function SpokenBooks:PagePicture()
-	if ItemTextFrame and ItemTextFrame.IsShown and ItemTextFrame:IsShown() then
+	if self.lastPage then
+		local item = ItemTextGetItem and ItemTextGetItem()
 		local icon, crop
-		if Spoken and Spoken.BagItemIcon then icon, crop = Spoken:BagItemIcon(ItemTextGetItem and ItemTextGetItem()) end
+		if Spoken and Spoken.BagItemIcon then icon, crop = Spoken:BagItemIcon(item) end
 		if icon then return { kind = "texture", texture = icon, texCoord = crop } end
 		local material = ItemTextGetMaterial and ItemTextGetMaterial()
+		if self.Explain then self:Explain("picture: %s is not in the bags; its material is %s", tostring(item), tostring(material)) end
 		if material and MATERIALS[material] then
 			return { kind = "texture", texture = MATERIALS[material], texCoord = ICON_CROP }
 		end
