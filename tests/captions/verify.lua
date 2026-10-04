@@ -498,8 +498,8 @@ Play(.2)
 Check(S.controls:GetAlpha()==1,'...all the way')
 S.pause:Fire('OnClick')
 Play(.3)
-Check(Q:IsPaused() and S.title:GetText()=='NPC sub' and S.pausedLabel:GetText():find('paused',1,true)~=nil
-    and S.pausedLabel:GetAlpha()==1,'its pause button pauses the line, and "(paused)" fades in beside the title')
+Check(Q:IsPaused() and S.title:GetText()=='NPC sub' and S.pausedLabel:GetText()=='(Paused)'
+    and S.pausedLabel:GetAlpha()==1,'its pause button pauses the line, and "(Paused)" fades in beside the title')
 S.pause:Fire('OnClick')
 Play(.05)
 Check(not Q:IsPaused() and S.pausedLabel:GetAlpha()>0 and S.pausedLabel:GetAlpha()<1,'...and plays it again, the label fading out')

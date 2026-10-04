@@ -156,7 +156,7 @@ L.LINK_DISCORD_TIP = "Habla con otros jugadores y con quienes hacen Spoken."
 L.LINK_CURSEFORGE_TIP = "La página de Spoken, con cada versión y los paquetes de voces."
 L.LINK_WAGO_TIP = "La página de Spoken en Wago, con cada versión."
 L.LINK_COFFEE_TIP = "Apoya Spoken: paga las voces y la regrabación de las líneas que se reportan."
-L.SUBTITLE_PAUSED = "en pausa"
+L.SUBTITLE_PAUSED = "En pausa"
 
 -- Modules
 L.OPT_PARTS_TITLE = "Módulos"
