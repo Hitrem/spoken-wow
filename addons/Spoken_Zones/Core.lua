@@ -29,6 +29,7 @@ SpokenZones.zoneChangedCallbacks = {}
 
 local defaults = {
 	showMapPanel = true,
+	mapPanelCollapsed = false,
 	-- Wide enough that a zone's name fits on one line beside the header's round buttons.
 	panelWidth = 360,
 	fontSize = 12,
@@ -908,6 +909,8 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 	elseif cmd == "panel" then
 		local enabled = not SpokenZones:Get("showMapPanel")
 		SpokenZones:Set("showMapPanel", enabled)
+		-- Asked for the panel by name, the player means to see it, not the button that reopens it.
+		if enabled then SpokenZones:Set("mapPanelCollapsed", false) end
 		SpokenZones:Print(enabled and SpokenZones.L.PANEL_SHOWN or SpokenZones.L.PANEL_HIDDEN)
 		Dispatch(SpokenZones.mapChangedCallbacks, SpokenZones:GetDisplayedMapID())
 	elseif cmd == "options" or cmd == "config" or cmd == "opt" then
