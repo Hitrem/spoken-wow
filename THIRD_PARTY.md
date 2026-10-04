@@ -67,9 +67,10 @@ None of this is the project's to license, and the MIT grant does not reach it.
 - **Lore page art** (`addons/Spoken_Zones/Textures/Art/*.tga`): the spellbook's parchment,
   divider and backplate, and the quest log's details page and frame, cut from the game's UI
   files (Forever client) so the page looks the same on every client. They are Blizzard's.
-- **Subtitle background** (`addons/Spoken/Textures/SubtitleBand.tga`): the band shade from
-  shorley's [Spoken Subtitles](https://github.com/shorley-gm/spoken-subtitles) (MIT), used as
-  it is there.
+- **Subtitle background and progress line** (`addons/Spoken/Textures/SubtitleBand.tga`,
+  `SubtitleLine.tga`): the band shade and the line's gold fill from shorley's
+  [Spoken Subtitles](https://github.com/shorley-gm/spoken-subtitles) (MIT), used as they are
+  there.
 - **Stop and Replay glyphs** (`addons/Spoken/Textures/GlyphStop.tga`, `GlyphReplay.tga`): drawn
   for this project in the gold of the player's play and pause glyphs; Stop is built from the
   pause glyph's bar.

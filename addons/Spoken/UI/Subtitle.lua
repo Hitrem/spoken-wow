@@ -28,6 +28,12 @@ local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 local PAGE_OUT, PAGE_IN = .18, .28
 local PAUSED_FADE = .25
 local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
+-- The progress line under the words, as Spoken Subtitles draws it: a dark hairline 1.5 tall, a
+-- gold fill along it, and the cast bar's spark at the fill's end, PROGRESS_GAP under the last line
+-- and PROGRESS_SHARE of the background's width.
+local PROGRESS_GAP, PROGRESS_SHARE = 9, 0.45
+local PROGRESS_LINE = [[Interface\AddOns\Spoken\Textures\SubtitleLine]]
+local SPARK = [[Interface\CastingBar\UI-CastingBar-Spark]]
 local SIZE_EASE = 10
 -- The controls shown on hover: the windows' round pause button, skip, and Report.
 local CONTROL_SIZE, CONTROL_GAP = 24, 4
@@ -242,6 +248,20 @@ function Subtitle:Build()
     self.pausedAlpha = 0
     self:BuildPicture()
 
+    local track = frame:CreateTexture(nil, "ARTWORK")
+    if track.SetColorTexture then track:SetColorTexture(0, 0, 0, 0.5) end
+    track:SetHeight(1.5)
+    local fill = frame:CreateTexture(nil, "ARTWORK", nil, 1)
+    fill:SetTexture(PROGRESS_LINE)
+    fill:SetHeight(1.5)
+    fill:SetPoint("LEFT", track, "LEFT")
+    local spark = frame:CreateTexture(nil, "OVERLAY")
+    spark:SetTexture(SPARK)
+    if spark.SetBlendMode then spark:SetBlendMode("ADD") end
+    spark:SetSize(14, 14)
+    spark:SetPoint("CENTER", fill, "RIGHT")
+    self.track, self.fill, self.spark = track, fill, spark
+
     -- Unwrapped, so its width is the true width of a candidate line.
     self.measure = frame:CreateFontString(nil, "OVERLAY", "QuestFont")
     self.measure:SetWordWrap(false)
@@ -387,8 +407,14 @@ function Subtitle:Layout(text)
         self.lines[index]:SetText("")
         self.lines[index]:Hide()
     end
-    self.rowsWidest, self.rowsHeight = widest, TOP_PAD + titleHeight + TITLE_GAP
-        + #self.rows * (lineHeight + LINE_GAP) - LINE_GAP + BOTTOM_PAD
+    local wordsBottom = TOP_PAD + titleHeight + TITLE_GAP + #self.rows * (lineHeight + LINE_GAP) - LINE_GAP
+    -- The progress line under the words, where the setting has it.
+    self.progressShown = Config().SubtitleProgress ~= false
+    for _, part in ipairs({ self.track, self.fill, self.spark }) do part:SetShown(self.progressShown) end
+    self.track:ClearAllPoints()
+    self.track:SetPoint("TOP", self.frame, "TOP", 0, -(wordsBottom + PROGRESS_GAP))
+    if self.progressShown then wordsBottom = wordsBottom + PROGRESS_GAP + 2 end
+    self.rowsWidest, self.rowsHeight = widest, wordsBottom + BOTTOM_PAD
     self:Fit()
     -- Where each word ends, for typing by word (WholeWords): found once, not every frame.
     self.wordEnds = {}
@@ -412,6 +438,7 @@ function Subtitle:Fit()
     local height = self.rowsHeight
     self.frame:SetSize(widest + PAD * 2, math.max(48, height))
     self.shadowWant = { w = widest + SHADOW_REACH * 2, h = math.max(48, height) }
+    self.track:SetWidth(math.floor(self.shadowWant.w * PROGRESS_SHARE))
     if not self.shadowSize then
         self.shadowSize = { w = self.shadowWant.w, h = self.shadowWant.h }
         self.shadow:SetSize(self.shadowSize.w, self.shadowSize.h)
@@ -582,6 +609,11 @@ function Subtitle:Update()
         self:Place()
     end
     local clip = speaking and Transcript.clip or self.sample
+    -- The progress line turned on or off in the settings: the page laid out again with or without it.
+    if self.page and self.pages and self.pages[self.page] and (Config().SubtitleProgress ~= false) ~= self.progressShown then
+        self:Layout(self.pages[self.page].text)
+        self.revealed = nil
+    end
     if wanted and clip ~= self.clip then
         -- A line still on screen fades out first, as when it ends, and the new one fades in after it.
         if speaking and self.clip and self.frame:IsShown() and self.frame:GetAlpha() > 0 then
@@ -621,6 +653,9 @@ function Subtitle:Corner(clip)
         button:Hide()
         self.report = nil
     end
+    -- As wide as the buttons it shows, so the row stays centred under the subtitle.
+    local count = action and 3 or 2
+    self.controls:SetWidth(CONTROL_SIZE * count + CONTROL_GAP * (count - 1))
 end
 
 -- The round button every window shows (Actions.RoundButton), the lore pages' and the quest
@@ -629,13 +664,13 @@ local function RoundButton(parent, glyphSize)
     return Actions.RoundButton(parent, glyphSize)
 end
 
---- Stop or Replay, skip and Report, in a row beside the subtitle's top right, outside its words. They
+--- Stop or Replay, skip and Report, in a row centred under the subtitle, outside its words. They
 --- fade in while the pointer is over the subtitle or them, and out after it leaves (Tick).
 function Subtitle:BuildControls()
     local frame = self.frame
     local controls = CreateFrame("Frame", nil, frame)
     controls:SetSize(CONTROL_SIZE * 3 + CONTROL_GAP * 2, CONTROL_SIZE)
-    controls:SetPoint("TOPLEFT", frame, "TOPRIGHT", 4, -TOP_PAD + 4)
+    controls:SetPoint("TOP", frame, "BOTTOM", 0, -2)
     controls:SetFrameLevel(frame:GetFrameLevel() + 2)
     controls:SetAlpha(0)
     controls:Hide()
@@ -752,6 +787,7 @@ function Subtitle:Tick(elapsed)
         end
     end
     if self.wanted and self.pages then self:Render() end
+    self:ShowProgress()
     self:Animate(elapsed)
     self:FadeControls(elapsed)
     self.poll = (self.poll or 0) + elapsed
@@ -760,6 +796,16 @@ function Subtitle:Tick(elapsed)
         self:Mouse()
         self:UpdatePause()
     end
+end
+
+--- The fill along the progress line: how far the voice has got through the line. Held where it
+--- stopped while the queue is stopped, as the words are.
+function Subtitle:ShowProgress()
+    if not self.progressShown then return end
+    local length = self.clip and tonumber(self.clip.length) or 0
+    local share = 0
+    if length > 0 and not self.sample then share = math.max(0, math.min(1, Transcript:AudioElapsed() / length)) end
+    self.fill:SetWidth(math.max(0.01, (self.track:GetWidth() or 0) * share))
 end
 
 --- The page's fade between pages, and the shadow easing to a new page's size.

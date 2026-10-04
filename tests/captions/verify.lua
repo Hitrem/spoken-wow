@@ -451,6 +451,17 @@ Check(S.frame:GetAlpha()==0 and Typed():gsub('%s','')=='','a new line fades in a
 Check(math.abs(S.frame:GetCenter()-UIParent:GetWidth()/2)<.001,'the subtitle is centred until moved')
 Play(1)
 Check(S.frame:GetAlpha()==1,'the fade-in completes')
+-- Spoken Subtitles' progress line under the words, and the buttons in a row under the subtitle.
+Check(S.track:IsShown() and S.fill:GetWidth()>0.01 and S.fill:GetWidth()<S.track:GetWidth(),'the progress line fills as the line is read')
+Check(math.abs(S.track:GetWidth()-math.floor(S.shadowWant.w*.45))<1,'...across 45% of the background, as Spoken Subtitles draws it')
+do
+    local point,_,relativePoint=S.controls:GetPoint(1)
+    Check(point=='TOP' and relativePoint=='BOTTOM','the buttons sit in a row under the subtitle')
+    local tall=S.frame:GetHeight()
+    cfg.SubtitleProgress=false; S:Update()
+    Check(not S.track:IsShown() and S.frame:GetHeight()<tall,'turned off, the progress line goes and the subtitle closes up')
+    cfg.SubtitleProgress=true; S:Update()
+end
 local partial=Typed()
 Check(partial~='' and partial~=line and line:find(partial,1,true)==1,'the typewriter has revealed the start of the line')
 Check(cfg.TypewriterBy=='letter','by default it types letter by letter')
