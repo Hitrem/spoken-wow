@@ -876,7 +876,7 @@ local function CmdHelp()
 	for _, key in ipairs({
 		"CMD_STATUS", "CMD_OPTIONS", "CMD_WINDOW", "CMD_PANEL", "CMD_HOVER",
 		"CMD_PLAY", "CMD_STOP", "CMD_VOICE", "CMD_AUTOPLAY", "CMD_AUDIO",
-		"CMD_LANG", "CMD_DISCOVER", "CMD_FORGET", "CMD_BAR", "CMD_MINIMAP",
+		"CMD_LANG", "CMD_DISCOVER", "CMD_FORGET", "CMD_MINIMAP",
 		"CMD_DEBUG", "CMD_VERIFY", "CMD_DUMP",
 	}) do
 		SpokenZones:Print(L[key])
@@ -962,11 +962,6 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 		end
 		SpokenZones:Print('simulating discovery of "%s"', tostring(areaName))
 		SpokenZones:OnAreaDiscovered(areaName)
-	elseif cmd == "bar" then
-		if SpokenZones.ResetPlayerPosition then
-			SpokenZones:ResetPlayerPosition()
-			SpokenZones:Print("player moved back to the middle of the screen")
-		end
 	elseif cmd == "debug" then
 		local enabled = not SpokenZones:Get("debug")
 		SpokenZones:Set("debug", enabled)

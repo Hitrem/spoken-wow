@@ -181,8 +181,7 @@ local REPORT = {
             -- is an English take even under a German selection, and its report is about that.
             ReportButton:ShowLink(target, clip.language)
         else
-            StaticPopup_Show("VOICEOVER_ERROR",
-                "This client cannot tell which line that was, so there is no address to report.")
+            StaticPopup_Show("VOICEOVER_ERROR", L.OPT_REPORT_NO_LINE)
         end
     end,
 }

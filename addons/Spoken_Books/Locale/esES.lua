@@ -58,7 +58,7 @@ L.OPT_STOP_ON_CLOSE_TIP = "Detiene la voz en cuanto cierras el libro, la carta o
 
 -- Voice packs
 L.OPT_SECTION_PACKS = "Paquetes de voces"
-L.OPT_PACK_NAME_FMT = "Voces (%1$s)"
+L.OPT_PACK_NAME_FMT = "Paquete (%1$s)"
 L.OPT_PACK_OFFICIAL = "Libros"
 L.OPT_PACK_INSTALLED = "Instalado"
 L.OPT_DOWNLOAD = "Descargar"

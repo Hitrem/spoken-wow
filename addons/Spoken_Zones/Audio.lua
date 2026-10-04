@@ -109,7 +109,7 @@ local function Source()
 	end
 	if not warnedNoPlayer then
 		warnedNoPlayer = true
-		SpokenZones:Print("|cffffcc00the Spoken player addon is not installed|r -- lore cannot be read aloud without it")
+		SpokenZones:Print("|cffffcc00Spoken is not installed|r -- stories cannot be read aloud without it")
 	end
 	return nil
 end

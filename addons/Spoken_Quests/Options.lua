@@ -167,7 +167,7 @@ local LegacyWrathTab = nil
 ---@type AceConfigOptionsTable
 local DataModulesTab =
 {
-    name = function() return format(L.OPT_TAB_DATA_MODULES .. "%s", next(Options.table.args.DataModules.args.Available.args) and "|cFF00CCFF (NEW)|r" or "") end,
+    name = function() return L.OPT_SECTION_PACKS .. (next(Options.table.args.DataModules.args.Available.args) and "|cFF00CCFF" .. L.OPT_NEW_SUFFIX .. "|r" or "") end,
     type = "group",
     childGroups = "tree",
     order = 20,
