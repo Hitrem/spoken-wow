@@ -1129,18 +1129,10 @@ function Addon:MuteGreetingAhead(event)
         or not Spoken.MuteGameDialogueAhead then
         return
     end
-    if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
-        -- The page text is not to be trusted yet (see the deferred read), so this asks only
-        -- whether any pack voices this speaker at all.
-        local guid = Utils:GetNPCGUID()
-        local speaker = { unitGUID = guid, name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
-        if not guid and not speaker.name then
-            return
-        end
-        if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
-            return
-        end
-    elseif QUEST_EVENTS[event] then
+    -- Gossip and greetings leave the NPC's voice alone: a trainer or a guard greeting the player up
+    -- close was silenced the moment the window opened, as if a quest were being read. Only the
+    -- quest text silences it (faded, SoundQueue:MuteGameDialogue).
+    if QUEST_EVENTS[event] then
         -- The quest ID can still be the previous quest's this early; the worst that costs is
         -- one greeting muted for nothing, or one cut off as it was before.
         local questID = QuestIDFor(event)

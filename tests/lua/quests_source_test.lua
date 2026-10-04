@@ -91,7 +91,9 @@ VO, env, Spoken = Boot()
 VO.Addon.db.profile.Audio.AutoToggleDialog = true
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
-Expect("the first quest clip mutes the dialog channel", world.cvars.Sound_EnableDialog, "0")
+Expect("the first quest clip fades the NPC's voice rather than cutting it", world.cvars.Sound_EnableDialog ~= "0", true)
+stub.Advance(0.6)
+Expect("...then mutes the dialog channel", world.cvars.Sound_EnableDialog, "0")
 Spoken:StopAll()
 Expect("...and the last leaving restores it", world.cvars.Sound_EnableDialog, "1")
 
@@ -101,6 +103,7 @@ VO, env, Spoken = Boot()
 VO.Addon.db.profile.Audio.AutoToggleDialog = true
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
+stub.Advance(0.6)
 Expect("a quest line speaking mutes dialog before the logout", world.cvars.Sound_EnableDialog, "0")
 stub.Logout()
 Expect("...and logging out mid-line restores it", world.cvars.Sound_EnableDialog, "1")
@@ -112,6 +115,7 @@ VO.Addon.db.profile.Audio.AutoToggleDialog = true
 local zones = Spoken:RegisterSource("zones", { title = "Zones", addon = "Spoken_Zones", channel = function() return "Dialog" end })
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
+stub.Advance(0.6)
 Expect("a quest line speaking mutes dialog", world.cvars.Sound_EnableDialog, "0")
 local z = H.Clip()
 Expect("a Dialog-channel clip is still admitted behind it", zones:Enqueue(z), z)
@@ -120,6 +124,7 @@ VO.Addon:QUEST_DETAIL()
 Spoken:Skip()
 Expect("the zones clip behind it speaks with dialog restored", world.cvars.Sound_EnableDialog, "1")
 Spoken:Skip()
+stub.Advance(0.6)
 Expect("the next quest line mutes it again", world.cvars.Sound_EnableDialog, "0")
 Spoken:Skip()
 Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
@@ -147,15 +152,14 @@ end
 VO, env, Spoken = MuteBoot()
 stub.ShowGossip("Greetings, traveller.")
 Open(VO, "GOSSIP_SHOW")
-Expect("a voiced NPC's gossip opening mutes dialog at once", world.cvars.Sound_EnableDialog, "0")
-Expect("...before its line is queued", Spoken:GetQueueSize(), 0)
+-- A trainer or a guard greeting the player up close keeps their own voice: only quest text
+-- silences it.
+Expect("a voiced NPC's gossip opening leaves the NPC's own voice on", world.cvars.Sound_EnableDialog, "1")
 stub.Advance(0.2)
-Expect("...the line is then read", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, GREETING_HASH)
-Expect("...with dialog still muted", world.cvars.Sound_EnableDialog, "0")
-stub.Advance(2)
-Expect("...past the mute's own deadline too", world.cvars.Sound_EnableDialog, "0")
+Expect("...the gossip line is then read", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, GREETING_HASH)
+stub.Advance(1)
+Expect("...alongside the NPC's voice, never muting it", world.cvars.Sound_EnableDialog, "1")
 Spoken:StopAll()
-Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
 
 VO, env, Spoken = MuteBoot()
 world.npcGUID = "Creature-0-0-0-0-9999-0"
@@ -186,8 +190,10 @@ VO, env, Spoken = MuteBoot()
 world.questID = 101
 stub.ShowPanel("QuestFrameDetailPanel")
 Open(VO, "QUEST_DETAIL")
-Expect("a quest dialog opening mutes dialog at once", world.cvars.Sound_EnableDialog, "0")
-stub.Advance(1)
+Expect("a quest dialog opening starts fading the NPC's voice out", world.cvars.Sound_EnableDialog, "1")
+stub.Advance(0.6)
+Expect("...and mutes it once faded", world.cvars.Sound_EnableDialog, "0")
+stub.Advance(0.4)
 Expect("...and its line is read under the mute", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
 Expect("...still muted", world.cvars.Sound_EnableDialog, "0")
 
