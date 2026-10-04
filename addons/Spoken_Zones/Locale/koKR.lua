@@ -64,7 +64,6 @@ L.PAUSE_TOOLTIP = "게임은 소리를 중간부터 이어 재생할 수 없으�
 L.QUEUE_HELD_COMBAT = "전투 종료 대기 중."
 L.QUEUE_HELD_CINEMATIC = "시네마틱 종료 대기 중."
 L.QUEUE_HELD_OFF = "내레이션이 꺼져 있습니다."
-L.BACK_TO_ZONE = "< %1$s(으)로 돌아가기"
 L.NO_LORE_FOR = "아직 %1$s에 대한 전승이 기록되지 않았습니다."
 L.LORE_NOT_WRITTEN = "%1$s은(는) 지도에 있지만, 아직 전승이 쓰이지 않았습니다."
 L.MAP_LORE_FOR_FMT = "%1$s의 전승"

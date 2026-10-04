@@ -64,7 +64,6 @@ L.PAUSE_TOOLTIP = "O jogo não consegue continuar um som no meio, então tocar d
 L.QUEUE_HELD_COMBAT = "Aguardando o fim do combate."
 L.QUEUE_HELD_CINEMATIC = "Aguardando o fim da cinemática."
 L.QUEUE_HELD_OFF = "A narração está desligada."
-L.BACK_TO_ZONE = "< Voltar para %1$s"
 L.NO_LORE_FOR = "Nenhuma história registrada para %1$s ainda."
 L.LORE_NOT_WRITTEN = "%1$s está no mapa, mas ninguém escreveu sua história ainda."
 L.MAP_LORE_FOR_FMT = "história de %1$s"

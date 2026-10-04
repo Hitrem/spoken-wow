@@ -64,7 +64,6 @@ L.PAUSE_TOOLTIP = "Das Spiel kann einen Sound nicht mittendrin fortsetzen, daher
 L.QUEUE_HELD_COMBAT = "Wartet auf Kampfende."
 L.QUEUE_HELD_CINEMATIC = "Wartet auf das Ende der Zwischensequenz."
 L.QUEUE_HELD_OFF = "Vertonung ist ausgeschaltet."
-L.BACK_TO_ZONE = "< Zurück zu %1$s"
 L.NO_LORE_FOR = "Noch keine Geschichte für %1$s aufgenommen."
 L.LORE_NOT_WRITTEN = "%1$s ist auf der Karte, aber noch hat niemand die Geschichte dazu geschrieben."
 L.MAP_LORE_FOR_FMT = "Geschichte von %1$s"

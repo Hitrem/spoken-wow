@@ -64,7 +64,6 @@ L.PAUSE_TOOLTIP = "遊戲無法從中間繼續播放聲音，因此重新播放�
 L.QUEUE_HELD_COMBAT = "等待戰鬥結束。"
 L.QUEUE_HELD_CINEMATIC = "等待過場動畫結束。"
 L.QUEUE_HELD_OFF = "旁白已關閉。"
-L.BACK_TO_ZONE = "< 回到%1$s"
 L.NO_LORE_FOR = "尚無%1$s的相關故事。"
 L.LORE_NOT_WRITTEN = "%1$s在地圖上，但還沒有人寫下它的故事。"
 L.MAP_LORE_FOR_FMT = "%1$s的故事"

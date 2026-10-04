@@ -64,7 +64,6 @@ L.PAUSE_TOOLTIP = "Игра не умеет продолжать звук с с�
 L.QUEUE_HELD_COMBAT = "Ожидание конца боя."
 L.QUEUE_HELD_CINEMATIC = "Ожидание конца ролика."
 L.QUEUE_HELD_OFF = "Озвучка выключена."
-L.BACK_TO_ZONE = "< Назад: %1$s"
 L.NO_LORE_FOR = "История пока не записана: %1$s."
 L.LORE_NOT_WRITTEN = "%1$s есть на карте, но историю этого места пока никто не написал."
 L.MAP_LORE_FOR_FMT = "история: %1$s"

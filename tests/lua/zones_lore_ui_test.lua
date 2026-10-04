@@ -219,10 +219,10 @@ Expect("...and shows the zone the map is on, with its story", mapPage.title.text
     "Durotar: Durotar is a cracked, red land.")
 Z.selected = { mapID = 1411, areaName = "Valley of Trials", entry = Z.Subzones[1411]["valley of trials"] }
 Z:RefreshPanel()
-Expect("an area clicked on the map shows its story, with a way back to the zone",
-    mapPage.title.text .. "|" .. mapPage.sub.text.text, "Valley of Trials|" .. Z.L.BACK_TO_ZONE:format("Durotar"))
-mapPage.sub.scripts.OnClick(mapPage.sub)
-Expect("...which goes back", mapPage.title.text, "Durotar")
+Expect("an area clicked on the map shows its story, with no link back under its name",
+    mapPage.title.text .. "|" .. mapPage.sub.text.text, "Valley of Trials|")
+for _, hook in ipairs(WorldMapFrame.hooks and WorldMapFrame.hooks.OnHide or {}) do hook(WorldMapFrame) end
+Expect("...and closing the map lets go of it, so the map opens on the zone's story", mapPage.title.text, "Durotar")
 
 ---------------------------------------------------------------- Lore of Azeroth from the panel
 local opened

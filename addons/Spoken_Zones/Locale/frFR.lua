@@ -64,7 +64,6 @@ L.PAUSE_TOOLTIP = "Le jeu ne peut pas reprendre un son en cours de route, donc r
 L.QUEUE_HELD_COMBAT = "En attente de la fin du combat."
 L.QUEUE_HELD_CINEMATIC = "En attente de la fin de la cinématique."
 L.QUEUE_HELD_OFF = "La narration est désactivée."
-L.BACK_TO_ZONE = "< Retour à %1$s"
 L.NO_LORE_FOR = "Aucun récit enregistré pour %1$s pour l'instant."
 L.LORE_NOT_WRITTEN = "%1$s est sur la carte, mais personne n'a encore écrit son récit."
 L.MAP_LORE_FOR_FMT = "récit de %1$s"

@@ -60,7 +60,12 @@ local function BuildPanel()
 		panel:Hide()
 	end)
 	panel.close = close
-	WorldMapFrame:HookScript("OnHide", function() panel.dismissed = nil end)
+	-- Closing the map also lets go of an area clicked on it: the page has no way back to the zone
+	-- of its own, so the map opens on the zone's story again.
+	WorldMapFrame:HookScript("OnHide", function()
+		panel.dismissed = nil
+		SpokenZones:ClearSubzone()
+	end)
 
 	-- The page inside the panel's border, under its title bar.
 	local holder = CreateFrame("Frame", nil, panel)
@@ -164,7 +169,6 @@ local function Refresh(mapID)
 		-- Prefer the name the client reported, which is what the player sees on the map ("The
 		-- Bulwark"), over the wiki page title ("Bulwark").
 		local name = selected.areaName or selected.entry.name or ""
-		local back = function() SpokenZones:ClearSubzone() end
 		-- Audio, the report link and Lore of Azeroth are keyed by the canonical form, not the name
 		-- the client reported. Resolve, not Normalise: on a localized client the reported name
 		-- reaches the corpus key only through the alias table, and normalising a non-Latin name
@@ -173,13 +177,11 @@ local function Refresh(mapID)
 		if SpokenZones:IsPending(selected.entry) then
 			-- Named, listed, and honest about the rest: nothing to play and nothing written to
 			-- report on. Lore of Azeroth lists it all the same, so Open goes to its row there.
-			page:Show({ title = name, subtitle = L.BACK_TO_ZONE:format(zoneName), onSubtitle = back,
-				text = L.LORE_NOT_WRITTEN:format(name), missing = true, contribute = { mapID, name },
+			page:Show({ title = name, text = L.LORE_NOT_WRITTEN:format(name), missing = true, contribute = { mapID, name },
 				lore = { mapID, key } })
 			return
 		end
-		page:Show({ title = name, subtitle = L.BACK_TO_ZONE:format(zoneName), onSubtitle = back,
-			text = selected.entry.full or selected.entry.short or "", audio = { mapID, key }, report = { mapID, key },
+		page:Show({ title = name, text = selected.entry.full or selected.entry.short or "", audio = { mapID, key }, report = { mapID, key },
 			lore = { mapID, key } })
 		return
 	end
