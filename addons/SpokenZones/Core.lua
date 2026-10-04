@@ -139,6 +139,10 @@ function SpokenZones:ResetOptions()
 	for key, value in pairs(defaults) do
 		SpokenZonesSettings[key] = value
 	end
+	-- Applied as the checkboxes apply them, not only written: a hidden minimap button comes
+	-- back, and the play buttons follow the voice being on again.
+	SpokenZones:ApplyMinimapButton()
+	SpokenZones:NotifyAudioChanged()
 end
 
 --------------------------------------------------------------------------------
@@ -757,6 +761,16 @@ function SpokenZones:ShowDiagnostics()
 		stories, tostring(SpokenZones:GetLanguage()))
 end
 
+-- The first zone, by uiMapID, the installed voice pack has a clip for.
+local function FirstZoneWithAudio()
+	local ids = {}
+	for id in pairs(SpokenZones.Zones or {}) do table.insert(ids, id) end
+	table.sort(ids)
+	for _, id in ipairs(ids) do
+		if SpokenZones:HasAudio(id, nil) then return id end
+	end
+end
+
 --- A story played the way a real one is, to check it can be heard: the one for where the
 --- player stands, or else the first one the voice pack has.
 function SpokenZones:PlayTestLine()
@@ -764,15 +778,16 @@ function SpokenZones:PlayTestLine()
 		SpokenZones:Print("|cffffcc00Read Stories Aloud is off|r")
 		return
 	end
+	-- Only a story with a clip is tried, and only one: PlayLore says why it failed.
 	local mapID, key = CurrentAudioTarget()
-	if mapID and SpokenZones:PlayLore(mapID, key) then return end
-	local ids = {}
-	for id in pairs(SpokenZones.Zones or {}) do table.insert(ids, id) end
-	table.sort(ids)
-	for _, id in ipairs(ids) do
-		if SpokenZones:PlayLore(id, nil) then return end
+	if not (mapID and SpokenZones:HasAudio(mapID, key)) then
+		mapID, key = FirstZoneWithAudio(), nil
 	end
-	SpokenZones:Print("|cffffcc00no story could be played -- is the voice pack installed?|r")
+	if not mapID then
+		SpokenZones:Print("|cffffcc00%s|r", SpokenZones:DescribeMissingAudio())
+		return
+	end
+	SpokenZones:PlayLore(mapID, key)
 end
 
 -- `/spz lang` lists the languages that can be read; `/spz lang <code>` switches;

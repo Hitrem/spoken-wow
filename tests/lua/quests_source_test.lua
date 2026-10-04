@@ -102,7 +102,7 @@ VO.Addon.db.profile.Audio.AutoToggleDialog = true
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
 Expect("a quest line speaking mutes dialog before the logout", world.cvars.Sound_EnableDialog, "0")
-stub.FireEvent("PLAYER_LOGOUT")
+stub.Logout()
 Expect("...and logging out mid-line restores it", world.cvars.Sound_EnableDialog, "1")
 
 -- Another addon's clip on the Dialog channel, queued behind a quest line, must be heard:

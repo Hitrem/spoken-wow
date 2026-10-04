@@ -984,6 +984,21 @@ local function Merge(base, over)
     end
     return out
 end
+-- What AceDB does to a section at logout: drop every value equal to its default and every
+-- table left empty by that.
+local function StripDefaults(section, defaults)
+    if type(section) ~= "table" or type(defaults) ~= "table" then return end
+    for key, default in pairs(defaults) do
+        local value = section[key]
+        if type(value) == "table" and type(default) == "table" then
+            StripDefaults(value, default)
+            if next(value) == nil then section[key] = nil end
+        elseif value == default then
+            section[key] = nil
+        end
+    end
+end
+local databases = {}
 libs["AceDB-3.0"] = {
     New = function(_, name, defaults)
         local sv = type(_G[name]) == "table" and _G[name] or {}
@@ -996,6 +1011,11 @@ libs["AceDB-3.0"] = {
         sv.global = sv.global or {}
         local db = { profile = sv.profiles.Default, char = sv.char[charKey], global = sv.global, sv = sv }
         db.RegisterCallback = function() end
+        function db:Shutdown()
+            StripDefaults(self.profile, defaults.profile)
+            StripDefaults(self.global, defaults.global)
+        end
+        table.insert(databases, db)
         -- The profile half of AceDB, which the settings panels offer inline.
         local current = "Default"
         function db:GetCurrentProfile() return current end
@@ -1016,6 +1036,14 @@ libs["AceDB-3.0"] = {
         return db
     end,
 }
+
+--- A logout or /reload as the client runs it: AceDB's own PLAYER_LOGOUT handler is registered
+--- when the library loads, before any addon's, so every database has stripped its defaults
+--- before the addons' PLAYER_LOGOUT handlers run.
+function M.Logout()
+    for _, db in ipairs(databases) do db:Shutdown() end
+    M.FireEvent("PLAYER_LOGOUT")
+end
 
 --- Load the Spoken player addon against this stub and return its private environment.
 --- Loads exactly what its addon.xml and then Contribute.xml list, in order (a Blizzard-client

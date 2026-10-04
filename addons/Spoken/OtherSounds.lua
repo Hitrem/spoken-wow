@@ -183,16 +183,17 @@ Callbacks:Register("CLIP_STARTED", function() OtherSounds:Sync() end)
 Callbacks:Register("QUEUE_EMPTY", function() OtherSounds:Sync() end)
 
 -- PLAYER_LOGOUT fires on /reload too, and the client writes its CVars after it: putting the
--- volumes back here is what keeps a reload mid-line from saving them lowered.
+-- volumes back here is what keeps a reload mid-line from saving them lowered. Gated on what was
+-- lowered, never on the settings: AceDB's own handler runs first and strips every setting still
+-- at its default, so a player who never moved these levels has none left by now.
 local events = CreateFrame("Frame")
 events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("PLAYER_LOGOUT")
 events:SetScript("OnEvent", function(_, event)
     event = event or _G.event
-    if not Addon.db or not OtherSounds:IsAvailable() then return end
-    if event == "PLAYER_LOGIN" then
-        OtherSounds:RestoreLeftovers()
-    else
+    if event == "PLAYER_LOGOUT" then
         OtherSounds:Restore(true)
+    elseif Addon.db and OtherSounds:IsAvailable() then
+        OtherSounds:RestoreLeftovers()
     end
 end)

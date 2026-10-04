@@ -100,20 +100,36 @@ Q:RemoveAllSoundsFromQueue(); stub.Advance(3)
 audio.SoundChannel = "Master"
 
 ---------------------------------------------------------------- the session ending mid-line
-quests:Enqueue(H.Clip({ length = 20 }))
-stub.Advance(1.5)
-stub.FireEvent("PLAYER_LOGOUT")
-Expect("a logout or reload mid-line puts the volumes straight back", Near(Volume("Music"), 0.8), true)
-Expect("...and forgets the saved copy", env.Addon.db.global.LoweredVolumes, nil)
-Q:RemoveAllSoundsFromQueue(); stub.Advance(3)
-SetVolumes()
-
 env.Addon.db.global.LoweredVolumes = { Music = 0.9 }
 world.cvars.Sound_MusicVolume = "0.2"
 stub.FireEvent("PLAYER_LOGIN")
 Expect("a session that ended without logging out is put right at the next login", Near(Volume("Music"), 0.9), true)
 Expect("...once", env.Addon.db.global.LoweredVolumes, nil)
 Expect("nothing went wrong in a callback", #env.Callbacks.errors, 0)
+SetVolumes()
+
+quests:Enqueue(H.Clip({ length = 20 }))
+stub.Advance(1.5)
+stub.Logout()
+Expect("a logout or reload mid-line puts the volumes straight back", Near(Volume("Music"), 0.8), true)
+Expect("...and forgets the saved copy", env.Addon.db.global.LoweredVolumes, nil)
+Q:RemoveAllSoundsFromQueue(); stub.Advance(3)
+SetVolumes()
+
+-- AceDB strips every setting still at its default before the addons hear PLAYER_LOGOUT. A
+-- player who never touched these levels had nothing left to restore by, and kept them lowered.
+_G.SpokenSettings = nil
+env, quests = H.Fresh(stub, SPOKEN)
+O, Q = env.OtherSounds, env.SoundQueue
+SetVolumes()
+quests:Enqueue(H.Clip({ length = 20 }))
+stub.Advance(1.5)
+Expect("on its default levels the music is lowered", Near(Volume("Music"), 0.24), true)
+stub.Logout()
+Expect("...and a logout mid-line still puts it back", Near(Volume("Music"), 0.8), true)
+Expect("...with every other channel", Near(Volume("Ambience"), 0.5) and Near(Volume("SFX"), 1), true)
+Expect("...though the settings were stripped to nothing", env.Addon.db.profile.Audio, nil)
+Expect("...and nothing went wrong in a callback", #env.Callbacks.errors, 0)
 
 ---------------------------------------------------------------- the legacy clients
 -- 2.4.3 and 3.3.5 speak through the music channel itself.
