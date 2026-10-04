@@ -1,4 +1,35 @@
-# Changelog — Spoken Player
+# Changelog — Spoken
+
+Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
+
+## 3.0.0-beta.1 — 2026-10-04
+
+A beta. **Spoken Player is now Spoken**, and it comes with its modules: one download holds
+Spoken, Spoken Quests, Spoken Books and Spoken Zones, each its own folder, grouped under Spoken
+in the AddOns list. Voice packs stay separate downloads.
+
+- **Everyone starts fresh.** Settings are saved under new names and nothing is carried over
+  from earlier releases, including Quests' autoplay choice, the once-per-NPC greeting history
+  and the record of zones already narrated. Lines gathered in `SpokenContributions.lua` are kept.
+- **Delete the old folders.** At login Spoken looks for `SpokenPlayer`, `VoiceOverRedux` and
+  `ZoneLore` left behind by an older release and asks you to delete them.
+- **Four narrator styles**: Subtitles Only, the default on modern clients, Small Window, Large
+  Window and Voice Only. Pick one in the welcome window, on the settings page or with
+  `/sp player`. Legacy clients start in the Large Window.
+- **Subtitles Only** shows the speaker and the words low on screen, four lines at a time, typed
+  out a little ahead of the voice, with play/pause, skip and Report on hover.
+- **Other sounds are turned down while a line plays**, each channel to its own level, and back
+  up when the queue falls quiet. A volume you change mid-line is kept.
+- Pausing fades the voice out. The round Play and Report buttons are shared by the subtitles,
+  the quest log and Zone Lore.
+- **Settings follow Blizzard's layout**: module cards you can switch off, the narrator styles as
+  pictures, one voice language for every module, Profiles, and search.
+- **Zone Lore** is a panel beside the world map. **Lore of Azeroth**, the old lore window, lists
+  Azeroth, its continents, zones and areas, with search.
+- Removed: Explain in Chat, the LoreTeller row in the quest log, and stories on the left of
+  the map.
+- New and changed text is machine-translated into German, Spanish, French, Korean, Brazilian
+  Portuguese, Russian and both Chinese scripts.
 
 ## 2.3.2 — 2026-10-02
 
