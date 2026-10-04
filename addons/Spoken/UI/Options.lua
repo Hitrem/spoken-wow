@@ -420,6 +420,9 @@ local function Build(canvas)
         ForSubtitles(layout:Slider(L.OPT_SUBTITLE_SIZE, 0.6, 1.6, 0.05,
             function() return transcript().SubtitleScale end,
             function(v) transcript().SubtitleScale = v end, refreshSubtitle, nil, L.OPT_SUBTITLE_SIZE_TIP))
+        ForSubtitles(layout:Slider(L.OPT_SUBTITLE_LINES, 1, 4, 1,
+            function() return transcript().SubtitleLines or 3 end,
+            function(v) transcript().SubtitleLines = v end, refreshSubtitle, Layout.Number, L.OPT_SUBTITLE_LINES_TIP))
         ForSubtitles(layout:Slider(L.TRANSCRIPT_SHADOW, 0, 1, 0.05,
             function() return transcript().SubtitleShadow end,
             function(v) transcript().SubtitleShadow = v end, refreshSubtitle, nil, L.TRANSCRIPT_SHADOW_TIP))

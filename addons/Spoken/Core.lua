@@ -95,6 +95,8 @@ Defaults = {
             SubtitleShadow = 0.6,
             SubtitleProgress = true,
             SubtitleScale = 1,
+            -- The most lines the subtitle shows at once, 1 to 4; longer lines turn pages.
+            SubtitleLines = 3,
         },
         Minimap = {
             -- LibDBIcon's own: minimapPos, lock, hide, and -- on the modern clients that

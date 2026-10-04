@@ -12,10 +12,14 @@ Subtitle = {}
 -- The widest a line runs, padding included. LoreTeller matched Plumber's talking head.
 local WIDTH = 512
 local PAD, TOP_PAD, TITLE_GAP, BOTTOM_PAD, LINE_GAP = 16, 12, 8, 12, 2
--- The most lines shown at once. Longer text is split into pages of up to this many, at sentence
--- ends where a sentence fits, and each page replaces the last once its share of the clip has
--- played.
-local PAGE_LINES = 4
+-- The most lines shown at once, the player's setting (SubtitleLines, 1 to 4). Longer text is split
+-- into pages of up to this many, at sentence ends where a sentence fits, and each page replaces the
+-- last once its share of the clip has played.
+local MAX_LINES = 4
+local function PageLines()
+    local lines = tonumber(Addon:Profile("Transcript").SubtitleLines) or 3
+    return math.max(1, math.min(MAX_LINES, math.floor(lines)))
+end
 local FADE_IN, FADE_OUT = .6, .5
 -- Until it is dragged: the top edge, in UI units up from the bottom of the screen.
 local DEFAULT_TOP = 336
@@ -143,12 +147,14 @@ function Subtitle:Wrap(text)
     return lines
 end
 
---- Pages of at most PAGE_LINES lines each: as many whole sentences as fit on a page, and a
+--- Pages of at most PageLines() lines each: as many whole sentences as fit on a page, and a
 --- sentence too long for one page cut between words into runs that do. Joined, the pages give
 --- back the text's words in order, which is what page timing and the active word count on.
 function Subtitle:Paginate(text)
-    if #self:Wrap(text) <= PAGE_LINES then return { text } end
-    local function Fits(candidate) return #self:Wrap(candidate) <= PAGE_LINES end
+    local most = PageLines()
+    self.pageLines = most
+    if #self:Wrap(text) <= most then return { text } end
+    local function Fits(candidate) return #self:Wrap(candidate) <= most end
     local pieces = {}
     for _, sentence in ipairs(Sentences(text)) do
         if Fits(sentence) then
@@ -710,6 +716,11 @@ function Subtitle:Update()
         self:Place()
     end
     local clip = speaking and Transcript.clip or self.sample
+    -- The lines at once changed in the settings: the line paged again, from where the voice is.
+    if self.clip and self.pages and self.pageLines and self.pageLines ~= PageLines() then
+        self:Prepare(self.clip, self.sample and L.SUBTITLE_SAMPLE_TEXT or Transcript.text)
+        self.revealed = nil
+    end
     -- The progress line turned on or off in the settings: the page laid out again with or without it.
     if self.page and self.pages and self.pages[self.page]
         and self:ProgressWanted() ~= self.progressShown then
