@@ -219,10 +219,17 @@ Expect("...and shows the zone the map is on, with its story", mapPage.title.text
     "Durotar: Durotar is a cracked, red land.")
 Z.selected = { mapID = 1411, areaName = "Valley of Trials", entry = Z.Subzones[1411]["valley of trials"] }
 Z:RefreshPanel()
-Expect("an area clicked on the map shows its story, with no link back under its name",
-    mapPage.title.text .. "|" .. mapPage.sub.text.text, "Valley of Trials|")
-for _, hook in ipairs(WorldMapFrame.hooks and WorldMapFrame.hooks.OnHide or {}) do hook(WorldMapFrame) end
-Expect("...and closing the map lets go of it, so the map opens on the zone's story", mapPage.title.text, "Durotar")
+Expect("an area clicked on the map says which zone it is in, as Lore of Azeroth does",
+    mapPage.title.text .. "|" .. mapPage.sub.text.text, "Valley of Trials|" .. Z.L.IN_ZONE_FMT:format("Durotar"))
+mapPage.sub.scripts.OnClick(mapPage.sub)
+Expect("...and the line goes back to the zone's story", mapPage.title.text, "Durotar")
+Expect("a zone's line is Lore of Azeroth's: its continent, and how many areas", mapPage.sub.text.text,
+    (Z:PlaceLine(1411)))
+local shownMap
+WorldMapFrame.SetMapID = function(_, id) shownMap = id end
+mapPage.sub.scripts.OnClick(mapPage.sub)
+Expect("...a click taking the map up to the continent", shownMap, 1414)
+WorldMapFrame.SetMapID = nil
 
 ---------------------------------------------------------------- Lore of Azeroth from the panel
 local opened
