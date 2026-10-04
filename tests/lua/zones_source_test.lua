@@ -7,7 +7,7 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local ZONES = here .. "/../../addons/SpokenZones/"
 local Expect, Failures = H.Expecter(print)
 
@@ -88,7 +88,8 @@ Expect("...but Report in the corner", F.frame.actions.buttons[1].anchor.point, "
 env, Z = Boot(); Spoken = _G.Spoken
 Z:PlayLore(1411, nil)
 F = env.PlayerFrame
-Expect("Report is an icon", F.frame.actions.buttons[1]:GetNormalTexture():GetTexture() ~= nil, true)
+Expect("Report is an icon, in the player's round button", F.frame.actions.buttons[1].glyph ~= nil
+    and F.frame.actions.buttons[1].ring ~= nil, true)
 F.frame.actions.buttons[1]:Click()
 Expect("...targeting what is playing", Z.copied, "https://spoken.test/r/1411/nil")
 
@@ -189,7 +190,7 @@ env, Z = Boot()
 local labels = {}
 for _, entry in ipairs(env.Minimap:BuildMenu()) do table.insert(labels, entry.text) end
 Expect("the zones addon adds its entries to the one button", table.concat(labels, "|"),
-    "Play/Pause|Stop|Settings|Open lore window|Spoken Zones settings")
+    "Play/Pause|Stop|Settings|Open Lore of Azeroth|Zones Settings")
 Expect("...and registers no button of its own", stub.ldbObjects.SpokenZones, nil)
 
 ---------------------------------------------------------------- without the player
@@ -272,7 +273,7 @@ local function BootGreeting(restored, level)
     Z.GetLoreWithFallback = function() return nil, nil end
     Z:SetupAudio()
     Z:SetupAutoplay()
-    _G.SpokenZonesCharDB = nil
+    _G.SpokenZonesCharacter = nil
     return counter
 end
 
@@ -280,7 +281,7 @@ end
 local function GreetingAsked(restored, level)
     local counter = BootGreeting(restored, level)
     stub.Advance(2)
-    _G.SpokenZonesCharDB = nil
+    _G.SpokenZonesCharacter = nil
     return counter.asked > 0
 end
 
@@ -302,7 +303,7 @@ cinematic = false
 stub.Advance(60)
 Expect("once it is over, the greeting gets all its attempts", counter.asked, 8)
 _G.InCinematic = nil
-_G.SpokenZonesCharDB = nil
+_G.SpokenZonesCharacter = nil
 
 ---------------------------------------------------------------- the pack this repo ships
 -- The shipped Data/Sounds.lua, loaded for real. Everything above uses hand-built tables, so

@@ -636,7 +636,7 @@ function Contribute:HasGap()
     if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution) then
         return false
     end
-    -- Hidden in the Spoken Player settings: no gap to show, and so no model to prime. The
+    -- Hidden in the Spoken settings: no gap to show, and so no model to prime. The
     -- method is guarded because an older bundled player does not have it.
     local hidden = Spoken.AreContributeButtonsHidden and Spoken:AreContributeButtonsHidden()
     -- Gathering needs the model primed as much as a click does, and runs with the buttons
@@ -748,7 +748,7 @@ local function Offer(envelope, key)
     -- What the first-click choice gathers if the player takes it. Only for a line with a key:
     -- a quest log entry has no NPC in front of it, so it is sent but never kept.
     local gather = key and { key = key, envelope = envelope } or nil
-    -- Encode is absent on an older SpokenPlayer a legacy-client zip can still bundle; Link
+    -- Encode is absent on an older Spoken a legacy-client zip can still bundle; Link
     -- returns nil for that or for an oversized result. Either way, the two-copy fallback still
     -- works, which is the whole point of shipping it alongside the link instead of replacing it.
     local link = Spoken.Contribute.Encode and Spoken.Contribute:Link(address, envelope)

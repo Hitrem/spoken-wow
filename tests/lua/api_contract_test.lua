@@ -9,7 +9,7 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
@@ -22,7 +22,7 @@ Expect("API_VERSION is 1", Spoken.API_VERSION, 1)
 -- literal in Environment.lua loads before the addon has any metadata API, so nothing in the
 -- game checks the two agree. A hardcoded expectation only asserts that a version bump touched
 -- three files instead of two.
-local toc = assert(io.open(SPOKEN .. "SpokenPlayer.toc")):read("*a")
+local toc = assert(io.open(SPOKEN .. "Spoken.toc")):read("*a")
 Expect("ADDON_VERSION matches the TOC", Spoken.ADDON_VERSION, toc:match("## Version:%s*([^\r\n]+)"))
 Expect("IsCompatible(1)", Spoken:IsCompatible(1), true)
 Expect("not IsCompatible(2)", Spoken:IsCompatible(2), false)

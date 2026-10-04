@@ -29,8 +29,8 @@ SpokenZones.zoneChangedCallbacks = {}
 
 local defaults = {
 	showMapPanel = true,
-	panelSide = "RIGHT",
-	panelWidth = 300,
+	-- Wide enough that a zone's name fits on one line beside the header's round buttons.
+	panelWidth = 360,
 	fontSize = 12,
 	showHoverPreview = true,
 	showMinimapButton = true,
@@ -56,7 +56,7 @@ local defaults = {
 	-- own language the day it ships, and one who picked English should not.
 	debug = false,
 	-- `hide` and `minimapPos` are intentionally absent: LibDBIcon owns those keys
-	-- inside SpokenZonesDB and writes them itself. See UI/MinimapButton.lua.
+	-- inside SpokenZonesSettings and writes them itself. See UI/MinimapButton.lua.
 }
 
 --------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ end
 
 -- Merge defaults into the saved table without clobbering stored values, so new
 -- options added in later versions appear for existing users. Runtime reads and
--- writes go straight to SpokenZonesDB.
+-- writes go straight to SpokenZonesSettings.
 -- Whether the client handed back anything it saved. Read before the tables below are
 -- created, because creating one is what makes the question unanswerable afterwards.
 --
@@ -87,34 +87,26 @@ end
 -- one a player hears; see SeedLoginArea.
 local function InitConfig()
 	SpokenZones.savedVariablesRestored =
-		type(SpokenZonesDB) == "table" or type(SpokenZonesCharDB) == "table"
+		type(SpokenZonesSettings) == "table" or type(SpokenZonesCharacter) == "table"
 
-	if type(SpokenZonesDB) ~= "table" then
-		SpokenZonesDB = {}
+	if type(SpokenZonesSettings) ~= "table" then
+		SpokenZonesSettings = {}
 	end
 	for key, value in pairs(defaults) do
-		if SpokenZonesDB[key] == nil then
-			SpokenZonesDB[key] = value
+		if SpokenZonesSettings[key] == nil then
+			SpokenZonesSettings[key] = value
 		end
 	end
 
-	-- `audioPack` was a folder name back when there was only one language to
-	-- choose a pack for; it is now one folder name per content language. The type
-	-- check makes this idempotent, which is why no stored schema version is needed.
-	-- The old value was necessarily an English pack, so that is where it lands.
-	if type(SpokenZonesDB.audioPack) == "string" then
-		SpokenZonesDB.audioPack = { enUS = SpokenZonesDB.audioPack }
-	end
-
-	SpokenZones.db = SpokenZonesDB
+	SpokenZones.db = SpokenZonesSettings
 end
 
 -- Safe before ADDON_LOADED has run.
 function SpokenZones:Get(key)
-	if SpokenZonesDB == nil then
+	if SpokenZonesSettings == nil then
 		return defaults[key]
 	end
-	local value = SpokenZonesDB[key]
+	local value = SpokenZonesSettings[key]
 	if value == nil then
 		return defaults[key]
 	end
@@ -122,7 +114,27 @@ function SpokenZones:Get(key)
 end
 
 function SpokenZones:Set(key, value)
-	SpokenZonesDB[key] = value
+	SpokenZonesSettings[key] = value
+end
+
+--- Every setting back to its default. The language chosen and the record of places already
+--- narrated are not settings in that sense, and stay.
+function SpokenZones:ResetOptions()
+	if SpokenZonesSettings == nil then return end
+	for key, value in pairs(defaults) do
+		SpokenZonesSettings[key] = value
+	end
+	-- Applied as the checkboxes apply them, not only written: a hidden minimap button comes
+	-- back, and the play buttons follow the voice being on again.
+	SpokenZones:ApplyMinimapButton()
+	SpokenZones:NotifyAudioChanged()
+end
+
+--- Whether the player has this part of Spoken switched on (Spoken's settings). Without the
+--- player there is no switch to read, and the part counts as on. Off, the map's panel and its
+--- play buttons stay hidden.
+function SpokenZones:IsPartOn()
+	return not (Spoken and Spoken.IsPartOn) or Spoken:IsPartOn("zones")
 end
 
 --------------------------------------------------------------------------------
@@ -463,34 +475,6 @@ events:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" then
 		if arg1 == ADDON_NAME then
 			InitConfig()
-			-- The old folder may hold the real old addon, which must not narrate over this
-			-- one. Its variables were copied at load, so disabling it is safe now.
-			local disable = (C_AddOns and C_AddOns.DisableAddOn) or DisableAddOn
-			local info = (C_AddOns and C_AddOns.GetAddOnInfo) or GetAddOnInfo
-			local meta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
-			-- The literal folder name, not this addon's own: what may still be installed
-			-- under it is the addon this one was renamed from. Writing the namespace here
-			-- instead would have the addon disable itself on first login.
-			--
-			-- DoesAddOnExist, not the truthiness of GetAddOnInfo: Camelot answers for a
-			-- folder that is not installed by handing the name straight back, so the old
-			-- test disabled ZoneLore on every login of a client that has never had it -
-			-- visible as `ZoneLore: disabled` in a fresh AddOns.txt. SpokenQuests met the
-			-- same trap on the same client, and asks AceAddon which players registered
-			-- instead; this addon is not an Ace addon and has no such register to ask.
-			local exists = C_AddOns and C_AddOns.DoesAddOnExist
-			local installed = exists and exists("ZoneLore") or (not exists and info and info("ZoneLore"))
-			-- The tombstone this release ships under the old name is not the old addon: one
-			-- .toc, no code, there only to keep ZoneLoreDB loading for Migration.lua. Current
-			-- clients reserve enabling and disabling an addon for their own UI and answer with
-			-- their own "blocked from an action only available to the Blizzard UI" dialog, so
-			-- disabling a folder that cannot narrate spends that dialog for nothing - and on a
-			-- fresh install the folder came out of this addon's own zip. X-Spoken-Tombstone is
-			-- a field this project invented, so only a .toc it wrote can be carrying it.
-			local tombstone = meta and meta("ZoneLore", "X-Spoken-Tombstone") == "1"
-			if disable and installed and not tombstone then
-				pcall(disable, "ZoneLore")
-			end
 			self:UnregisterEvent("ADDON_LOADED")
 		end
 	elseif event == "PLAYER_ENTERING_WORLD" then
@@ -520,7 +504,7 @@ end)
 
 -- Recursively enumerate the map tree so tools/seed/zones.json can be built from
 -- the client itself rather than transcribed by hand. Results land in
--- SpokenZonesDB.dump, which is only written to disk on logout or /reload.
+-- SpokenZonesSettings.dump, which is only written to disk on logout or /reload.
 local MAP_TYPE_NAMES = { [0] = "Cosmic", [1] = "World", [2] = "Continent", [3] = "Zone", [4] = "Dungeon", [5] = "Micro", [6] = "Orphan" }
 
 local function DumpMapTree(rootID, out, seen, depth)
@@ -554,8 +538,8 @@ local function CmdDump()
 	DumpMapTree(947, out, seen, 0)   -- Azeroth (world)
 	DumpMapTree(1414, out, seen, 0)  -- Kalimdor
 	DumpMapTree(1415, out, seen, 0)  -- Eastern Kingdoms
-	SpokenZonesDB.dump = out
-	SpokenZones:Print("dumped %d maps to SpokenZonesDB.dump. Run /reload, then:", #out)
+	SpokenZonesSettings.dump = out
+	SpokenZones:Print("dumped %d maps to SpokenZonesSettings.dump. Run /reload, then:", #out)
 	SpokenZones:Print("  node tools/seed-from-dump.mjs")
 end
 
@@ -759,6 +743,45 @@ local function CmdAudioPack(arg)
 	end
 end
 
+--- What the settings' Show Diagnostics prints: the voice packs, and how reading is set up.
+function SpokenZones:ShowDiagnostics()
+	CmdAudioPack(nil)
+	local stories = 0
+	for _ in pairs(SpokenZones.Zones or {}) do stories = stories + 1 end
+	SpokenZones:Print("voice %s, read on discovery %s, %d zones with stories, language %s",
+		SpokenZones:IsVoiceEnabled() and "on" or "off", SpokenZones:Get("autoplay") and "on" or "off",
+		stories, tostring(SpokenZones:GetLanguage()))
+end
+
+-- The first zone, by uiMapID, the installed voice pack has a clip for.
+local function FirstZoneWithAudio()
+	local ids = {}
+	for id in pairs(SpokenZones.Zones or {}) do table.insert(ids, id) end
+	table.sort(ids)
+	for _, id in ipairs(ids) do
+		if SpokenZones:HasAudio(id, nil) then return id end
+	end
+end
+
+--- A story played the way a real one is, to check it can be heard: the one for where the
+--- player stands, or else the first one the voice pack has.
+function SpokenZones:PlayTestLine()
+	if not SpokenZones:IsVoiceEnabled() then
+		SpokenZones:Print("|cffffcc00Read Stories Aloud is off|r")
+		return
+	end
+	-- Only a story with a clip is tried, and only one: PlayLore says why it failed.
+	local mapID, key = CurrentAudioTarget()
+	if not (mapID and SpokenZones:HasAudio(mapID, key)) then
+		mapID, key = FirstZoneWithAudio(), nil
+	end
+	if not mapID then
+		SpokenZones:Print("|cffffcc00%s|r", SpokenZones:DescribeMissingAudio())
+		return
+	end
+	SpokenZones:PlayLore(mapID, key)
+end
+
 -- `/spz lang` lists the languages that can be read; `/spz lang <code>` switches;
 -- `/spz lang auto` goes back to following the client;
 -- `/spz lang <code> force` and `/spz lang off` turn the preview override on and
@@ -875,7 +898,7 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 	elseif cmd == "panel" then
 		local enabled = not SpokenZones:Get("showMapPanel")
 		SpokenZones:Set("showMapPanel", enabled)
-		SpokenZones:Print("world map panel %s", enabled and "enabled" or "disabled")
+		SpokenZones:Print(enabled and SpokenZones.L.PANEL_SHOWN or SpokenZones.L.PANEL_HIDDEN)
 		Dispatch(SpokenZones.mapChangedCallbacks, SpokenZones:GetDisplayedMapID())
 	elseif cmd == "options" or cmd == "config" or cmd == "opt" then
 		if SpokenZones.OpenOptions then

@@ -8,10 +8,6 @@ local AceDBOptions = LibStub("AceDBOptions-3.0")
 ------------------------------------------------------------
 -- Construction of the options table for AceConfigDialog --
 
-local function SortAceConfigOptions(a, b)
-    return (a.order or 100) < (b.order or 100)
-end
-
 -- Needed to preserve order (modern AceGUI has support for custom sorting of dropdown items, but old versions don't)
 local FRAME_STRATAS =
 {

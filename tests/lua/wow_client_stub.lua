@@ -176,7 +176,14 @@ local function Widget(kind, name)
         if not anchor then return end
         return anchor.point, anchor.relativeTo, anchor.relativePoint, anchor.x, anchor.y
     end
-    function w:GetStringWidth() return #tostring(self.text or "") * 7 end
+    -- Seven pixels a byte by default, which the caption and subtitle suites are measured in.
+    -- A suite that measures translated text sets M.TextWidth to something closer to a font.
+    function w:GetStringWidth()
+        if M.TextWidth then return M.TextWidth(self) end
+        return #tostring(self.text or "") * 7
+    end
+    function w:SetWordWrap(on) self.wordWrap = on and true or false end
+    function w:SetFontObject(font) self.font = type(font) == "table" and (font.name or font) or font end
     function w:GetTop() return 100 end
     function w:GetBottom() return 0 end
     function w:GetLeft() return 0 end
@@ -196,9 +203,12 @@ local function Widget(kind, name)
     function w:GetTexture() return self.texture end
     function w:SetTexCoord(...) self.texCoord = { ... } end
     function w:CreateTexture(n, layer) local t = Widget("Texture", n); t.parent = self; t.layer = layer; return t end
-    function w:CreateFontString(n, layer)
+    -- A mask, as the client hands one back: the small window rounds a portrait with it.
+    function w:CreateMaskTexture(n) local t = Widget("MaskTexture", n); t.parent = self; return t end
+    function w:CreateFontString(n, layer, template)
         local t = Widget("FontString", n)
         t.parent = self
+        t.font = template
         table.insert(self.children, t)
         return t
     end
@@ -974,6 +984,21 @@ local function Merge(base, over)
     end
     return out
 end
+-- What AceDB does to a section at logout: drop every value equal to its default and every
+-- table left empty by that.
+local function StripDefaults(section, defaults)
+    if type(section) ~= "table" or type(defaults) ~= "table" then return end
+    for key, default in pairs(defaults) do
+        local value = section[key]
+        if type(value) == "table" and type(default) == "table" then
+            StripDefaults(value, default)
+            if next(value) == nil then section[key] = nil end
+        elseif value == default then
+            section[key] = nil
+        end
+    end
+end
+local databases = {}
 libs["AceDB-3.0"] = {
     New = function(_, name, defaults)
         local sv = type(_G[name]) == "table" and _G[name] or {}
@@ -986,6 +1011,11 @@ libs["AceDB-3.0"] = {
         sv.global = sv.global or {}
         local db = { profile = sv.profiles.Default, char = sv.char[charKey], global = sv.global, sv = sv }
         db.RegisterCallback = function() end
+        function db:Shutdown()
+            StripDefaults(self.profile, defaults.profile)
+            StripDefaults(self.global, defaults.global)
+        end
+        table.insert(databases, db)
         -- The profile half of AceDB, which the settings panels offer inline.
         local current = "Default"
         function db:GetCurrentProfile() return current end
@@ -1007,23 +1037,34 @@ libs["AceDB-3.0"] = {
     end,
 }
 
+--- A logout or /reload as the client runs it: AceDB's own PLAYER_LOGOUT handler is registered
+--- when the library loads, before any addon's, so every database has stripped its defaults
+--- before the addons' PLAYER_LOGOUT handlers run.
+function M.Logout()
+    for _, db in ipairs(databases) do db:Shutdown() end
+    M.FireEvent("PLAYER_LOGOUT")
+end
+
 --- Load the Spoken player addon against this stub and return its private environment.
 --- Loads exactly what its addon.xml and then Contribute.xml list, in order (a Blizzard-client
 --- .toc's order), then initialises the saved variables the way ADDON_LOADED would.
 function M.LoadSpoken(addonDirectory)
-    for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources",
-        "Strings", "UI/Layout", "UI/Transcript", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
+    for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources", "OtherSounds",
+        "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN",
+        "Locale/zhTW", "UI/Layout", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
         "UI/MinimalPlayer", "UI/MinimapButton",
         -- Real LibDeflate, not a hand-faked stub library: Contribute:Encode's round trip through
         -- actual compression is the point of testing it at all.
-        "UI/Options", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
+        "UI/Options", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     local env = _G.SpokenEnv
     env.Addon:InitDB()
-    -- These suites exercise the original layout. The Minimal Classic layout,
-    -- including switching back to this one, has its own UI/timer fixture.
+    -- These suites exercise the original layout, not the subtitles a first install shows
+    -- (defaults_test pins those). The Minimal Classic layout, including switching back to
+    -- this one, has its own UI/timer fixture.
     env.Addon.db.profile.Frame.MinimalPlayer = false
+    env.Addon.db.profile.Frame.SubtitlePlayer = false
     return env
 end
 
@@ -1148,8 +1189,9 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
     for _, module in ipairs({ "QuestOverlayUI", "Options" }) do
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
-    for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "FuzzySearch", "EasterEggs",
-        "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
+    for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "Locale/deDE", "Locale/esES",
+        "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "FuzzySearch",
+        "EasterEggs", "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
@@ -1190,7 +1232,7 @@ end
 
 --- Kept for one release: the pre-cutover loader name.
 M.LoadPlayer = function(addonDirectory)
-    local VO = M.LoadQuests(addonDirectory, addonDirectory .. "../SpokenPlayer/")
+    local VO = M.LoadQuests(addonDirectory, addonDirectory .. "../Spoken/")
     return VO
 end
 

@@ -9,7 +9,7 @@
  * `/forever/` is the Anniversary branch: two branches exist here, not one, because the corpus
  * and the contribution queue are not answering about the same game. The corpus is built from
  * the 1.12 world the Classic Era client speaks, but a pasted contribution comes from whatever
- * client the addon it's built for runs on -- SpokenPlayer's envelope names the Anniversary
+ * client the addon it's built for runs on -- Spoken's envelope names the Anniversary
  * realm, which has content /classic/ has never heard of (this branch's own case: NPC 205729,
  * a post-vanilla quest-giver the corpus has no line for at all). Pointing every contribution's
  * lookup at /classic/ would silently 404 on exactly the rows most worth checking by hand.

@@ -74,6 +74,10 @@ function SpokenZones:SetupSubzoneClicks()
 		if button ~= "LeftButton" then
 			return
 		end
+		if not SpokenZones:IsPartOn() then
+			downX, downY = nil, nil
+			return
+		end
 
 		local startX, startY = downX, downY
 		downX, downY = nil, nil

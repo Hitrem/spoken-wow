@@ -84,7 +84,7 @@ function SpokenBooks:PlayFrom(pageId)
 
 	local queued = 0
 	for _, id in ipairs(self:PagesFrom(pageId)) do
-		if SpokenBooksDB and SpokenBooksDB.readWholeBook == false and id ~= pageId then
+		if SpokenBooksSettings and SpokenBooksSettings.readWholeBook == false and id ~= pageId then
 			break
 		end
 		local clip = self:ClipFor(id)

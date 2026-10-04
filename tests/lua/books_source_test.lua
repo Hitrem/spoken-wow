@@ -6,7 +6,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local BOOKS = here .. "/../../addons/SpokenBooks/"
 local Expect, Failures = H.Expecter(print)
 
@@ -21,7 +21,7 @@ end
 
 local function Boot()
     stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
-    _G.SpokenBooksDB = nil
+    _G.SpokenBooksSettings = nil
     local env = stub.LoadSpoken(SPOKEN)
     env.Addon:Enable()
     local B = LoadBooks()
@@ -41,7 +41,7 @@ end
 -- sections need: Events.lua is what creates the frame the events arrive at, and without it
 -- firing them reaches nothing and the test passes for the wrong reason.
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
-_G.SpokenBooksDB = nil
+_G.SpokenBooksSettings = nil
 local bootEnv = stub.LoadSpoken(SPOKEN)
 bootEnv.Addon:Enable()
 local B0 = {}
@@ -50,10 +50,10 @@ for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader",
 end
 
 stub.FireEvent("ADDON_LOADED", "SomebodyElse")
-Expect("another addon's load leaves the saved variables alone", SpokenBooksDB, nil)
+Expect("another addon's load leaves the saved variables alone", SpokenBooksSettings, nil)
 
 stub.FireEvent("ADDON_LOADED", "SpokenBooks")
-Expect("the addon's own ADDON_LOADED writes the defaults", SpokenBooksDB.autoplay, true)
+Expect("the addon's own ADDON_LOADED writes the defaults", SpokenBooksSettings.autoplay, true)
 Expect("...and claims no source yet, because the player may not have loaded", B0.source, nil)
 
 stub.FireEvent("PLAYER_ENTERING_WORLD")
@@ -75,12 +75,12 @@ Expect("...and reports itself compatible", B.compatible, true)
 
 ---------------------------------------------------------------- saved variables
 Expect("autoplay is on by default, because opening a book is already deliberate",
-    SpokenBooksDB.autoplay, true)
-Expect("a whole book is read by default", SpokenBooksDB.readWholeBook, true)
+    SpokenBooksSettings.autoplay, true)
+Expect("a whole book is read by default", SpokenBooksSettings.readWholeBook, true)
 
-SpokenBooksDB.autoplay = false
+SpokenBooksSettings.autoplay = false
 B:InitDB()
-Expect("InitDB does not overwrite a choice already made", SpokenBooksDB.autoplay, false)
+Expect("InitDB does not overwrite a choice already made", SpokenBooksSettings.autoplay, false)
 
 ---------------------------------------------------------------- the checksum
 -- The numbers below come from pipelines/books/tools/lib/naming.mjs, which keys the

@@ -14,7 +14,7 @@ local function Lists(path, file)
     return toc:find("\n" .. file:gsub("%.", "%%.") .. "%s*\n") ~= nil or toc:find("\n" .. file:gsub("%.", "%%.") .. "%s*$") ~= nil
 end
 
-for _, addon in ipairs({ "SpokenPlayer", "SpokenQuests" }) do
+for _, addon in ipairs({ "Spoken", "SpokenQuests" }) do
     for _, legacy in ipairs({ "1.12", "2.4.3", "3.3.5" }) do
         local toc = ADDONS .. addon .. "/" .. addon .. "_" .. legacy .. ".toc"
         Expect(addon .. "_" .. legacy .. ".toc does not load contributing", Lists(toc, "Contribute.xml"), false)

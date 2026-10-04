@@ -5,7 +5,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local BOOKS = here .. "/../../addons/SpokenBooks/"
 local Expect, Failures = H.Expecter(print)
 
@@ -77,7 +77,7 @@ Expect("Show() puts a link in the box, not the raw envelope",
 Expect("...with the link hint", box.hint:GetText(), "Copy this and open it in your browser:")
 env.Spoken.Contribute.Encode = realEncode
 
--- The fallback an older bundled SpokenPlayer still gets: no Encode at all.
+-- The fallback an older bundled Spoken still gets: no Encode at all.
 env.Spoken.Contribute.Encode = nil
 B:ShowContribution()
 Expect("...falls back to the raw envelope when Encode is absent",

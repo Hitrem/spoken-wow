@@ -7,7 +7,7 @@
 -- A TEXT button, not an icon, for the reason UI/AudioButton.lua gives on the zones side: an
 -- icon path cannot be verified without launching the client, and a texture that does not
 -- exist on 11509 draws nothing at all -- an invisible button is a worse failure than a plain
--- one. SpokenPlayer carries QuestLogPlayButton.blp, but it is that addon's file and this one
+-- one. Spoken carries QuestLogPlayButton.blp, but it is that addon's file and this one
 -- must work with the player absent.
 --
 -- ON THE PAGE, in its bottom-right corner. Two placements came before it and both were on
@@ -69,6 +69,11 @@ end
 function SpokenBooks:RefreshPlayButton()
 	local button = self.playButton
 	if not button then
+		return
+	end
+	-- Switched off in Spoken's settings, the part puts nothing on the book.
+	if not SpokenBooks:IsPartOn() then
+		button:Hide()
 		return
 	end
 
@@ -179,7 +184,7 @@ function SpokenBooks:SetupPlayButton()
 
 	self.playButton = button
 
-	-- Toggling the hide setting in the Spoken Player settings fires no game event.
+	-- Toggling the hide setting in the Spoken settings fires no game event.
 	if _G.Spoken and Spoken.RegisterCallback then
 		Spoken:RegisterCallback("CONTRIBUTE_SETTINGS_CHANGED", function()
 			SpokenBooks:RefreshPlayButton()

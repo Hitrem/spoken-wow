@@ -9,7 +9,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local print = stub.print
 local QUESTS = here .. "/../../addons/SpokenQuests/"
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 
 local world = stub.world
 local failures = 0
@@ -29,7 +29,7 @@ local function Boot(client)
     world.questID = 0
     stub.ShowPanel(nil)
     -- A fresh install each time: the previous client's run turned autoplay off.
-    _G.SpokenQuestsDB = nil
+    _G.SpokenQuestsSettings = nil
     local VO = stub.LoadQuests(QUESTS, SPOKEN)
     dofile(QUESTS .. "UI/DialogPlayButton.lua")
     VO.Addon:OnInitialize()
@@ -117,7 +117,7 @@ for _, client in ipairs({ "11509", "1.12" }) do
     Open(101, "QuestFrameDetailPanel", "QUEST_DETAIL")
     Expect(client .. ": autoplay off, an offer reads nothing", Played(played), "(nothing)")
     Expect(client .. ": autoplay off, the dialog shows Play", button:IsShown(), true)
-    Expect(client .. ": ...labelled Play", button:GetText(), "Play")
+    Expect(client .. ": ...labelled Listen", button:GetText(), "Listen")
 
     button:Click()
     stub.Advance(0.2)
@@ -127,7 +127,7 @@ for _, client in ipairs({ "11509", "1.12" }) do
     button:Click()
     stub.Advance(0.2)
     Expect(client .. ": Stop stops it", _G.Spoken:GetCurrent() == nil, true)
-    Expect(client .. ": ...and the button is Play again", button:GetText(), "Play")
+    Expect(client .. ": ...and the button is Listen again", button:GetText(), "Listen")
     Close()
     Expect(client .. ": closing the dialog hides the button", button:IsShown(), false)
 

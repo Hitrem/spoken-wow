@@ -101,8 +101,8 @@ export default function UploadGathered({ signedInAs }: { signedInAs: string | nu
     return (
       <p role="status" className="rounded border p-4 text-sm">
         Got {result.accepted} {result.accepted === 1 ? "line" : "lines"} — thank you.
-        {result.refused ? ` ${result.refused} could not be used.` : ""} You can clear the gathered lines
-        in the game now: Spoken Player settings, Clear gathered lines.
+        {result.refused ? ` ${result.refused} could not be used.` : ""} You can clear the collected lines
+        in the game now: Spoken's settings, Clear Collected Lines.
       </p>
     );
   }

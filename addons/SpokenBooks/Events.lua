@@ -1,7 +1,7 @@
 -- The client's book frame, wired to the playlist -- and the login that wires the addon up
 -- at all.
 --
--- ADDON_LOADED is where the saved variables become readable: SpokenBooksDB is nil until the
+-- ADDON_LOADED is where the saved variables become readable: SpokenBooksSettings is nil until the
 -- client has restored it, so Commands.lua indexing it before then is an error rather than a
 -- default. PLAYER_ENTERING_WORLD is where the source is claimed, late on purpose -- the
 -- player addon builds its API at its own load, and waiting for the world is what the zones
@@ -39,41 +39,59 @@ function SpokenBooks:OnTextReady()
 	local pageId = self:PageOnScreen()
 	if not pageId then
 		-- Mail, or a page this corpus does not carry. Neither is worth saying anything
-		-- about: one is deliberate and the other is a gap the reader cannot act on.
+		-- about unasked: one is deliberate and the other is a gap the reader cannot act on.
+		self:Explain("not read: this page is not one Spoken knows")
 		return 0
 	end
 
 	self.lastPage = pageId
 
-	if not SpokenBooksDB or SpokenBooksDB.autoplay == false then
+	if not SpokenBooksSettings or SpokenBooksSettings.autoplay == false then
 		-- The reader turned autoplay off, so nothing starts by itself -- but the page is
 		-- remembered, which is what lets `/spb read` play the one in front of them.
+		self:Explain("not read: Read Automatically is off (press Play to hear it)")
 		return 0
 	end
 
 	-- Read once, and this character has read this one. Only autoplay is refused: `/spb read`
 	-- and the button on the frame go straight to SyncTo, because a reader who presses play
 	-- has asked for this book again in so many words.
-	if SpokenBooksDB.readOnce then
+	if SpokenBooksSettings.readOnce then
 		local book = self:PlaceOf(pageId)
 		if self:HasReadBook(book) and not self:IsNarrating(book) then
+			self:Explain("not read: Read Only Once is on and this character has heard it")
 			return 0
 		end
 	end
 
-	return self:SyncTo(pageId)
+	local queued = self:SyncTo(pageId)
+	if queued > 0 then
+		self:Explain("reading page %s (%d queued)", tostring(pageId), queued)
+	else
+		self:Explain("not read: no voice pack has page %s", tostring(pageId))
+	end
+	return queued
 end
 
---- The frame is gone. Narration is not: a reader who has heard three pages of a journal and
---- shuts it to carry on walking is still listening, and cutting the voice off mid-sentence
---- to enforce "a book is read while it is open" loses the rest of a book they asked for.
---- `/spb stop` is how you stop, and opening anything else rebuilds from there.
+--- A line in chat saying what was decided and why, while /spb debug has it on.
+function SpokenBooks:Explain(message, ...)
+	if SpokenBooksSettings and SpokenBooksSettings.debug and self.Print then
+		self:Print(message, ...)
+	end
+end
+
+--- The frame is gone. Narration is not, unless the reader asked for it with Stop When Book
+--- Closes: one who has heard three pages of a journal and shuts it to carry on walking is
+--- usually still listening. `/spb stop` stops it either way.
 ---
 --- The page is still forgotten, because it is the page *on screen* and there is no longer
 --- one. That is what keeps `/spb read` with no book open a no-op rather than a re-reading of
 --- whatever was last closed.
 function SpokenBooks:OnTextClosed()
 	self.lastPage = nil
+	if SpokenBooksSettings and SpokenBooksSettings.stopOnClose then
+		self:StopReading()
+	end
 end
 
 frame:SetScript("OnEvent", function(_, event, arg1)
@@ -100,7 +118,7 @@ frame:SetScript("OnEvent", function(_, event, arg1)
 	elseif name == "ITEM_TEXT_CLOSED" then
 		SpokenBooks:OnTextClosed()
 	elseif name == "ADDON_LOADED" then
-		-- Every addon's load fires this; only this addon's own restores SpokenBooksDB.
+		-- Every addon's load fires this; only this addon's own restores SpokenBooksSettings.
 		if payload == ADDON_NAME then
 			SpokenBooks:InitDB()
 			frame:UnregisterEvent("ADDON_LOADED")

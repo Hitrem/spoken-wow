@@ -11,8 +11,8 @@ end
 SpokenBooks.Print = function(self, message, ...) Print(message, ...) end
 
 local function Toggle(key, label)
-	SpokenBooksDB[key] = not SpokenBooksDB[key]
-	Print("%s %s", label, SpokenBooksDB[key] and "enabled" or "disabled")
+	SpokenBooksSettings[key] = not SpokenBooksSettings[key]
+	Print("%s %s", label, SpokenBooksSettings[key] and "enabled" or "disabled")
 end
 
 --- Read the page in front of the reader, or say why nothing happened.
@@ -20,8 +20,6 @@ end
 --- Deliberate, so it works with autoplay off: that is the whole point of the setting, and a
 --- command that respected it would leave no way to start narration.
 ---
---- Shared with the player's menu entry rather than inlined in the slash command, because a
---- reason only one of the two printed would make the other look broken.
 function SpokenBooks:ReadOrExplain()
 	if self:ReadCurrent() > 0 then
 		return
@@ -46,12 +44,12 @@ local function Status()
 	Print("%d books, %d pages known; %d narrated by %d pack%s", books, pages, clips,
 		#packs, #packs == 1 and "" or "s")
 	local read = 0
-	for _ in pairs(SpokenBooksCharDB and SpokenBooksCharDB.read or {}) do read = read + 1 end
+	for _ in pairs(SpokenBooksCharacter and SpokenBooksCharacter.read or {}) do read = read + 1 end
 
 	Print("autoplay %s, whole book %s, read once %s",
-		SpokenBooksDB.autoplay and "on" or "off",
-		SpokenBooksDB.readWholeBook and "on" or "off",
-		SpokenBooksDB.readOnce and "on" or "off")
+		SpokenBooksSettings.autoplay and "on" or "off",
+		SpokenBooksSettings.readWholeBook and "on" or "off",
+		SpokenBooksSettings.readOnce and "on" or "off")
 	Print("gathering %s", SpokenBooks:GatherAvailable() and (Spoken.Gather:IsEnabled() and "on" or "off") or "unavailable")
 	-- Said whether or not read-once is on, because the count is what makes `/spb forget`
 	-- make sense, and because a reader turning the setting on wants to know what it will
@@ -60,6 +58,30 @@ local function Status()
 	if #packs == 0 then
 		Print(SpokenBooks:DescribeMissingAudio())
 	end
+end
+
+--- What /spb status prints, for the settings' Show Diagnostics.
+function SpokenBooks:ShowStatus()
+	Status()
+end
+
+--- A page every installed pack has, played the way a real one is, to check it can be heard.
+function SpokenBooks:PlayTestLine()
+	for _, pack in ipairs(self:GetAudioPacks()) do
+		local pageId = next(pack.pages)
+		if pageId then
+			-- One page, queued as a real one plays: not PlayFrom, which marks the book read and
+			-- with Read Whole Book on lines up the rest of it.
+			local clip = self.source and self:ClipFor(pageId)
+			if clip and self.source:Enqueue(clip) then
+				Print("playing a test page")
+			else
+				Print("|cffffcc00the test page could not be queued|r")
+			end
+			return
+		end
+	end
+	Print(self:DescribeMissingAudio())
 end
 
 _G.SLASH_SPOKENBOOKS1 = "/spokenbooks"
@@ -99,7 +121,9 @@ SlashCmdList["SPOKENBOOKS"] = function(msg)
 		Print("stopped")
 	elseif cmd == "status" then
 		Status()
+	elseif cmd == "debug" then
+		Toggle("debug", "explaining in chat why a page was or was not read")
 	else
-		Print("/spb read | stop | autoplay | whole | once | gather | forget | settings | status")
+		Print("/spb read | stop | autoplay | whole | once | gather | forget | settings | status | debug")
 	end
 end

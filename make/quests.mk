@@ -176,10 +176,10 @@ acted: pull-recorded package-acted ## Pull the recordings and build the voice-ac
 icon: ## Rebuild the addons' icon.tga and the minimap BLP from pipelines/quests/assets/icon/*-512.png (needs ffmpeg)
 	@python3 pipelines/quests/tools/make_icon.py pipelines/quests/assets/icon/spoken-player-512.png pipelines/quests/assets/icon/spoken-player.tga
 	@python3 pipelines/quests/tools/make_icon.py pipelines/quests/assets/icon/spoken-quests-512.png pipelines/quests/assets/icon/spoken-quests.tga
-	@cp pipelines/quests/assets/icon/spoken-player.tga addons/SpokenPlayer/icon.tga
+	@cp pipelines/quests/assets/icon/spoken-player.tga addons/Spoken/icon.tga
 	@cp pipelines/quests/assets/icon/spoken-quests.tga addons/SpokenQuests/icon.tga
-	@echo "==> copied into addons/SpokenPlayer/ and addons/SpokenQuests/"
-	@python3 pipelines/quests/tools/make_minimap_icon.py pipelines/quests/assets/icon/spoken-player-512.png addons/SpokenPlayer/Textures/MinimapButton.blp
+	@echo "==> copied into addons/Spoken/ and addons/SpokenQuests/"
+	@python3 pipelines/quests/tools/make_minimap_icon.py pipelines/quests/assets/icon/spoken-player-512.png addons/Spoken/Textures/MinimapButton.blp
 
 package: ## Zip the player addon into dist/: one Blizzard zip, one per legacy client
 	@./scripts/quests/package.sh

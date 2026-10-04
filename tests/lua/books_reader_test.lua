@@ -6,7 +6,7 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local BOOKS = here .. "/../../addons/SpokenBooks/"
 local Expect, Failures = H.Expecter(print)
 
@@ -20,7 +20,7 @@ local function LoadBooks()
 end
 
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
-_G.SpokenBooksDB = nil
+_G.SpokenBooksSettings = nil
 local env = stub.LoadSpoken(SPOKEN)
 env.Addon:Enable()
 local B = LoadBooks()

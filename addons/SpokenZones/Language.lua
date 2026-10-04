@@ -23,7 +23,7 @@
 -- This file loads before Core.lua and before anything under Data/, because the
 -- generated data files ask ShouldLoadLanguage whether to build their tables at
 -- all. That question can only be answered this early because SpokenZones.toc sets
--- LoadSavedVariablesFirst -- SpokenZonesDB is already populated when these files
+-- LoadSavedVariablesFirst -- SpokenZonesSettings is already populated when these files
 -- run. Removing that .toc line does not error; it silently pins every player to
 -- English.
 
@@ -138,12 +138,12 @@ end
 -- same: a player who never chose should start reading German the day German
 -- ships, while one who explicitly picked English must keep English.
 function SpokenZones:GetLanguagePreference()
-	local pref = SpokenZonesDB and SpokenZonesDB.language
+	local pref = SpokenZonesSettings and SpokenZonesSettings.language
 	return type(pref) == "string" and byCode[pref] and pref or nil
 end
 
 function SpokenZones:IsPreviewingLanguage()
-	return (SpokenZonesDB and SpokenZonesDB.languagePreview) and true or false
+	return (SpokenZonesSettings and SpokenZonesSettings.languagePreview) and true or false
 end
 
 -- Whether a language may be selected at all. Preview mode relaxes readiness so
@@ -227,12 +227,12 @@ function SpokenZones:SetLanguage(code)
 	if code ~= nil and not self:IsLanguageSelectable(code) then
 		return false
 	end
-	SpokenZonesDB.language = code
+	SpokenZonesSettings.language = code
 	return true
 end
 
 function SpokenZones:SetLanguagePreview(enabled)
-	SpokenZonesDB.languagePreview = enabled and true or false
+	SpokenZonesSettings.languagePreview = enabled and true or false
 end
 
 --------------------------------------------------------------------------------

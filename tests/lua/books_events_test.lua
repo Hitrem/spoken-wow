@@ -5,7 +5,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local BOOKS = here .. "/../../addons/SpokenBooks/"
 local Expect, Failures = H.Expecter(print)
 
@@ -34,7 +34,7 @@ local function LoadBooks()
 end
 
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
-_G.SpokenBooksDB = nil
+_G.SpokenBooksSettings = nil
 local env = stub.LoadSpoken(SPOKEN)
 env.Addon:Enable()
 local B = LoadBooks()
@@ -82,7 +82,7 @@ stub.ClosePage()
 stub.FireEvent("ITEM_TEXT_CLOSED")
 
 ---------------------------------------------------------------- autoplay off
-SpokenBooksDB.autoplay = false
+SpokenBooksSettings.autoplay = false
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_1 })
 stub.FireEvent("ITEM_TEXT_READY")
 Expect("with autoplay off nothing speaks by itself", #QueuedPages(), 0)
@@ -91,16 +91,16 @@ Expect("...but the page is remembered, so it can be read on request", B.lastPage
 B:ReadCurrent()
 Expect("asking for it reads it anyway", #QueuedPages(), 3)
 B:StopReading()
-SpokenBooksDB.autoplay = true
+SpokenBooksSettings.autoplay = true
 
 ---------------------------------------------------------------- the slash command
 SlashCmdList["SPOKENBOOKS"]("autoplay")
-Expect("/spb autoplay toggles it", SpokenBooksDB.autoplay, false)
+Expect("/spb autoplay toggles it", SpokenBooksSettings.autoplay, false)
 SlashCmdList["SPOKENBOOKS"]("autoplay")
-Expect("...and back", SpokenBooksDB.autoplay, true)
+Expect("...and back", SpokenBooksSettings.autoplay, true)
 
 SlashCmdList["SPOKENBOOKS"]("whole")
-Expect("/spb whole toggles whole-book reading", SpokenBooksDB.readWholeBook, false)
+Expect("/spb whole toggles whole-book reading", SpokenBooksSettings.readWholeBook, false)
 SlashCmdList["SPOKENBOOKS"]("whole")
 
 stub.ClosePage()
@@ -110,15 +110,15 @@ Expect("/spb read with no book open queues nothing", #QueuedPages(), 0)
 
 ---------------------------------------------------------------- reading each book only once
 B:StopReading()
-SpokenBooksCharDB.read = {}
-SpokenBooksDB.readOnce = true
+SpokenBooksCharacter.read = {}
+SpokenBooksSettings.readOnce = true
 local REGISTRY = B:PlaceOf(261)
 
 -- Opened at page 2, so page 1 is a page of this book the queue does not cover.
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 2, text = REGISTRY_2, hasNext = true })
 stub.FireEvent("ITEM_TEXT_READY")
 Expect("a book this character has not read is read", #QueuedPages(), 2)
-Expect("...and counts as read from the moment it starts", SpokenBooksCharDB.read[REGISTRY], true)
+Expect("...and counts as read from the moment it starts", SpokenBooksCharacter.read[REGISTRY], true)
 
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_1, hasNext = true })
 stub.FireEvent("ITEM_TEXT_READY")
@@ -139,7 +139,7 @@ B:StopReading()
 Expect("forgetting the record empties it", B:ForgetRead() >= 1, true)
 stub.FireEvent("ITEM_TEXT_READY")
 Expect("...so the same book is read again", #QueuedPages(), 3)
-SpokenBooksDB.readOnce = false
+SpokenBooksSettings.readOnce = false
 
 ---------------------------------------------------------------- the button on the book frame
 B:StopReading()

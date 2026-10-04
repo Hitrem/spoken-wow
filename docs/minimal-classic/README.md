@@ -1,7 +1,7 @@
 # Minimal Classic player
 
-The compact layout SpokenPlayer draws by default on the modern clients, shipped
-in the player since 2.2.0. Contributed by
+The compact layout Spoken offers as the **Small Window** narrator style on
+the modern clients, shipped in the player since 2.2.0. Contributed by
 [shorley-gm](https://github.com/shorley-gm), written against 2.0.4 and ported
 onto 2.1.0 before it was merged.
 
@@ -9,10 +9,11 @@ The player shows a round native still portrait, gold speaker name, narration
 title and narrow cast-style progress bar. There is no permanent button row.
 The dark rock background and metal trim use WoW artwork.
 
-Nothing is installed separately: it is part of the player's zip. Turning
-**Minimal Classic player** off in `/sp options` restores the original layout.
-The 1.12, 2.4.3 and 3.3.5 clients draw the original layout and have no such
-setting.
+Nothing is installed separately: it is part of the player's zip. Choose it as
+the narrator style on Spoken's settings page, in the welcome window, or with
+`/sp player minimal`; `/sp player classic` gives the original layout (Large
+Window), `subtitle` the subtitles and `none` the voice alone. The 1.12, 2.4.3
+and 3.3.5 clients have no Small Window.
 
 In-game validation used the 2.0.4-based layout in the modern Classic beta
 client; the port onto 2.1.0 is checked with the offline suites. Other modern
@@ -30,12 +31,13 @@ flavors have not been visually verified.
 | Right-click portrait, speaker, title or panel | Playback menu and source actions, including Report/Stop Gossip |
 | Drag speaker name or panel | Move the unlocked player |
 | Hover collapsed player | Reveal the resize grip |
-| `/sp options` | Toggle **Minimal Classic player**, scale, lock and visibility settings |
+| `/sp options` | Narrator style, scale, lock and the window's other settings |
+| `/sp player minimal` | Switch to this layout (`classic`, `subtitle` or `none` for the others) |
 | `/sp reset` | Reset the active layout's position and width |
 | `/sp diagnostics` | Inspect playback, UI state and captured callback errors |
 
-The hidden-portrait, hidden-player and optional-action settings remain
-effective in this layout.
+The hidden-portrait and optional-action settings remain effective in this
+layout.
 
 An empty queue hides the player. Test a quest with available narration when
 checking it. WoW cannot resume a sound partway through: play after pause
@@ -52,9 +54,9 @@ not captures of the WoW client. Actual portrait appearance comes from the game.
 
 ## Implementation
 
-- `addons/SpokenPlayer/UI/MinimalPlayer.lua`: layout, menu, queue drawer,
+- `addons/Spoken/UI/MinimalPlayer.lua`: layout, menu, queue drawer,
   progress and fades over the existing queue/actions services.
-- `addons/SpokenPlayer/UI/StaticPortrait.lua`: native `SetPortraitTexture`
+- `addons/Spoken/UI/StaticPortrait.lua`: native `SetPortraitTexture`
   snapshots captured while the speaker's unit token still exists.
 - Small integration changes in `addon.xml`, `API.lua`, `Core.lua`,
   `Strings.lua`, `UI/Options.lua` and `UI/PlayerFrame.lua`.

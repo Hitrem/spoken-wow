@@ -121,7 +121,7 @@ end
 -- lives in the player, which is the addon that is not there. They coordinate through two
 -- globals instead: one collects the names to say, the other makes sure only one dialog is
 -- raised however many addons are waiting on it.
-local PLAYER_FOLDER = "SpokenPlayer"
+local PLAYER_FOLDER = "Spoken"
 local PLAYER_DIALOG = "SPOKEN_PLAYER_REQUIRED"
 
 --- Say that this addon needs the player. Called whether or not the player is there, since
@@ -184,7 +184,7 @@ function SpokenZones:PromptForPlayer()
 	_G.SpokenPlayerPrompted = true
 	StaticPopupDialogs[PLAYER_DIALOG] =
 	{
-		text = string.format("|cffffd200Spoken Player|r is required to use %s.", ListNames(names)),
+		text = string.format("|cffffd200Spoken|r is required to use %s.", ListNames(names)),
 		button1 = ENABLE or "Enable",
 		button2 = CANCEL or "Cancel",
 		timeout = 0,
@@ -220,6 +220,14 @@ function SpokenZones:SetupAudio()
 		-- Durations come from a generated lookup and are exact; upstream's larger gap
 		-- absorbs durations that are not.
 		interClipGap = 0.25,
+		-- What Spoken's settings show on this part's card: which voice packs are installed.
+		packs = function()
+			local names = {}
+			for _, pack in ipairs(SpokenZones:GetAudioPacks()) do
+				table.insert(names, pack.addon or SpokenZones:GetAudioPackLabel(pack))
+			end
+			return names
+		end,
 	})
 
 	-- Switchable from the player's settings, named there by this addon. The quests addon
@@ -231,6 +239,15 @@ function SpokenZones:SetupAudio()
 	Spoken:RegisterCallback("AUDIO_CHANGED", function()
 		SpokenZones:NotifyAudioChanged()
 	end)
+
+	-- Switched off or on in Spoken's settings: the map panel follows, and the lore window goes.
+	if Spoken.RegisterCallback then
+		Spoken:RegisterCallback("PART_SWITCHED", function(key, on)
+			if key ~= "zones" then return end
+			if SpokenZones.RefreshPanel then SpokenZones:RefreshPanel() end
+			if not on and SpokenZones.HideLoreWindow then SpokenZones:HideLoreWindow() end
+		end)
+	end
 
 	Spoken.Minimap:AddEntry("zones", { id = "lore", text = L.MENU_LORE_WINDOW, order = 1,
 		onClick = function() SpokenZones:ToggleLoreWindow() end })
@@ -484,8 +501,7 @@ local ACTIONS = {
 		id = "report",
 		-- An icon in the corner rather than a word beside the line. The bug icon postdates
 		-- the three legacy clients, where the texture is missing and the button
-		-- would be a blank square; `text` is what they draw instead. The addon's own
-		-- CreateReportButton still builds the labelled one the lore window uses.
+		-- would be a blank square; `text` is what they draw instead.
 		icon = [[Interface\HelpFrame\HelpIcon-Bug]],
 		label = L.OPT_REPORT_PROBLEM,
 		text = "R",
@@ -616,6 +632,13 @@ function SpokenZones:IsPlayingLore(mapID, areaKey)
 	return head.mapID == mapID and head.areaKey == areaKey
 end
 
+--- This story at the head of the queue, whether speaking or paused: what the Play button
+--- pauses and resumes rather than starting again.
+function SpokenZones:IsLoreAtHead(mapID, areaKey)
+	local head = OurHead()
+	return head ~= nil and head.mapID == mapID and head.areaKey == areaKey
+end
+
 function SpokenZones:IsPaused()
 	local head = OurHead()
 	return head ~= nil and _G.Spoken:IsPaused()
@@ -675,15 +698,6 @@ function SpokenZones:StopLore()
 	end
 end
 
--- Ends the current clip while leaving the backlog alone, so whatever is waiting
--- starts. Distinct from StopLore, which is the player asking for silence.
-function SpokenZones:SkipLore()
-	if not OurHead() then
-		return false
-	end
-	return _G.Spoken:Skip()
-end
-
 -- Pause is the player's, not this addon's: pausing lore pauses whatever is speaking.
 function SpokenZones:PauseLore()
 	return _G.Spoken and _G.Spoken:Pause() or false
@@ -691,10 +705,6 @@ end
 
 function SpokenZones:ResumeLore()
 	return _G.Spoken and _G.Spoken:Resume() or false
-end
-
-function SpokenZones:TogglePauseLore()
-	return _G.Spoken and _G.Spoken:TogglePause() or false
 end
 
 -- Plays this entry now, ahead of anything waiting. Pressing Play has always meant
@@ -727,15 +737,6 @@ function SpokenZones:PlayLore(mapID, areaKey)
 		self:Print("|cffffcc00cannot play lore: %s|r", reason)
 	end
 	return playing and true or false
-end
-
--- Play if this entry is not already playing, stop if it is. What the button does.
-function SpokenZones:ToggleLore(mapID, areaKey)
-	if self:IsPlayingLore(mapID, areaKey) then
-		self:StopLore()
-		return false
-	end
-	return self:PlayLore(mapID, areaKey)
 end
 
 --------------------------------------------------------------------------------

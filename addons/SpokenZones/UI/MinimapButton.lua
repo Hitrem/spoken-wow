@@ -1,6 +1,6 @@
 -- SpokenZones -- minimap button, via LibDataBroker + LibDBIcon.
 --
--- LibDBIcon owns two keys inside SpokenZonesDB: `hide` and `minimapPos`. They are
+-- LibDBIcon owns two keys inside SpokenZonesSettings: `hide` and `minimapPos`. They are
 -- deliberately not in Core.lua's defaults table, because the library writes them
 -- itself and a default would fight it -- except for seeding minimapPos once, so
 -- the button starts somewhere sensible instead of at angle 0.
@@ -48,7 +48,7 @@ local function OnTooltipShow(tooltip)
 	end
 
 	tooltip:AddLine(" ")
-	tooltip:AddLine("|cff66bbffLeft-click|r open the lore window", 0.7, 0.7, 0.7)
+	tooltip:AddLine(SpokenZones.L.MINIMAP_LEFT_CLICK:format(SpokenZones.L.MENU_LORE_WINDOW), 0.7, 0.7, 0.7)
 	tooltip:AddLine("|cff66bbffRight-click|r open settings", 0.7, 0.7, 0.7)
 end
 
@@ -69,11 +69,11 @@ function SpokenZones:SetupMinimapButton()
 
 	-- Seed the position once so the button does not default to angle 0, where it
 	-- can sit under other addons' buttons.
-	if SpokenZonesDB.minimapPos == nil then
-		SpokenZonesDB.minimapPos = 204
+	if SpokenZonesSettings.minimapPos == nil then
+		SpokenZonesSettings.minimapPos = 204
 	end
 	-- Mirror our own option onto the key LibDBIcon reads.
-	SpokenZonesDB.hide = not SpokenZones:Get("showMinimapButton")
+	SpokenZonesSettings.hide = not SpokenZones:Get("showMinimapButton")
 
 	dataObject = ldb:NewDataObject("SpokenZones", {
 		type = "data source",
@@ -84,7 +84,7 @@ function SpokenZones:SetupMinimapButton()
 	})
 
 	icon = dbicon
-	icon:Register("SpokenZones", dataObject, SpokenZonesDB)
+	icon:Register("SpokenZones", dataObject, SpokenZonesSettings)
 
 	SpokenZones:ApplyMinimapButton()
 end
@@ -94,7 +94,7 @@ end
 -- rather than the toggle.
 function SpokenZones:ApplyMinimapButton()
 	local enabled = SpokenZones:Get("showMinimapButton") and true or false
-	SpokenZonesDB.hide = not enabled
+	SpokenZonesSettings.hide = not enabled
 	if icon then
 		if enabled then
 			icon:Show("SpokenZones")

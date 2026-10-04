@@ -127,6 +127,10 @@ function ContributeButton:Refresh()
     if not button then
         return
     end
+    if not Addon:IsPartOn() then
+        button:Hide()
+        return
+    end
 
     if not Contribute:HasGap() then
         button:Hide()
@@ -215,7 +219,7 @@ function ContributeButton:Setup()
         end
     end
 
-    -- The hide setting lives in the Spoken Player settings, and toggling it fires no game
+    -- The hide setting lives in the Spoken settings, and toggling it fires no game
     -- event, so the button hears about it from the player instead.
     if _G.Spoken and Spoken.RegisterCallback then
         Spoken:RegisterCallback("CONTRIBUTE_SETTINGS_CHANGED", function()

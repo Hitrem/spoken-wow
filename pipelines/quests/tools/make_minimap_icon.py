@@ -1,7 +1,7 @@
 """Turn the project artwork into the BLP the minimap button wears.
 
     python3 tools/make_minimap_icon.py assets/icon/spoken-player-512.png \
-        ../../addons/SpokenPlayer/Textures/MinimapButton.blp
+        ../../addons/Spoken/Textures/MinimapButton.blp
 
 NO FRAME. LibDBIcon draws the icon 17x17 inside "Interface\\Minimap\\MiniMap-TrackingBorder",
 so the octagonal gold frame the AddOns-list mark wears would sit inside a second, rounder

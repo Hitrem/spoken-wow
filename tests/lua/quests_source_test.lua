@@ -9,7 +9,7 @@ local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
 local QUESTS = here .. "/../../addons/SpokenQuests/"
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
 local BOOK = [[Interface\AddOns\SpokenQuests\Textures\Book]]
@@ -102,7 +102,7 @@ VO.Addon.db.profile.Audio.AutoToggleDialog = true
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
 Expect("a quest line speaking mutes dialog before the logout", world.cvars.Sound_EnableDialog, "0")
-stub.FireEvent("PLAYER_LOGOUT")
+stub.Logout()
 Expect("...and logging out mid-line restores it", world.cvars.Sound_EnableDialog, "1")
 
 -- Another addon's clip on the Dialog channel, queued behind a quest line, must be heard:
@@ -233,7 +233,7 @@ VO, env, Spoken = Boot()
 local labels = {}
 for _, entry in ipairs(env.Minimap:BuildMenu()) do table.insert(labels, entry.text) end
 Expect("the quests addon adds its entries to the one button", table.concat(labels, "|"),
-    "Play/Pause|Stop|Settings|Read visible quest|Spoken Quests settings")
+    "Play/Pause|Stop|Settings|Quests Settings")
 Expect("...and registers no button of its own", stub.ldbObjects.SpokenQuests, nil)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end

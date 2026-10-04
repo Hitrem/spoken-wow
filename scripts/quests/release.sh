@@ -138,7 +138,7 @@ esac; }
 # loader. The cost is that every player re-downloads the pack, which the next release makes them
 # do regardless.
 target_zip_name() { case "$1" in
-  spoken)         echo "SpokenPlayer";;
+  spoken)         echo "Spoken";;
   player)         echo "SpokenQuests";;
   audio-all)      echo "SpokenQuestsAudio";;
   spoken-all)     echo "SpokenAll";;
@@ -156,7 +156,7 @@ esac; }
 # stale zip that happens to still be in dist/.
 target_toc() { case "$1" in
   player) echo "$REPO/addons/SpokenQuests/SpokenQuests.toc";;
-  spoken) echo "$REPO/addons/SpokenPlayer/SpokenPlayer.toc";;
+  spoken) echo "$REPO/addons/Spoken/Spoken.toc";;
   *)      local name; name="$(target_zip_name "$1")"; echo "$DIST/$name/$name.toc";;
 esac; }
 target_version() {

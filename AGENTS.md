@@ -7,9 +7,10 @@ Repo-wide conventions. Each project also has its own, and they still apply:
 
 Four things share one tree, and they are not equally finished:
 
-1. `addons/` — the shipped Lua. `SpokenPlayer` is the player; `SpokenQuests`,
-   `SpokenZones` and `SpokenBooks` are feature addons that queue clips through
-   it; `SpokenZonesAudio` and `SpokenBooksAudio` are sound packs.
+1. `addons/` — the shipped Lua. `Spoken` plays every line; `SpokenQuests`,
+   `SpokenBooks` and `SpokenZones` are its modules, which queue clips through
+   it and ship inside its one download; `SpokenZonesAudio` and `SpokenBooksAudio`
+   are sound packs.
 2. `apps/` — `web` is the site: one domain, `spoken.rusty.one`, with a quests
    section, a zones section and a books section. It is the merge of two sites
    that came before it; their names are redirect vhosts now.

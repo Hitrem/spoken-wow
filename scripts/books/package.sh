@@ -7,10 +7,6 @@
 # The version comes from `## Version:` in the .toc, so bumping the addon and naming the zip
 # stay one edit rather than two.
 #
-# No tombstone folder, unlike the quests and zones packages: this addon has never shipped
-# under another name, so there is no old SavedVariables file to keep loading and no old
-# code to overwrite.
-#
 # The sound pack is packaged by make/books.mk instead. Its zip is stored rather than
 # deflated and is built out of addons/ directly, because half a gigabyte of mp3 through a
 # staging copy is a minute of disk traffic that buys nothing.
@@ -52,7 +48,7 @@ fi
 # UI/Layout.lua is byte-identical across all four Spoken addons and the packaged copy has to
 # stay that way; pipelines/quests/tests/test_package.py enforces it on the tree, and this
 # catches a staging copy that somehow diverged from it.
-for other in SpokenPlayer SpokenQuests SpokenZones; do
+for other in Spoken SpokenQuests SpokenZones; do
   peer="$REPO/addons/$other/UI/Layout.lua"
   [ -f "$peer" ] || continue
   cmp -s "$SRC/UI/Layout.lua" "$peer" || {

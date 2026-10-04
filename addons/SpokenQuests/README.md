@@ -37,22 +37,17 @@ Modern Classic clients also use `C_GossipInfo`. The original compatibility code 
 
 ## Install
 
-Place these two folders directly under the game's `Interface/AddOns` directory:
+Spoken Quests comes in Spoken's download, beside Spoken and its other modules: install Spoken. The voices are a separate download: keep **AI VoiceOverData Vanilla**, or a Spoken Quests Audio pack, installed beside it.
 
-```text
-VoiceOverRedux
-AI_VoiceOverData_Vanilla
-```
+If the old **AI VoiceOver** player (`AI_VoiceOver`) is installed, Spoken Quests stops it and disables it for the next login. Do not disable or rename **AI VoiceOverData Vanilla**.
 
-Disable the old **AI VoiceOver** player (`AI_VoiceOver`). Do not disable or rename **AI VoiceOverData Vanilla**. The new player preserves the existing `VoiceOverDB` settings.
-
-At the character screen, enable **VoiceOver Redux**. Log in and run:
+Log in and run:
 
 ```text
 /spq diagnostics
 ```
 
-The expected final line is `1 detected, 1 loaded`. If the old player was enabled at the same time, reload once after the new addon disables it.
+The expected final line is `1 detected, 1 loaded`. If the old player was enabled at the same time, reload once.
 
 If the module loads but quests remain silent, run `/spq test`. This plays a short known Vanilla sound through the configured channel. While a quest is visible, use the standalone `/spqread` command; it does not depend on AceConsole's `/spq` parser. Then run `/spq diagnostics`; the `Last runtime stage` line distinguishes a missing quest ID, hidden handler error, absent Data entry, paused queue, disabled channel, rejected file, and successful playback. Any optional API registration failures are printed as `Bridge warning` lines.
 

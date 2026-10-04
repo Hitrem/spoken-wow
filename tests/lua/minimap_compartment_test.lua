@@ -7,12 +7,12 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
 local function Clean()
     stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
-    _G.SpokenPlayerDB = nil
+    _G.SpokenSettings = nil
     _G.AddonCompartmentFrame = nil
     stub.dbIcons = {}
 end

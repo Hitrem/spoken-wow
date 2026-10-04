@@ -1,6 +1,6 @@
 <!-- GENERATED from publishers/books/spoken-books.md by scripts/descriptions.mjs. Do not edit by hand. -->
 
-**Every book in the world, read aloud.** One of the Spoken addons, narrating through the [Spoken Player](https://www.curseforge.com/wow/addons/spoken-player) it shares with Spoken Quests and Spoken Zones — your addon manager installs it alongside.
+**Every book in the world, read aloud.** One of [Spoken](https://www.curseforge.com/wow/addons/spoken-player)'s modules: it comes in Spoken's download, beside Spoken Quests and Spoken Zones, and narrates through it.
 
 Open a book and it starts reading. Turn the page and it follows you. Close it and it reads on — shut the book, get back on the road, and hear the rest of it. `/spb stop` when you have heard enough. Letters and notes in your bags work the same way, and so do the plaques and gravestones out in the world.
 
@@ -29,9 +29,9 @@ Without the pack it loads, stays quiet, and `/spb status` tells you what is miss
 
 ## When there is no voice
 
-The corpus is built from a 1.12 world database, so it has nothing for a book written after vanilla, for languages that database does not carry, or for custom text a server added itself. Open one of those and the Play button reads **Contribute** instead: press it and it hands you a link carrying the page's own text, copied straight off your screen. Copy it, open it in your browser, and press Send — the same page sent by several readers is what moves a book up the queue. Your mail is never sent this way; the addon still checks for a sender or an open mailbox first. Rather not see the button? **Hide the Contribute buttons** in the Spoken Player settings turns it off.
+The corpus is built from a 1.12 world database, so it has nothing for a book written after vanilla, for languages that database does not carry, or for custom text a server added itself. Open one of those and the Play button reads **Contribute** instead: press it and it hands you a link carrying the page's own text, copied straight off your screen. Copy it, open it in your browser, and press Send — the same page sent by several readers is what moves a book up the queue. Your mail is never sent this way; the addon still checks for a sender or an open mailbox first. Rather not see the button? **Hide the Contribute buttons** in the Spoken settings turns it off.
 
-The first time you press Contribute, you can also choose to **gather as you play**: every page Spoken has no voice for is kept quietly, and you send them all at once by uploading `SavedVariables/SpokenContributions.lua` at spoken.rusty.one/contribute. `/spoken share` shows the steps again, and **Gather missing lines automatically** in the Spoken Player settings turns it off.
+The first time you press Contribute, you can also choose to **gather as you play**: every page Spoken has no voice for is kept quietly, and you send them all at once by uploading `SavedVariables/SpokenContributions.lua` at spoken.rusty.one/contribute. `/spoken share` shows the steps again, and **Gather missing lines automatically** in the Spoken settings turns it off.
 
 ## Settings
 

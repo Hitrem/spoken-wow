@@ -1,28 +1,25 @@
 ## Interface: 11509, 20506, 16001
 ## Title: Spoken Zones
-## Notes: Zone and subzone lore on the world map, read aloud through the Spoken player. Formerly ZoneLore.
-## Notes-deDE: Zonen- und Gebietslore auf der Weltkarte, vorgelesen durch den Spoken-Player. Ehemals ZoneLore.
-## Notes-esES: Historia de zonas y subzonas en el mapa del mundo, leída en voz alta a través del reproductor Spoken. Anteriormente ZoneLore.
-## Notes-esMX: Historia de zonas y subzonas en el mapa del mundo, leída en voz alta a través del reproductor Spoken. Anteriormente ZoneLore.
-## Notes-frFR: Histoire des zones et sous-zones sur la carte du monde, lue à voix haute grâce au lecteur Spoken. Anciennement ZoneLore.
-## Notes-ptBR: História de zonas e subzonas no mapa do mundo, lida em voz alta através do reprodutor Spoken. Anteriormente ZoneLore.
-## Notes-ruRU: История зон и подзон на карте мира, озвученная через проигрыватель Spoken. Ранее — ZoneLore.
-## Notes-koKR: Spoken 플레이어로 월드맵의 지역과 하위 지역 전승을 소리내어 읽습니다. 이전 이름은 ZoneLore.
-## Notes-zhCN: 在世界地图上通过 Spoken 播放器朗读区域和次级区域传说。前身为 ZoneLore。
-## Notes-zhTW: 在世界地圖上透過 Spoken 播放器朗讀區域和次級區域傳說。前身為 ZoneLore。
+## Notes: Zone and subzone lore on the world map, read aloud through Spoken.
+## Notes-deDE: Zonen- und Gebietslore auf der Weltkarte, vorgelesen durch Spoken.
+## Notes-esES: Historia de zonas y subzonas en el mapa del mundo, leída en voz alta a través de Spoken.
+## Notes-esMX: Historia de zonas y subzonas en el mapa del mundo, leída en voz alta a través de Spoken.
+## Notes-frFR: Histoire des zones et sous-zones sur la carte du monde, lue à voix haute grâce à Spoken.
+## Notes-ptBR: História de zonas e subzonas no mapa do mundo, lida em voz alta através do Spoken.
+## Notes-ruRU: История зон и подзон на карте мира, озвученная через Spoken.
+## Notes-koKR: Spoken으로 월드맵의 지역과 하위 지역 전승을 소리내어 읽습니다.
+## Notes-zhCN: 在世界地图上通过 Spoken 朗读区域和次级区域传说。
+## Notes-zhTW: 在世界地圖上透過 Spoken 朗讀區域和次級區域傳說。
 ## Version: 2.2.1
 ## Author: rusty
-## SavedVariables: SpokenZonesDB
-## SavedVariablesPerCharacter: SpokenZonesCharDB
-# ZoneLoreDB, ZoneLoreCharDB and ZoneLoreQueueDB -- the addon's variables under its old
-# name -- are declared by the ZoneLore tombstone folder, which is what keeps that file
-# loading. Migration.lua copies them once; the Spoken player reads ZoneLoreQueueDB itself.
+## SavedVariables: SpokenZonesSettings
+## SavedVariablesPerCharacter: SpokenZonesCharacter
 ## LoadSavedVariablesFirst: true
 # ^ load-bearing beyond convenience: the generated data files under Data/ ask
 # Language.lua which language to build a table for, and it can only answer that
-# early because ZoneLoreDB is already populated. Without this line every player
+# early because SpokenZonesSettings is already populated. Without this line every player
 # silently reads English.
-## OptionalDeps: SpokenPlayer, ZoneLore, SpokenZonesAudio, ZoneLoreAudio, ZoneLoreAudio64
+## OptionalDeps: Spoken, SpokenZonesAudio, ZoneLoreAudio, ZoneLoreAudio64
 # Spoken is the player this addon speaks through. Optional here so a hand-installed
 # copy without it loads and says what is missing rather than failing to load at
 # all; addon managers install it from the CurseForge dependency. The packs are not
@@ -33,13 +30,12 @@
 # what a player installed before the rename, and ZoneLoreAudio64 the retired smaller
 # tier. A name here that nobody has installed costs nothing.
 ## IconTexture: Interface\AddOns\SpokenZones\Textures\AddonIcon.tga
+## Group: Spoken
 ## X-License: Addon code MIT. Zone lore text from warcraft.wiki.gg, CC BY-SA 4.0.
 ## X-Credits: Lore text sourced from warcraft.wiki.gg contributors (CC BY-SA 4.0).
 
 embeds.xml
 
-# Migration.lua before everything: it hands the saved language choice to Language.lua.
-Migration.lua
 # Data/Languages.lua first: it is what Language.lua reads to decide which
 # language is being read, and everything after that guards itself on the answer.
 Data/Languages.lua
@@ -92,7 +88,7 @@ UI/TextView.lua
 UI/CopyLink.lua
 UI/AudioButton.lua
 UI/ReportButton.lua
-UI/Skin.lua
+UI/LorePage.lua
 UI/MapPanel.lua
 UI/SubzoneClick.lua
 UI/HoverPreview.lua

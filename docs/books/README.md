@@ -147,8 +147,8 @@ you turn pages; turning to a queued page changes nothing, and turning elsewhere 
 from there. The source has no queue limit, unlike zones: a cap trims the oldest waiting
 clip, which on a four-page book keeps the first page and the last and discards the middle.
 
-**Two saved-variable tables, on purpose.** `SpokenBooksDB` is account-wide and holds the
-three switches — autoplay, whole-book, read-once. `SpokenBooksCharDB` is per character and
+**Two saved-variable tables, on purpose.** `SpokenBooksSettings` is account-wide and holds the
+three switches — autoplay, whole-book, read-once. `SpokenBooksCharacter` is per character and
 holds only what that character has been read, keyed by book id. Settings are how you like
 the addon to behave; having read something is a thing a character did, so an alt walking
 into the same library hears it fresh.
@@ -220,7 +220,7 @@ before it goes — the same page, submitted again by the same or another reader,
 on one row at `/contributions` rather than filing a second.
 
 `UI/Layout.lua` is the fourth copy of a file that must stay byte-identical across
-SpokenPlayer, SpokenQuests, SpokenZones and SpokenBooks;
+Spoken, SpokenQuests, SpokenZones and SpokenBooks;
 `pipelines/quests/tests/test_package.py` is what enforces that.
 
 ### Installing it in a client

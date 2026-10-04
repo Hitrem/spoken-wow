@@ -7,7 +7,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local SPOKEN = here .. "/../../addons/SpokenPlayer/"
+local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
 stub.SetClient("11509")
@@ -126,12 +126,21 @@ Expect("Link refuses when Encode would", C:Link("https://x", nil), nil)
 -- (tried first; a naive LCG's low bits, and even a Checksum-driven sequence, both turned out
 -- patterned enough to compress to a few percent of their size), which would never reach the
 -- cap this is supposed to test.
-local urandom = assert(io.open("/dev/urandom", "rb"))
-local bytes = urandom:read(50000)
-urandom:close()
+-- /dev/urandom where the system has one; on Windows, which has none, LuaJIT's own generator, a
+-- Tausworthe whose output deflate cannot shrink the way it shrinks an LCG's.
 local noise = {}
-for i = 1, #bytes do
-    noise[i] = string.char(33 + (bytes:byte(i) % 90))
+local urandom = io.open("/dev/urandom", "rb")
+if urandom then
+    local bytes = urandom:read(50000)
+    urandom:close()
+    for i = 1, #bytes do
+        noise[i] = string.char(33 + (bytes:byte(i) % 90))
+    end
+else
+    math.randomseed(os.time())
+    for i = 1, 50000 do
+        noise[i] = string.char(33 + math.random(0, 89))
+    end
 end
 local huge = C:Envelope("books", { { "page", "1" } }, table.concat(noise))
 Expect("Link refuses a result over its cap", C:Link("https://x", huge), nil)

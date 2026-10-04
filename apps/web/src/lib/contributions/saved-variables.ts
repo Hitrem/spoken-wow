@@ -1,7 +1,7 @@
 /**
  * The envelopes inside the saved variables file the addon gathers into.
  *
- * The addon's background gathering (addons/SpokenPlayer/Gather.lua) keeps every envelope it
+ * The addon's background gathering (addons/Spoken/Gather.lua) keeps every envelope it
  * would have offered a Contribute link for, and the game writes them into
  * WTF/Account/<account>/SavedVariables/SpokenContributions.lua as Lua string literals. The player
  * uploads that file as it is, so this reads it as it is: every string literal in it, decoded,

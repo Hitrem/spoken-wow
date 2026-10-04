@@ -234,7 +234,7 @@ quests-icon` regenerates both from the PNGs, `tools/make_icon.py` is what it run
 file's header explains why ffmpeg's own targa encoder is not used (it writes RLE, and the
 client wants uncompressed).
 
-The minimap button is the same mark again, as `addons/SpokenPlayer/Textures/MinimapButton.blp`
+The minimap button is the same mark again, as `addons/Spoken/Textures/MinimapButton.blp`
 — BLP because a texture a frame loads is BLP on every client this ships to, where the AddOns
 list takes either. `tools/make_minimap_icon.py` (also run by `make quests-icon`) crops the
 shield's frame off the 512 px render before scaling, since LibDBIcon draws the icon 17 pixels
@@ -1008,15 +1008,15 @@ Use `SpokenQuests/` on a current client. Upstream `AI_VoiceOver/` calls
 10.2 and removed in 11.0.2, so on Classic Era 1.15.9 it errors while enumerating and the
 sound pack never registers. Install one player, never two — two copies fight over the same
 `VoiceOverDB` and the same sound queue. `SUPERSEDED_PLAYERS` at the top of `VoiceOver.lua`
-pairs every name this lineage has run under with the folder it installs into — upstream's
-`AI_VoiceOver`, this project's own `AI_VoiceOver_Continued` and `VoiceOverRedux`, since a
-rename uninstalls nothing — and each one found is stopped by AceAddon name for the session
-and disabled by folder for the next login.
+pairs upstream's players with the folders they install into — `AI_VoiceOver` and
+`AI_VoiceOver_Continued` — and each one found is stopped by AceAddon name for the session and
+disabled by folder for the next login. This project's own old folder, `VoiceOverRedux`, is
+Spoken's to find (`OLD_FOLDERS` in `addons/Spoken/Core.lua`), which asks the player to delete
+it.
 
 **A player counts as a duplicate when it has registered, not when its folder is present.**
-The folder proves nothing: the tombstone this release ships under `VoiceOverRedux` holds one
-`.toc` and no code, and it arrives inside this addon's own zip, so a fresh install opened
-with a dialog about
+The folder proves nothing: earlier releases shipped an empty `VoiceOverRedux` placeholder
+inside this addon's own zip, and a fresh install opened with a dialog about
 an addon nobody had installed — and, behind it, the client's own *blocked from an action only
 available to the Blizzard UI* dialog, because enabling and disabling addons is reserved for
 Blizzard's UI on current clients and `DisableAddOn` had been called on a folder with nothing
