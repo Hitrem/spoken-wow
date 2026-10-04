@@ -253,7 +253,16 @@ function Subtitle:Build()
     self.pausedAlpha = 0
     self:BuildPicture()
 
-    self:BuildProgress()
+    -- Guarded as a whole: a progress bar that fails to build leaves the subtitle without one, and
+    -- says why in chat once, rather than leaving the subtitle half built and erroring every frame.
+    local built, why = pcall(self.BuildProgress, self)
+    if not built then
+        print("|cff66bbffSpoken:|r progress bar: " .. tostring(why))
+        self.track = CreateFrame("Frame", nil, frame)
+        self.fill = self.track:CreateTexture(nil, "ARTWORK")
+        self.spark = self.track:CreateTexture(nil, "OVERLAY")
+        self.fillRoom, self.progressHeight, self.progressBroken = 0, 0, true
+    end
 
     -- What waits behind the line, at the row's end: a grey dot and "+2" (Subtitle:CountWaiting).
     self.moreDot = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -507,7 +516,7 @@ function Subtitle:Layout(text)
     end
     local wordsBottom = TOP_PAD + titleHeight + TITLE_GAP + #self.rows * (lineHeight + LINE_GAP) - LINE_GAP
     -- The progress line under the words, where the setting has it.
-    self.progressShown = Config().SubtitleProgress ~= false
+    self.progressShown = Config().SubtitleProgress ~= false and not self.progressBroken
     for _, part in ipairs({ self.track, self.fill, self.spark }) do part:SetShown(self.progressShown) end
     if self.progressShown then wordsBottom = wordsBottom + PROGRESS_GAP + self.progressHeight end
     self.rowsWidest, self.rowsHeight = widest, wordsBottom + BOTTOM_PAD
@@ -706,7 +715,8 @@ function Subtitle:Update()
     end
     local clip = speaking and Transcript.clip or self.sample
     -- The progress line turned on or off in the settings: the page laid out again with or without it.
-    if self.page and self.pages and self.pages[self.page] and (Config().SubtitleProgress ~= false) ~= self.progressShown then
+    if self.page and self.pages and self.pages[self.page]
+        and (Config().SubtitleProgress ~= false and not self.progressBroken) ~= self.progressShown then
         self:Layout(self.pages[self.page].text)
         self.revealed = nil
     end
