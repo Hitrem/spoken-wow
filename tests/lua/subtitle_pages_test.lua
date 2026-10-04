@@ -1,6 +1,6 @@
--- The subtitle shows at most four lines at once: a longer line is split into pages of up to
--- four, at sentence ends where a sentence fits, and between words where one does not. Run with
--- `make test-player`.
+-- The subtitle shows at most Lines at Once lines (3 unless set, 1 to 4): a longer line is split
+-- into pages of up to that many, at sentence ends where a sentence fits, at its phrases where it
+-- does not, and between words only for a phrase too long on its own. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
@@ -50,6 +50,22 @@ most = 0
 for _, page in ipairs(pages) do most = math.max(most, #Subtitle:Wrap(page)) end
 Expect("a sentence longer than a page is cut between words", #pages > 1 and most <= 4, true)
 Expect("...losing none of them", Words(table.concat(pages, " ")), Words(endless))
+
+-- One line at a time: a sentence too long for it breaks at its phrases, never mid-phrase.
+local cfg = _G.SpokenEnv.Addon.db.profile.Transcript
+cfg.SubtitleLines = 1
+local phrased = "When the war ended, the orcs were placed in camps, guarded by the Alliance, and the land was quiet for a time."
+pages = Subtitle:Paginate(phrased)
+local atPhrases = #pages > 1
+for index = 1, #pages - 1 do
+    if not pages[index]:find(",$") then atPhrases = false end
+end
+Expect("one line at a time, a long sentence turns its pages at its commas", atPhrases, true)
+Expect("...every page one line", (function()
+    for _, page in ipairs(pages) do if #Subtitle:Wrap(page) > 1 then return false end end
+    return true end)(), true)
+Expect("...losing no words", Words(table.concat(pages, " ")), Words(phrased))
+cfg.SubtitleLines = 3
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll subtitle page tests passed")

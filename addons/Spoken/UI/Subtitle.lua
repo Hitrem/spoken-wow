@@ -114,6 +114,44 @@ local function Sentences(text)
     return sentences
 end
 
+-- Where a sentence pauses inside itself: after a comma, a semicolon, a colon or a dash, in Latin
+-- script or in Chinese and Japanese punctuation. A closing quote or bracket, and the space after,
+-- stay with the phrase they end.
+local PHRASE_ENDS = { [","] = true, [";"] = true, [":"] = true, ["\226\128\148"] = true, ["\226\128\147"] = true,
+    ["\239\188\140"] = true, ["\227\128\129"] = true, ["\239\188\155"] = true, ["\239\188\154"] = true }
+local PHRASE_CLOSERS = { ['"'] = true, ["'"] = true, [")"] = true, ["]"] = true, ["\226\128\157"] = true,
+    ["\226\128\153"] = true, ["\227\128\141"] = true, ["\227\128\143"] = true, ["\239\188\137"] = true }
+local function Phrases(sentence)
+    local chars = {}
+    for char in sentence:gmatch(UTF8_CHAR) do chars[#chars + 1] = char end
+    local phrases, current, i = {}, "", 1
+    while i <= #chars do
+        local char = chars[i]
+        current = current .. char
+        -- "--", as the lore writes a dash in plain text.
+        local dash = char == "-" and chars[i + 1] == "-"
+        if dash then
+            i = i + 1
+            current = current .. chars[i]
+        end
+        if PHRASE_ENDS[char] or dash then
+            while chars[i + 1] and PHRASE_CLOSERS[chars[i + 1]] do
+                i = i + 1
+                current = current .. chars[i]
+            end
+            while chars[i + 1] and chars[i + 1]:find("^%s$") do
+                i = i + 1
+                current = current .. chars[i]
+            end
+            phrases[#phrases + 1] = current
+            current = ""
+        end
+        i = i + 1
+    end
+    if current:find("%S") then phrases[#phrases + 1] = current end
+    return phrases
+end
+
 function Subtitle:Width(text)
     self.measure:SetText(text)
     return self.measure:GetStringWidth()
@@ -147,8 +185,9 @@ function Subtitle:Wrap(text)
     return lines
 end
 
---- Pages of at most PageLines() lines each: as many whole sentences as fit on a page, and a
---- sentence too long for one page cut between words into runs that do. Joined, the pages give
+--- Pages of at most PageLines() lines each: as many whole sentences as fit on a page; a sentence
+--- too long for one page at its phrases (Phrases), as many whole phrases to a page as fit; and only
+--- a phrase too long for a page on its own cut between words into runs that do. Joined, the pages give
 --- back the text's words in order, which is what page timing and the active word count on.
 function Subtitle:Paginate(text)
     local most = PageLines()
@@ -156,12 +195,10 @@ function Subtitle:Paginate(text)
     if #self:Wrap(text) <= most then return { text } end
     local function Fits(candidate) return #self:Wrap(candidate) <= most end
     local pieces = {}
-    for _, sentence in ipairs(Sentences(text)) do
-        if Fits(sentence) then
-            pieces[#pieces + 1] = sentence
-        else
+    -- A piece too long for a page on its own, cut between words.
+    local function Cut(piece)
             local run = ""
-            for word, space in sentence:gmatch("(%S+)(%s*)") do
+            for word, space in piece:gmatch("(%S+)(%s*)") do
                 if run ~= "" and not Fits(run .. word) then
                     pieces[#pieces + 1] = run
                     run = ""
@@ -182,6 +219,14 @@ function Subtitle:Paginate(text)
                 end
             end
             if run:find("%S") then pieces[#pieces + 1] = run end
+    end
+    for _, sentence in ipairs(Sentences(text)) do
+        if Fits(sentence) then
+            pieces[#pieces + 1] = sentence
+        else
+            for _, phrase in ipairs(Phrases(sentence)) do
+                if Fits(phrase) then pieces[#pieces + 1] = phrase else Cut(phrase) end
+            end
         end
     end
     local pages, page = {}, ""
