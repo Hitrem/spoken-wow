@@ -44,6 +44,14 @@ dofile(addons .. 'Spoken/Sources.lua')
 dofile(addons .. 'Spoken/Strings.lua')
 dofile(addons .. 'Spoken/UI/Layout.lua')
 dofile(addons .. 'Spoken/UI/Transcript.lua')
+-- The status bar art the subtitle's progress bar is framed with, as a modern client describes it.
+C_Texture=C_Texture or {}
+C_Texture.GetAtlasInfo=C_Texture.GetAtlasInfo or function(name)
+    local sizes={['widgetstatusbar-borderleft']={35,31},['widgetstatusbar-borderright']={35,31},
+        ['widgetstatusbar-bordercenter']={64,31},['widgetstatusbar-bgcenter']={64,18},['widgetstatusbar-fill-yellow']={256,15}}
+    local s=sizes[name]
+    return s and {width=s[1],height=s[2],file=0,leftTexCoord=0,rightTexCoord=1,topTexCoord=0,bottomTexCoord=1} or nil
+end
 dofile(addons .. 'Spoken/UI/Subtitle.lua')
 E.SoundUtils={WhyInaudible=function() end,IsMutedByPlayer=function() return false end,
     MuteChannel=function() end,TestSound=function() return true end,

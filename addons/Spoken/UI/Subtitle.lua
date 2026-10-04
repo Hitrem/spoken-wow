@@ -285,7 +285,42 @@ function Subtitle:BuildProgress()
         AtlasInfo("widgetstatusbar-bordercenter")
     local yellow = AtlasInfo("widgetstatusbar-fill-yellow")
     self.fillRoom = 0
-    if left and right and middle and yellow and fill.SetAtlas then
+    -- The game's frame where it can be built; anything failing on the way falls back to the plain
+    -- line, said once, rather than stopping the subtitle being built at all.
+    local framed = left and right and middle and yellow and fill.SetAtlas
+        and tonumber(middle.height) and tonumber(left.width) and tonumber(right.width) and true or false
+    if framed then
+        local ok, err = pcall(self.FrameProgress, self, track, fill, left, right, middle, yellow)
+        if not ok then
+            framed = false
+            if geterrorhandler then geterrorhandler()(err) end
+        end
+    end
+    if not framed then
+        self.fillRoom = 0
+        local back = track:CreateTexture(nil, "BACKGROUND")
+        back:SetAllPoints()
+        if back.SetColorTexture then back:SetColorTexture(0, 0, 0, 0.5) end
+        track:SetHeight(1.5)
+        fill:SetTexture(PROGRESS_LINE)
+        fill:SetHeight(1.5)
+        self.progressHeight = 2
+    end
+    fill:SetPoint("LEFT", track, "LEFT", self.fillRoom, 0)
+    -- Hung from the background's foot and sized from its width, so the bar follows the background
+    -- as it eases to a new page's size instead of jumping there ahead of it (ShowProgress).
+    track:SetPoint("BOTTOM", self.shadow, "BOTTOM", 0, BOTTOM_PAD)
+    local spark = track:CreateTexture(nil, "OVERLAY", nil, 1)
+    spark:SetTexture(SPARK)
+    if spark.SetBlendMode then spark:SetBlendMode("ADD") end
+    spark:SetSize(14, 14)
+    spark:SetPoint("CENTER", fill, "RIGHT")
+    self.track, self.fill, self.spark = track, fill, spark
+end
+
+--- The game's status bar frame round the progress bar (Subtitle:BuildProgress).
+function Subtitle:FrameProgress(track, fill, left, right, middle, yellow)
+    do
         -- As the cards' meter lays the art out: the fill 8 inside the border's ends and 2 short of
         -- the background's, the border's own 31 rows scaled to PROGRESS_HEIGHT.
         local k = PROGRESS_HEIGHT / (middle.height > 0 and middle.height or 31)
@@ -311,27 +346,9 @@ function Subtitle:BuildProgress()
         back:SetPoint("TOPLEFT", track, "TOPLEFT", self.fillRoom - 2 * k, -2 * k)
         back:SetPoint("BOTTOMRIGHT", track, "BOTTOMRIGHT", -(self.fillRoom - 2 * k), 2 * k)
         fill:SetAtlas("widgetstatusbar-fill-yellow")
-        fill:SetHeight(math.min(yellow.height or 15, (middle.height or 31) - 4) * k)
+        fill:SetHeight(math.min(tonumber(yellow.height) or 15, middle.height - 4) * k)
         self.progressHeight = PROGRESS_HEIGHT
-    else
-        local back = track:CreateTexture(nil, "BACKGROUND")
-        back:SetAllPoints()
-        if back.SetColorTexture then back:SetColorTexture(0, 0, 0, 0.5) end
-        track:SetHeight(1.5)
-        fill:SetTexture(PROGRESS_LINE)
-        fill:SetHeight(1.5)
-        self.progressHeight = 2
     end
-    fill:SetPoint("LEFT", track, "LEFT", self.fillRoom, 0)
-    -- Hung from the background's foot and sized from its width, so the bar follows the background
-    -- as it eases to a new page's size instead of jumping there ahead of it (ShowProgress).
-    track:SetPoint("BOTTOM", self.shadow, "BOTTOM", 0, BOTTOM_PAD)
-    local spark = track:CreateTexture(nil, "OVERLAY", nil, 1)
-    spark:SetTexture(SPARK)
-    if spark.SetBlendMode then spark:SetBlendMode("ADD") end
-    spark:SetSize(14, 14)
-    spark:SetPoint("CENTER", fill, "RIGHT")
-    self.track, self.fill, self.spark = track, fill, spark
 end
 
 --- The picture before the name, built as the Small Window builds its portrait (MinimalPlayer:
