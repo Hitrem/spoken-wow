@@ -28,12 +28,13 @@ local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 local PAGE_OUT, PAGE_IN = .18, .28
 local PAUSED_FADE = .25
 local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
--- The progress line under the words, laid out as Spoken Subtitles lays its own -- PROGRESS_GAP under
--- the last line, PROGRESS_SHARE of the background's width, the cast bar's spark at the fill's end --
+-- The progress line under the words, laid out as Spoken Subtitles lays its own -- PROGRESS_SHARE of the
+-- background's width, the cast bar's spark at the fill's end -- as far under the last line as the
+-- words are under the name (Subtitle:Layout) --
 -- and framed in the track of the game's settings slider (MinimalSliderWithSteppersTemplate): its
 -- rounded ends and its middle, scaled to PROGRESS_HEIGHT, with the status bar's yellow fill inside.
 -- Without that art, Spoken Subtitles' own hairline and gold fill.
-local PROGRESS_GAP, PROGRESS_SHARE, PROGRESS_HEIGHT = 9, 0.45, 5
+local PROGRESS_SHARE, PROGRESS_HEIGHT = 0.45, 5
 local PROGRESS_LINE = [[Interface\AddOns\Spoken\Textures\SubtitleLine]]
 local SPARK = [[Interface\CastingBar\UI-CastingBar-Spark]]
 -- Called from the global environment, not SpokenEnv: the client builds part of its answer from
@@ -520,7 +521,11 @@ function Subtitle:Layout(text)
     -- The progress line under the words, where the setting has it.
     self.progressShown = Config().SubtitleProgress ~= false and not self.progressBroken
     for _, part in ipairs({ self.track, self.fill, self.spark }) do part:SetShown(self.progressShown) end
-    if self.progressShown then wordsBottom = wordsBottom + PROGRESS_GAP + self.progressHeight end
+    -- As far under the words as the words are under the name: the name sits in the middle of the
+    -- picture's height, so its gap is the row's spare half and TITLE_GAP.
+    local gap = TITLE_GAP + math.floor((titleHeight - (self.title:GetStringHeight() or 0)) / 2)
+    self.progressGap = gap
+    if self.progressShown then wordsBottom = wordsBottom + gap + self.progressHeight end
     self.rowsWidest, self.rowsHeight = widest, wordsBottom + BOTTOM_PAD
     self:Fit()
     -- Where each word ends, for typing by word (WholeWords): found once, not every frame.

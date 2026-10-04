@@ -467,6 +467,12 @@ Check(not S.progressBroken and S.progressHeight==5 and S.fill.atlas=='widgetstat
 Check(S.track:IsShown() and S.fill:GetWidth()>0.01 and S.fill:GetWidth()<S.track:GetWidth(),'the progress line fills as the line is read')
 Check(math.abs(S.track:GetWidth()-math.floor(S.shadowWant.w*.45))<1,'...across 45% of the background, as Spoken Subtitles draws it')
 do
+    -- The words as far under the name as the bar is under the words.
+    local nameToWords=S:RowHeight()-S.title:GetStringHeight()
+    nameToWords=math.floor(nameToWords/2)+8
+    Check(S.progressGap==nameToWords,'the bar sits as far under the words as the words sit under the name')
+end
+do
     local point,relativeTo,relativePoint=S.controls:GetPoint(1)
     Check(point=='TOP' and relativeTo==S.shadow and relativePoint=='BOTTOM','the buttons sit in a row under the background, easing with it')
     local tall=S.frame:GetHeight()
