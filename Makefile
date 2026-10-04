@@ -72,6 +72,7 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/player_frame_test.lua
 	@$(LUA) tests/captions/verify.lua
 	@$(LUA) tests/lua/zones_source_test.lua
+	@$(LUA) tests/lua/zones_flight_test.lua
 	@$(LUA) tests/lua/zones_pending_test.lua
 	@$(LUA) tests/lua/quests_source_test.lua
 	@$(LUA) tests/lua/data_modules_test.lua

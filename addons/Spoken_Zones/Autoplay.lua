@@ -182,6 +182,11 @@ end
 -- Returns whether the entry was queued, which the login greeting needs: a greeting that
 -- resolved nothing must not count as having greeted.
 local function Enqueue(mapID, areaKey)
+	-- Skip flyover lore so it cannot queue up for landing.
+	if (UnitOnTaxi and UnitOnTaxi("player")) or (IsFlying and IsFlying()) then
+		return false
+	end
+
 	-- A subzone of a continent is not a thing, so the guard applies to the zone-level
 	-- entries only -- but those are the ones that carry the continent lore.
 	if not areaKey and not IsAutoplayableMap(mapID) then
