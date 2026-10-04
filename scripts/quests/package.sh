@@ -40,6 +40,10 @@ NAME="${NAME:-SpokenQuests}"
 SRC="$REPO/$ADDON"
 PLAYER_SRC="$REPO/addons/Spoken"
 PLAYER="Spoken"
+# The SpokenPlayer tombstone, which the legacy zips carry beside the player they bundle.
+TOMBSTONE="SpokenPlayer"
+# shellcheck source=../lib/tombstone.sh
+source "$REPO/scripts/lib/tombstone.sh"
 TOC="$SRC/$NAME.toc"
 DIST="${DIST:-$REPO/dist}"
 
@@ -165,10 +169,13 @@ for pair in "${CLIENTS[@]}"; do
   # packaging tests assert the zip's copy is byte-identical to that tree.
   stage_tree "$staging/$client" "$PLAYER_SRC" "$PLAYER"
   prune_for_client "$staging/$client/$PLAYER" "$PLAYER" "$PLAYER_SRC" "$variant"
+  # And the SpokenPlayer tombstone over the one .toc this client reads from the old player.
+  mkdir -p "$staging/$client/$TOMBSTONE"
+  tombstone_toc "$PLAYER_SRC/${PLAYER}_$variant.toc" "$staging/$client/$TOMBSTONE/$TOMBSTONE.toc"
 
   zip_path="$DIST/$NAME-WoW_$client-$version.zip"
   rm -f "$zip_path"
-  (cd "$staging/$client" && zip -r -q -X "$zip_path" "$NAME" "$PLAYER" \
+  (cd "$staging/$client" && zip -r -q -X "$zip_path" "$NAME" "$PLAYER" "$TOMBSTONE" \
     -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig')
 
   files="$(unzip -Z1 "$zip_path" | grep -cv '/$')"

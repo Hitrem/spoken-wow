@@ -23,6 +23,8 @@ ADDON_DIR = os.path.join(REPO, "addons", "SpokenQuests")
 PLAYER_DIR = os.path.join(REPO, "addons", "Spoken")
 NAME = "SpokenQuests"
 PLAYER = "Spoken"
+#: The folder Spoken had before 3.0.0, which every zip carrying Spoken overwrites with a tombstone.
+TOMBSTONE = "SpokenPlayer"
 
 #: client label -> the Interface version its .toc must declare.
 LEGACY_CLIENTS = {"1.12": "11200", "2.4.3": "20400", "3.3.5": "30300"}
@@ -155,10 +157,29 @@ def test_the_blizzard_zip_carries_every_flavor_and_no_legacy_client(built):
 
 def test_every_zip_unpacks_into_the_addons_folder(built):
     # Addon hosts unpack the archive straight into Interface/AddOns, so every root must be a
-    # folder the client reads: the addon, or Spoken, which the legacy zips bundle.
+    # folder the client reads: the addon, or Spoken and the tombstone, which the legacy zips bundle.
     for name, (names, _) in built.items():
         roots = {entry.split("/", 1)[0] for entry in names}
-        assert roots <= {NAME, PLAYER}, (name, roots)
+        assert roots <= {NAME, PLAYER, TOMBSTONE}, (name, roots)
+
+
+def assert_tombstone(files, expected):
+    """The SpokenPlayer folder holds exactly `expected` {.toc name: Interface line}, each one
+    the tombstone: no file listed, never loaded."""
+    tombstone = {n: files[n].decode() for n in files if n.startswith(f"{TOMBSTONE}/")}
+    assert sorted(tombstone) == sorted(f"{TOMBSTONE}/{toc}" for toc in expected), tombstone
+    for toc, interface in expected.items():
+        text = tombstone[f"{TOMBSTONE}/{toc}"]
+        assert text.startswith(f"## Interface: {interface}\n"), (toc, text)
+        assert "## LoadOnDemand: 1" in text
+        assert not [line for line in text.splitlines() if line.strip() and not line.startswith("#")], text
+
+
+@pytest.mark.parametrize("client,interface", sorted(LEGACY_CLIENTS.items()))
+def test_a_legacy_zip_overwrites_the_old_player_with_a_tombstone(built, client, interface):
+    # Before 3.0.0 these zips carried SpokenPlayer; unzipping over it must leave nothing to load.
+    _, files = legacy(built, client)
+    assert_tombstone(files, {f"{TOMBSTONE}.toc": interface})
 
 
 def test_spoken_ships_with_its_modules_for_blizzard_clients(player_built):
@@ -173,10 +194,17 @@ def test_spoken_ships_with_its_modules_for_blizzard_clients(player_built):
     # Spoken, the folder whose only job is to name the gathered-lines file
     # (addons/SpokenContributions/SpokenContributions.toc): one .toc, no Lua, and the three
     # modules: one download with everything in it.
-    assert {entry.split("/", 1)[0] for entry in names} == {PLAYER, "SpokenContributions", "SpokenQuests",
-                                                          "SpokenBooks", "SpokenZones"}
+    assert {entry.split("/", 1)[0] for entry in names} == {PLAYER, "SpokenContributions", TOMBSTONE,
+                                                          "SpokenQuests", "SpokenBooks", "SpokenZones"}
     assert [name for name in names if name.startswith("SpokenContributions/") and not name.endswith("/")] \
         == ["SpokenContributions/SpokenContributions.toc"]
+    # Every .toc name the old player's folder had on these clients, so an unzip over it leaves
+    # the old Lua with nothing to load it.
+    interfaces = {}
+    for suffix in ("", "_Mainline", "_TBC", "_Vanilla", "_Wrath"):
+        with open(os.path.join(PLAYER_DIR, f"{PLAYER}{suffix}.toc"), encoding="utf-8") as handle:
+            interfaces[f"{TOMBSTONE}{suffix}.toc"] = handle.readline().split(":", 1)[1].strip()
+    assert_tombstone(files, interfaces)
 
 
 def test_the_shared_layout_is_the_same_file_in_every_addon():

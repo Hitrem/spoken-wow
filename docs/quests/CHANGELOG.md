@@ -6,6 +6,10 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 3.0.0-beta.2 — player — 2026-10-04
+
+- Ships inside Spoken 3.0.0-beta.2. No changes of its own.
+
 ## 3.0.0-beta.1 — player — 2026-10-04
 
 - Ships inside Spoken 3.0.0-beta.1 as one of its modules, no longer as a download of its own.

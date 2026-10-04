@@ -2,6 +2,13 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## 3.0.0-beta.2 — 2026-10-04
+
+- **Unzipping over an older Spoken Player works.** The download now carries a `SpokenPlayer`
+  folder that never loads. Unzipping it over the old one leaves the old player nothing to load,
+  so it no longer runs beside Spoken: no more "attempt to index local 'object'" error from
+  LibDBIcon and no more popup asking you to delete the folder. The folder is safe to delete.
+
 ## 3.0.0-beta.1 — 2026-10-04
 
 A beta. **Spoken Player is now Spoken**, and it comes with its modules: one download holds
