@@ -141,6 +141,7 @@ L = {
     LINK_GITHUB_TIP = "The source code, and where problems with the addon are reported.",
     LINK_DISCORD_TIP = "Talk with other players and the people who make Spoken.",
     LINK_CURSEFORGE_TIP = "Spoken's page, with every release and the voice packs.",
+    LINK_WAGO_TIP = "Spoken's page on Wago, with every release.",
     SUBTITLE_PAUSED = "paused",
     OPT_RESET_TIP = "Moves the window and the subtitles back to where they start. Use this when one is off the screen or in the way.",
     OPT_PARTS_TITLE = "Modules",

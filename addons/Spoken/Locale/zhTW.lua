@@ -216,6 +216,7 @@ L.OPT_LINKS_TIP = "點擊選取網址，按 Ctrl+C 複製，然後貼到瀏覽�
 L.LINK_GITHUB_TIP = "原始碼，以及回報插件問題的地方。"
 L.LINK_DISCORD_TIP = "與其他玩家和 Spoken 的製作者交流。"
 L.LINK_CURSEFORGE_TIP = "Spoken 的頁面，包含每個版本和語音包。"
+L.LINK_WAGO_TIP = "Spoken 在 Wago 上的頁面，包含每個版本。"
 L.SUBTITLE_PAUSED = "已暫停"
 L.OPT_RESET_TIP = "將視窗和字幕移回初始位置。其中一個超出螢幕或擋住畫面時使用。"
 L.OPT_PARTS_TITLE = "模組"

@@ -148,6 +148,7 @@ L.OPT_LINKS_TIP = "Cliquez pour sélectionner l'adresse, copiez-la avec Ctrl+C, 
 L.LINK_GITHUB_TIP = "Le code source, et l'endroit où signaler les problèmes de l'addon."
 L.LINK_DISCORD_TIP = "Discutez avec d'autres joueurs et avec ceux qui font Spoken."
 L.LINK_CURSEFORGE_TIP = "La page de Spoken, avec chaque version et les packs de voix."
+L.LINK_WAGO_TIP = "La page de Spoken sur Wago, avec chaque version."
 L.SUBTITLE_PAUSED = "en pause"
 
 -- Modules
