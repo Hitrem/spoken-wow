@@ -33,7 +33,7 @@ local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
 -- and framed as the game frames a status bar (UIWidgetTemplateStatusBar, the module cards' meter):
 -- its border's ends and middle, its dark middle and its yellow fill, scaled to PROGRESS_HEIGHT.
 -- Without that art, Spoken Subtitles' own hairline and gold fill.
-local PROGRESS_GAP, PROGRESS_SHARE, PROGRESS_HEIGHT = 9, 0.45, 10
+local PROGRESS_GAP, PROGRESS_SHARE, PROGRESS_HEIGHT = 9, 0.45, 7
 local PROGRESS_LINE = [[Interface\AddOns\Spoken\Textures\SubtitleLine]]
 local SPARK = [[Interface\CastingBar\UI-CastingBar-Spark]]
 -- Called from the global environment, not SpokenEnv: the client builds part of its answer from
@@ -329,7 +329,9 @@ function Subtitle:BuildProgress()
     local spark = track:CreateTexture(nil, "OVERLAY", nil, 1)
     spark:SetTexture(SPARK)
     if spark.SetBlendMode then spark:SetBlendMode("ADD") end
-    spark:SetSize(14, 14)
+    -- Taller than the bar, so its glow reaches a little past the frame above and below, as it
+    -- did past the plain hairline.
+    spark:SetSize(12, framed and self.progressHeight + 9 or 14)
     spark:SetPoint("CENTER", fill, "RIGHT")
     self.track, self.fill, self.spark = track, fill, spark
 end
