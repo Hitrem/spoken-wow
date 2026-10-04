@@ -12,7 +12,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **The old `SpokenQuests`, `SpokenZones` and `SpokenBooks` folders become harmless.** The last
   update of each old download leaves a folder that never loads, listed greyed out as
   "Spoken Quests (now in Spoken)" and the like. It is safe to delete. A full old copy still in
-  Interface\AddOns would play every line a second time, so Spoken asks you to delete it at login.
+  Interface\AddOns would play every line a second time, so at login Spoken switches it off and
+  offers **Reload Now**. Delete the folder when you can.
 - **The modules' settings start fresh once more.** The game names a module's settings file
   after its folder, so the new folders begin without one: Quests' settings and profiles, Zones'
   and Books' settings, and the record of greetings heard and zones narrated. Spoken's own
