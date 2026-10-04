@@ -47,6 +47,9 @@ dofile(addons .. 'Spoken/UI/Transcript.lua')
 -- The status bar art the subtitle's progress bar is framed with, as a modern client describes it.
 C_Texture=C_Texture or {}
 C_Texture.GetAtlasInfo=C_Texture.GetAtlasInfo or function(name)
+    -- As the client does: it finds Vector2DMixin in the caller's environment, so a call from
+    -- Spoken's private one fails.
+    if getfenv(2)~=_G then error('unable to find mixin or metatable (Vector2DMixin)') end
     local sizes={['widgetstatusbar-borderleft']={35,31},['widgetstatusbar-borderright']={35,31},
         ['widgetstatusbar-bordercenter']={64,31},['widgetstatusbar-bgcenter']={64,18},['widgetstatusbar-fill-yellow']={256,15}}
     local s=sizes[name]
@@ -460,6 +463,7 @@ Check(math.abs(S.frame:GetCenter()-UIParent:GetWidth()/2)<.001,'the subtitle is 
 Play(1)
 Check(S.frame:GetAlpha()==1,'the fade-in completes')
 -- Spoken Subtitles' progress line under the words, and the buttons in a row under the subtitle.
+Check(not S.progressBroken and S.progressHeight==10 and S.fill.atlas=='widgetstatusbar-fill-yellow','the progress bar is built in the game's status bar frame')
 Check(S.track:IsShown() and S.fill:GetWidth()>0.01 and S.fill:GetWidth()<S.track:GetWidth(),'the progress line fills as the line is read')
 Check(math.abs(S.track:GetWidth()-math.floor(S.shadowWant.w*.45))<1,'...across 45% of the background, as Spoken Subtitles draws it')
 do

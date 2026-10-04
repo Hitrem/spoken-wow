@@ -36,9 +36,13 @@ local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
 local PROGRESS_GAP, PROGRESS_SHARE, PROGRESS_HEIGHT = 9, 0.45, 10
 local PROGRESS_LINE = [[Interface\AddOns\Spoken\Textures\SubtitleLine]]
 local SPARK = [[Interface\CastingBar\UI-CastingBar-Spark]]
-local function AtlasInfo(name)
+-- Called from the global environment, not SpokenEnv: the client builds part of its answer from
+-- Vector2DMixin, which it looks up in the caller's environment without SpokenEnv's fallback to
+-- _G, and from here it failed with "unable to find mixin or metatable (Vector2DMixin)". Layout.lua,
+-- which runs in the global environment, calls it without trouble.
+local AtlasInfo = setfenv(function(name)
     return C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(name) or nil
-end
+end, _G)
 local SIZE_EASE = 10
 -- The controls shown on hover: the windows' round pause button, skip, and Report.
 local CONTROL_SIZE, CONTROL_GAP = 24, 4
