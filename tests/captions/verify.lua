@@ -465,6 +465,7 @@ for _,row in ipairs(S.rows) do Check(S:Width(row.text)<=480,'every subtitle line
 Q:PauseQueue(); Play(2)
 Check(Typed()==partial,'pausing holds the typing where the voice stopped')
 Check(S.pausedLabel:GetAlpha()==1 and S.label:GetAlpha()==0,"paused, (paused) takes the title's place after the name")
+Check(S.rowLeft==S.rowWant and S.rowWant==-S:RowWidth(true)/2,'...and the row slides to its new middle')
 Q:ResumeQueue()
 Check(Typed():gsub('%s','')=='' and S.frame:GetAlpha()==1,'resuming types again from the start without fading again')
 Play(.5)
@@ -615,4 +616,14 @@ Check(snap.text=='Text from NPC','captured NPC text is preserved')
 GetQuestLogQuestText=function() error('client API unavailable') end
 local unavailable={event=V.Enums.SoundEvent.QuestAccept,questID=33,fileName='accept'}
 Check(pcall(V.Player.Prepare,V.Player,unavailable),'missing log APIs do not break playback')
+-- A zone's own story names the zone once: centred on the picture and the name, with no dot, and
+-- "(paused)" straight after the name.
+do
+    local zone={key='z',path='z',length=5,text='A zone.',present={header='Durotar',label='Durotar'}}
+    S:Prepare(zone,'A zone.'); S.shownPaused=false; S:Layout('A zone.')
+    local plain=S:RowWidth(false)
+    Check(not S.dot:IsShown() and S.label:GetText()=='' and plain==36+8+S.title:GetStringWidth()
+        and S.rowWant==-plain/2,"a zone's story names it once, centred, with no dot")
+    Check(select(2,S.pausedLabel:GetPoint(1))==S.title,'...and (paused) follows its name')
+end
 print(string.format('PASS: %d checks using the real queue, both player layouts, captions, commands and quest adapter.',assertions))

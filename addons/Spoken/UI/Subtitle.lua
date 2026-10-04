@@ -314,26 +314,27 @@ function Subtitle:RowHeight()
     return math.max(PICTURE, self.title:GetStringHeight() or 0)
 end
 
---- The title row's width, picture to label, with room after the name and its dot for the wider of
---- the label and "(paused)", so the row stays put as one fades into the other. The label is cut to
---- keep the row within the subtitle's widest.
-function Subtitle:RowWidth()
+--- The title row's width as it shows `paused` or not: the picture and the name, then, where the line
+--- belongs to something, a dot and its title -- "(paused)" in the title's place while paused --
+--- and where it does not, "(paused)" alone after the name. Centred on that, the row is centred on
+--- what can be seen. The title is cut to keep the row within the subtitle's widest.
+function Subtitle:RowWidth(paused)
     local start = PICTURE + PICTURE_GAP + (self.title:GetStringWidth() or 0)
-        + LABEL_GAP + (self.dot:GetStringWidth() or 0)
-    local paused = self.pausedLabel:GetStringWidth() or 0
-    local label = 0
     if self.labelText then
+        local lead = LABEL_GAP + (self.dot:GetStringWidth() or 0) + LABEL_GAP
         self.label:SetWidth(0)
-        label = math.min(self.label:GetStringWidth() or 0, math.max(0, WIDTH - PAD * 2 - start - LABEL_GAP))
+        local label = math.min(self.label:GetStringWidth() or 0, math.max(0, WIDTH - PAD * 2 - start - lead))
         self.label:SetWidth(math.max(1, label))
+        return start + lead + (paused and (self.pausedLabel:GetStringWidth() or 0) or label)
     end
-    return start + LABEL_GAP + math.max(label, paused)
+    return start + (paused and LABEL_GAP + (self.pausedLabel:GetStringWidth() or 0) or 0)
 end
 
---- The row laid out across the frame's middle, `width` wide: the picture, the name level with its
---- middle, the dot, and the label and "(paused)" in one place after it.
-function Subtitle:PlaceRow(width)
-    local left = -math.floor(width / 2)
+--- The row laid out from `left`, an offset from the frame's middle: the picture, the name level with
+--- its middle, the dot and the title after it, and "(paused)" in the title's place, or after the
+--- name where there is no title.
+function Subtitle:PlaceRow(left)
+    left = math.floor(left + .5)
     local textY = -TOP_PAD - math.floor((self:RowHeight() - (self.title:GetStringHeight() or 0)) / 2)
     self.picture:ClearAllPoints()
     self.picture:SetPoint("TOPLEFT", self.frame, "TOP", left, -TOP_PAD)
@@ -344,7 +345,7 @@ function Subtitle:PlaceRow(width)
     self.label:ClearAllPoints()
     self.label:SetPoint("LEFT", self.dot, "RIGHT", LABEL_GAP, 0)
     self.pausedLabel:ClearAllPoints()
-    self.pausedLabel:SetPoint("LEFT", self.dot, "RIGHT", LABEL_GAP, 0)
+    self.pausedLabel:SetPoint("LEFT", self.labelText and self.dot or self.title, "RIGHT", LABEL_GAP, 0)
 end
 
 -- The centre and the top edge, not a corner: the frame is as wide as its longest line, so
@@ -393,7 +394,7 @@ end
 function Subtitle:Layout(text)
     self.measure:SetText("Ag")
     local lineHeight = self.measure:GetStringHeight()
-    local titleHeight, widest = self:RowHeight(), self:RowWidth()
+    local titleHeight, widest = self:RowHeight(), self:RowWidth(self.shownPaused)
     self.rows = {}
     for index, wrapped in ipairs(self:Wrap(text)) do
         local width = self:Width(wrapped)
@@ -428,9 +429,13 @@ end
 --- The frame and its shadow sized to the rows and the title row, which goes across the middle.
 function Subtitle:Fit()
     if not self.rowsWidest then return end
-    local row = self:RowWidth()
+    local row = self:RowWidth(self.shownPaused)
     local widest = math.max(self.rowsWidest, row)
-    self:PlaceRow(row)
+    -- Centred on what it shows. Pausing changes that, and the row slides to its new middle (Animate);
+    -- a new line starts in place.
+    self.rowWant = -row / 2
+    if not self.rowLeft then self.rowLeft = self.rowWant end
+    self:PlaceRow(self.rowLeft)
     local height = self.rowsHeight
     self.frame:SetSize(widest + PAD * 2, math.max(48, height))
     -- The shadow's soft edge is 30 of its 64 rows top and bottom, so it reaches well past the
@@ -486,10 +491,11 @@ function Subtitle:Prepare(clip, text)
     -- A zone's own story names the zone twice; said once.
     if label == "" or label == title then label = nil end
     self.titleText, self.labelText, self.shownPaused = title, label, nil
+    self.rowLeft = nil
     self.title:SetText(title)
     self.label:SetText(label or "")
-    -- With nothing after the name, the dot only comes with "(paused)".
-    self.dot:SetAlpha(label and 1 or self.pausedAlpha)
+    -- The dot parts the name from what the line belongs to; with nothing after the name, no dot.
+    self.dot:SetShown(label ~= nil)
     self:ConfigurePicture(clip)
     -- A clip with no usable length still pages and types, at LoreTeller's reading pace.
     local duration = tonumber(clip.length)
@@ -806,7 +812,12 @@ function Subtitle:Animate(elapsed)
             or math.max(0, self.pausedAlpha - step)
         self.pausedLabel:SetAlpha(self.pausedAlpha)
         self.label:SetAlpha(1 - self.pausedAlpha)
-        if not self.labelText then self.dot:SetAlpha(self.pausedAlpha) end
+    end
+    if self.rowWant and self.rowLeft and self.rowLeft ~= self.rowWant then
+        local k = math.min(1, elapsed * SIZE_EASE)
+        self.rowLeft = self.rowLeft + (self.rowWant - self.rowLeft) * k
+        if math.abs(self.rowLeft - self.rowWant) < .5 then self.rowLeft = self.rowWant end
+        self:PlaceRow(self.rowLeft)
     end
     for _, line in ipairs(self.lines) do line:SetAlpha(alpha) end
 
