@@ -24,9 +24,14 @@ function SpokenBooks:ReadOrExplain()
 	if self:ReadCurrent() > 0 then
 		return
 	end
-	Print(self:HasAudio(self.lastPage or -1)
-		and "nothing to read -- open a book first"
-		or self:DescribeMissingAudio())
+	local pageId = self:PageOnScreen() or self.lastPage
+	if not pageId then
+		Print("nothing to read -- open a book first")
+	elseif not self:HasAudio(pageId) then
+		Print(self:DescribeMissingAudio())
+	else
+		Print("already reading this page")
+	end
 end
 
 local function Status()
@@ -101,7 +106,7 @@ SlashCmdList["SPOKENBOOKS"] = function(msg)
 			Spoken.Gather:SetEnabled(not Spoken.Gather:IsEnabled())
 			Print("gathering %s", Spoken.Gather:IsEnabled() and "enabled" or "disabled")
 		else
-			Print("gathering is unavailable -- no Spoken player offers background gathering")
+			Print("gathering is unavailable -- this version of Spoken has no background gathering")
 		end
 	elseif cmd == "forget" then
 		local count = SpokenBooks:ForgetRead()
@@ -112,7 +117,7 @@ SlashCmdList["SPOKENBOOKS"] = function(msg)
 		if SpokenBooks.OpenOptions then
 			SpokenBooks:OpenOptions()
 		else
-			Print("no settings panel on this client -- every switch is on this list")
+			Print("no settings panel on this client -- type /spb for the commands")
 		end
 	elseif cmd == "read" or cmd == "play" then
 		SpokenBooks:ReadOrExplain()
