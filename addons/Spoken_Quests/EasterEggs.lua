@@ -6,7 +6,8 @@ setfenv(1, VoiceOver)
 -- somebody whose installed packs do not even hold the line.
 EasterEggs =
 {
-    ADDON_NAME = "SpokenQuests",
+    -- The folder, not a name: it builds the path the recording is played from.
+    ADDON_NAME = AddonFolder,
 
     ---@type table<string, { path: string, length: number, option: string }>
     alternates =

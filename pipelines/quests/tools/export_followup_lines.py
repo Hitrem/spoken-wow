@@ -1,6 +1,6 @@
 """The lines an NPC says in chat right after a quest is accepted or turned in.
 
-Writes addons/SpokenQuests/FollowupLines.lua, which the addon reads to recognise those lines
+Writes addons/Spoken_Quests/FollowupLines.lua, which the addon reads to recognise those lines
 as they arrive in /say or /yell and voice them.
 
 Which lines they are, and who says them, is tts_cli/followup.py: the corpus reads the same
@@ -19,7 +19,7 @@ from tts_cli.followup import collect  # noqa: E402
 from tts_cli.sql_queries import make_connection  # noqa: E402
 
 DEFAULT_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           "..", "..", "..", "addons", "SpokenQuests", "FollowupLines.lua")
+                           "..", "..", "..", "addons", "Spoken_Quests", "FollowupLines.lua")
 
 
 def lua_string(text):

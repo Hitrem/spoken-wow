@@ -72,6 +72,10 @@ target_curseforge() { case "$1" in zones) echo "1636521";; audio) pack_field cur
 # that size (scripts/lib/wago.sh). The page keeps its `wago:` id for the description pasted
 # there, which sends players to the GitHub release.
 target_wago()       { case "$1" in zones) echo "mNw7b5No";; esac; }
+# zones is the spoken-zones project, retiring: the module ships inside Spoken's zip, from the
+# Spoken_Zones folder, and this project's last file is the tombstone that
+# scripts/spoken/package-retired.sh builds under the old folder's name (make
+# package-spoken-retired), its version read off the template, addons/SpokenZones/SpokenZones.toc.
 target_addon()      { case "$1" in zones) echo "SpokenZones";; audio) pack_field folder;; esac; }
 target_zip()        { target_addon "$1"; }
 # The project's slug, which is neither the folder nor the zip name: the folders keep the names
@@ -238,7 +242,7 @@ for target in "${targets[@]}"; do
     version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" 2>/dev/null | head -1 | tr -d '\r')"
   fi
   if [[ -z "$version" ]]; then
-    missing+=("$target -- not built (no version); run make zones-package / make zones-package-audio")
+    missing+=("$target -- not built (no version); run make package-spoken-retired for the addon, make zones-package-audio for the pack")
     continue
   fi
   zip_path="$DIST/$(target_zip "$target")-$version.zip"

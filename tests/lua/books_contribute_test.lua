@@ -6,14 +6,14 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local SPOKEN = here .. "/../../addons/Spoken/"
-local BOOKS = here .. "/../../addons/SpokenBooks/"
+local BOOKS = here .. "/../../addons/Spoken_Books/"
 local Expect, Failures = H.Expecter(print)
 
 local function LoadBooks()
     local SpokenBooks = {}
     for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader", "Audio", "Contribute" }) do
         local chunk = assert(loadfile(BOOKS .. file .. ".lua"))
-        chunk("SpokenBooks", SpokenBooks)
+        chunk("Spoken_Books", SpokenBooks)
     end
     return SpokenBooks
 end

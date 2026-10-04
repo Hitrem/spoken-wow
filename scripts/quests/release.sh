@@ -137,6 +137,11 @@ esac; }
 # folder the client reports at play time, and the zones packs read their own name out of the
 # loader. The cost is that every player re-downloads the pack, which the next release makes them
 # do regardless.
+#
+# player is the spoken-quests project, retiring: the module ships inside Spoken's zip, from the
+# Spoken_Quests folder, and this project's last file is the tombstone that
+# scripts/spoken/package-retired.sh builds under the old folder's name (make
+# package-spoken-retired), its version read off the template, addons/SpokenQuests/SpokenQuests.toc.
 target_zip_name() { case "$1" in
   spoken)         echo "Spoken";;
   player)         echo "SpokenQuests";;

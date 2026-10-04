@@ -3,7 +3,7 @@
 -- Narration ships in a separate sound-pack addon because it is a large download, and it is
 -- optional: without one there is nothing to play, so the addon stays quiet and says why.
 --
--- THERE IS NO STAND-IN CLIP, for the reason addons/SpokenZones/Audio.lua gives at length:
+-- THERE IS NO STAND-IN CLIP, for the reason addons/Spoken_Zones/Audio.lua gives at length:
 -- substituting unrelated audio is worse than silence, because silence is honest about what
 -- is missing and a borrowed clip is not.
 

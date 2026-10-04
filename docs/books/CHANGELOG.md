@@ -3,6 +3,11 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
+## 3.0.0-beta.3 — 2026-10-04
+
+- Ships inside Spoken 3.0.0-beta.3, in a folder renamed to `Spoken_Books`. Settings start fresh
+  again: the game names the settings file after the folder. See Spoken's changelog.
+
 ## 3.0.0-beta.2 — 2026-10-04
 
 - Ships inside Spoken 3.0.0-beta.2. No changes of its own.

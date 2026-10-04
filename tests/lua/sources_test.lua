@@ -23,7 +23,7 @@ Expect("Iterate follows `order`", table.concat(order, ","), "quests,zones")
 
 ---------------------------------------------------------------- admit
 local vetoed = nil
-local books = env.Sources:Register("books", { title = "Books", addon = "SpokenBooks", order = 3,
+local books = env.Sources:Register("books", { title = "Books", addon = "Spoken_Books", order = 3,
     admit = function(clip, queue) if vetoed then return false, vetoed end return true end })
 vetoed = "no page open"
 local bc = H.Clip()

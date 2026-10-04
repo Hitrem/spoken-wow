@@ -5,7 +5,7 @@
  *
  * THE TWO MUST AGREE EXACTLY -- naming.py's own docstring says a filename off by one
  * character addresses a file the addon can never find, and fails silently. The same drift
- * hazard AGENTS.md documents for addons/SpokenBooks/Checksum.lua: two independent
+ * hazard AGENTS.md documents for addons/Spoken_Books/Checksum.lua: two independent
  * implementations of one frozen format, pinned together by tests on both sides rather than
  * shared code, because one is Python and the other TypeScript.
  *

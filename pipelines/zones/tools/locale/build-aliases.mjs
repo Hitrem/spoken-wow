@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Writes addon/SpokenZones/Data/<locale>/Aliases.lua for every non-English locale.
+// Writes addons/Spoken_Zones/Data/<locale>/Aliases.lua for every non-English locale.
 //
 //   node tools/locale/build-aliases.mjs               # pinned build
 //   node tools/locale/build-aliases.mjs --build 1.15.9.69109
@@ -138,7 +138,7 @@ async function main() {
       }
     }
 
-    const dir = join(ROOT, "addons/SpokenZones/Data", locale.code);
+    const dir = join(ROOT, "addons/Spoken_Zones/Data", locale.code);
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, "Aliases.lua"), emitAliases(locale.code, aliases, build));
 

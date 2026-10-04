@@ -15,9 +15,9 @@ folder. The voice packs are separate downloads.
 | Folder | Addon | Voices | Voice packs |
 |---|---|---|---|
 | `Spoken` | **Spoken** | nothing itself: it plays every module's lines | — |
-| `SpokenQuests` | **Spoken Quests** | quest dialogue and NPC gossip | [All](https://www.curseforge.com/wow/addons/spoken-quests-audio-all), or [Alliance](https://www.curseforge.com/wow/addons/spoken-quests-audio-alliance) · [Horde](https://www.curseforge.com/wow/addons/spoken-quests-audio-horde) · [Shared](https://www.curseforge.com/wow/addons/spoken-quests-audio-shared) · [Gossip](https://www.curseforge.com/wow/addons/spoken-quests-audio-gossip) — or all in one from [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) |
-| `SpokenBooks` | **Spoken Books** | books, letters and other in-world texts | [CurseForge](https://www.curseforge.com/wow/addons/spoken-books-audio) · [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=books-audio) |
-| `SpokenZones` | **Spoken Zones** | zone and subzone lore | [CurseForge](https://www.curseforge.com/wow/addons/spoken-zones-audio) · [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=zones-audio) |
+| `Spoken_Quests` | **Spoken Quests** | quest dialogue and NPC gossip | [All](https://www.curseforge.com/wow/addons/spoken-quests-audio-all), or [Alliance](https://www.curseforge.com/wow/addons/spoken-quests-audio-alliance) · [Horde](https://www.curseforge.com/wow/addons/spoken-quests-audio-horde) · [Shared](https://www.curseforge.com/wow/addons/spoken-quests-audio-shared) · [Gossip](https://www.curseforge.com/wow/addons/spoken-quests-audio-gossip) — or all in one from [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=quests-audio) |
+| `Spoken_Books` | **Spoken Books** | books, letters and other in-world texts | [CurseForge](https://www.curseforge.com/wow/addons/spoken-books-audio) · [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=books-audio) |
+| `Spoken_Zones` | **Spoken Zones** | zone and subzone lore | [CurseForge](https://www.curseforge.com/wow/addons/spoken-zones-audio) · [GitHub](https://github.com/rusty-key/spoken-wow/releases?q=zones-audio) |
 
 `make package-spoken` builds the download, `Spoken-<version>.zip`, with every module built by
 its own packager. A module's voice pack holds its lines; the module does nothing without one,
@@ -38,9 +38,13 @@ modules do not run there.
 in. The move to one download: `spoken-player` becomes Spoken and ships the zip above, so
 everyone who has it gets the modules with their next update; `spoken-quests`, `spoken-zones`,
 `spoken-books` and `spoken` retire, and their last release stops shipping the module folders;
-the voice packs name Spoken as their dependency. Folders an older release left behind
-(`SpokenPlayer`, `VoiceOverRedux`, `ZoneLore`) are found at login, and the player is asked to
-delete them.
+the voice packs name Spoken as their dependency. The modules' folders were `SpokenQuests`,
+`SpokenZones` and `SpokenBooks` until 3.0.0-beta.3; those names belong to the retiring projects,
+so the modules moved to `Spoken_Quests`, `Spoken_Zones` and `Spoken_Books`, and each retiring
+project's last release (`make package-spoken-retired`) replaces its old folder with a tombstone
+that never loads. Folders an older release left behind (`SpokenPlayer`, `VoiceOverRedux`,
+`ZoneLore`, and a full old copy of a module under its old name) are found at login, and the
+player is asked to delete them.
 
 ## What players see
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Makes addons/SpokenBooks and addons/SpokenBooksAudio visible to a WoW client.
+# Makes addons/Spoken_Books and addons/SpokenBooksAudio visible to a WoW client.
 #
 #   ./scripts/deploy.sh          # symlink (edits are live, just /reload in-game)
 #   ./scripts/deploy.sh --copy   # rsync a real copy instead
@@ -34,7 +34,7 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WOW="/Applications/World of Warcraft"
-NAMES=(SpokenBooks SpokenBooksAudio)
+NAMES=(Spoken_Books SpokenBooksAudio)
 
 # Client key -> the flavour directory Blizzard installs it under.
 CLIENTS=(era anniversary forever)

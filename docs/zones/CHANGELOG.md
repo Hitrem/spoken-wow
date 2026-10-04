@@ -9,6 +9,11 @@ is the pack's, and `scripts/zones/release.sh` matches on the kind as well as the
 section with no kind in its heading is the addon's. A language's pack numbers itself too, from
 2.0.0 in step with the English pack (Spanish (AL) shipped first, as 1.0.0), and its sections are headed by its release tag: `## <version> — zones-audio-esMX`.
 
+## 3.0.0-beta.3 — 2026-10-04
+
+- Ships inside Spoken 3.0.0-beta.3, in a folder renamed to `Spoken_Zones`. Settings start fresh
+  again: the game names the settings file after the folder. See Spoken's changelog.
+
 ## 3.0.0-beta.2 — 2026-10-04
 
 - Ships inside Spoken 3.0.0-beta.2. No changes of its own.

@@ -23,7 +23,7 @@ Scope expansion is expensive here specifically:
 - The take archive is the only audio. `addons/SpokenZonesAudio/Sounds/` is assembled from
   the live takes by `make zones-sounds` before a build and is not a store; never treat a
   file there as the record.
-- `addons/SpokenZones/Data/*.lua` and `addons/SpokenZonesAudio/Data/Sounds.lua` are
+- `addons/Spoken_Zones/Data/*.lua` and `addons/SpokenZonesAudio/Data/Sounds.lua` are
   generated. Fix the source, not the output. For lore text that source is the
   `lore_line` table -- edit it through the explorer, or re-scrape, then
   `make zones-lore-export` and commit the diff.
@@ -48,7 +48,7 @@ A change that reaches players bumps the `## Version:` of every addon it affects
 and writes that version's section of `CHANGELOG.md`, in the same PR as the change.
 Not as a follow-up, and not left to whoever releases.
 
-**Bump only what the PR actually changes.** `addons/SpokenZones/SpokenZones.toc` and
+**Bump only what the PR actually changes.** `addons/Spoken_Zones/Spoken_Zones.toc` and
 `addons/SpokenZonesAudio/SpokenZonesAudio.toc` carry their own versions and
 `scripts/release.sh` reads each independently, so they are free to diverge. The
 one rule binding them is compatibility: ZoneLore reads any pack sharing its
@@ -101,7 +101,7 @@ handful of tool calls, and do not use subagents to double-check your own work. I
 one subagent can do it, use one.
 
 Most work here is a direct edit. A sweep across all nine
-`addons/SpokenZones/UI/*.lua` files may warrant an agent; a two-file change does not.
+`addons/Spoken_Zones/UI/*.lua` files may warrant an agent; a two-file change does not.
 
 ## Communication
 

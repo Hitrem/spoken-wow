@@ -8,7 +8,7 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local SPOKEN = here .. "/../../addons/Spoken/"
-local ZONES = here .. "/../../addons/SpokenZones/"
+local ZONES = here .. "/../../addons/Spoken_Zones/"
 local Expect, Failures = H.Expecter(print)
 
 stub.SetClient("11509")
@@ -16,10 +16,10 @@ local env = stub.LoadSpoken(SPOKEN)
 
 -- The addon's own .toc Version, deliberately unlike "dev" so the assertion below cannot pass
 -- by coincidence -- it is pinning that CaptureContribution reads a real version, not
--- confirming a particular one. See addons/SpokenQuests/Contribute.lua's Contribute:Capture
+-- confirming a particular one. See addons/Spoken_Quests/Contribute.lua's Contribute:Capture
 -- for the same pattern; SpokenZones.VERSION does not exist, only the lowercase
 -- SpokenZones.version Core.lua already computes from the .toc.
-stub.SetAddOns({ { folder = "SpokenZones", meta = { Version = "9.9.9" } } })
+stub.SetAddOns({ { folder = "Spoken_Zones", meta = { Version = "9.9.9" } } })
 
 local Z = H.LoadZones(ZONES)   -- the loader that loads Core.lua for real, unlike stub.LoadZones
 

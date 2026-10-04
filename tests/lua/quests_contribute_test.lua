@@ -6,7 +6,7 @@ local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
 local SPOKEN = here .. "/../../addons/Spoken/"
-local QUESTS = here .. "/../../addons/SpokenQuests/"
+local QUESTS = here .. "/../../addons/Spoken_Quests/"
 local Expect, Failures = H.Expecter(print)
 
 stub.SetClient("11509")
@@ -21,7 +21,7 @@ local VoiceOver = stub.LoadQuests(QUESTS, SPOKEN)
 -- to see TestPack in this same list, or the DataModules:Register call further down (which
 -- asserts a module was detected during enumeration) fails.
 stub.SetAddOns({
-    { folder = "SpokenQuests", meta = { Version = "9.9.9" } },
+    { folder = "Spoken_Quests", meta = { Version = "9.9.9" } },
     { folder = "TestPack", meta = { ["X-VoiceOver-DataModule-Version"] = "1", Version = "1.2.1", Title = "TestPack" } },
 })
 

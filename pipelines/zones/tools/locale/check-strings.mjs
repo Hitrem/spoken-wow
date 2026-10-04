@@ -3,7 +3,7 @@
 //
 //   node tools/locale/check-strings.mjs
 //
-// addon/SpokenZones/Locale/enUS.lua is the key set: every string the interface can
+// addons/Spoken_Zones/Locale/enUS.lua is the key set: every string the interface can
 // show, named. A translation is a file of the same keys with different values,
 // and anything it leaves out falls back to English at runtime.
 //
@@ -19,7 +19,7 @@ import { join } from "node:path";
 import { BASE_LOCALE, CODES } from "../lib/locales.mjs";
 import { ROOT } from "../lib/wiki.mjs";
 
-const LOCALE_DIR = join(ROOT, "addons/SpokenZones/Locale");
+const LOCALE_DIR = join(ROOT, "addons/Spoken_Zones/Locale");
 
 // The emitted files are one assignment per line, so a regex reader is enough --
 // the same bet validate.mjs makes about the data files.

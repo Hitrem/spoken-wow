@@ -700,8 +700,8 @@ function _G.StaticPopup_Show(key, ...)
 end
 
 --- Addons enabled or disabled and UI reloads a scenario asked for. Disabling is recorded
---- rather than ignored because current clients refuse it to an addon, so an addon asking for
---- it when it has nothing to disable is a bug a test should be able to see.
+--- rather than ignored: an addon switching another off when it has nothing to switch off is a
+--- bug a test should be able to see.
 M.enabledAddOns, M.disabledAddOns, M.reloads = {}, {}, 0
 function _G.EnableAddOn(addon) table.insert(M.enabledAddOns, addon) end
 function _G.ReloadUI() M.reloads = M.reloads + 1 end
@@ -1080,7 +1080,7 @@ end
 function M.LoadZones(addonDirectory, SpokenZones)
     for _, file in ipairs({ "Audio", "UI/ReportButton", "Autoplay" }) do
         local chunk = assert(loadfile(addonDirectory .. file .. ".lua"))
-        chunk("SpokenZones", SpokenZones)
+        chunk("Spoken_Zones", SpokenZones)
     end
     return SpokenZones
 end

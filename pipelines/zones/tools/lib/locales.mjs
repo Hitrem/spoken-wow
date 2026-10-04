@@ -2,7 +2,7 @@
 // What a language is -- its code, name, script and ElevenLabs code -- is shared with the
 // site and the other pipelines, and lives in pipelines/lib/locales.mjs.
 //
-// Must stay in step with SpokenZones.LOCALES in addon/SpokenZones/Language.lua;
+// Must stay in step with SpokenZones.LOCALES in addons/Spoken_Zones/Language.lua;
 // tools/validate.mjs fails the build if the two lists drift, the same way it
 // already guards NormaliseAreaKey.
 

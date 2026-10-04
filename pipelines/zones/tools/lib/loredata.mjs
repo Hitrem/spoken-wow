@@ -18,7 +18,7 @@ import { BASE_LOCALE } from "./locales.mjs";
 //
 // Four levels up, not two: this file is pipelines/zones/tools/lib/. The constant has to
 // reach the repo root rather than the pipeline root because what it resolves is now
-// split across the tree -- the lore corpus lives in addons/SpokenZones/Data/, the voice
+// split across the tree -- the lore corpus lives in addons/Spoken_Zones/Data/, the voice
 // config in pipelines/zones/tools/voice/, the CurseForge descriptions in
 // publishers/zones/ and the built zips in dist/. One root with full paths beats four
 // roots.
@@ -43,11 +43,11 @@ export const ROOT =
 // Every other language sits beside it in Data/<lang>/, which is where Language.lua's guard
 // and validate.mjs both expect it.
 export function zonesLua(lang = BASE_LOCALE) {
-  return join(ROOT, `addons/SpokenZones/Data/${lang}/Zones.lua`);
+  return join(ROOT, `addons/Spoken_Zones/Data/${lang}/Zones.lua`);
 }
 
 export function subzonesLua(lang = BASE_LOCALE) {
-  return join(ROOT, `addons/SpokenZones/Data/${lang}/Subzones.lua`);
+  return join(ROOT, `addons/Spoken_Zones/Data/${lang}/Subzones.lua`);
 }
 
 // The emitter escapes exactly these, so the reader reverses exactly these.

@@ -872,10 +872,9 @@ function Addon:OnInitialize()
     -- file. Disabling one takes effect on the next login only. Nothing is read from their
     -- saved variables: every player starts this release with settings of its own.
     --
-    -- Through pcall because current clients reserve enabling and disabling an addon for their
-    -- own UI. A client that refuses raises its own "blocked from an action only available to
-    -- the Blizzard UI" dialog and an error with it, and every quest hook below this still has
-    -- to be installed. The duplicate is stopped for the session either way.
+    -- Through pcall in case a client refuses DisableAddOn to an addon (Forever accepts it,
+    -- checked 2026-10-04): every quest hook below this still has to be installed. The
+    -- duplicate is stopped for the session either way.
     local disabled = {}
     for _, folder in ipairs(supersededFolders) do
         pcall(DisableAddOn, folder)

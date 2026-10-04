@@ -19,7 +19,7 @@ import { loadClientAreas } from "./lib/era.mjs";
 import { BASE_LOCALE, CODES, LOCALES } from "./lib/locales.mjs";
 import { slugFor } from "./voice/naming.mjs";
 
-const DATA = join(ROOT, "addons/SpokenZones/Data");
+const DATA = join(ROOT, "addons/Spoken_Zones/Data");
 
 // Terms that should never survive the era filter. Case-sensitive where the
 // lower-case word is legitimate vanilla lore ("the black dragonflight").
@@ -331,7 +331,7 @@ for (const lang of languages) {
 //------------------------------------------------------------------------------
 
 {
-  const toc = await readFile(join(ROOT, "addons/SpokenZones/SpokenZones.toc"), "utf8");
+  const toc = await readFile(join(ROOT, "addons/Spoken_Zones/Spoken_Zones.toc"), "utf8");
   const files = toc
     .split("\n")
     .map((line) => line.trim())
@@ -341,16 +341,16 @@ for (const lang of languages) {
   const languages = order("Data/Languages.lua");
   const language = order("Language.lua");
 
-  if (languages === -1) note("SpokenZones.toc: Data/Languages.lua is not loaded");
-  if (language === -1) note("SpokenZones.toc: Language.lua is not loaded");
+  if (languages === -1) note("Spoken_Zones.toc: Data/Languages.lua is not loaded");
+  if (language === -1) note("Spoken_Zones.toc: Language.lua is not loaded");
   if (languages > -1 && language > -1 && languages > language) {
-    note("SpokenZones.toc: Data/Languages.lua must load before Language.lua, or no language is ever ready");
+    note("Spoken_Zones.toc: Data/Languages.lua must load before Language.lua, or no language is ever ready");
   }
 
   for (const file of files) {
     if ((file.startsWith("Data/") && file !== "Data/Languages.lua") || file.startsWith("Locale/")) {
       if (order(file) < language) {
-        note(`SpokenZones.toc: ${file} loads before Language.lua, whose guard it calls`);
+        note(`Spoken_Zones.toc: ${file} loads before Language.lua, whose guard it calls`);
       }
     }
   }
@@ -361,15 +361,15 @@ for (const lang of languages) {
     for (const name of ["Zones.lua", "Subzones.lua", "Aliases.lua"]) {
       const path = `Data/${lang}/${name}`;
       const exists = await readFile(join(DATA, lang, name), "utf8").then(() => true, () => false);
-      if (exists && order(path) === -1) note(`SpokenZones.toc: ${path} exists but is not loaded`);
+      if (exists && order(path) === -1) note(`Spoken_Zones.toc: ${path} exists but is not loaded`);
     }
     const localePath = `Locale/${lang}.lua`;
-    const localeExists = await readFile(join(ROOT, "addons/SpokenZones", localePath), "utf8").then(
+    const localeExists = await readFile(join(ROOT, "addons/Spoken_Zones", localePath), "utf8").then(
       () => true,
       () => false,
     );
     if (localeExists && order(localePath) === -1) {
-      note(`SpokenZones.toc: ${localePath} exists but is not loaded`);
+      note(`Spoken_Zones.toc: ${localePath} exists but is not loaded`);
     }
   }
 }
@@ -384,7 +384,7 @@ for (const lang of languages) {
 //------------------------------------------------------------------------------
 
 {
-  const languageLua = await readFile(join(ROOT, "addons/SpokenZones/Language.lua"), "utf8");
+  const languageLua = await readFile(join(ROOT, "addons/Spoken_Zones/Language.lua"), "utf8");
   const luaCodes = [...languageLua.matchAll(/\{ code = "(\w+)"/g)].map((m) => m[1]);
   if (luaCodes.join(",") !== CODES.join(",")) {
     note(
@@ -457,7 +457,7 @@ for (const [parent, keys] of byParent) {
 // Lua source still performs the same steps in the same order.
 //------------------------------------------------------------------------------
 
-const coreSrc = await readFile(join(ROOT, "addons/SpokenZones/Core.lua"), "utf8");
+const coreSrc = await readFile(join(ROOT, "addons/Spoken_Zones/Core.lua"), "utf8");
 const expectedSteps = [
   /key = name:lower\(\)/,
   /key = key:gsub\("'", ""\)/,

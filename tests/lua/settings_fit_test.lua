@@ -41,9 +41,9 @@ stub.TextWidth = function(fs)
     return width
 end
 local SPOKEN = here .. "/../../addons/Spoken/"
-local QUESTS = here .. "/../../addons/SpokenQuests/"
-local BOOKS = here .. "/../../addons/SpokenBooks/"
-local ZONES = here .. "/../../addons/SpokenZones/"
+local QUESTS = here .. "/../../addons/Spoken_Quests/"
+local BOOKS = here .. "/../../addons/Spoken_Books/"
+local ZONES = here .. "/../../addons/Spoken_Zones/"
 _G.UISpecialFrames = _G.UISpecialFrames or {}
 
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers(); stub.ResetFrames()
@@ -58,9 +58,9 @@ _G.C_AddOns = { IsAddOnLoaded = function() return true end }
 local VO = stub.LoadQuests(QUESTS, SPOKEN)
 VO.Addon:OnInitialize()
 local env = _G.SpokenEnv
-env.Sources:Register("books", { title = "Spoken Books", addon = "SpokenBooks", order = 2,
+env.Sources:Register("books", { title = "Spoken Books", addon = "Spoken_Books", order = 2,
     packs = function() return { "SpokenBooksAudio" } end })
-env.Sources:Register("zones", { title = "Spoken Zones", addon = "SpokenZones", order = 3,
+env.Sources:Register("zones", { title = "Spoken Zones", addon = "Spoken_Zones", order = 3,
     packs = function() return { "SpokenZonesAudio" } end })
 _G.Spoken:RegisterOptionalAction("report", "Report")
 env.Addon:Enable()
@@ -70,12 +70,12 @@ local B = {}
 for _, file in ipairs({ "Locale/enUS", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
     "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "Checksum", "Core", "Language", "Reader", "Audio", "Playlist",
     "UI/Layout", "UI/Options", "Events", "Commands" }) do
-    assert(loadfile(BOOKS .. file .. ".lua"))("SpokenBooks", B)
+    assert(loadfile(BOOKS .. file .. ".lua"))("Spoken_Books", B)
 end
 B:InitDB(); B:SetupOptions()
 local Z = H.NewZoneLore()
 for _, file in ipairs({ "UI/Layout", "UI/Options" }) do
-    assert(loadfile(ZONES .. file .. ".lua"))("SpokenZones", Z)
+    assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 Z:SetupOptions()
 

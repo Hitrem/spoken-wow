@@ -1,6 +1,6 @@
 // The zones lore catalogue, built from `lore_line`.
 //
-// SERVER ONLY. The database is the corpus; addons/SpokenZones/Data/enUS/*.lua is an
+// SERVER ONLY. The database is the corpus; addons/Spoken_Zones/Data/enUS/*.lua is an
 // export of it (`make zones-lore-export`, checked by `make zones-lore-check`), so the app
 // reads the table and never the files. Reading the Lua here would mean the explorer showed
 // whatever was last exported and committed, and -- because a line only reaches the Lua

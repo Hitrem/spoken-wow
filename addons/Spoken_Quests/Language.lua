@@ -35,7 +35,7 @@ Language = {}
 -- declare. A code absent here is not a language: a pack declaring one is treated as
 -- undeclared (English), because the alternative is a pack that silently answers nothing.
 --
--- Kept deliberately in step with SpokenZones.LOCALES in addons/SpokenZones/Language.lua:
+-- Kept deliberately in step with SpokenZones.LOCALES in addons/Spoken_Zones/Language.lua:
 -- the two addons are installed side by side and a player who sets Portuguese in one and
 -- finds no such option in the other has found a bug.
 --

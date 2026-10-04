@@ -7,9 +7,9 @@ name: Release addons
 # The tag prefix picks the addon, because the two version independently and always have:
 #
 #     spoken/v1.0.0   ->  addons/Spoken
-#     quests/v2.0.0   ->  addons/SpokenQuests
-#     zones/v1.0.0    ->  addons/SpokenZones
-#     books/v2.0.0    ->  addons/SpokenBooks
+#     quests/v2.0.0   ->  addons/Spoken_Quests
+#     zones/v1.0.0    ->  addons/Spoken_Zones
+#     books/v2.0.0    ->  addons/Spoken_Books
 #
 # Unprefixed v*.*.* tags are deliberately not matched: seventeen of them already exist
 # from the AI_VoiceOver_Continued lineage and were imported as legacy/quests/v*.
@@ -41,9 +41,9 @@ jobs:
         run: |
           case "${GITHUB_REF_NAME%%/*}" in
             spoken) toc=addons/Spoken/Spoken.toc;               script=scripts/spoken/package.sh ;;
-            quests) toc=addons/SpokenQuests/SpokenQuests.toc;   script=scripts/quests/package.sh ;;
-            zones)  toc=addons/SpokenZones/SpokenZones.toc;     script=scripts/zones/package.sh  ;;
-            books)  toc=addons/SpokenBooks/SpokenBooks.toc;     script=scripts/books/package.sh  ;;
+            quests) toc=addons/Spoken_Quests/Spoken_Quests.toc;   script=scripts/quests/package.sh ;;
+            zones)  toc=addons/Spoken_Zones/Spoken_Zones.toc;     script=scripts/zones/package.sh  ;;
+            books)  toc=addons/Spoken_Books/Spoken_Books.toc;     script=scripts/books/package.sh  ;;
             *)      echo "unknown tag prefix in ${GITHUB_REF_NAME}" >&2; exit 1 ;;
           esac
           {
@@ -89,10 +89,10 @@ jobs:
 
           download, version = os.environ["DOWNLOAD"], os.environ["VERSION"]
           variables = {
-              "github_zip_download_blizz": f"{download}/SpokenQuests-{version}.zip",
-              "github_zip_download_112": f"{download}/SpokenQuests-WoW_1.12-{version}.zip",
-              "github_zip_download_243": f"{download}/SpokenQuests-WoW_2.4.3-{version}.zip",
-              "github_zip_download_335": f"{download}/SpokenQuests-WoW_3.3.5-{version}.zip",
+              "github_zip_download_blizz": f"{download}/Spoken_Quests-{version}.zip",
+              "github_zip_download_112": f"{download}/Spoken_Quests-WoW_1.12-{version}.zip",
+              "github_zip_download_243": f"{download}/Spoken_Quests-WoW_2.4.3-{version}.zip",
+              "github_zip_download_335": f"{download}/Spoken_Quests-WoW_3.3.5-{version}.zip",
               "curse_link_blizz": "https://www.curseforge.com/wow/addons/spoken-quests",
               # Wago carries the addons but not the packs: each pack is 300-450 MB and that
               # upload endpoint answers 413, so only the player has a second store link.

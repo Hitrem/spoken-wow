@@ -12,7 +12,7 @@ package.path = here .. "/?.lua;" .. package.path
 local H = require("queue_helpers")
 local Expect, Failures = H.Expecter(print)
 
-local DATA = here .. "/../../addons/SpokenZones/Data/enUS/"
+local DATA = here .. "/../../addons/Spoken_Zones/Data/enUS/"
 
 -- Data files register themselves through the addon table and guard on the language.
 local registered = {}
@@ -21,7 +21,7 @@ local SpokenZones = {
     ShouldLoadLanguage = function() return true end,
 }
 for _, file in ipairs({ "Zones.lua", "Subzones.lua" }) do
-    assert(loadfile(DATA .. file))("SpokenZones", SpokenZones)
+    assert(loadfile(DATA .. file))("Spoken_Zones", SpokenZones)
 end
 
 Expect("Zones.lua registered", type(registered.zones), "table")

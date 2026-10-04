@@ -10,16 +10,16 @@
 
 # The \# escapes are required: an unescaped # starts a make comment, even
 # inside a $(shell ...) call.
-VERSION := $(shell sed -n 's/^\#\# Version:[[:space:]]*//p' addons/SpokenZones/SpokenZones.toc | head -1)
-ZIP := dist/SpokenZones-$(VERSION).zip
+VERSION := $(shell sed -n 's/^\#\# Version:[[:space:]]*//p' addons/Spoken_Zones/Spoken_Zones.toc | head -1)
+ZIP := dist/Spoken_Zones-$(VERSION).zip
 
 help: ## Show this help
-	@echo "SpokenZones $(VERSION)"
+	@echo "Spoken Zones $(VERSION)"
 	@echo
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-package: check ## Build dist/SpokenZones-<version>.zip for upload
+package: check ## Build dist/Spoken_Zones-<version>.zip for upload
 	@./scripts/zones/package.sh
 
 check: validate lint locale-check ## Run every pre-package check
@@ -34,8 +34,8 @@ validate: ## Sanity-check the generated Lua data files
 # icon is converted and committed. Both addons carry the same shield: they install as a
 # pair, and two icons would imply they are alternatives to each other.
 icon: ## Rebuild both addons' AddonIcon.tga from pipelines/zones/assets/spoken-zones-512.png (needs ffmpeg)
-	@python3 pipelines/zones/tools/make-icon.py pipelines/zones/assets/spoken-zones-512.png addons/SpokenZones/Textures/AddonIcon.tga
-	@cp addons/SpokenZones/Textures/AddonIcon.tga addons/SpokenZonesAudio/Textures/AddonIcon.tga
+	@python3 pipelines/zones/tools/make-icon.py pipelines/zones/assets/spoken-zones-512.png addons/Spoken_Zones/Textures/AddonIcon.tga
+	@cp addons/Spoken_Zones/Textures/AddonIcon.tga addons/SpokenZonesAudio/Textures/AddonIcon.tga
 	@echo "==> copied to addons/SpokenZonesAudio/Textures/AddonIcon.tga"
 
 lint: ## Block-balance check on the addon's Lua
@@ -126,7 +126,7 @@ lore-import-names: ## Name zones and subzones in a language from tools/seed/area
 	@test -n "$(LOCALE)" || { echo "lore-import-names: set LOCALE, e.g. LOCALE=deDE"; exit 2; }
 	@node pipelines/zones/tools/lore/import-names.mjs --lang $(LOCALE)
 
-lore-export: ## Write addons/SpokenZones/Data/<lang>/*.lua, every translated language, from the database
+lore-export: ## Write addons/Spoken_Zones/Data/<lang>/*.lua, every translated language, from the database
 	@node pipelines/zones/tools/lore/export.mjs
 
 lore-check: ## Confirm the committed Lua matches the database

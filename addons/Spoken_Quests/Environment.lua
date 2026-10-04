@@ -29,9 +29,9 @@ local previousEnvironment = rawget(_G, "VoiceOver")
 
 VoiceOver = setmetatable({
     _G = _G,
-    AddonFolder = "SpokenQuests",
+    AddonFolder = "Spoken_Quests",
     -- What /spq diagnostics prints. A literal because this file loads before the addon has any
     -- metadata API; scripts/package.sh refuses to build when it disagrees with the .toc.
-    AddonVersion = "3.0.0-beta.2",
+    AddonVersion = "3.0.0-beta.3",
     PreviousEnvironment = previousEnvironment,
 }, { __index = _G })

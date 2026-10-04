@@ -8,10 +8,10 @@ local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
 local SPOKEN = here .. "/../../addons/Spoken/"
-local ZONES = here .. "/../../addons/SpokenZones/"
+local ZONES = here .. "/../../addons/Spoken_Zones/"
 local Expect, Failures = H.Expecter(print)
 
-local BOOK = [[Interface\AddOns\SpokenZones\Textures\Book]]
+local BOOK = [[Interface\AddOns\Spoken_Zones\Textures\Book]]
 
 local NewZoneLore = H.NewZoneLore
 
@@ -100,7 +100,7 @@ Expect("...and SpokenZones sees it", Z:IsPaused(), true)
 Z:ResumeLore()
 Expect("ResumeLore", Spoken:IsPaused(), false)
 
-local quests = Spoken:RegisterSource("quests", { title = "Quests", addon = "SpokenQuests", order = 1 })
+local quests = Spoken:RegisterSource("quests", { title = "Quests", addon = "Spoken_Quests", order = 1 })
 local q = H.Clip()
 quests:Enqueue(q)
 Z:EnqueueLore(Z:NewLoreSound(1411, "valley of trials"))

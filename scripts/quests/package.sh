@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Builds the player addon's distributable zips.
 #
-#   ./scripts/quests/package.sh                 # dist/SpokenQuests-<version>.zip + one per legacy client
+#   ./scripts/quests/package.sh                 # dist/Spoken_Quests-<version>.zip + one per legacy client
 #   ALLOW_DIRTY=1 ./scripts/quests/package.sh   # build from an uncommitted tree
 #
 # ONE ZIP FOR BLIZZARD'S CLIENTS, ONE APIECE FOR THE LEGACY ONES. Blizzard's clients
 # pick their .toc by flavor suffix - _Vanilla, _TBC, _Wrath, _Mainline - so a single archive
 # serves Classic Era through retail and the client decides. The 1.12, 2.4.3 and 3.3.5 clients
-# predate suffix support: each reads SpokenQuests.toc and nothing else, and each wants a
+# predate suffix support: each reads Spoken_Quests.toc and nothing else, and each wants a
 # different file under that one name, so each needs an archive of its own. They also load a
 # vendored Ace3 of their own - the root Libs/ binds C_Timer.After at load time - which is why
 # every legacy zip carries its client's directory and none of the others.
@@ -17,7 +17,7 @@
 # differences are the legacy clients and the audio living elsewhere.
 #
 # Addon hosts unpack the zip straight into Interface/AddOns, so its root must contain the
-# SpokenQuests/ folder itself - hence the staging copy before zipping.
+# Spoken_Quests/ folder itself - hence the staging copy before zipping.
 #
 # THE LEGACY ZIPS ALSO CARRY THE SPOKEN PLAYER. Those clients have no addon manager to
 # install a dependency, so the player travels inside the zip, staged from its own tree at
@@ -32,16 +32,23 @@
 # ADDON says where the source is read from and NAME what the installed folder is called;
 # they agree now that the rename has shipped, and stay separate because the staging copy
 # is what lets the zips be assembled from more than one tree.
+#
+# THE LEGACY ZIPS ALSO CARRY TWO TOMBSTONES. The folder was SpokenQuests until 3.0.0-beta.3
+# (addons/SpokenQuests/SpokenQuests.toc says why it moved), and Spoken was SpokenPlayer before
+# 3.0.0. Unzipping over an older install adds the new folders without removing the old ones, so
+# each old folder gets a .toc that never loads under the one name this client reads from it.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-ADDON="${ADDON:-addons/SpokenQuests}"
-NAME="${NAME:-SpokenQuests}"
+ADDON="${ADDON:-addons/Spoken_Quests}"
+NAME="${NAME:-Spoken_Quests}"
 SRC="$REPO/$ADDON"
 PLAYER_SRC="$REPO/addons/Spoken"
 PLAYER="Spoken"
-# The SpokenPlayer tombstone, which the legacy zips carry beside the player they bundle.
+# The tombstones the legacy zips carry beside the module and the player they bundle: the old
+# player's folder, and this module's own before the rename.
 TOMBSTONE="SpokenPlayer"
+OLD_NAME="SpokenQuests"
 # shellcheck source=../lib/tombstone.sh
 source "$REPO/scripts/lib/tombstone.sh"
 TOC="$SRC/$NAME.toc"
@@ -169,13 +176,16 @@ for pair in "${CLIENTS[@]}"; do
   # packaging tests assert the zip's copy is byte-identical to that tree.
   stage_tree "$staging/$client" "$PLAYER_SRC" "$PLAYER"
   prune_for_client "$staging/$client/$PLAYER" "$PLAYER" "$PLAYER_SRC" "$variant"
-  # And the SpokenPlayer tombstone over the one .toc this client reads from the old player.
-  mkdir -p "$staging/$client/$TOMBSTONE"
-  tombstone_toc "$PLAYER_SRC/${PLAYER}_$variant.toc" "$staging/$client/$TOMBSTONE/$TOMBSTONE.toc"
+  # And the tombstones, over the one .toc this client reads from each old folder.
+  mkdir -p "$staging/$client/$TOMBSTONE" "$staging/$client/$OLD_NAME"
+  tombstone_toc "$REPO/addons/$TOMBSTONE/$TOMBSTONE.toc" "$PLAYER_SRC/${PLAYER}_$variant.toc" \
+    "$staging/$client/$TOMBSTONE/$TOMBSTONE.toc"
+  tombstone_toc "$REPO/addons/$OLD_NAME/$OLD_NAME.toc" "$SRC/${NAME}_$variant.toc" \
+    "$staging/$client/$OLD_NAME/$OLD_NAME.toc"
 
   zip_path="$DIST/$NAME-WoW_$client-$version.zip"
   rm -f "$zip_path"
-  (cd "$staging/$client" && zip -r -q -X "$zip_path" "$NAME" "$PLAYER" "$TOMBSTONE" \
+  (cd "$staging/$client" && zip -r -q -X "$zip_path" "$NAME" "$PLAYER" "$TOMBSTONE" "$OLD_NAME" \
     -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig')
 
   files="$(unzip -Z1 "$zip_path" | grep -cv '/$')"

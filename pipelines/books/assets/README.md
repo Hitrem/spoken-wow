@@ -14,7 +14,7 @@ means re-exporting all four rather than touching them individually.
 
 ## Where they end up
 
-**The addon list** reads `addons/SpokenBooks/Textures/AddonIcon.tga`, a 64×64 uncompressed
+**The addon list** reads `addons/Spoken_Books/Textures/AddonIcon.tga`, a 64×64 uncompressed
 TGA built from the 512 PNG by `make books-icon` and committed — an addon has to build on a
 machine with no ffmpeg. Both addons carry the same file.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Writes addon/SpokenZones/Data/Languages.lua: what each language covers, and
+// Writes addons/Spoken_Zones/Data/Languages.lua: what each language covers, and
 // whether it is finished enough to offer to players.
 //
 //   node tools/locale/build-languages.mjs
@@ -28,7 +28,7 @@ import { luaString, ROOT } from "../lib/wiki.mjs";
 import { stringCoverage } from "./check-strings.mjs";
 import { loadPacks } from "../../../../scripts/lib/packs.mjs";
 
-const DATA = join(ROOT, "addons/SpokenZones/Data");
+const DATA = join(ROOT, "addons/Spoken_Zones/Data");
 const OUT_PATH = join(DATA, "Languages.lua");
 
 // Whether a language has a pack: its page under publishers/zones/ is what says so, since a

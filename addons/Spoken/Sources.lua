@@ -68,9 +68,7 @@ end
 
 --- Whether the player has switched this part of Spoken off in the settings. Off, the addon
 --- stays installed and loaded and nothing it sends is played. The player's own switch, not the
---- client's addon list: current clients keep enabling and disabling an addon for their own UI
---- and refuse it to addons (see the pcall around DisableAddOn in SpokenQuests' VoiceOver.lua),
---- and this one needs no reload either. `part` is a source or its key: the settings ask about a
+--- client's addon list, which only changes at the next reload: this one needs none. `part` is a source or its key: the settings ask about a
 --- part by key whether or not it is installed.
 function Sources:IsTurnedOff(part)
     local key = type(part) == "table" and part.key or part

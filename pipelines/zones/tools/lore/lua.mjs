@@ -48,7 +48,7 @@ function pendingLine(entry, indent) {
 }
 
 /**
- * addon/SpokenZones/Data/<lang>/Zones.lua.
+ * addons/Spoken_Zones/Data/<lang>/Zones.lua.
  *
  * @param entries {name, short, full, source, mapID}[] -- any order; sorted here, because
  *   a data file whose order depends on how the rows came back is a diff on every export.
@@ -82,7 +82,7 @@ export function emitZones(entries, lang = BASE_LOCALE) {
 }
 
 /**
- * addon/SpokenZones/Data/<lang>/Subzones.lua.
+ * addons/Spoken_Zones/Data/<lang>/Subzones.lua.
  *
  * @param entries {mapID, key, name, short, full, source}[]
  * @param zoneNames Map<mapID, string> for the per-zone comment. A subzone row carries

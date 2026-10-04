@@ -13,7 +13,7 @@
  * with "The " -- "The Underbog" slugged to "the-underbog" here and "underbog" in the corpus,
  * so a row that was actually on file kept reading as missing. `normaliseKey`/`slugFor` come
  * from zones/tools.ts's bridge instead, the same module the corpus itself is built through,
- * so the two can't drift apart the way addons/SpokenBooks/Checksum.lua warns a duplicated
+ * so the two can't drift apart the way addons/Spoken_Books/Checksum.lua warns a duplicated
  * rule eventually does.
  */
 import { normaliseKey, slugFor } from "@/lib/zones/tools";
