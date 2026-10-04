@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Makes addons/SpokenZones and addons/SpokenZonesAudio visible to a WoW client.
+# Makes addons/Spoken_Zones and addons/SpokenZonesAudio visible to a WoW client.
 #
 #   ./scripts/deploy.sh          # symlink (edits are live, just /reload in-game)
 #   ./scripts/deploy.sh --copy   # rsync a real copy instead
@@ -28,7 +28,7 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WOW="/Applications/World of Warcraft"
-NAMES=(SpokenZones SpokenZonesAudio)
+NAMES=(Spoken_Zones SpokenZonesAudio)
 
 # Client key -> the flavour directory Blizzard installs it under.
 CLIENTS=(era anniversary)

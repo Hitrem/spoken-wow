@@ -16,7 +16,7 @@
 
 local ADDON_NAME, SpokenBooks = ...
 
--- Kept in step with SpokenZones.LOCALES (addons/SpokenZones/Language.lua): the addons sit
+-- Kept in step with SpokenZones.LOCALES (addons/Spoken_Zones/Language.lua): the addons sit
 -- side by side, and a language offered in one and missing from the other is a setting the
 -- player makes once and finds half-honoured. tests/lua/books_language_test.lua holds them
 -- together.

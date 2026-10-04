@@ -17,8 +17,8 @@ local function Boot(client)
     stub.settingsCategories = {}; stub.ldbObjects = {}; stub.dbIcons = {}
     local env = stub.LoadSpoken(SPOKEN)
     env.Addon:Enable()   -- what PLAYER_LOGIN does: builds the frame, the button, the panel
-    local quests = env.Sources:Register("quests", { title = "Quests", addon = "SpokenQuests", order = 1 })
-    local zones = env.Sources:Register("zones", { title = "Zones", addon = "SpokenZones", order = 2 })
+    local quests = env.Sources:Register("quests", { title = "Quests", addon = "Spoken_Quests", order = 1 })
+    local zones = env.Sources:Register("zones", { title = "Zones", addon = "Spoken_Zones", order = 2 })
     return env, quests, zones
 end
 
@@ -104,9 +104,9 @@ Expect("the header follows the head", F.frame.container.name:GetText(), "Thrall"
 
 ---------------------------------------------------------------- bullets
 env, quests, zones = Boot(); F = env.PlayerFrame
-_G.Spoken:RegisterBullet("quest-accept", [[Interface\AddOns\SpokenQuests\Textures\Accept]], 14)
+_G.Spoken:RegisterBullet("quest-accept", [[Interface\AddOns\Spoken_Quests\Textures\Accept]], 14)
 quests:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "quest-accept", portrait = { kind = "none" } } }))
-Expect("a row uses its registered bullet", F.frame.container.buttons[1].iconWidget:GetTexture(), [[Interface\AddOns\SpokenQuests\Textures\Accept]])
+Expect("a row uses its registered bullet", F.frame.container.buttons[1].iconWidget:GetTexture(), [[Interface\AddOns\Spoken_Quests\Textures\Accept]])
 quests:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "nope", portrait = { kind = "none" } } }))
 Expect("an unknown bullet falls back to the queue bullet", F.frame.container.buttons[2].iconWidget:GetTexture(), [[Interface\AddOns\Spoken\Textures\SoundQueueBulletQueue]])
 

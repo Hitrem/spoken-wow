@@ -1080,7 +1080,7 @@ end
 function M.LoadZones(addonDirectory, SpokenZones)
     for _, file in ipairs({ "Audio", "UI/ReportButton", "Autoplay" }) do
         local chunk = assert(loadfile(addonDirectory .. file .. ".lua"))
-        chunk("SpokenZones", SpokenZones)
+        chunk("Spoken_Zones", SpokenZones)
     end
     return SpokenZones
 end

@@ -1,4 +1,4 @@
-// book_line -> addons/SpokenBooks/Data/Books.lua.
+// book_line -> addons/Spoken_Books/Data/Books.lua.
 //
 // The table is the corpus and this file is an export of it, exactly as the zones side
 // exports lore_line: the addon build, and anyone packaging a release, must work on a clone
@@ -17,7 +17,7 @@ import { booksLua } from "./lib/lua.mjs";
 // compiled into the site and its paths would be the build machine's.
 await loadEnv("books");
 
-const OUT = new URL("../../../addons/SpokenBooks/Data/Books.lua", import.meta.url).pathname;
+const OUT = new URL("../../../addons/Spoken_Books/Data/Books.lua", import.meta.url).pathname;
 const LANG = "enUS";
 
 const url = process.env.DATABASE_URL;

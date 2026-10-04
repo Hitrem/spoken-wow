@@ -9,7 +9,7 @@ categories:
   - Roleplay
   - Audio & Video
 license: MIT
-addonReadme: addons/SpokenBooks/README.md
+addonReadme: addons/Spoken_Books/README.md
 ---
 
 **Every book in the world, read aloud.** One of [Spoken](https://www.curseforge.com/wow/addons/spoken-player)'s modules: it comes in Spoken's download, beside Spoken Quests and Spoken Zones, and narrates through it.

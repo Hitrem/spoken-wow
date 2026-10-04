@@ -8,11 +8,11 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
-local QUESTS = here .. "/../../addons/SpokenQuests/"
+local QUESTS = here .. "/../../addons/Spoken_Quests/"
 local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
-local BOOK = [[Interface\AddOns\SpokenQuests\Textures\Book]]
+local BOOK = [[Interface\AddOns\Spoken_Quests\Textures\Book]]
 
 local lookup = {}
 for _, q in ipairs({ 101, 102, 103 }) do
@@ -109,7 +109,7 @@ Expect("...and logging out mid-line restores it", world.cvars.Sound_EnableDialog
 -- the mute covers a quest line speaking, not the quests source having a backlog.
 VO, env, Spoken = Boot()
 VO.Addon.db.profile.Audio.AutoToggleDialog = true
-local zones = Spoken:RegisterSource("zones", { title = "Zones", addon = "SpokenZones", channel = function() return "Dialog" end })
+local zones = Spoken:RegisterSource("zones", { title = "Zones", addon = "Spoken_Zones", channel = function() return "Dialog" end })
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
 Expect("a quest line speaking mutes dialog", world.cvars.Sound_EnableDialog, "0")
@@ -214,7 +214,7 @@ VO.Addon.db.profile.Audio.OGThrall = true
 world.gossipText = "Greetings, traveller."
 VO.Addon:GOSSIP_SHOW()
 Expect("the easter egg swaps the path before the player sees it", Spoken:GetCurrent().path,
-    [[Interface\AddOns\SpokenQuests\Sounds\og-thrall.mp3]])
+    [[Interface\AddOns\Spoken_Quests\Sounds\og-thrall.mp3]])
 Expect("...and the length", Spoken:GetCurrent().length, 33.802375)
 
 ---------------------------------------------------------------- the quest-log overlay

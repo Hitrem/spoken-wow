@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # Builds a distributable zip for CurseForge / WoWInterface / Wago.
 #
-#   ./scripts/zones/package.sh              # dist/SpokenZones-<version>.zip
+#   ./scripts/zones/package.sh              # dist/Spoken_Zones-<version>.zip
 #   ALLOW_DIRTY=1 ./scripts/zones/package.sh  # build from an uncommitted tree
 #
 # The version comes from `## Version:` in the .toc, so bumping the addon and
 # naming the zip stay one edit rather than two.
 #
 # Addon hosts unpack the zip straight into Interface/AddOns, so its root must
-# contain the SpokenZones/ folder itself -- hence the staging copy before zipping.
+# contain the Spoken_Zones/ folder itself -- hence the staging copy before zipping.
 
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-ADDON="${ADDON:-addons/SpokenZones}"
-NAME="${NAME:-SpokenZones}"
+ADDON="${ADDON:-addons/Spoken_Zones}"
+NAME="${NAME:-Spoken_Zones}"
 SRC="$REPO/$ADDON"
 TOC="$SRC/$NAME.toc"
 DIST="${DIST:-$REPO/dist}"

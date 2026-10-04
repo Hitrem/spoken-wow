@@ -10,7 +10,7 @@
 // to them like the current version of the line and get versioned over.
 //
 // WITHOUT DATABASE_URL everything here still works, reading and writing
-// addon/SpokenZones/Data/*.lua as the scrapers always did. That is not a courtesy: the
+// addons/Spoken_Zones/Data/*.lua as the scrapers always did. That is not a courtesy: the
 // addon build, validate.mjs and package-audio.sh all run on clones with no Postgres,
 // and a corpus that could only be assembled by a database would take the whole release
 // path with it.

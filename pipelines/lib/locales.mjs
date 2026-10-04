@@ -4,7 +4,7 @@
 // section.
 //
 // Must stay in step with the addons' own lists (SpokenZones.LOCALES in
-// addons/SpokenZones/Language.lua); pipelines/zones/tools/validate.mjs fails the build if
+// addons/Spoken_Zones/Language.lua); pipelines/zones/tools/validate.mjs fails the build if
 // they drift, and apps/web/src/lib/lang.test.ts does the same for the site.
 //
 // The clients the Classic-family addons run on, plus the languages a community translates

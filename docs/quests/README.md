@@ -138,7 +138,7 @@ make package-audio VERSION=1.4.0   # the version written into each pack's .toc
 ENCODE=copy make package-audio     # the masters untouched, to hear what is being given up
 ```
 
-`make package` takes its version from `## Version:` in `SpokenQuests.toc` and produces four
+`make package` takes its version from `## Version:` in `Spoken_Quests.toc` and produces four
 zips. It refuses to build from an uncommitted tree — `ALLOW_DIRTY=1` overrides while testing —
 and refuses when a variant `.toc` or `Environment.lua` names a different version, which is drift
 nothing else notices until it ships.
@@ -146,9 +146,9 @@ nothing else notices until it ships.
 **One zip for Blizzard's clients, one apiece for the legacy ones.** Blizzard's clients
 pick a `.toc` by flavor suffix — `_Vanilla`, `_TBC`, `_Wrath`, `_Mainline` — so a single archive
 serves Classic Era through retail and the client chooses. The 1.12, 2.4.3 and 3.3.5 clients
-predate suffix support: each reads `SpokenQuests.toc` and nothing else, and each wants a
+predate suffix support: each reads `Spoken_Quests.toc` and nothing else, and each wants a
 different file under that one name, so each needs an archive of its own. Each also loads its own
-vendored Ace3 from `SpokenQuests/<client>/`, because the root `Libs/AceTimer-3.0` binds
+vendored Ace3 from `Spoken_Quests/<client>/`, because the root `Libs/AceTimer-3.0` binds
 `C_Timer.After` while loading and would error there. A legacy zip therefore carries one `.toc`,
 one Ace3, and neither of the other two clients' directories.
 
@@ -999,11 +999,11 @@ separate folder in the same AddOns directory; symlink both for faster developmen
 
 ```bash
 export WOW_DIR=PATH_OF_YOUR_WOW_DIR
-ln -s "$PWD/SpokenQuests" "$WOW_DIR/_classic_era_/Interface/AddOns/SpokenQuests"
+ln -s "$PWD/Spoken_Quests" "$WOW_DIR/_classic_era_/Interface/AddOns/Spoken_Quests"
 ln -s "$PWD/dist/SpokenQuestsAudio" "$WOW_DIR/_classic_era_/Interface/AddOns/SpokenQuestsAudio"
 ```
 
-Use `SpokenQuests/` on a current client. Upstream `AI_VoiceOver/` calls
+Use `Spoken_Quests/` on a current client. Upstream `AI_VoiceOver/` calls
 `GetNumAddOns`, `GetAddOnMetadata` and `LoadAddOn`, which Blizzard moved to `C_AddOns` in
 10.2 and removed in 11.0.2, so on Classic Era 1.15.9 it errors while enumerating and the
 sound pack never registers. Install one player, never two — two copies fight over the same

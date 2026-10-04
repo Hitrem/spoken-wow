@@ -7,14 +7,14 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local SPOKEN = here .. "/../../addons/Spoken/"
-local BOOKS = here .. "/../../addons/SpokenBooks/"
+local BOOKS = here .. "/../../addons/Spoken_Books/"
 local Expect, Failures = H.Expecter(print)
 
 local function LoadBooks()
     local SpokenBooks = {}
     for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language" }) do
         local chunk = assert(loadfile(BOOKS .. file .. ".lua"))
-        chunk("SpokenBooks", SpokenBooks)
+        chunk("Spoken_Books", SpokenBooks)
     end
     return SpokenBooks
 end
@@ -46,13 +46,13 @@ local bootEnv = stub.LoadSpoken(SPOKEN)
 bootEnv.Addon:Enable()
 local B0 = {}
 for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader", "Audio", "Playlist", "Events", "Commands" }) do
-    assert(loadfile(BOOKS .. file .. ".lua"))("SpokenBooks", B0)
+    assert(loadfile(BOOKS .. file .. ".lua"))("Spoken_Books", B0)
 end
 
 stub.FireEvent("ADDON_LOADED", "SomebodyElse")
 Expect("another addon's load leaves the saved variables alone", SpokenBooksSettings, nil)
 
-stub.FireEvent("ADDON_LOADED", "SpokenBooks")
+stub.FireEvent("ADDON_LOADED", "Spoken_Books")
 Expect("the addon's own ADDON_LOADED writes the defaults", SpokenBooksSettings.autoplay, true)
 Expect("...and claims no source yet, because the player may not have loaded", B0.source, nil)
 

@@ -22,7 +22,7 @@
 --
 -- This file loads before Core.lua and before anything under Data/, because the
 -- generated data files ask ShouldLoadLanguage whether to build their tables at
--- all. That question can only be answered this early because SpokenZones.toc sets
+-- all. That question can only be answered this early because Spoken_Zones.toc sets
 -- LoadSavedVariablesFirst -- SpokenZonesSettings is already populated when these files
 -- run. Removing that .toc line does not error; it silently pins every player to
 -- English.

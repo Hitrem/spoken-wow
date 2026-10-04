@@ -8,8 +8,8 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local QUESTS = here .. "/../../addons/SpokenQuests/"
-local ZONES = here .. "/../../addons/SpokenZones/"
+local QUESTS = here .. "/../../addons/Spoken_Quests/"
+local ZONES = here .. "/../../addons/Spoken_Zones/"
 local Expect, Failures = H.Expecter(print)
 
 local DISABLED = { folder = "Spoken", title = "Spoken", loadable = false, reason = "DISABLED" }

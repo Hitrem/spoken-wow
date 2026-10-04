@@ -15,7 +15,7 @@ stub.SetModernQuestLog({
     { questID = 96130, title = "Chakuyak", level = 9, description = "Bring me the tusks, and be quick about it." },
 })
 
-local VO = stub.LoadQuestsOverlay(here .. "/../../addons/SpokenQuests/", here .. "/../../addons/Spoken/")
+local VO = stub.LoadQuestsOverlay(here .. "/../../addons/Spoken_Quests/", here .. "/../../addons/Spoken/")
 local Spoken = _G.Spoken
 local failures = 0
 
@@ -123,7 +123,7 @@ Expect("clicking play reads the accept line", table.concat(played, ", "), "748-a
 
 -- The giver, named the way the dialog would have: on an English client the pack's name, on
 -- any other the client's own, which the addon ships because the packs only have English.
-local QUESTS = here .. "/../../addons/SpokenQuests/"
+local QUESTS = here .. "/../../addons/Spoken_Quests/"
 Expect("an English client names the giver from the pack", VO.DataModules:GetObjectName(VO.Enums.GUID.Creature, 2948),
     "Mull Thunderhorn")
 stub.SetLocale("ruRU")

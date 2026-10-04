@@ -1,7 +1,7 @@
 """The lines an NPC says in chat right after a quest is accepted or turned in.
 
 Read out of the world DB once, here, and used twice: tools/export_followup_lines.py writes
-them to addons/SpokenQuests/FollowupLines.lua, which the addon matches arriving /say and /yell
+them to addons/Spoken_Quests/FollowupLines.lua, which the addon matches arriving /say and /yell
 against, and tts_cli/corpus.py turns them into corpus rows (source "followup") so they are
 voiced and shipped like every other line. Two readers of one extraction, so the addon can
 never be armed for a line the corpus has no audio for, or the other way round.

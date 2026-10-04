@@ -5,7 +5,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local BOOKS = here .. "/../../addons/SpokenBooks/"
+local BOOKS = here .. "/../../addons/Spoken_Books/"
 local Expect, Failures = H.Expecter(print)
 
 local PAGE, ONLY_ENGLISH = 15, 16
@@ -30,7 +30,7 @@ local function Install(packs, locale)
     }
     local B = {}
     for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader", "Audio" }) do
-        assert(loadfile(BOOKS .. file .. ".lua"))("SpokenBooks", B)
+        assert(loadfile(BOOKS .. file .. ".lua"))("Spoken_Books", B)
     end
     B:InitDB()
     return B

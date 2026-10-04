@@ -7,12 +7,12 @@ local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
 local SPOKEN = here .. "/../../addons/Spoken/"
-local ZONES = here .. "/../../addons/SpokenZones/"
+local ZONES = here .. "/../../addons/Spoken_Zones/"
 local Expect, Failures = H.Expecter(print)
 
 stub.SetClient("11509")
 stub.LoadSpoken(SPOKEN)
-stub.SetAddOns({ { folder = "SpokenZones", meta = { Version = "9.9.9" } } })
+stub.SetAddOns({ { folder = "Spoken_Zones", meta = { Version = "9.9.9" } } })
 
 local MAP, BOTH, ONLY_ENGLISH = 1411, "valley of trials", "sen'jin village"
 

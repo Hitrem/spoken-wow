@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Writes addons/SpokenZones/Data/<lang>/{Zones,Subzones}.lua from lore_line, English and
+// Writes addons/Spoken_Zones/Data/<lang>/{Zones,Subzones}.lua from lore_line, English and
 // every language with a translation.
 //
 //   node tools/lore/export.mjs           # write every language's pair
@@ -132,8 +132,8 @@ async function main() {
     return;
   }
 
-  console.log("\nreview with:  git diff addons/SpokenZones/Data/");
-  console.log("a new language also needs its two files in SpokenZones.toc, then:  make zones-languages");
+  console.log("\nreview with:  git diff addons/Spoken_Zones/Data/");
+  console.log("a new language also needs its two files in Spoken_Zones.toc, then:  make zones-languages");
   console.log("then rebuild the audio lookup if any English text moved:  make zones-lookup");
 }
 

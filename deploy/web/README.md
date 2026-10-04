@@ -2,7 +2,7 @@
 
 One site, three sections, on one droplet. nginx in front, pm2 supervising, GitHub Actions
 deploying on every push to `master` that touches `apps/web/`, `pipelines/`,
-`addons/SpokenZones/Data/` or `deploy/web/`.
+`addons/Spoken_Zones/Data/` or `deploy/web/`.
 
 It replaced two separate deployments, whose names are now redirect vhosts pointing here —
 see `nginx-voiceover-redirect.conf` and `nginx-lore-redirect.conf`, which exist so that

@@ -20,7 +20,7 @@
 LUA ?= $(shell command -v luajit || command -v lua5.1)
 
 .PHONY: help test test-player contribute-fixtures lint package-all \
-        package-spoken package-spoken-all release-spoken-all release-spoken-all-dry \
+        package-spoken package-spoken-retired package-spoken-all release-spoken-all release-spoken-all-dry \
         descriptions descriptions-check descriptions-published \
         character-models \
         audio-release audio-release-dry
@@ -182,6 +182,13 @@ package-all: ## Build every addon zip: Spoken with its modules, then quests and 
 # packager. No sound packs; scripts/spoken/package.sh says why.
 package-spoken: ## Zip Spoken with its modules, Quests, Books and Zones, without the sound packs
 	@./scripts/spoken/package.sh
+
+# The last release of each retired project, spoken-quests, spoken-zones and spoken-books: a
+# tombstone under the folder name it shipped, so updating it leaves the old module nothing to
+# load beside Spoken's. scripts/spoken/package-retired.sh explains it; the uploads are
+# scripts/quests/release.sh's player target and the zones and books release scripts.
+package-spoken-retired: ## Zip the tombstones the retired Quests, Zones and Books projects ship last
+	@./scripts/spoken/package-retired.sh
 
 # Spoken Everything: Quests, Zones, Books AI Voiceover, CurseForge project `spoken`: a few kilobytes naming every Spoken addon
 # and English sound pack as required dependencies, so the CurseForge app installs the lot.

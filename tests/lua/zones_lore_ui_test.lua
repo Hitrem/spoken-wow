@@ -7,7 +7,7 @@ package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
 local H = require("queue_helpers")
 local print = stub.print
-local ZONES = here .. "/../../addons/SpokenZones/"
+local ZONES = here .. "/../../addons/Spoken_Zones/"
 local Expect, Failures = H.Expecter(print)
 
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers(); stub.ResetFrames()
@@ -73,7 +73,7 @@ Z.ToggleLoreWindow = nil
 _G.hooksecurefunc = _G.hooksecurefunc or function() end
 
 for _, file in ipairs({ "UI/Layout", "UI/TextView", "UI/AudioButton", "UI/ReportButton", "UI/LorePage", "UI/LoreWindow", "UI/MapPanel" }) do
-    assert(loadfile(ZONES .. file .. ".lua"))("SpokenZones", Z)
+    assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 
 ---------------------------------------------------------------- the lore window
@@ -260,7 +260,7 @@ Expect("each fade eases in three steps, so it shows no line where it starts", #b
 ATLASES["spellbook-Page-Right-C60"], ATLASES["QuestDetailsBackgrounds"] = nil, nil
 ATLASES["spellbook-divider"], ATLASES["spellbook-list-backplate"] = nil, nil
 local bare = Z:CreateLorePage(createFrame("Frame", nil, UIParent), "book")
-local ART = [[Interface\AddOns\SpokenZones\Textures\Art\]]
+local ART = [[Interface\AddOns\Spoken_Zones\Textures\Art\]]
 Expect("a client without the spellbook's art still has its page", bare.bg.texture, ART .. "spellbook-Page-Right-C60")
 Expect("...its divider", bare.divider.texture, ART .. "spellbook-divider")
 Expect("...and its backplate", bare.backplate and bare.backplate.texture, ART .. "spellbook-list-backplate")

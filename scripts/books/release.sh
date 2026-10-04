@@ -68,6 +68,10 @@ target_curseforge() { case "$1" in books) echo "1701514";; audio) pack_field cur
 # that size (scripts/lib/wago.sh). The page keeps its `wago:` id for the description pasted
 # there, which sends players to the GitHub release.
 target_wago()       { case "$1" in books) echo "qGYZnRNg";; esac; }
+# books is the spoken-books project, retiring: the module ships inside Spoken's zip, from the
+# Spoken_Books folder, and this project's last file is the tombstone that
+# scripts/spoken/package-retired.sh builds under the old folder's name (make
+# package-spoken-retired), its version read off the template, addons/SpokenBooks/SpokenBooks.toc.
 target_addon()      { case "$1" in books) echo "SpokenBooks";; audio) pack_field folder;; esac; }
 target_zip()        { target_addon "$1"; }
 # The project's slug. Used for the link printed after an upload, so a wrong one here is a
@@ -217,7 +221,7 @@ for target in "${targets[@]}"; do
     version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" 2>/dev/null | head -1 | tr -d '\r')"
   fi
   if [[ -z "$version" ]]; then
-    missing+=("$target -- not built (no version); run make books-package / make books-package-audio")
+    missing+=("$target -- not built (no version); run make package-spoken-retired for the addon, make books-package-audio for the pack")
     continue
   fi
   zip_path="$DIST/$(target_zip "$target")-$version.zip"
@@ -255,7 +259,7 @@ for target in "${targets[@]}"; do
   echo "=== $target -> $stores ==="
 
   if [[ ! -f "$zip_path" ]]; then
-    echo "error: $zip_path does not exist -- run make books-package / make books-package-audio first" >&2
+    echo "error: $zip_path does not exist -- run make package-spoken-retired (the addon) or make books-package-audio (the pack) first" >&2
     exit 1
   fi
 

@@ -27,7 +27,7 @@ on:
       - "pipelines/lib/**"
       # The lore corpus lives in the database, but the Lua the addon ships is exported from
       # it and the deploy seeds CI's throwaway database from those files.
-      - "addons/SpokenZones/Data/**"
+      - "addons/Spoken_Zones/Data/**"
       - "deploy/web/**"
       - ".github/workflows/deploy-web.yaml"
   workflow_dispatch:

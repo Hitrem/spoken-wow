@@ -43,7 +43,7 @@ import-locale: ## locales_page_text -> book_line + entity_name (LOCALE=deDE; nee
 	@test -n "$(LOCALE)" || { echo "import-locale: set LOCALE, e.g. LOCALE=deDE"; exit 2; }
 	@node $(PIPELINE)/tools/import-locale.mjs --lang $(LOCALE)
 
-export: ## book_line -> addons/SpokenBooks/Data/Books.lua (needs DATABASE_URL)
+export: ## book_line -> addons/Spoken_Books/Data/Books.lua (needs DATABASE_URL)
 	@node $(PIPELINE)/tools/export.mjs
 
 lookup: ## take -> the pack's Data/Sounds.lua (LOCALE=xx: into build/books/xx; needs DATABASE_URL)
@@ -150,8 +150,8 @@ endif
 # Both addons carry the same icon: they install as a pair, and two icons would imply they
 # are alternatives to each other.
 icon: ## Rebuild both addons' AddonIcon.tga from pipelines/books/assets (needs ffmpeg)
-	@python3 pipelines/zones/tools/make-icon.py pipelines/books/assets/spoken-books-512.png addons/SpokenBooks/Textures/AddonIcon.tga
-	@cp addons/SpokenBooks/Textures/AddonIcon.tga addons/SpokenBooksAudio/Textures/AddonIcon.tga
+	@python3 pipelines/zones/tools/make-icon.py pipelines/books/assets/spoken-books-512.png addons/Spoken_Books/Textures/AddonIcon.tga
+	@cp addons/Spoken_Books/Textures/AddonIcon.tga addons/SpokenBooksAudio/Textures/AddonIcon.tga
 	@echo "==> copied to addons/SpokenBooksAudio/Textures/AddonIcon.tga"
 
 deploy: ## Symlink the addon into a client (CLIENT=era|anniversary|forever)

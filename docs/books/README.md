@@ -70,7 +70,7 @@ them.
 | `import` | that file | `book_line` rows | the same maintainer |
 | review | `book_line` | corrected text | anyone, at `/books` |
 | generate | `book_line` | mp3s and `take` rows | anyone with an ElevenLabs key |
-| export | `book_line` | `addons/SpokenBooks/Data/Books.lua` | a maintainer, before a release |
+| export | `book_line` | `addons/Spoken_Books/Data/Books.lua` | a maintainer, before a release |
 
 ## Running it locally
 
@@ -122,7 +122,7 @@ pnpm --filter @spoken/web test     # the site, including lib/books
 
 ## The addon
 
-`addons/SpokenBooks` hooks `ITEM_TEXT_BEGIN` / `READY` / `CLOSED` — the whole book UI, and
+`addons/Spoken_Books` hooks `ITEM_TEXT_BEGIN` / `READY` / `CLOSED` — the whole book UI, and
 the same API on Era, Anniversary and Forever, which is why there is one addon rather than
 three.
 
@@ -132,7 +132,7 @@ where no other page shares it; then nothing. Nothing is the right third answer: 
 alternative is reading the wrong page's words aloud.
 
 **The checksum is the load-bearing part.** `pipelines/books/tools/lib/naming.mjs` and
-`addons/SpokenBooks/Checksum.lua` must produce the same number for the same text, over
+`addons/Spoken_Books/Checksum.lua` must produce the same number for the same text, over
 UTF-8 bytes, using only multiply, add and modulo — the clients run Lua 5.1, which has no
 bitwise operators. `tests/lua/books_source_test.lua` asserts the two agree, on an ASCII
 string and an accented one. They have to: the lookup is keyed on that number, and a
@@ -243,7 +243,7 @@ The two CurseForge projects:
 Cutting one:
 
 ```bash
-make books-package                 # -> dist/SpokenBooks-<version>.zip
+make books-package                 # -> dist/Spoken_Books-<version>.zip
 make books-package-audio           # -> dist/SpokenBooksAudio-<version>.zip
 make books-release-dry             # what would be uploaded, uploading nothing
 make books-release                 # needs CURSEFORGE_TOKEN
@@ -291,7 +291,7 @@ make books-release-audio LOCALE=esMX  # uploads it, CurseForge only
 
 The addon finds a page by its title and a checksum of its words, and a client in another
 locale shows neither in English. So a language's `Data/Sounds.lua` also carries that
-language's `index` and `loose`, in the shape of `SpokenBooks/Data/Books.lua`'s: every page
+language's `index` and `loose`, in the shape of `Spoken_Books/Data/Books.lua`'s: every page
 the world database translates, under each name its owners have in that language, keyed on the
 text as the client shows it — the newest *extracted* version, not a correction made on the
 site. The reader asks it only on a client in the pack's language, before the English index.

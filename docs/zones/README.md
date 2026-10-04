@@ -32,7 +32,7 @@ has it. Both can still be installed at once — Spoken Zones plays the
 higher-bitrate one and `/spz audio` switches; see "Sound packs are
 self-describing" below for how it decides.
 
-Player-facing documentation lives in `addons/SpokenZones/README.md` and
+Player-facing documentation lives in `addons/Spoken_Zones/README.md` and
 `addons/SpokenZonesAudio/README.md` — those are the CurseForge project descriptions.
 Release history is in `CHANGELOG.md`.
 
@@ -48,7 +48,7 @@ validators that keep the generated Lua honest.
 ## Layout
 
 ```
-addons/SpokenZones/          the addon itself (this is what WoW loads)
+addons/Spoken_Zones/          the addon itself (this is what WoW loads)
   ZoneLore.toc
   embeds.xml             loads the bundled libraries
   Language.lua           which language is read, and the string lookup
@@ -471,7 +471,7 @@ attribution — and it never adds or removes a line.
 
 **Place names are never translated here.** The client already names every zone and
 subzone in its own language, and `make zones-aliases` writes those names out of `AreaTable`
-straight into each locale's `addons/SpokenZones/Data/<locale>/Aliases.lua`
+straight into each locale's `addons/Spoken_Zones/Data/<locale>/Aliases.lua`
 (`pipelines/zones/tools/locale/build-aliases.mjs` does it, fetching the table per run
 rather than through a committed seed). The explorer names places from that table in whatever language is being
 read, translated line or not; a translated row is stored under the same name, so an
@@ -677,8 +677,8 @@ voice ships:
 
 | File | Where it shows |
 |---|---|
-| `addons/SpokenZones/SpokenZones.toc` and `addons/SpokenZonesAudio/SpokenZonesAudio.toc` (`## Notes:`) | the in-game addon list, and the CurseForge blurb |
-| `addons/SpokenZones/README.md`, `addons/SpokenZonesAudio/README.md` | the two CurseForge project descriptions |
+| `addons/Spoken_Zones/Spoken_Zones.toc` and `addons/SpokenZonesAudio/SpokenZonesAudio.toc` (`## Notes:`) | the in-game addon list, and the CurseForge blurb |
+| `addons/Spoken_Zones/README.md`, `addons/SpokenZonesAudio/README.md` | the two CurseForge project descriptions |
 | `web/src/lib/beta.ts` | the **beta** badge beside the logo on lore.rusty.one |
 
 **Descriptions only, in the addon.** Nothing in the client says any of this out
@@ -1413,8 +1413,8 @@ credits on the spot.
 Getting that into the addon is one command and a commit:
 
 ```
-make zones-lore-export        # rewrite addons/SpokenZones/Data/*.lua from the database
-git diff addons/SpokenZones/Data/
+make zones-lore-export        # rewrite addons/Spoken_Zones/Data/*.lua from the database
+git diff addons/Spoken_Zones/Data/
 make zones-lookup             # only if the text moved and the audio was regenerated
 ```
 
@@ -1493,11 +1493,11 @@ Three CurseForge projects, released on their own cadences: most ZoneLore release
 do not touch a voiceline, and the packs should not re-upload 400MB for a Lua fix.
 
 ```sh
-make zones-package                    # dist/SpokenZones-<version>.zip
+make zones-package                    # dist/Spoken_Zones-<version>.zip
 make zones-package-audio              # dist/SpokenZonesAudio-<v>.zip
 ```
 
-`make zones-package` refuses to build from a dirty `addons/SpokenZones/` tree, so a zip can always be
+`make zones-package` refuses to build from a dirty `addons/Spoken_Zones/` tree, so a zip can always be
 traced back to a commit. Both scripts unpack to the addon folder itself, which is
 what the addon hosts expect — check with `unzip -l` if that ever seems in doubt.
 
@@ -1628,7 +1628,7 @@ queue widget's textures are ported from
 rest of the repository. The credit is here because knowing where the code came from is
 what makes re-applying its fixes possible.
 
-Zone lore text in `addons/SpokenZones/Data/Zones.lua` and `Data/Subzones.lua` is
+Zone lore text in `addons/Spoken_Zones/Data/Zones.lua` and `Data/Subzones.lua` is
 derived from [warcraft.wiki.gg](https://warcraft.wiki.gg) and is licensed
 **CC BY-SA 4.0**; each entry carries a `source` URL to its page. The narration in
 the sound packs is generated from that text and carries the same license. Any

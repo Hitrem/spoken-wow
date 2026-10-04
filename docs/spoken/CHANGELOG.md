@@ -2,6 +2,23 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## 3.0.0-beta.3 — 2026-10-04
+
+- **The modules have new folder names**: `Spoken_Quests`, `Spoken_Books` and `Spoken_Zones`.
+  The old names belong to the Spoken Quests, Spoken Zones and Spoken Books downloads, which
+  retire now that Spoken carries the modules. With their own folders the modules are safe from
+  whatever the CurseForge app does to one of those old downloads still installed. Titles in the
+  AddOns list are unchanged.
+- **The old `SpokenQuests`, `SpokenZones` and `SpokenBooks` folders become harmless.** The last
+  update of each old download leaves a folder that never loads, listed greyed out as
+  "Spoken Quests (now in Spoken)" and the like. It is safe to delete. A full old copy still in
+  Interface\AddOns would play every line a second time, so Spoken asks you to delete it at login.
+- **The modules' settings start fresh once more.** The game names a module's settings file
+  after its folder, so the new folders begin without one: Quests' settings and profiles, Zones'
+  and Books' settings, and the record of greetings heard and zones narrated. Spoken's own
+  settings are kept, including which modules are switched off, and so are the lines gathered in
+  `SpokenContributions.lua`.
+
 ## 3.0.0-beta.2 — 2026-10-04
 
 - **Unzipping over an older Spoken Player works.** The download now carries a `SpokenPlayer`

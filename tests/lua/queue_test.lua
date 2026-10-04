@@ -241,7 +241,7 @@ Expect("...and the queue moves on", world.played[1], next_.path)
 -- source's channel: without one the client uses SFX, and with effects switched off
 -- every file would be reported missing though Master plays it fine.
 Fresh()
-local probed = env.Sources:Register("probed", { title = "Probed", addon = "SpokenQuests", order = 3,
+local probed = env.Sources:Register("probed", { title = "Probed", addon = "Spoken_Quests", order = 3,
     testBeforeQueue = true })
 local p = H.Clip()
 Expect("a probed source admits a file that exists", probed:Enqueue(p) ~= nil, true)

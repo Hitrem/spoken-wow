@@ -7,13 +7,13 @@ local H = require("queue_helpers")
 local print = stub.print
 local world = stub.world
 local SPOKEN = here .. "/../../addons/Spoken/"
-local QUESTS = here .. "/../../addons/SpokenQuests/"
-local BOOKS = here .. "/../../addons/SpokenBooks/"
+local QUESTS = here .. "/../../addons/Spoken_Quests/"
+local BOOKS = here .. "/../../addons/Spoken_Books/"
 local Expect, Failures = H.Expecter(print)
 
 stub.SetClient("11509")
 stub.SetAddOns({
-    { folder = "SpokenQuests", meta = { Version = "9.9.9" } },
+    { folder = "Spoken_Quests", meta = { Version = "9.9.9" } },
     { folder = "TestPack", meta = { ["X-VoiceOver-DataModule-Version"] = "1", Version = "1.2.1", Title = "TestPack" } },
 })
 local VoiceOver = stub.LoadQuests(QUESTS, SPOKEN)
@@ -147,7 +147,7 @@ Expect("...counting what is kept", box.body:GetText():match("1 line") ~= nil, tr
 ------------------------------------------------------------------------------- books
 local SpokenBooks = {}
 for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader", "Audio", "Contribute" }) do
-    assert(loadfile(BOOKS .. file .. ".lua"))("SpokenBooks", SpokenBooks)
+    assert(loadfile(BOOKS .. file .. ".lua"))("Spoken_Books", SpokenBooks)
 end
 SpokenBooks:InitDB()
 dofile(BOOKS .. "Data/Books.lua")

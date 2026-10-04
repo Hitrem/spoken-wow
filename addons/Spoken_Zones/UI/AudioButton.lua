@@ -14,8 +14,8 @@ local L = SpokenZones.L
 local ROUND_SIZE = 24
 -- Our own copies, not paths into Spoken: OwnRound only draws when the player is missing,
 -- and a missing texture draws as solid green.
-local RING = [[Interface\AddOns\SpokenZones\Textures\SettingsButton]]
-local PORTRAIT_ATLAS = [[Interface\AddOns\SpokenZones\Textures\PortraitFrameAtlas]]
+local RING = [[Interface\AddOns\Spoken_Zones\Textures\SettingsButton]]
+local PORTRAIT_ATLAS = [[Interface\AddOns\Spoken_Zones\Textures\PortraitFrameAtlas]]
 local PORTRAIT_ATLAS_SIZE = 512
 local BUG = [[Interface\HelpFrame\HelpIcon-Bug]]
 

@@ -8,7 +8,7 @@ categories:
   - Miscellaneous
   - Roleplay
 license: MIT
-addonReadme: addons/SpokenZones/README.md
+addonReadme: addons/Spoken_Zones/README.md
 ---
 
 **Zone lore on the world map, for WoW Classic Era.** One of [Spoken](https://www.curseforge.com/wow/addons/spoken-player)'s modules: it comes in Spoken's download, beside Spoken Quests and Spoken Books, and narrates through it.

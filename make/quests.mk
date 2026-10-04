@@ -144,11 +144,11 @@ acted: pull-recorded package-acted ## Pull the recordings and build the voice-ac
 # Two zips built on their own schedules, which is why they are two targets: most changes to
 # the player touch no voiceline, and the sound pack is three orders of magnitude larger.
 #
-# `package` takes its version from `## Version:` in SpokenQuests.toc, so bumping the addon
+# `package` takes its version from `## Version:` in Spoken_Quests.toc, so bumping the addon
 # and naming the zips stay one edit. It refuses to build from an uncommitted tree, because a
 # zip nobody can trace back to a commit is a zip nobody can rebuild - ALLOW_DIRTY=1 to
 # override while testing. Four zips come out: one for Blizzard's clients, which pick a .toc by
-# flavor suffix, and one apiece for 1.12, 2.4.3 and 3.3.5, which read SpokenQuests.toc and
+# flavor suffix, and one apiece for 1.12, 2.4.3 and 3.3.5, which read Spoken_Quests.toc and
 # nothing else and each need their own vendored Ace3 in it. Only the first goes to CurseForge;
 # the GitHub release workflow publishes all four.
 #
@@ -177,8 +177,8 @@ icon: ## Rebuild the addons' icon.tga and the minimap BLP from pipelines/quests/
 	@python3 pipelines/quests/tools/make_icon.py pipelines/quests/assets/icon/spoken-player-512.png pipelines/quests/assets/icon/spoken-player.tga
 	@python3 pipelines/quests/tools/make_icon.py pipelines/quests/assets/icon/spoken-quests-512.png pipelines/quests/assets/icon/spoken-quests.tga
 	@cp pipelines/quests/assets/icon/spoken-player.tga addons/Spoken/icon.tga
-	@cp pipelines/quests/assets/icon/spoken-quests.tga addons/SpokenQuests/icon.tga
-	@echo "==> copied into addons/Spoken/ and addons/SpokenQuests/"
+	@cp pipelines/quests/assets/icon/spoken-quests.tga addons/Spoken_Quests/icon.tga
+	@echo "==> copied into addons/Spoken/ and addons/Spoken_Quests/"
 	@python3 pipelines/quests/tools/make_minimap_icon.py pipelines/quests/assets/icon/spoken-player-512.png addons/Spoken/Textures/MinimapButton.blp
 
 package: ## Zip the player addon into dist/: one Blizzard zip, one per legacy client
@@ -256,7 +256,7 @@ factions: ## Re-export pipelines/quests/corpus/factions.json from the world DB (
 # scripts. Committed as addon Lua for the same reason factions.json is committed: packaging the
 # addon must never need MySQL. pipelines/quests/tools/export_followup_lines.py explains who speaks.
 
-followup-lines: ## Re-export addons/SpokenQuests/FollowupLines.lua from the world DB (needs MySQL)
+followup-lines: ## Re-export addons/Spoken_Quests/FollowupLines.lua from the world DB (needs MySQL)
 	@$(PYTHON) pipelines/quests/tools/export_followup_lines.py
 
 release-dry: ## Show what `make release` would upload to CurseForge and Wago
@@ -406,8 +406,8 @@ export-locale-text: ## quest_line localeText -> build/quests/$(LOCALE)/locale-te
 # the addon, not a pack: the name follows the client's language, not the voice the player
 # chose, so it has to be there with the English packs too (tts_cli/giver_names.py). Rerun after
 # an import-locale; the files only change when a name does.
-export-giver-names: ## entity_name -> addons/SpokenQuests/Locale/Names/<lang>.lua
-	@$(QUESTS_CLI) export-giver-names --out-dir $(abspath addons/SpokenQuests/Locale/Names)
+export-giver-names: ## entity_name -> addons/Spoken_Quests/Locale/Names/<lang>.lua
+	@$(QUESTS_CLI) export-giver-names --out-dir $(abspath addons/Spoken_Quests/Locale/Names)
 
 export-ignores: ## line_ignore -> corpus/ignored.json, replacing the old ssh export
 	@$(QUESTS_CLI) export-ignores $(ARGS)

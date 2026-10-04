@@ -11,6 +11,11 @@
 #
 # There are no legacy-client zips of Spoken: those clients have no addon manager, so the quests
 # addon's 1.12/2.4.3/3.3.5 zips carry Spoken inside them (scripts/quests/package.sh).
+#
+# The modules' folders are Spoken_Quests, Spoken_Books and Spoken_Zones. Their old names,
+# SpokenQuests and the rest, belong to the retired CurseForge projects, and this zip carries no
+# tombstone under them: two projects shipping one folder is what the rename exists to stop. The
+# retired projects' last releases carry those (scripts/spoken/package-retired.sh).
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -76,7 +81,7 @@ mkdir -p "$staging/$TOMBSTONE"
 for toc in "$SRC"/$NAME.toc "$SRC"/${NAME}_*.toc; do
   suffix="${toc##*/$NAME}"
   case "$suffix" in _1.12.toc|_2.4.3.toc|_3.3.5.toc) continue ;; esac
-  tombstone_toc "$toc" "$staging/$TOMBSTONE/$TOMBSTONE$suffix"
+  tombstone_toc "$REPO/addons/$TOMBSTONE/$TOMBSTONE.toc" "$toc" "$staging/$TOMBSTONE/$TOMBSTONE$suffix"
 done
 
 excludes=()
@@ -87,15 +92,15 @@ done
 # checks would refuse. A case rather than an associative array: macOS still ships bash 3.2.
 module_packager() {
   case "$1" in
-    SpokenQuests) echo "$REPO/scripts/quests/package.sh" ;;
-    SpokenBooks) echo "$REPO/scripts/books/package.sh" ;;
-    SpokenZones) echo "$REPO/scripts/zones/package.sh" ;;
+    Spoken_Quests) echo "$REPO/scripts/quests/package.sh" ;;
+    Spoken_Books) echo "$REPO/scripts/books/package.sh" ;;
+    Spoken_Zones) echo "$REPO/scripts/zones/package.sh" ;;
   esac
 }
 modules_dist="$(mktemp -d)"
 trap 'rm -rf "$staging" "$modules_dist"' EXIT
 folders=("$NAME" "$STORE" "$TOMBSTONE")
-for module in SpokenQuests SpokenBooks SpokenZones; do
+for module in Spoken_Quests Spoken_Books Spoken_Zones; do
   module_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$REPO/addons/$module/$module.toc" | head -1 | tr -d '
 ')"
   DIST="$modules_dist" "$(module_packager "$module")" >/dev/null
