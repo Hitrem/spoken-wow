@@ -701,18 +701,18 @@ do
     Play(.6)
     E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
 end
--- Lines at Once: the subtitle pages a long line into pages of at most that many lines, 3 unless
--- the player sets 1 to 4, and a change re-pages the line on screen.
+-- Sentences at Once: the subtitle pages a long line into pages of that many sentences, 3 unless
+-- the player sets 1 to 4, never more than four lines, and a change re-pages the line on screen.
 do
     local style=E.Addon:PlayerStyle()
     E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
-    Check(cfg.SubtitleLines==3,'Lines at Once is 3 to begin with')
+    Check(cfg.SubtitleSentences==3,'Sentences at Once is 3 to begin with')
     local long=string.rep('A long sentence that keeps going on and on across the screen. ',8)
     source:Enqueue(Clip('lines',long,30)); Play(.7)
-    Check(#S.rows<=3 and #S.pages>1,'a long line is paged three lines at a time')
-    cfg.SubtitleLines=1; S:Update(); Play(.1)
-    Check(#S.rows==1 and S.pageLines==1,'set to one, the line on screen is paged again a line at a time')
-    cfg.SubtitleLines=3; S:Update()
+    Check(#S.rows<=4 and #S.pages>1,'a long line is paged, three sentences at most to a page')
+    cfg.SubtitleSentences=1; S:Update(); Play(.1)
+    Check(#S.rows==1 and S.pageSentences==1,'set to one, the line on screen is paged again a sentence at a time')
+    cfg.SubtitleSentences=3; S:Update()
     Q:RemoveAllSoundsFromQueue(); Play(.6)
     E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
 end

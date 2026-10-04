@@ -12,13 +12,13 @@ Subtitle = {}
 -- The widest a line runs, padding included. LoreTeller matched Plumber's talking head.
 local WIDTH = 512
 local PAD, TOP_PAD, TITLE_GAP, BOTTOM_PAD, LINE_GAP = 16, 12, 8, 12, 2
--- The most lines shown at once, the player's setting (SubtitleLines, 1 to 4). Longer text is split
--- into pages of up to this many, at sentence ends where a sentence fits, and each page replaces the
--- last once its share of the clip has played.
-local MAX_LINES = 4
-local function PageLines()
-    local lines = tonumber(Addon:Profile("Transcript").SubtitleLines) or 3
-    return math.max(1, math.min(MAX_LINES, math.floor(lines)))
+-- How many sentences show at once, the player's setting (SubtitleSentences, 1 to 4), and never
+-- more than MAX_LINES lines. Longer text is split into pages (Subtitle:Paginate), and each page
+-- replaces the last once its share of the clip has played.
+local MAX_LINES, MAX_SENTENCES = 4, 4
+local function PageSentences()
+    local sentences = tonumber(Addon:Profile("Transcript").SubtitleSentences) or 3
+    return math.max(1, math.min(MAX_SENTENCES, math.floor(sentences)))
 end
 local FADE_IN, FADE_OUT = .6, .5
 -- Until it is dragged: the top edge, in UI units up from the bottom of the screen.
@@ -185,59 +185,64 @@ function Subtitle:Wrap(text)
     return lines
 end
 
---- Pages of at most PageLines() lines each: as many whole sentences as fit on a page; a sentence
---- too long for one page at its phrases (Phrases), as many whole phrases to a page as fit; and only
---- a phrase too long for a page on its own cut between words into runs that do. Joined, the pages give
---- back the text's words in order, which is what page timing and the active word count on.
+--- Pages of PageSentences() whole sentences each, fewer where they would run past MAX_LINES lines.
+--- A sentence longer than MAX_LINES on its own turns at its phrases (Phrases), on pages of its own
+--- with as many whole phrases to a page as fit; only a phrase longer still is cut between words.
+--- Joined, the pages give back the text's words in order, which is what page timing and the active
+--- word count on.
 function Subtitle:Paginate(text)
-    local most = PageLines()
-    self.pageLines = most
-    if #self:Wrap(text) <= most then return { text } end
-    local function Fits(candidate) return #self:Wrap(candidate) <= most end
-    local pieces = {}
-    -- A piece too long for a page on its own, cut between words.
+    local most = PageSentences()
+    self.pageSentences = most
+    local function Fits(candidate) return #self:Wrap(candidate) <= MAX_LINES end
+    local sentences = Sentences(text)
+    if #sentences <= most and Fits(text) then return { text } end
+    local pages, page, count = {}, "", 0
+    local function Close()
+        if page:find("%S") then pages[#pages + 1] = (page:gsub("%s+$", "")) end
+        page, count = "", 0
+    end
+    -- A phrase longer than MAX_LINES, cut between words into runs that fit.
     local function Cut(piece)
-            local run = ""
-            for word, space in piece:gmatch("(%S+)(%s*)") do
-                if run ~= "" and not Fits(run .. word) then
-                    pieces[#pieces + 1] = run
-                    run = ""
-                end
-                if Fits(word) then
-                    run = run .. word .. space
-                else
-                    -- One unbroken run longer than a page, as text written without spaces is:
-                    -- cut between characters, as Wrap breaks it into lines.
-                    for char in word:gmatch(UTF8_CHAR) do
-                        if run ~= "" and not Fits(run .. char) then
-                            pieces[#pieces + 1] = run
-                            run = ""
-                        end
-                        run = run .. char
+        local runs, run = {}, ""
+        for word, space in piece:gmatch("(%S+)(%s*)") do
+            if run ~= "" and not Fits(run .. word) then
+                runs[#runs + 1] = run
+                run = ""
+            end
+            if Fits(word) then
+                run = run .. word .. space
+            else
+                -- One unbroken run longer than a page, as text written without spaces is:
+                -- cut between characters, as Wrap breaks it into lines.
+                for char in word:gmatch(UTF8_CHAR) do
+                    if run ~= "" and not Fits(run .. char) then
+                        runs[#runs + 1] = run
+                        run = ""
                     end
-                    run = run .. space
+                    run = run .. char
+                end
+                run = run .. space
+            end
+        end
+        if run:find("%S") then runs[#runs + 1] = run end
+        return runs
+    end
+    for _, sentence in ipairs(sentences) do
+        if Fits(sentence) then
+            if count >= most or (page ~= "" and not Fits(page .. sentence)) then Close() end
+            page, count = page .. sentence, count + 1
+        else
+            Close()
+            for _, phrase in ipairs(Phrases(sentence)) do
+                for _, part in ipairs(Fits(phrase) and { phrase } or Cut(phrase)) do
+                    if page ~= "" and not Fits(page .. part) then Close() end
+                    page = page .. part
                 end
             end
-            if run:find("%S") then pieces[#pieces + 1] = run end
-    end
-    for _, sentence in ipairs(Sentences(text)) do
-        if Fits(sentence) then
-            pieces[#pieces + 1] = sentence
-        else
-            for _, phrase in ipairs(Phrases(sentence)) do
-                if Fits(phrase) then pieces[#pieces + 1] = phrase else Cut(phrase) end
-            end
+            Close()
         end
     end
-    local pages, page = {}, ""
-    for _, piece in ipairs(pieces) do
-        if page ~= "" and not Fits(page .. piece) then
-            pages[#pages + 1] = (page:gsub("%s+$", ""))
-            page = ""
-        end
-        page = page .. piece
-    end
-    if page:find("%S") then pages[#pages + 1] = (page:gsub("%s+$", "")) end
+    Close()
     return pages
 end
 
@@ -761,8 +766,8 @@ function Subtitle:Update()
         self:Place()
     end
     local clip = speaking and Transcript.clip or self.sample
-    -- The lines at once changed in the settings: the line paged again, from where the voice is.
-    if self.clip and self.pages and self.pageLines and self.pageLines ~= PageLines() then
+    -- The sentences at once changed in the settings: the line paged again, from where the voice is.
+    if self.clip and self.pages and self.pageSentences and self.pageSentences ~= PageSentences() then
         self:Prepare(self.clip, self.sample and L.SUBTITLE_SAMPLE_TEXT or Transcript.text)
         self.revealed = nil
     end
