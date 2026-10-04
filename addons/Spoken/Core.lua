@@ -325,12 +325,25 @@ function Addon:RetireOldFolders()
     for _, folder in ipairs(found) do
         if DisableAddOn then pcall(DisableAddOn, folder) end
     end
-    local text = format(L.OLD_FOLDERS_FMT, table.concat(found, ", "))
+    local text = format(L.OLD_FOLDERS_FMT, "• " .. table.concat(found, "\n• "))
     print("|cff66bbffSpoken:|r " .. text)
     if StaticPopupDialogs and StaticPopup_Show then
+        -- Left-aligned while shown, for the list: the popup frames are shared by every addon and
+        -- centred by default, so the alignment goes back as it closes.
+        local function Body(dialog)
+            return dialog.text or dialog.Text or (dialog.GetName and _G[dialog:GetName() .. "Text"])
+        end
         StaticPopupDialogs.SPOKEN_OLD_FOLDERS = {
             text = text, button1 = L.OLD_FOLDERS_RELOAD, button2 = L.OLD_FOLDERS_LATER,
             OnAccept = function() ReloadUI() end,
+            OnShow = function(dialog)
+                local body = Body(dialog)
+                if body and body.SetJustifyH then body:SetJustifyH("LEFT") end
+            end,
+            OnHide = function(dialog)
+                local body = Body(dialog)
+                if body and body.SetJustifyH then body:SetJustifyH("CENTER") end
+            end,
             timeout = 0, whileDead = 1, hideOnEscape = 1,
         }
         StaticPopup_Show("SPOKEN_OLD_FOLDERS")
