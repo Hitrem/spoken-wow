@@ -60,7 +60,7 @@ L.LORE_WINDOW_EMPTY = "在左側選擇一個地方來閱讀它的故事。地區
 
 L.PLAY = "播放"
 L.STOP = "停止"
-L.STOP_TOOLTIP = "停止這段故事。重播會從頭開始：遊戲無法從中間繼續播放聲音。"
+L.STOP_TOOLTIP = "停止這段故事。重播會從頭朗讀。"
 L.REPLAY = "重播"
 L.REPLAY_TOOLTIP = "從頭重新朗讀這段故事。"
 L.QUEUE_HELD_COMBAT = "等待戰鬥結束。"

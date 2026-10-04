@@ -60,7 +60,7 @@ L.LORE_WINDOW_EMPTY = "Wähle links einen Ort, um seine Geschichte zu lesen. Die
 
 L.PLAY = "Abspielen"
 L.STOP = "Stopp"
-L.STOP_TOOLTIP = "Hält die Geschichte an. Wiederholen startet sie von vorne: Das Spiel kann einen Sound nicht mittendrin fortsetzen."
+L.STOP_TOOLTIP = "Hält die Geschichte an. Wiederholen liest sie von vorne."
 L.REPLAY = "Wiederholen"
 L.REPLAY_TOOLTIP = "Liest die Geschichte noch einmal von vorne."
 L.QUEUE_HELD_COMBAT = "Wartet auf Kampfende."

@@ -30,7 +30,7 @@ local L = {}
 
 L.PLAY = "Play"
 L.STOP = "Stop"
-L.STOP_TOOLTIP = "Stops the story. Replay starts it again from the beginning: the game cannot carry on a sound part-way through."
+L.STOP_TOOLTIP = "Stops the story. Replay reads it from the beginning."
 L.REPLAY = "Replay"
 L.REPLAY_TOOLTIP = "Reads the story again from the beginning."
 

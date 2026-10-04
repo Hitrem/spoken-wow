@@ -60,7 +60,7 @@ L.LORE_WINDOW_EMPTY = "Choisissez un lieu à gauche pour lire son récit. Le nom
 
 L.PLAY = "Lecture"
 L.STOP = "Arrêter"
-L.STOP_TOOLTIP = "Arrête l'histoire. Rejouer la relance depuis le début : le jeu ne peut pas reprendre un son en cours de route."
+L.STOP_TOOLTIP = "Arrête l'histoire. Rejouer la relit depuis le début."
 L.REPLAY = "Rejouer"
 L.REPLAY_TOOLTIP = "Relit l'histoire depuis le début."
 L.QUEUE_HELD_COMBAT = "En attente de la fin du combat."

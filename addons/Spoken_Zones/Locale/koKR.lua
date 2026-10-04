@@ -60,7 +60,7 @@ L.LORE_WINDOW_EMPTY = "왼쪽에서 장소를 골라 이야기를 읽으세요. 
 
 L.PLAY = "재생"
 L.STOP = "정지"
-L.STOP_TOOLTIP = "이야기를 멈춥니다. 다시 재생하면 처음부터 시작합니다. 게임은 소리를 중간부터 이어 재생할 수 없습니다."
+L.STOP_TOOLTIP = "이야기를 멈춥니다. 다시 재생하면 처음부터 읽습니다."
 L.REPLAY = "다시 재생"
 L.REPLAY_TOOLTIP = "이야기를 처음부터 다시 읽습니다."
 L.QUEUE_HELD_COMBAT = "전투 종료 대기 중."

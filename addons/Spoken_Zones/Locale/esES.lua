@@ -63,7 +63,7 @@ L.LORE_WINDOW_EMPTY = "Elige un lugar a la izquierda para leer su historia. El n
 
 L.PLAY = "Reproducir"
 L.STOP = "Detener"
-L.STOP_TOOLTIP = "Detiene la historia. Repetir la empieza de nuevo desde el principio: el juego no puede continuar un sonido a la mitad."
+L.STOP_TOOLTIP = "Detiene la historia. Repetir la lee desde el principio."
 L.REPLAY = "Repetir"
 L.REPLAY_TOOLTIP = "Lee la historia otra vez desde el principio."
 L.QUEUE_HELD_COMBAT = "Esperando que termine el combate."
