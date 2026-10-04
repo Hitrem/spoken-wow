@@ -78,6 +78,13 @@ Expect("retiring them switches every old folder off for the next login", table.c
 local popup = stub.popups[1]
 Expect("...names them in a popup", popup and popup.key, "SPOKEN_OLD_FOLDERS")
 Expect("...that offers the reload which finishes it", popup and popup.dialog.button1, "Reload Now")
+Expect("...listing them one to a line", string.find(popup.dialog.text, "\n\n• SpokenPlayer\n• VoiceOverRedux\n", 1, true) ~= nil, true)
+local justify = "CENTER"
+local shown = { text = { SetJustifyH = function(_, value) justify = value end } }
+popup.dialog.OnShow(shown)
+Expect("...left-aligned while it shows", justify, "LEFT")
+popup.dialog.OnHide(shown)
+Expect("...and centred again for the next addon's popup", justify, "CENTER")
 popup.dialog.OnAccept()
 Expect("...and reloads when taken up on it", stub.reloads, reloads + 1)
 loaded = {}
