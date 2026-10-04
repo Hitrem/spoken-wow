@@ -62,12 +62,12 @@ None of this is the project's to license, and the MIT grant does not reach it.
 - **Lore page art** (`addons/Spoken_Zones/Textures/Art/*.tga`): the spellbook's parchment,
   divider and backplate, and the quest log's details page and frame, cut from the game's UI
   files (Forever client) so the page looks the same on every client. They are Blizzard's.
-- **Link icons** (`addons/Spoken/Textures/Link*.tga`): the GitHub, Discord, CurseForge and Wago
-  logos, each on a square of its brand colour. GitHub's and Discord's shapes come from
-  [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons), CurseForge's from
-  [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0), Wago's from the logo on
-  addons.wago.io. The logos are trademarks of GitHub, Inc., Discord Inc., Overwolf (CurseForge)
-  and Wago, used only to link to those sites.
+- **Link icons** (`addons/Spoken/Textures/Link*.tga`): the GitHub, Discord, CurseForge, Wago and
+  Buy Me a Coffee logos, each on a square of its brand colour. GitHub's and Discord's shapes come
+  from [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons), CurseForge's and Buy Me
+  a Coffee's from [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0), Wago's from
+  the logo on addons.wago.io. The logos are trademarks of GitHub, Inc., Discord Inc., Overwolf
+  (CurseForge), Wago and Buy Me a Coffee, used only to link to those sites.
 - **Minimal Classic player textures** (`addons/Spoken/Textures/Minimal*.tga`)
   also derive from Blizzard UI artwork. Sources and adaptations are listed in
   [`docs/minimal-classic/ARTWORK.md`](docs/minimal-classic/ARTWORK.md).

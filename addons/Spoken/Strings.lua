@@ -142,6 +142,7 @@ L = {
     LINK_DISCORD_TIP = "Talk with other players and the people who make Spoken.",
     LINK_CURSEFORGE_TIP = "Spoken's page, with every release and the voice packs.",
     LINK_WAGO_TIP = "Spoken's page on Wago, with every release.",
+    LINK_COFFEE_TIP = "Support Spoken: it pays for the voices, and for recording again the lines players report.",
     SUBTITLE_PAUSED = "paused",
     OPT_RESET_TIP = "Moves the window and the subtitles back to where they start. Use this when one is off the screen or in the way.",
     OPT_PARTS_TITLE = "Modules",

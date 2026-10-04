@@ -140,6 +140,8 @@ local LINKS = {
         url = "https://www.curseforge.com/wow/addons/spoken-player", tip = "LINK_CURSEFORGE_TIP" },
     { name = "Wago", icon = [[Interface\AddOns\Spoken\Textures\LinkWago]],
         url = "https://addons.wago.io/addons/spoken-player", tip = "LINK_WAGO_TIP" },
+    { name = "Buy Me a Coffee", icon = [[Interface\AddOns\Spoken\Textures\LinkBuyMeACoffee]],
+        url = "https://buymeacoffee.com/rustykey", tip = "LINK_COFFEE_TIP" },
 }
 Options.LINKS = LINKS
 

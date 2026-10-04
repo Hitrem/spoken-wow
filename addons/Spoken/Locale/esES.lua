@@ -155,6 +155,7 @@ L.LINK_GITHUB_TIP = "El código fuente, y donde se informa de los problemas del 
 L.LINK_DISCORD_TIP = "Habla con otros jugadores y con quienes hacen Spoken."
 L.LINK_CURSEFORGE_TIP = "La página de Spoken, con cada versión y los paquetes de voces."
 L.LINK_WAGO_TIP = "La página de Spoken en Wago, con cada versión."
+L.LINK_COFFEE_TIP = "Apoya Spoken: paga las voces y volver a grabar las líneas que se reportan."
 L.SUBTITLE_PAUSED = "en pausa"
 
 -- Modules

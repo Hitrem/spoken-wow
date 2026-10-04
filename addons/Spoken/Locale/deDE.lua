@@ -217,6 +217,7 @@ L.LINK_GITHUB_TIP = "Der Quellcode und der Ort, an dem Probleme mit dem Addon ge
 L.LINK_DISCORD_TIP = "Sprich mit anderen Spielern und den Leuten, die Spoken machen."
 L.LINK_CURSEFORGE_TIP = "Die Seite von Spoken, mit jeder Version und den Sprachpaketen."
 L.LINK_WAGO_TIP = "Die Seite von Spoken auf Wago, mit jeder Version."
+L.LINK_COFFEE_TIP = "Unterstütze Spoken: Damit werden die Stimmen bezahlt und gemeldete Zeilen neu aufgenommen."
 L.SUBTITLE_PAUSED = "pausiert"
 L.OPT_RESET_TIP = "Setzt das Fenster und die Untertitel an ihre Ausgangsposition zurück. Nützlich, wenn eines davon außerhalb des Bildschirms liegt oder im Weg ist."
 L.OPT_PARTS_TITLE = "Module"

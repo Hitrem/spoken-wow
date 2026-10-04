@@ -217,6 +217,7 @@ L.LINK_GITHUB_TIP = "소스 코드, 그리고 애드온 문제를 알리는 곳�
 L.LINK_DISCORD_TIP = "다른 플레이어, 그리고 Spoken을 만드는 사람들과 이야기하세요."
 L.LINK_CURSEFORGE_TIP = "모든 릴리스와 음성 팩이 있는 Spoken 페이지입니다."
 L.LINK_WAGO_TIP = "모든 릴리스가 있는 Wago의 Spoken 페이지입니다."
+L.LINK_COFFEE_TIP = "Spoken을 후원하세요. 음성 제작과 신고된 대사의 재녹음 비용으로 쓰입니다."
 L.SUBTITLE_PAUSED = "일시정지됨"
 L.OPT_RESET_TIP = "창과 자막을 처음 위치로 되돌립니다. 화면 밖으로 나갔거나 방해가 될 때 사용하세요."
 L.OPT_PARTS_TITLE = "모듈"
