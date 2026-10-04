@@ -149,6 +149,33 @@ Expect("G. picked, an English client reads Italian", Z:GetLanguage(), "itIT")
 Z = InstallItalian("itIT", {})
 Expect("G. a client claiming Italian still reads English on Auto", Z:GetAutoLanguage(), "enUS")
 
+---------------------------------------------------------------- H. what the client's font draws
+-- A language of another script is offered where the lore's font draws it: a German client whose
+-- font has Cyrillic offers Russian, and none offers Korean or Chinese without their glyphs. The
+-- font is asked by drawing the language's own name against as many characters no font has.
+Z = InstallOn("deDE", nil)
+Z.drawable = {}
+local fontHas = { [208] = true, [209] = true }   -- Cyrillic's lead bytes: this font draws it
+local realParent = _G.UIParent.CreateFontString
+_G.UIParent.CreateFontString = function()
+    local fs = { text = "" }
+    function fs:SetText(t) self.text = t end
+    function fs:Hide() end
+    function fs:GetStringWidth()
+        local w = 0
+        for ch in self.text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+            w = w + (fontHas[ch:byte(1)] and 7 or 10)   -- a glyph it has, or the same box as any other
+        end
+        return w
+    end
+    return fs
+end
+Expect("H. a German client whose font has Cyrillic offers Russian", Z:CanRenderLanguage("ruRU"), true)
+Expect("H. ...but not Korean, which it cannot draw", Z:CanRenderLanguage("koKR"), false)
+Expect("H. ...nor Chinese", Z:CanRenderLanguage("zhCN"), false)
+Expect("H. a Latin language needs no asking", Z:CanRenderLanguage("frFR"), true)
+_G.UIParent.CreateFontString = realParent
+
 stub.SetLocale("enUS")
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
