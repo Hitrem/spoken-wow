@@ -141,6 +141,9 @@ function SpokenZones:SetupOptions()
 	layout:Checkbox(L.OPT_HOVER,
 		L.OPT_HOVER_TIP,
 		Get("showHoverPreview"), Set("showHoverPreview"))
+	layout:Checkbox(L.OPT_PICTURES,
+		L.OPT_PICTURES_TIP,
+		Get("showPictures"), Set("showPictures"), RedrawEverything)
 	layout:Requires(layout:Slider(L.OPT_PANEL_WIDTH, 220, 520, 10,
 		Get("panelWidth"), Set("panelWidth"), RedrawPanel, SpokenLayout.Number, L.OPT_PANEL_WIDTH_TIP),
 		besideMap, L.REASON_MAP_PANEL)

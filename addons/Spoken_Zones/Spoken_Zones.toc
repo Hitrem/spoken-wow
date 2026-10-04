@@ -74,6 +74,7 @@ Data/zhCN/Zones.lua
 Data/zhCN/Subzones.lua
 Data/zhTW/Zones.lua
 Data/zhTW/Subzones.lua
+Data/Pictures.lua
 Data/deDE/Aliases.lua
 Data/esES/Aliases.lua
 Data/esMX/Aliases.lua

@@ -70,6 +70,10 @@ function Z:OnMapChanged() end
 function Z:CanContribute() return true end
 function Z:ResolveAreaKey(name) return name and string.lower(name) end
 function Z:ClearSubzone() self.selected = nil; self:RefreshPanel() end
+-- Durotar has a picture; its areas have none.
+function Z:Picture(mapID, key)
+    if mapID == 1411 and not key then return "Pictures/zone-1411", "Pictures/Mask2" end
+end
 Z.ToggleLoreWindow = nil
 _G.hooksecurefunc = _G.hooksecurefunc or function() end
 
@@ -94,6 +98,14 @@ Z:ToggleLoreWindow()
 Expect("opening it lands on where the player stands", page.title.text, "Durotar")
 Expect("...the story in the spellbook's ink", page.body.ink and page.body.ink[1], 0.24)
 Expect("...with Play and Report for it", page.play.mapID == 1411 and page.report.mapID == 1411, true)
+Expect("...and the zone's picture above the story", page.body.picture:IsShown() and page.body.picture:GetTexture(), "Pictures/zone-1411")
+Expect("...its edge frayed by its mask", page.body.pictureMask:GetTexture(), "Pictures/Mask2")
+Expect("...a little see-through, so the parchment shows in it", page.body.picture:GetAlpha(), 0.95)
+Expect("...as wide as the words, up to its most", page.body.picture:GetWidth(), math.min(400, page.body.text:GetWidth()))
+Expect("...centred over them", select(1, page.body.picture:GetPoint(1)) == "TOP"
+    and select(2, page.body.picture:GetPoint(1)) == page.body.child, true)
+local _, _, _, _, textTop = page.body.text:GetPoint(1)
+Expect("...the words below it", textTop < -page.body.picture:GetHeight(), true)
 
 -- The list: Durotar open, its two areas under it, Dun Morogh closed.
 local rows = {}
