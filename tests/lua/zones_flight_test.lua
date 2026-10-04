@@ -1,5 +1,4 @@
--- Flight suppresses automatic zone intake without spending narration history or holding
--- flyover lore for landing. The zone resolver, autoplay and player queue are loaded for real.
+-- Exercise flight checks with real zone and queue code.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
@@ -45,7 +44,7 @@ local function Boot(client, taxi, flight, greeting)
     return Z
 end
 
--- Taxi flight is separate from flying on a mount: IsFlying can remain false on a taxi.
+-- IsFlying can be false on a taxi.
 for _, state in ipairs({
     { name = "taxi", taxi = true, flying = false },
     { name = "flying mount", taxi = false, flying = true },

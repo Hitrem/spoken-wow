@@ -182,8 +182,7 @@ end
 -- Returns whether the entry was queued, which the login greeting needs: a greeting that
 -- resolved nothing must not count as having greeted.
 local function Enqueue(mapID, areaKey)
-	-- Flyover lore is skipped at intake, rather than held for landing, when the
-	-- player may be several zones away. Taxi flights need their own check.
+	-- Skip flyover lore so it cannot queue up for landing.
 	if (UnitOnTaxi and UnitOnTaxi("player")) or (IsFlying and IsFlying()) then
 		return false
 	end
