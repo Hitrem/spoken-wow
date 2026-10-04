@@ -50,8 +50,8 @@ C_Texture.GetAtlasInfo=C_Texture.GetAtlasInfo or function(name)
     -- As the client does: it finds Vector2DMixin in the caller's environment, so a call from
     -- Spoken's private one fails.
     if getfenv(2)~=_G then error('unable to find mixin or metatable (Vector2DMixin)') end
-    local sizes={['Minimal_SliderBar_Left']={11,17},['Minimal_SliderBar_Right']={11,17},
-        ['_Minimal_SliderBar_Middle']={1,17},['widgetstatusbar-fill-yellow']={256,15}}
+    local sizes={['widgetstatusbar-borderleft']={35,31},['widgetstatusbar-borderright']={35,31},
+        ['widgetstatusbar-bordercenter']={64,31},['widgetstatusbar-bgcenter']={64,18},['widgetstatusbar-fill-yellow']={256,15}}
     local s=sizes[name]
     return s and {width=s[1],height=s[2],file=0,leftTexCoord=0,rightTexCoord=1,topTexCoord=0,bottomTexCoord=1} or nil
 end
@@ -463,7 +463,7 @@ Check(math.abs(S.frame:GetCenter()-UIParent:GetWidth()/2)<.001,'the subtitle is 
 Play(1)
 Check(S.frame:GetAlpha()==1,'the fade-in completes')
 -- Spoken Subtitles' progress line under the words, and the buttons in a row under the subtitle.
-Check(not S.progressBroken and S.progressHeight==5 and S.fill.atlas=='widgetstatusbar-fill-yellow',"the progress bar is built in the game's slider track")
+Check(not S.progressBroken and S.progressHeight==7 and S.fill.atlas=='widgetstatusbar-fill-yellow',"the progress bar is built in the game's status bar frame")
 Check(S.track:IsShown() and S.fill:GetWidth()>0.01 and S.fill:GetWidth()<S.track:GetWidth(),'the progress line fills as the line is read')
 Check(math.abs(S.track:GetWidth()-math.floor(S.shadowWant.w*.45))<1,'...across 45% of the background, as Spoken Subtitles draws it')
 do
