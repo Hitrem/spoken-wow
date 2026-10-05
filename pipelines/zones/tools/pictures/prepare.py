@@ -2,7 +2,7 @@
 """Prepares the wiki pictures fetch.mjs downloaded for the lore pages.
 
 Each picture is cropped to a 2:1 banner, tinted a touch toward the parchment it sits on, thinned
-to the paper toward its edges and written as a DXT1 BLP to addons/SpokenZones/Textures/Pictures/.
+to the paper toward its edges and written as a DXT1 BLP to addons/Spoken_Zones/Textures/Pictures/.
 The edges themselves, where the paint fails in dry-brush streaks, specks and spatters, are mask
 textures (Mask1.tga...) the game cuts each picture with, so a picture costs no alpha. Writes
 Data/Pictures.lua (which picture and mask each place has) and CREDITS.md (each picture's wiki
@@ -28,8 +28,8 @@ from scipy import ndimage
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", "..", "..", ".."))
 RAW = os.path.join(ROOT, "pipelines/zones/tools/cache/pictures/raw")
-OUT = os.path.join(ROOT, "addons/SpokenZones/Textures/Pictures")
-LUA = os.path.join(ROOT, "addons/SpokenZones/Data/Pictures.lua")
+OUT = os.path.join(ROOT, "addons/Spoken_Zones/Textures/Pictures")
+LUA = os.path.join(ROOT, "addons/Spoken_Zones/Data/Pictures.lua")
 
 # Shipped at twice the size the frame draws them (about 320 wide), so the game shrinks a picture
 # rather than stretching it: stretched, a 256-wide picture looked soft.

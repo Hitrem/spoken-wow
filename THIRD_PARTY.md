@@ -68,7 +68,7 @@ None of this is the project's to license, and the MIT grant does not reach it.
   each place's [Warcraft Wiki](https://warcraft.wiki.gg) page, cropped, tinted and edged by
   `pipelines/zones/tools/pictures/prepare.py`. The game in them is Blizzard's; each source file's
   wiki page gives its uploader and terms, listed per picture in that folder's `CREDITS.md`. The
-  edge masks (`Mask*.tga`) are made for this project.
+  edge masks (`Mask*.blp`) are made for this project.
 - **Lore page art** (`addons/Spoken_Zones/Textures/Art/*.tga`): the spellbook's parchment,
   divider and backplate, and the quest log's details page and frame, cut from the game's UI
   files (Forever client) so the page looks the same on every client. They are Blizzard's.

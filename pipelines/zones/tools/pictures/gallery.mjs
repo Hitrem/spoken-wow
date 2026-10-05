@@ -25,7 +25,7 @@ const safe = (s) => s.replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, " ").trim();
 async function main() {
   const all = await entries();
   const manifest = JSON.parse(await readFile(join(HERE, "manifest.json"), "utf8")).pictures;
-  const zones = await readFile(join(ROOT, "addons/SpokenZones/Data/enUS/Zones.lua"), "utf8");
+  const zones = await readFile(join(ROOT, "addons/Spoken_Zones/Data/enUS/Zones.lua"), "utf8");
   const zoneName = new Map([...zones.matchAll(/\[(\d+)\] = \{\s*\n\s*name = "([^"]+)"/g)].map((m) => [Number(m[1]), m[2]]));
 
   const pages = await pageImages([...new Set(all.map((e) => e.title))]);

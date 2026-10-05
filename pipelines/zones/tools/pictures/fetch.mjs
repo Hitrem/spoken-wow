@@ -18,7 +18,7 @@ import { API, CACHE, ROOT, USER_AGENT, THROTTLE_MS, sleep } from "../lib/wiki.mj
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MANIFEST = join(HERE, "manifest.json");
 const RAW = join(CACHE, "pictures", "raw");
-const DATA = join(ROOT, "addons/SpokenZones/Data/enUS");
+const DATA = join(ROOT, "addons/Spoken_Zones/Data/enUS");
 // Wide enough to crop a 2:1 banner from at twice the shipped size.
 const THUMB_WIDTH = 1024;
 

@@ -191,7 +191,7 @@ function SpokenZones:Picture(mapID, key)
 	local pictures = self.pictures and mapID and self.pictures[mapID]
 	local picture = pictures and pictures[key or ""]
 	if not picture or self:Get("showPictures") == false then return nil end
-	local folder = [[Interface\AddOns\SpokenZones\Textures\Pictures\]]
+	local folder = [[Interface\AddOns\Spoken_Zones\Textures\Pictures\]]
 	return folder .. picture[1], folder .. "Mask" .. picture[2]
 end
 
