@@ -53,6 +53,7 @@ Core.lua
 Audio.lua
 Contribute.lua
 Autoplay.lua
+Discovery.lua
 Data/enUS/Zones.lua
 Data/enUS/Subzones.lua
 # Keep the selected lore and caption text for installed voices. Other languages return early.

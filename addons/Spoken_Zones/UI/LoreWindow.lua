@@ -165,6 +165,14 @@ local function Matches(text)
 	return filter == "" or (text and string.find(string.lower(text), filter, 1, true) ~= nil)
 end
 
+-- Whether the list shows a place: every place with Show Undiscovered Places on, otherwise only
+-- those this character has found (Discovery.lua), and always the one chosen.
+local function Listed(mapID, key)
+	if SpokenZones:ShowsUndiscovered() then return true end
+	if selection and selection.mapID == mapID and (key == nil or selection.key == key) then return true end
+	return SpokenZones:IsFound(mapID, key)
+end
+
 local function Missing(mapID)
 	local entry = SpokenZones:GetLore(mapID)
 	return not entry or SpokenZones:IsPending(entry)
@@ -173,14 +181,18 @@ end
 -- One zone's rows: itself, and its areas under it when it is open (or, while searching, the
 -- areas that match). Nothing when neither it nor any area matches the search.
 local function ZoneRows(mapID, depth)
+	if not Listed(mapID) then return {} end
 	local subKeys = SubzoneKeys(mapID)
 	local zoneName = ZoneName(mapID)
 	local areas = {}
+	local found = 0
 	if subKeys then
 		for _, key in ipairs(subKeys) do
+			local listed = Listed(mapID, key)
+			if listed then found = found + 1 end
 			local entry = SpokenZones.Subzones[mapID][key]
 			local name = entry.name or key
-			if filter == "" and expandedZone == mapID or filter ~= "" and Matches(name) then
+			if listed and (filter == "" and expandedZone == mapID or filter ~= "" and Matches(name)) then
 				table.insert(areas, { kind = "subzone", mapID = mapID, key = key, label = name, depth = depth + 1,
 					missing = SpokenZones:IsPending(entry) })
 			end
@@ -188,7 +200,7 @@ local function ZoneRows(mapID, depth)
 	end
 	if filter ~= "" and not Matches(zoneName) and #areas == 0 then return {} end
 	local rows = { { kind = "zone", mapID = mapID, label = zoneName, depth = depth,
-		count = subKeys and #subKeys or 0, open = filter ~= "" and #areas > 0 or expandedZone == mapID,
+		count = found, total = subKeys and #subKeys or 0, open = filter ~= "" and #areas > 0 or expandedZone == mapID,
 		missing = Missing(mapID) } }
 	for _, area in ipairs(areas) do table.insert(rows, area) end
 	return rows
@@ -214,9 +226,14 @@ local function BuildRowList()
 			end
 		end
 		local name = ZoneName(continent)
-		if not searching or Matches(name) or #zones > 0 then
+		local listed = 0
+		for _, mapID in ipairs(ZonesOf(continent)) do
+			if Listed(mapID) then listed = listed + 1 end
+		end
+		-- A continent with none of its zones found yet stays out of the list.
+		if (listed > 0 or Listed(continent) and SpokenZones:ShowsUndiscovered()) and (not searching or Matches(name) or #zones > 0) then
 			table.insert(continents, { kind = "continent", mapID = continent, label = name, depth = 1,
-				count = #ZonesOf(continent), open = searching and #zones > 0 or (not searching and continentOpen[continent]),
+				count = listed, total = #ZonesOf(continent), open = searching and #zones > 0 or (not searching and continentOpen[continent]),
 				missing = Missing(continent), zones = zones })
 		end
 	end
@@ -442,7 +459,9 @@ local function RenderList()
 			else
 				row.toggle:Hide()
 			end
-			row.count:SetText(item.count > 0 and item.count or "")
+			-- Found out of all where some are not listed yet: 5/27.
+			local of = item.total and item.total > item.count and (item.count .. "/" .. item.total) or item.count
+			row.count:SetText(item.count > 0 and of or "")
 			if item.missing then row.label:SetTextColor(0.62, 0.55, 0.36) else row.label:SetTextColor(1, 0.82, 0) end
 		else
 			row.label:SetFontObject("GameFontHighlightSmall")
@@ -545,6 +564,8 @@ local function BuildWindow()
 	window:SetScript("OnDragStart", window.StartMoving)
 	window:SetScript("OnDragStop", window.StopMovingOrSizing)
 	window:SetScript("OnShow", function()
+		-- A place found since the window last opened is listed now.
+		if SpokenZones.RefreshFound then SpokenZones:RefreshFound() end
 		if PlaySound and SOUNDKIT and SOUNDKIT.IG_SPELLBOOK_OPEN then PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN) end
 	end)
 	window:SetScript("OnHide", function()

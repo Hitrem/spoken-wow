@@ -74,6 +74,12 @@ function Z:ClearSubzone() self.selected = nil; self:RefreshPanel() end
 function Z:Picture(mapID, key)
     if mapID == 1411 and not key then return "Pictures/zone-1411", "Pictures/Mask2" end
 end
+-- Every place listed, as with Show Undiscovered Places on, until the checks for the found-only
+-- list below turn it off.
+local showAll, found = true, {}
+function Z:ShowsUndiscovered() return showAll end
+function Z:IsFound(mapID, key) return found[key and (mapID .. "/" .. key) or tostring(mapID)] == true end
+function Z:RefreshFound() end
 Z.ToggleLoreWindow = nil
 _G.hooksecurefunc = _G.hooksecurefunc or function() end
 
@@ -291,6 +297,18 @@ Expect("the map's panel on the quest details' copy", Z:CreateLorePage(createFram
     "log").bg.texture, ART .. "QuestDetailsBackgrounds")
 ATLASES["spellbook-Page-Right-C60"], ATLASES["QuestDetailsBackgrounds"] = true, true
 ATLASES["spellbook-divider"] = true
+
+---------------------------------------------------------------- only the places found
+-- Durotar and one of its areas found; Dun Morogh and Somewhere Else not.
+showAll, found = false, { ["1411"] = true, ["1411/valley of trials"] = true }
+Z:ShowLoreFor(1411, nil)
+Expect("only the places found are listed, a continent with none found left out", Shown(), "Azeroth|Kalimdor|Durotar|Valley of Trials")
+Expect("...a zone's count its areas found out of all", RowFor("Durotar").count.text, "1/2")
+Expect("...and a plain count where all are found", RowFor("Kalimdor").count.text, 1)
+showAll = true
+Z:RefreshLoreWindow()
+Expect("Show Undiscovered Places lists them all again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+Expect("...with plain counts", RowFor("Durotar").count.text, 2)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones lore window tests passed")

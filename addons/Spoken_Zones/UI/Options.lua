@@ -150,6 +150,9 @@ function SpokenZones:SetupOptions()
 	-- The lore window: every zone's stories to browse, which nothing else on the page leads to.
 	layout:Section(L.OPT_SECTION_LORE)
 	layout:Button(L.MENU_LORE_WINDOW, 200, function() SpokenZones:ToggleLoreWindow() end, L.OPT_LORE_WINDOW_TIP)
+	layout:Checkbox(L.OPT_SHOW_UNDISCOVERED,
+		L.OPT_SHOW_UNDISCOVERED_TIP,
+		Get("showUndiscovered"), Set("showUndiscovered"), RedrawEverything)
 
 	layout:Section(L.OPT_SECTION_LANGUAGE)
 	-- Only finished languages are offered. A player choosing from a list has no way to

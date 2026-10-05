@@ -33,6 +33,8 @@ local defaults = {
 	panelWidth = 360,
 	fontSize = 12,
 	showPictures = true,
+	-- Off, so Lore of Azeroth lists only the places this character has found (Discovery.lua).
+	showUndiscovered = false,
 	showMinimapButton = true,
 	voiceEnabled = true,
 	-- Dialog so narration rides the player's dialog volume slider rather than
@@ -455,6 +457,9 @@ local function SetupHooks()
 	end
 	if SpokenZones.SetupMapHighlight then
 		SpokenZones:SetupMapHighlight()
+	end
+	if SpokenZones.SetupDiscovery then
+		SpokenZones:SetupDiscovery()
 	end
 	if SpokenZones.SetupLoreWindow then
 		SpokenZones:SetupLoreWindow()
