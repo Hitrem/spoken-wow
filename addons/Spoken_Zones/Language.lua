@@ -159,7 +159,7 @@ function SpokenZones:CanRenderLanguage(code)
 	end
 	self.drawable = self.drawable or {}
 	if self.drawable[code] == nil then
-		self.drawable[code] = self:FontDraws(locale.native) and true or false
+		self.drawable[code] = self:FontDraws(locale.native)
 	end
 	return self.drawable[code]
 end

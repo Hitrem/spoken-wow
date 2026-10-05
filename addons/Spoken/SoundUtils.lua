@@ -35,7 +35,7 @@ end
 local function OthersLowerDialog()
     local audio = Addon.db and Addon.db.profile.Audio
     local lower = audio and audio.LowerOthers
-    return lower and lower.Enabled and (lower.Dialog or 1) < 1 and OtherSounds and OtherSounds:IsAvailable() or false
+    return lower and lower.Enabled and (lower.Dialog or 1) < 1 and OtherSounds and OtherSounds:IsAvailable()
 end
 
 ---@param channel string
