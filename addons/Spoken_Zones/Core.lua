@@ -33,7 +33,6 @@ local defaults = {
 	panelWidth = 360,
 	loreWindowWidth = 880,
 	loreWindowHeight = 600,
-	loreWindowCollapsedWidth = 310,
 	fontSize = 12,
 	showHoverPreview = true,
 	showPictures = true,

@@ -536,19 +536,11 @@ local function ListMargins()
 	return 14, 12
 end
 
--- Collapsed at its narrowest, the list is as wide as it is beside the text.
-local function NaturalCollapsedWidth()
+-- Collapsed, the window is just the list, at the width it has beside the text: only the height
+-- resizes, so collapsing never reflows the rows.
+local function CollapsedWidth()
 	local left, right = ListMargins()
 	return LIST_WIDTH + left + right
-end
-
-local function CollapsedMinWidth()
-	return NaturalCollapsedWidth()
-end
-
--- Collapsed, the window holds only the list, which has no use for more room than this.
-local function CollapsedMaxWidth()
-	return NaturalCollapsedWidth() * 2
 end
 
 local function ScreenMaxWidth()
@@ -556,9 +548,9 @@ local function ScreenMaxWidth()
 end
 
 local function ApplyResizeBounds(frame)
-	local maxW = minimized and CollapsedMaxWidth() or ScreenMaxWidth()
+	local maxW = minimized and CollapsedWidth() or ScreenMaxWidth()
 	local maxH = math.floor((UIParent:GetHeight() or 1080) * 0.95)
-	local minW = minimized and CollapsedMinWidth() or WINDOW_MIN_WIDTH
+	local minW = minimized and CollapsedWidth() or WINDOW_MIN_WIDTH
 	local minH = WINDOW_MIN_HEIGHT
 	if frame.SetResizeBounds then
 		frame:SetResizeBounds(minW, minH, maxW, maxH)
@@ -589,10 +581,6 @@ local function SavedSize(key, min, max, fallback)
 	return math.min(saved, max)
 end
 
-local function CollapsedWidth()
-	return SavedSize("loreWindowCollapsedWidth", CollapsedMinWidth(), CollapsedMaxWidth(), CollapsedMinWidth())
-end
-
 local function ExpandedWidth()
 	return SavedSize("loreWindowWidth", WINDOW_MIN_WIDTH, ScreenMaxWidth(), WINDOW_WIDTH)
 end
@@ -600,19 +588,6 @@ end
 local function SavedHeight()
 	local maxH = math.floor((UIParent:GetHeight() or 1080) * 0.95)
 	return SavedSize("loreWindowHeight", WINDOW_MIN_HEIGHT, maxH, WINDOW_HEIGHT)
-end
-
-local function SyncListWidth()
-	if not window or not window.inset then
-		return
-	end
-	if minimized then
-		local left, right = ListMargins()
-		local width = math.max((window:GetWidth() or CollapsedWidth()) - left - right, LIST_WIDTH)
-		window.inset:SetWidth(width)
-	else
-		window.inset:SetWidth(LIST_WIDTH)
-	end
 end
 
 local function SaveWindowSize()
@@ -624,10 +599,7 @@ local function SaveWindowSize()
 		return
 	end
 	SpokenZones:Set("loreWindowHeight", math.floor(height + 0.5))
-	if minimized then
-		SpokenZones:Set("loreWindowCollapsedWidth", math.floor(width + 0.5))
-		SyncListWidth()
-	else
+	if not minimized then
 		SpokenZones:Set("loreWindowWidth", math.floor(width + 0.5))
 	end
 end
@@ -675,15 +647,12 @@ SetMinimized = function(want)
 	if minimized then
 		window:SetWidth(CollapsedWidth())
 		ApplyTextPaneVisibility()
+		SetCollapseArrow()
 	else
 		window:SetWidth(ExpandedWidth())
-		SyncListWidth()
 		SetCollapseArrow()
 		SpokenZones:RefreshLoreWindow()
-		return
 	end
-	SyncListWidth()
-	SetCollapseArrow()
 end
 
 -- The game's portrait frame where the client has it: its border, title bar, portrait and close
@@ -775,12 +744,6 @@ local function BuildWindow()
 		end
 		SetCollapseArrow()
 	end
-
-	window:HookScript("OnSizeChanged", function()
-		if minimized then
-			SyncListWidth()
-		end
-	end)
 
 	-- Inside the frame's border and under its title bar; a templated frame's portrait takes the
 	-- top-left corner, so the search box starts to its right.
