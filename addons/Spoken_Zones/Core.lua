@@ -121,6 +121,13 @@ function SpokenZones:Set(key, value)
 	SpokenZonesSettings[key] = value
 end
 
+-- Switched on, by the setting or by /spz panel, the player means to see the panel, not the
+-- button that reopens it.
+function SpokenZones:SetMapPanelShown(shown)
+	SpokenZones:Set("showMapPanel", shown)
+	if shown then SpokenZones:Set("mapPanelCollapsed", false) end
+end
+
 --- Every setting back to its default. The language chosen and the record of places already
 --- narrated are not settings in that sense, and stay.
 function SpokenZones:ResetOptions()
@@ -910,9 +917,7 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 		CmdVerify()
 	elseif cmd == "panel" then
 		local enabled = not SpokenZones:Get("showMapPanel")
-		SpokenZones:Set("showMapPanel", enabled)
-		-- Asked for the panel by name, the player means to see it, not the button that reopens it.
-		if enabled then SpokenZones:Set("mapPanelCollapsed", false) end
+		SpokenZones:SetMapPanelShown(enabled)
 		SpokenZones:Print(enabled and SpokenZones.L.PANEL_SHOWN or SpokenZones.L.PANEL_HIDDEN)
 		Dispatch(SpokenZones.mapChangedCallbacks, SpokenZones:GetDisplayedMapID())
 	elseif cmd == "options" or cmd == "config" or cmd == "opt" then

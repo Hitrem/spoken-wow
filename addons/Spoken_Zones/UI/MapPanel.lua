@@ -129,7 +129,11 @@ local function BuildToggle()
 		GameTooltip:SetText(L.MAP_PANEL_EXPAND)
 		GameTooltip:Show()
 	end)
-	toggle:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	toggle:SetScript("OnLeave", GameTooltip_Hide)
+	-- However the button goes -- clicked, the map maximised or closed -- its tooltip goes with it.
+	toggle:SetScript("OnHide", function(self)
+		if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+	end)
 	toggle:Hide()
 end
 
@@ -254,9 +258,8 @@ function SpokenZones:RefreshPanel()
 end
 
 function SpokenZones:SetMapPanelCollapsed(collapsed)
-	SpokenZones:Set("mapPanelCollapsed", collapsed and true or false)
-	if GameTooltip:IsOwned(toggle) then GameTooltip:Hide() end
-	Refresh(SpokenZones:GetDisplayedMapID())
+	SpokenZones:Set("mapPanelCollapsed", collapsed)
+	Refresh()
 end
 
 -- Re-apply width and font after an options change. TextView re-wraps itself
