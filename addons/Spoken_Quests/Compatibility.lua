@@ -873,7 +873,8 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
             self:BindPlayButton(playButton, questID, self:GetQuestTitle(questID))
             playButton.soundData = QueuedLine(questID)
             -- This quest's line speaking or paused mid-line: pause or resume it, as the subtitle's
-            -- button does. Waiting behind another line: leave it queued. Otherwise: queue it.
+            -- button does. Waiting behind a line speaking: leave it queued; behind a stopped one: play it.
+            -- Otherwise: queue it.
             local bound = playButton:GetScript("OnClick")
             -- Named arguments, not varargs: this file also loads on 1.12, whose Lua 5.0 cannot
             -- parse `...` as an expression, and one parse error loses the whole file.
@@ -884,6 +885,10 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
                 if state == "stop" or state == "replay" then
                     SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
                     Spoken:TogglePause()
+                elseif clip and Spoken:IsPaused() and Player.source then
+                    -- Waiting behind a stopped line: Play on it plays it, and takes the queue out of its stop.
+                    SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
+                    Player.source:PlayNow(clip)
                 elseif not clip and bound then
                     -- The bound handler queues the line it holds, so it starts from a fresh one.
                     button.soundData = nil

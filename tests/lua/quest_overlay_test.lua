@@ -184,6 +184,18 @@ detailsButton:Click()
 stub.Advance(3)
 Expect("a line queued elsewhere and finished leaves Play working", table.getn(played) > before, true)
 
+-- Waiting behind a stopped line, this quest's line plays when Play is clicked on it.
+local filler = _G.Spoken:RegisterSource("filler", { title = "Filler", addon = "Spoken" })
+filler:Enqueue(require("queue_helpers").Clip({ length = 30 }))
+buttons[748]:Click()
+_G.Spoken:Pause()
+QuestMapFrame_ShowQuestDetails(748)
+before = table.getn(played)
+detailsButton:Click()
+Expect("a line waiting behind a stopped one plays when clicked",
+    tostring(_G.Spoken:IsPaused()) .. " " .. tostring(table.getn(played) > before), "false true")
+_G.Spoken:StopAll()
+
 -- One button, rebound: showing another quest's details must not read the last one.
 QuestMapFrame_ShowQuestDetails(96130)
 Expect("a quest with no line greys the same button", detailsButton:IsEnabled(), false)
