@@ -7,6 +7,12 @@ setfenv(1, SpokenEnv)
 StaticPortrait = { cache = {}, count = 0, age = 0 }
 local ART = [[Interface\AddOns\Spoken\Textures\]]
 local UNITS = { "npc", "target", "mouseover", "focus" }
+-- An object's or an item's GUID, in the modern form or the hex one of 2.4.3 to 5.4.8 (0xF11...
+-- objects, 0x4... items). Anything else, a creature's hex GUID included, may have a face.
+local function Faceless(guid)
+    return string.find(guid, "^GameObject%-") or string.find(guid, "^Item%-")
+        or string.find(guid, "^0x[Ff]11") or string.find(guid, "^0x4")
+end
 local function Identity(clip)
     local spec = clip and clip.present and clip.present.portrait
     if not spec or spec.kind ~= "model" then return end
@@ -15,7 +21,7 @@ local function Identity(clip)
     if guid and string.find(guid, "^Creature%-0%-0%-0%-0%-") then guid = nil end
     -- Only a creature has a face to capture. The game paints a wanted poster or any other object
     -- as an empty black disc, so such a line takes its own picture (Portrait) instead.
-    if guid and not (string.find(guid, "^Creature%-") or string.find(guid, "^Vehicle%-")) then return end
+    if guid and Faceless(guid) then return end
     return spec, guid, spec.creatureID
 end
 local function CreatureID(guid)
