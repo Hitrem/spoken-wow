@@ -351,7 +351,8 @@ def lore_names():
     """Zone ids by folder name, and each zone's area keys by folder name, from the lore data."""
     zones, areas = {}, {}
     text = open(os.path.join(DATA, "Zones.lua"), encoding="utf-8").read()
-    for i, n in re.findall(r'^\t\[(\d+)\] = \{\r?\n\t\tname = "([^"]+)"', text, re.M):
+    # The name is not always the first field (a zone waiting for its story says "pending" first).
+    for i, n in re.findall(r'^\t\[(\d+)\] = \{\r?\n(?:\t\t(?!name )[^\n]*\n)*\t\tname = "([^"]+)"', text, re.M):
         zones[safe(n)] = int(i)
     parent = key = None
     for line in open(os.path.join(DATA, "Subzones.lua"), encoding="utf-8").read().splitlines():
@@ -388,17 +389,19 @@ def reviewed(choices):
         place = os.path.basename(dp)
         if place + " - new.png" not in fs:
             continue
-        rel = os.path.relpath(dp, world).split(os.sep)   # <continent>/<zone>[/<area>]
+        # Azeroth[/<continent>]/<zone>[/<area>], the tree Lore of Azeroth shows: a zone such as
+        # Zephras Isle sits straight under Azeroth, and the world and each continent are places too.
+        rel = ["Azeroth"] + [p for p in os.path.relpath(dp, world).split(os.sep) if p != "."]
         old = next((f for f in fs if f.startswith(place + " - old")), None)
         entry = {"path": os.path.join(dp, place + " - new.png"), "old": old and os.path.join(dp, old)}
-        if len(rel) == 2 and rel[1] in zones:
-            zid = zones[rel[1]]
-            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": place})
-        elif len(rel) == 3 and rel[1] in zones and rel[2] in areas.get(zones[rel[1]], {}):
-            zid = zones[rel[1]]
-            key, name = areas[zid][rel[2]]
+        zone = len(rel) > 1 and zones.get(rel[-2])
+        if zone and rel[-1] in areas.get(zone, {}):
+            key, name = areas[zone][rel[-1]]
             slug = re.sub(r"[^a-z0-9]+", "-", key).strip("-")
-            out.append({**entry, "id": "%d-%s" % (zid, slug), "parent": zid, "key": key, "title": name})
+            out.append({**entry, "id": "%d-%s" % (zone, slug), "parent": zone, "key": key, "title": name})
+        elif rel[-1] in zones:
+            zid = zones[rel[-1]]
+            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": place})
         else:
             unknown.append("/".join(rel))
     return out, unknown
