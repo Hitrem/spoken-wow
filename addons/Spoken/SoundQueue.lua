@@ -420,6 +420,8 @@ function SoundQueue:PlaySound(clip)
 
     -- The client fires no event when a sound finishes, so the recorded duration is the
     -- only signal that the clip is over.
+    -- When the voice itself ends; the timer runs on through the pause after it (GapAfter).
+    clip.spokenAt = GetTime() + (clip.delay or 0) + clip.length
     clip.nextSoundTimer = Addon:ScheduleTimer(function()
         self:RemoveSoundFromQueue(clip, true)
     end, (clip.delay or 0) + clip.length + self:GapAfter(clip))
@@ -665,6 +667,18 @@ function SoundQueue:PauseQueue()
     self:SetPaused(true)
 
     local head = self:GetCurrentSound()
+    -- Stopped in the pause after a line has spoken to its end: that line is over, and it is the
+    -- next one Stop holds. Replay then plays the next line rather than the one already heard.
+    if head and head.nextSoundTimer and head.spokenAt and GetTime() >= head.spokenAt then
+        self:RemoveSoundFromQueue(head, true)
+        -- It was the last: there is nothing left to hold, and nothing for the queue to stay stopped on.
+        if self:IsEmpty() then
+            self:SetPaused(false)
+            Callbacks:Fire("AUDIO_CHANGED")
+            return true
+        end
+        head = self:GetCurrentSound()
+    end
     if head and self:CanBePaused() then
         -- Faded out, not cut: a pause is the player stepping away, not an interruption.
         SoundUtils:StopSound(head, PAUSE_FADE_MS)

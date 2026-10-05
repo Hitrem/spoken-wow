@@ -204,6 +204,23 @@ stub.Advance(1.5)
 Expect("the pause between lines holds the next back: not yet at 1.5s", world.played[2], nil)
 stub.Advance(1.1)
 Expect("...next after length, gap and the pause (2.55s)", world.played[2], b.path)
+
+-- Stop in the pause holds the next line; it does not stop, and replay, the one already heard.
+Fresh()
+env.Addon.db.profile.Audio.LineGap = 1
+a, b = H.Clip(), H.Clip()
+quests:Enqueue(a); quests:Enqueue(b)
+stub.Advance(1.5)
+Q:PauseQueue()
+Expect("Stop in the pause ends the line that has spoken", Q:IsPaused() and Q:GetCurrentSound() == b, true)
+Q:ResumeQueue()
+Expect("...and Replay plays the next one", Q:IsPlaying(b) and #world.played, 2)
+Fresh()
+env.Addon.db.profile.Audio.LineGap = 1
+quests:Enqueue(H.Clip())
+stub.Advance(1.5)
+Q:PauseQueue()
+Expect("Stop in the pause after the last line leaves nothing stopped", Q:IsEmpty() and not Q:IsPaused(), true)
 env.Addon.db.profile.Audio.LineGap = 0
 
 ---------------------------------------------------------------- PlayNow past the backlog cap

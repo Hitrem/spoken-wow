@@ -432,7 +432,7 @@ local function SubtitleLit()
     return false
 end
 local line='Hello there, traveller. The road ahead is long and the night is cold.'
-source:Enqueue(Clip('sub',line,10))
+source:Enqueue(Clip('sub',line,20))
 Check(not T.frame:IsShown() and not M.frame:IsShown() and not E.PlayerFrame.frame:IsShown(),
     'subtitles take the place of both windows')
 Check(S.frame:IsShown() and S.frame:GetParent()==UIParent,'the subtitle is a frame of its own')
