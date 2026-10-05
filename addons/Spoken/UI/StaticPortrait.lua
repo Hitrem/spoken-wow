@@ -198,6 +198,10 @@ function StaticPortrait:Configure(viewport, clip)
                 local renderer = Renderers[viewport.active]
                 if renderer then renderer.Release(viewport.activeFrame) end
             end
+        end
+        -- One texture per face, shared by the subtitle and the Small Window: the other may have
+        -- taken it since, while this viewport still counts it as its own.
+        if viewport.activeFrame ~= entry.texture or entry.texture:GetParent() ~= viewport then
             entry.texture:SetParent(viewport)
             entry.texture:ClearAllPoints()
             entry.texture:SetAllPoints()

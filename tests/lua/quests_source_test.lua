@@ -91,6 +91,14 @@ do
     Expect("a creature's hex GUID still captures its face", env.StaticPortrait:Capture(Model(shown)) ~= nil, true)
     shown = "0xF110000B8A000123"
     Expect("...an object's hex GUID does not", env.StaticPortrait:Capture(Model(shown)), nil)
+    -- The subtitle and the Small Window share one texture per face; each takes it back in turn.
+    shown = "0xF130000B8A000123"
+    local subtitle, small = _G.CreateFrame("Frame"), _G.CreateFrame("Frame")
+    env.StaticPortrait:Configure(subtitle, Model(shown))
+    env.StaticPortrait:Configure(small, Model(shown))
+    env.StaticPortrait:Configure(subtitle, Model(shown))
+    Expect("a face shown in the Small Window comes back to the subtitle", subtitle.activeFrame
+        and subtitle.activeFrame:GetParent() == subtitle, true)
     _G.UnitGUID, _G.SetPortraitTexture = unitGUID, portrait
 end
 _G.C_Container = {
