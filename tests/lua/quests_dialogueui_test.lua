@@ -1,7 +1,8 @@
 -- The quests addon inside DialogueUI's window (UI/DialogueUIBridge.lua): matching the caption to
 -- DialogueUI's paragraphs, typing them out and lighting the words being read as Spoken's
 -- settings say, putting the text back, rebuilt pages, the Play button DialogueUI draws for a
--- voiceover provider, the player and the subtitles hosted over the window, and the settings
+-- voiceover provider, the player and the subtitles hosted over the window, the Report and
+-- Contribute corner and its copy box on it, and the settings
 -- DialogueUI's absence greys out. DialogueUI itself is a fake here, built from the parts of
 -- DUIQuestFrame the module reaches for. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
@@ -329,6 +330,117 @@ Expect("...at their own size", subtitle:GetScale(), words.SubtitleScale or 1)
 Expect("...and their own strata, under the game's panels", strata, "LOW")
 Spoken:StopAll()
 env.Addon:SetPlayerStyle("classic")
+driver:Show()
+
+---------------------------------------------------------------- Report and Contribute
+-- rusty-key/spoken-wow#246: DialogueUI never shows the game's quest and gossip frames, and
+-- hides UIParent, so its window gets a corner of its own: the Report icon, faint, on every
+-- page, and for a line no pack has the icon in full with the words to contribute.
+dofile(QUESTS .. "UI/ContributeButton.lua")
+local Contribute = VO.ContributeButton
+Contribute:Setup()
+local panelButton = Contribute.button
+local function Fire(widget, script)
+    if widget.scripts[script] then widget.scripts[script](widget) end
+    for _, fn in ipairs(widget.hooks[script] or {}) do fn(widget) end
+end
+stub.ShowPanel(nil)
+world.questID = 101
+DUI:Show()
+DUI.handler = nil
+Expect("no page built yet, none is known", Bridge:Page(), nil)
+DUI.handler = "HandleQuestDetail"
+Expect("the page DialogueUI shows is known", Bridge:Page(), "QUEST_DETAIL")
+DUI:HandleQuestDetail()
+local corner = Contribute.corner
+local icon, link = corner and corner.icon, corner and corner.link
+Expect("a voiced quest shows the Report icon", icon ~= nil and icon:IsShown(), true)
+Expect("...on DialogueUI's window, which UIParent's hiding leaves up", icon and icon:GetParent(), DUI)
+Expect("...faint, as the DialogueUI narrator style's", icon and icon:GetAlpha(), 0.4)
+Expect("...with nothing to contribute beside it", link and link:IsShown(), false)
+Expect("...and not the game's panel button", panelButton:IsShown(), false)
+Fire(icon, "OnEnter")
+Expect("...full under the pointer", icon:GetAlpha(), 1)
+local tip = Contribute.tooltip
+Expect("...with a tooltip of its own on DialogueUI's window, which UIParent's hiding leaves up",
+    tip ~= nil and tip:GetParent() == DUI and tip:IsShown(), true)
+Expect("...saying what Report is for", tip and tip.lines and tip.lines[1], VO.L.OPT_REPORT_PROBLEM)
+Expect("...at the size the game's tooltip would be", tip and tip:GetScale(), 1 / 0.8)
+Fire(icon, "OnLeave")
+Expect("...faint again after", icon:GetAlpha(), 0.4)
+Expect("...and the tooltip gone", tip and tip:IsShown(), false)
+Expect("...under DialogueUI's Decline, right-aligned with it", icon.anchor and icon.anchor.point == "RIGHT"
+    and icon.anchor.relativeTo == DUI and icon.anchor.relativePoint == "BOTTOMRIGHT" and icon.anchor.x, -29)
+Expect("...hung just under it, above the parchment's curled foot", icon.anchor and icon.anchor.y, 28)
+-- The margins as DialogueUI laid them out, which its window size setting changes.
+local footer = stub.Widget("Button")
+footer.GetBottom = function() return 50 end
+footer.GetRight = function() return 270 end
+DUI.ExitButton = footer
+DUI:HandleQuestDetail()
+Expect("...measured from DialogueUI's footer once it is laid out", icon.anchor and icon.anchor.x .. " " .. icon.anchor.y, "-30 38")
+DUI.ExitButton = nil
+-- Report, on DialogueUI's window: its quest page, in Spoken's copy box, which shows over the
+-- window where the game's popup would be hidden with UIParent.
+driver.scripts.OnShow(driver)
+Fire(icon, "OnClick")
+local box = Spoken.ContributeBox
+Expect("Report opens the quest page's address", box and box.editBox:GetText(), "https://voiceover.rusty.one/r/quest/101/accept")
+Expect("...over DialogueUI's window", box and box.frame:GetParent(), DUI)
+box.frame:Hide()
+
+world.questID = 102
+DUI:HandleQuestDetail()
+Expect("a quest no pack voices shows the icon in full", icon:IsShown() and icon:GetAlpha(), 1)
+Expect("...with the words to contribute beside it", link:IsShown(), true)
+Expect("...saying so", link.label:GetText(), VO.L.OPT_CONTRIBUTE_NO_VO)
+Expect("...on DialogueUI's window", link:GetParent(), DUI)
+Fire(link, "OnEnter")
+Expect("...its tooltip saying what is missing", tip and tip.lines and tip.lines[1], VO.L.OPT_CONTRIBUTE_TIP_QUEST)
+Fire(link, "OnLeave")
+Expect("...still in full once the pointer leaves", icon:GetAlpha(), 1)
+-- The red of DialogueUI's Accept button, for whichever theme DialogueUI's font says is on.
+local red
+link.label.SetTextColor = function(_, r, g, b) red = string.format("%.2f %.2f %.2f", r, g, b) end
+local fontColor = { 0.19, 0.17, 0.13 }
+_G.DUIFont_QuestType_Left = { GetTextColor = function() return fontColor[1], fontColor[2], fontColor[3] end }
+DUI:HandleQuestDetail()
+Expect("...in the Accept button's red on parchment", red, "0.47 0.16 0.08")
+fontColor = { 0.9, 0.9, 0.9 }
+DUI:HandleQuestDetail()
+Expect("...and lifted to read on the dark theme", red, "0.85 0.22 0.20")
+_G.DUIFont_QuestType_Left = nil
+local envelope = VO.Contribute:Capture()
+Expect("...and it sends the quest DialogueUI shows", envelope and envelope:match("\nquest=102\n") ~= nil
+    and envelope:match("\nevent=accept\n") ~= nil, true)
+world.questID = 101
+DUI:HandleQuestDetail()
+Expect("back on a voiced quest, the words go", link:IsShown(), false)
+world.questID = 102
+world.gossipText = "Strange times, friend."
+DUI.handler = "HandleGossip"
+DUI:HandleGossip()
+Expect("gossip no pack voices offers it too", link:IsShown(), true)
+Expect("...for the gossip line", Contribute.gossip, true)
+local gossip = VO.Contribute:Capture()
+Expect("...and it sends the words DialogueUI shows", gossip and gossip:match("\nquest=") == nil
+    and gossip:match("\nStrange times, friend%.\n") ~= nil, true)
+-- The copy box a click opens: over the window while it is open, back on UIParent after.
+Fire(link, "OnClick")
+Expect("the copy box opens over DialogueUI's window", box and box.frame:IsShown() and box.frame:GetParent(), DUI)
+Expect("...the same size on screen", box and box.frame:GetScale(), 1 / 0.8)
+DUI:Hide()
+driver:Hide()
+driver.scripts.OnHide(driver)
+Expect("closing the window leaves no page", Bridge:Page(), nil)
+Expect("...and takes the corner with it", icon:IsShown() or link:IsShown(), false)
+Expect("...and nothing is left on the game's frames", panelButton:IsShown(), false)
+Expect("the copy box goes back to UIParent", box and box.frame:GetParent(), _G.UIParent)
+Expect("...still open, at its own size", box and box.frame:IsShown() and box.frame:GetScale(), 1)
+DUI.handler = nil
+world.gossipText = nil
+world.questID = 101
+DUI:Show()
 driver:Show()
 
 ---------------------------------------------------------------- the settings

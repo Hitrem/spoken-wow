@@ -10,7 +10,9 @@ setfenv(1, VoiceOver)
 --     of Spoken's Type Words Out and Highlight Words is on (Spoken:GetCaption) -- and long
 --     text scrolls to keep the voice in view;
 --   * the Spoken player, or its subtitles, can stay on screen over DialogueUI;
---   * DialogueUI's Play button (its text-to-speech button) plays this addon's recording.
+--   * DialogueUI's Play button (its text-to-speech button) plays this addon's recording;
+--   * the Contribute button, for a line no pack has, sits on DialogueUI's window, and the
+--     copy box it opens shows over it (Bridge:Page, UI/ContributeButton.lua).
 --
 -- Nothing here changes DialogueUI. It is reached from outside: its window is the global
 -- DUIQuestFrame, each paragraph of text is a FontString in that frame's fontStringPool, and
@@ -493,6 +495,39 @@ function Bridge:UpdatePlayerHost()
 end
 
 --------------------------------------------------------------------------------
+-- The Contribute button
+--------------------------------------------------------------------------------
+
+--- The dialog event of the page DialogueUI's window shows (EVENTS), or nil while it is closed
+--- or when this file stood down. What the game's own quest and gossip frames say without
+--- DialogueUI, which never shows them: Contribute.lua asks it to know what is on screen, and
+--- UI/ContributeButton.lua to put its button on this window. `handler` is DialogueUI's name
+--- for the page builder it last ran; nil until the first dialog, so not part of Recognised.
+function Bridge:Page()
+    local frame = self.driver and _G.DUIQuestFrame
+    if frame and frame:IsShown() then
+        return EVENTS[frame.handler]
+    end
+end
+
+--- The Contribute button follows the window: it opens, closes and changes page with no
+--- event the button hears in time, since DialogueUI builds the page before showing it.
+local function RefreshContribute()
+    local button = rawget(VoiceOver, "ContributeButton")
+    if button and button.Refresh then
+        button:Refresh()
+    end
+end
+
+--- Spoken's copy box, which a click on the button opens, over the window while it is open:
+--- it is a child of UIParent, which DialogueUI hides.
+local function HostContributeBox(host)
+    if _G.Spoken and Spoken.SetContributeHost then
+        Spoken:SetContributeHost(host)
+    end
+end
+
+--------------------------------------------------------------------------------
 -- DialogueUI's Play button
 --------------------------------------------------------------------------------
 
@@ -576,6 +611,7 @@ function Bridge:Hook()
                 Bridge.Expect(handler)
                 Tick()
             end
+            RefreshContribute()
         end)
     end
 
@@ -590,11 +626,17 @@ function Bridge:Hook()
             Tick()
         end
     end)
-    driver:SetScript("OnShow", function() self:UpdatePlayerHost() end)
+    driver:SetScript("OnShow", function()
+        self:UpdatePlayerHost()
+        HostContributeBox(frame)
+        RefreshContribute()
+    end)
     driver:SetScript("OnHide", function()
         Restore()
         state.pending = nil
         self:UpdatePlayerHost()
+        HostContributeBox(nil)
+        RefreshContribute()
     end)
     self.driver = driver
 

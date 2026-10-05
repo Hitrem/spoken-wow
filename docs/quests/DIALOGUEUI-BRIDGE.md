@@ -17,6 +17,18 @@ brings back what was hidden, inside DialogueUI's window:
 - **Use DialogueUI's Play button.** Spoken Quests registers as DialogueUI's voiceover provider,
   so DialogueUI's text-to-speech button plays the recording. The button appears only when
   text-to-speech is turned on in DialogueUI's settings.
+- **Report a problem, or contribute a missing line.** Just under DialogueUI's Decline (or
+  Goodbye) button, right-aligned with it and clear of the parchment's curled foot, sits the
+  player's round Report icon (16 px), faint (40 %)
+  as in the DialogueUI narrator style, on every quest and gossip page: it opens the report
+  address for the page, the quest's or the NPC's. For a quest or gossip line no pack has, the
+  same icon is in full, with **No voice-over playing? Contribute!** beside it, in DialogueUI's
+  small serif and the red of DialogueUI's Accept button (sampled from its art; on the dark
+  theme lifted so small text reads on black); either then does what the game's Contribute
+  button does. Both copy boxes show over the window. Always on, with no setting: the
+  Contribute button was missing under DialogueUI
+  ([rusty-key/spoken-wow#246](https://github.com/rusty-key/spoken-wow/issues/246)), and
+  gathering saved nothing.
 
 All but **Show Spoken over DialogueUI** are on by default: DialogueUI's window, marked as the
 line plays, already shows the words. They sit in the Quests section of Spoken's **DialogueUI** page
@@ -84,6 +96,23 @@ reads that text back for its own text-to-speech.
 - Dragging is locked, so a position measured in DialogueUI's scale is never saved.
 
 `Spoken:SetPlayerHost(nil)` puts all of it back, the subtitles' own low strata included.
+
+**Contribute button.** Spoken Quests decides there is a line to contribute from the game's
+quest panels and gossip frame, which DialogueUI never shows. `Bridge:Page()` gives the
+dialog event of the page DialogueUI's window shows instead, from DialogueUI's
+`DUIQuestFrame.handler` (the page builder it last ran). `Contribute.lua` falls back on it to
+read the quest or gossip text, so gathering works as well. `UI/ContributeButton.lua` then
+puts its Report and Contribute corner on DialogueUI's window, as children of the window since
+DialogueUI hides UIParent, and
+the bridge refreshes it as pages are built and as the window opens and closes. The margins
+under and beside the footer buttons are measured from DialogueUI's `ExitButton` each time,
+since DialogueUI's window size setting changes them. Their tooltip is one of the game's make
+(`GameTooltipTemplate`) on the window, scaled to the game's, since the game's own is a child of
+UIParent too. `ReportButton.lua` reads the quest page
+from `Bridge:Page()` too, and while a page is up shows its address in Spoken's copy box rather
+than the game's popup, which is a child of UIParent. While the window is open, the bridge also passes it
+to `Spoken:SetContributeHost`, which puts Spoken's copy box over it. A box still open when the
+window closes goes back to UIParent and stays up.
 
 **Play button.** DialogueUI hears the client's quest event before Spoken Quests' recorder
 does. So the provider resolves the line from the page DialogueUI says it is showing, through

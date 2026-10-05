@@ -364,6 +364,14 @@ local function Observations(fields)
     add("creature", UnitCreatureType and UnitCreatureType("npc") or nil)
 end
 
+--- The page DialogueUI's window shows in place of the game's quest and gossip frames, as the
+--- dialog event it stands for, or nil without DialogueUI (UI/DialogueUIBridge.lua). DialogueUI
+--- never shows the game's frames, so without this nothing would ever be on screen.
+local function DialogueUIPage()
+    local bridge = rawget(VoiceOver, "DialogueUIBridge")
+    return bridge and bridge.Page and bridge:Page()
+end
+
 --- Which panel the player is looking at, as the event it would have played.
 local function EventOnScreen()
     if QuestFrameRewardPanel and QuestFrameRewardPanel:IsShown() then
@@ -373,14 +381,28 @@ local function EventOnScreen()
     elseif QuestFrameDetailPanel and QuestFrameDetailPanel:IsShown() then
         return Enums.SoundEvent.QuestAccept, GetQuestText and GetQuestText()
     end
+    -- The same three pages in DialogueUI's window: the quest API answers for the dialog
+    -- whichever window draws it.
+    local page = DialogueUIPage()
+    if page == "QUEST_COMPLETE" then
+        return Enums.SoundEvent.QuestComplete, GetRewardText and GetRewardText()
+    elseif page == "QUEST_PROGRESS" then
+        return Enums.SoundEvent.QuestProgress, GetProgressText and GetProgressText()
+    elseif page == "QUEST_DETAIL" then
+        return Enums.SoundEvent.QuestAccept, GetQuestText and GetQuestText()
+    end
     return nil, nil
 end
 
 --- The gossip text on screen, or nil once the gossip window is gone. GetGossipText goes on
 --- answering with the last words after the window closes -- walking away closes it with no
---- event this addon hears -- so the frame is what says whether they are still being spoken.
---- A client without a GossipFrame to ask is taken at its word.
+--- event this addon hears -- so the frame is what says whether they are still being spoken:
+--- the game's own, or DialogueUI's in its place. A client without a GossipFrame to ask is
+--- taken at its word.
 local function GossipOnScreen()
+    if DialogueUIPage() == "GOSSIP_SHOW" then
+        return GetGossipText and GetGossipText()
+    end
     local frame = _G.GossipFrame
     if frame and frame.IsVisible and not frame:IsVisible() then
         return nil
@@ -730,15 +752,16 @@ function Contribute:CanOfferFromLog()
 end
 
 --- The tooltip every Contribute button in this addon shows. `gossip` for an NPC's line rather
---- than a quest, which the first line then says instead.
-function Contribute:ShowTooltip(owner, gossip)
-    if not GameTooltip then
+--- than a quest, which the first line then says instead. In `tooltip`, or the game's.
+function Contribute:ShowTooltip(owner, gossip, tooltip)
+    tooltip = tooltip or GameTooltip
+    if not tooltip then
         return
     end
-    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    GameTooltip:SetText(gossip and L.OPT_CONTRIBUTE_TIP_LINE or L.OPT_CONTRIBUTE_TIP_QUEST)
-    GameTooltip:AddLine(L.OPT_CONTRIBUTE_TIP_SHARE, 1, 0.8, 0.2, true)
-    GameTooltip:Show()
+    tooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    tooltip:SetText(gossip and L.OPT_CONTRIBUTE_TIP_LINE or L.OPT_CONTRIBUTE_TIP_QUEST)
+    tooltip:AddLine(L.OPT_CONTRIBUTE_TIP_SHARE, 1, 0.8, 0.2, true)
+    tooltip:Show()
 end
 
 --- Hand the player an envelope: as one link where the bundled player can build one, and as the

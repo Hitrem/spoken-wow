@@ -36,6 +36,21 @@ local function IsFrameVisible(frame)
     return frame:IsShown()
 end
 
+-- The page DialogueUI's window shows, as the dialog event it stands for, or nil without
+-- DialogueUI (UI/DialogueUIBridge.lua): the game's quest frames stay hidden under it.
+local function DialogueUIPage()
+    local bridge = rawget(VoiceOver, "DialogueUIBridge")
+    return bridge and bridge.Page and bridge:Page()
+end
+
+-- DialogueUI's pages, as the events their lines play for.
+local PAGE_EVENTS =
+{
+    QUEST_DETAIL = Enums.SoundEvent.QuestAccept,
+    QUEST_PROGRESS = Enums.SoundEvent.QuestProgress,
+    QUEST_COMPLETE = Enums.SoundEvent.QuestComplete,
+}
+
 local EVENT_PATHS =
 {
     [Enums.SoundEvent.QuestAccept] = "accept",
@@ -89,6 +104,9 @@ function ReportButton:CurrentTarget()
         event = Enums.SoundEvent.QuestProgress
     elseif IsFrameVisible(QuestFrameDetailPanel) then
         event = Enums.SoundEvent.QuestAccept
+    else
+        local page = DialogueUIPage()
+        event = page and PAGE_EVENTS[page]
     end
 
     local target = event and self:TargetForQuest(GetQuestID and GetQuestID(), event)
@@ -118,16 +136,26 @@ function ReportButton:Link(target, language)
     return format("%s/r/%s", SITE_URL, target)
 end
 
-function ReportButton:ShowLink(target, language)
-    shownLink = self:Link(target, language)
+--- The address in the copy popup. Under DialogueUI's window, which hides UIParent and the
+--- game's popups with it, in Spoken's copy box instead, which shows over that window
+--- (Spoken:SetContributeHost).
+local function ShowCopy(url)
+    if DialogueUIPage() and Spoken and Spoken.ShowContribution then
+        Spoken:ShowContribution(url, nil, true)
+        return
+    end
+    shownLink = url
     StaticPopup_Show(COPY_DIALOG)
+end
+
+function ReportButton:ShowLink(target, language)
+    ShowCopy(self:Link(target, language))
 end
 
 --- The same popup, for an address that is not a report: the settings panel offers one per
 --- sound pack, since the game cannot open a link and a player has to copy it out.
 function ReportButton:ShowAddress(url)
-    shownLink = url
-    StaticPopup_Show(COPY_DIALOG)
+    ShowCopy(url)
 end
 
 function ReportButton:Initialize()

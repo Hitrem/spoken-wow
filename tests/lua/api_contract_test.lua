@@ -47,7 +47,7 @@ local METHODS = {
     -- captions, for another view of the line
     "GetCaption", "GetCaptionOptions", "SplitCaption",
     -- contributions
-    "ShowContribution", "AreContributeButtonsHidden",
+    "ShowContribution", "SetContributeHost", "AreContributeButtonsHidden",
 }
 for _, name in ipairs(METHODS) do
     Expect("Spoken:" .. name .. " exists", type(Spoken[name]), "function")

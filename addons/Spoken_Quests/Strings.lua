@@ -170,6 +170,8 @@ L.OPT_READ_TIP = "Read this aloud"
 L.OPT_GREETING = "Greeting"
 L.OPT_AUTOPLAY_OFF_TIP = "Read Automatically is turned off on the Quests page of the Spoken settings."
 L.OPT_CONTRIBUTE = "Contribute"
+-- Beside the Report icon on DialogueUI's window, for a line no pack has (UI/ContributeButton.lua).
+L.OPT_CONTRIBUTE_NO_VO = "No voice-over playing? Contribute!"
 L.OPT_REPORT = "Report"
 L.OPT_CONTRIBUTE_TIP_LINE = "Spoken Quests doesn't have this line"
 L.OPT_CONTRIBUTE_TIP_QUEST = "Spoken Quests doesn't have this quest"
