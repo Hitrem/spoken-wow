@@ -14,9 +14,10 @@
 
 local ADDON_NAME, SpokenZones = ...
 
-local THROTTLE = 0.05
--- How bright the lit area is, and how long it takes to light up or go out.
-local HIGHLIGHT_ALPHA, FADE = 0.35, 0.15
+local THROTTLE = 0.03
+-- How bright the lit area is, how quickly it lights up (at once, near enough: a slow rise read as
+-- the map lagging behind the cursor) and how softly it goes out.
+local HIGHLIGHT_ALPHA, FADE_IN, FADE_OUT = 0.35, 0.05, 0.15
 
 local state = { tiles = {}, alpha = 0, wanted = nil, elapsed = 0 }
 SpokenZones.mapHighlight = state
@@ -158,7 +159,7 @@ local function OnUpdate(_, elapsed)
 	-- fades out in its own shape.
 	local goal = state.wanted and HIGHLIGHT_ALPHA or 0
 	if state.alpha ~= goal then
-		local step = HIGHLIGHT_ALPHA * elapsed / FADE
+		local step = HIGHLIGHT_ALPHA * elapsed / (goal > state.alpha and FADE_IN or FADE_OUT)
 		state.alpha = goal > state.alpha and math.min(goal, state.alpha + step) or math.max(goal, state.alpha - step)
 		state.frame:SetAlpha(state.alpha)
 	end
