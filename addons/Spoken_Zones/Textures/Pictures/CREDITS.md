@@ -12,10 +12,8 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1411-deadeye-shore | Deadeye Shore | [Deadeye Shore.jpg](https://warcraft.wiki.gg/wiki/File:Deadeye_Shore.jpg) | - | - |
 | 1411-den | The Den | [The Den.jpg](https://warcraft.wiki.gg/wiki/File:The_Den.jpg) | - | - |
 | 1411-drygulch-ravine | Drygulch Ravine | [Drygulch Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Drygulch_Ravine.jpg) | - | - |
-| 1411-dustwind-cave | Dustwind Cave | [Dustwind Cave.jpg](https://warcraft.wiki.gg/wiki/File:Dustwind_Cave.jpg) | - | - |
-| 1411-echo-isles | Echo Isles | [Echo Isles.jpg](https://warcraft.wiki.gg/wiki/File:Echo_Isles.jpg) | - | - |
+| 1411-echo-isles | Echo Isles | [Echo Isles 2.jpg](https://warcraft.wiki.gg/wiki/File:Echo_Isles_2.jpg) | - | - |
 | 1411-hidden-path | Hidden Path | [Hidden Path.jpg](https://warcraft.wiki.gg/wiki/File:Hidden_Path.jpg) | - | - |
-| 1411-jaggedswine-farm | Jaggedswine Farm | [Jaggedswine Farm.jpg](https://warcraft.wiki.gg/wiki/File:Jaggedswine_Farm.jpg) | - | - |
 | 1411-kolkar-crag | Kolkar Crag | [Kolkar Crag.jpg](https://warcraft.wiki.gg/wiki/File:Kolkar_Crag.jpg) | - | - |
 | 1411-orgrimmar | Orgrimmar | [Orgrimmar Gates Classic 2.jpg](https://warcraft.wiki.gg/wiki/File:Orgrimmar_Gates_Classic_2.jpg) | - | - |
 | 1411-razor-hill | Razor Hill | [Razor Hill.jpg](https://warcraft.wiki.gg/wiki/File:Razor_Hill.jpg) | - | - |
@@ -23,40 +21,35 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1411-razormane-grounds | Razormane Grounds | [Razormane Grounds2.jpg](https://warcraft.wiki.gg/wiki/File:Razormane_Grounds2.jpg) | - | - |
 | 1411-razorwind-canyon | Razorwind Canyon | [Razorwind Canyon.jpg](https://warcraft.wiki.gg/wiki/File:Razorwind_Canyon.jpg) | - | - |
 | 1411-rocktusk-farm | Rocktusk Farm | [Rocktusk Farm.jpg](https://warcraft.wiki.gg/wiki/File:Rocktusk_Farm.jpg) | - | - |
-| 1411-scuttle-coast | Scuttle Coast | [Scuttle Coast.jpg](https://warcraft.wiki.gg/wiki/File:Scuttle_Coast.jpg) | - | - |
-| 1411-senjin-village | Sen'jin Village | [Senjin Village.jpg](https://warcraft.wiki.gg/wiki/File:Senjin_Village.jpg) | - | - |
+| 1411-scuttle-coast | Scuttle Coast | [Scuttle Coast1.jpg](https://warcraft.wiki.gg/wiki/File:Scuttle_Coast1.jpg) | - | - |
+| 1411-senjin-village | Sen'jin Village | [Senjin village1.jpg](https://warcraft.wiki.gg/wiki/File:Senjin_village1.jpg) | - | - |
 | 1411-shrine-of-the-dormant-flame | Shrine of the Dormant Flame | [Shrine Dormant Flame.jpg](https://warcraft.wiki.gg/wiki/File:Shrine_Dormant_Flame.jpg) | - | - |
 | 1411-skull-rock | Skull Rock | [Skull Rock.jpg](https://warcraft.wiki.gg/wiki/File:Skull_Rock.jpg) | - | - |
 | 1411-southfury-river | Southfury River | [Southfury.jpg](https://warcraft.wiki.gg/wiki/File:Southfury.jpg) | - | - |
 | 1411-spirit-rock | Spirit Rock | [Spirit Rock.jpg](https://warcraft.wiki.gg/wiki/File:Spirit_Rock.jpg) | - | - |
 | 1411-thunder-ridge | Thunder Ridge | [Ancient Skeleton sprouting.jpg](https://warcraft.wiki.gg/wiki/File:Ancient_Skeleton_sprouting.jpg) | - | - |
-| 1411-tiragarde-keep | Tiragarde Keep | [Tiragarde Keep.jpg](https://warcraft.wiki.gg/wiki/File:Tiragarde_Keep.jpg) | - | - |
 | 1411-torkren-farm | Tor'kren Farm | [Torkren Farm.jpg](https://warcraft.wiki.gg/wiki/File:Torkren_Farm.jpg) | - | - |
 | 1411-valley-of-trials | Valley of Trials | [Valley of Trials.jpg](https://warcraft.wiki.gg/wiki/File:Valley_of_Trials.jpg) | - | - |
-| 1412-baeldun-digsite | Bael'dun Digsite | [Bael'dun Digsite.jpg](https://warcraft.wiki.gg/wiki/File:Bael%27dun_Digsite.jpg) | - | - |
 | 1412-bloodhoof-village | Bloodhoof Village | [Bloodhoof Village.jpg](https://warcraft.wiki.gg/wiki/File:Bloodhoof_Village.jpg) | - | - |
 | 1412-brambleblade-ravine | Brambleblade Ravine | [Brambleblade Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Brambleblade_Ravine.jpg) | - | - |
 | 1412-camp-narache | Camp Narache | [Camp Narache.jpg](https://warcraft.wiki.gg/wiki/File:Camp_Narache.jpg) | - | - |
-| 1412-golden-plains | Golden Plains | [Golden Plains.jpg](https://warcraft.wiki.gg/wiki/File:Golden_Plains.jpg) | - | - |
 | 1412-kodo-rock | Kodo Rock | [Kodo Rock.jpg](https://warcraft.wiki.gg/wiki/File:Kodo_Rock.jpg) | - | - |
 | 1412-palemane-rock | Palemane Rock | [Palemane Rock.jpg](https://warcraft.wiki.gg/wiki/File:Palemane_Rock.jpg) | - | - |
 | 1412-ravaged-caravan | Ravaged Caravan | [Ravaged Caravan.jpg](https://warcraft.wiki.gg/wiki/File:Ravaged_Caravan.jpg) | - | - |
-| 1412-red-cloud-mesa | Red Cloud Mesa | [Red Cloud Mesa.jpg](https://warcraft.wiki.gg/wiki/File:Red_Cloud_Mesa.jpg) | - | - |
+| 1412-red-cloud-mesa | Red Cloud Mesa | [Red Cloud Mesa Cata.jpg](https://warcraft.wiki.gg/wiki/File:Red_Cloud_Mesa_Cata.jpg) | - | - |
 | 1412-red-rocks | Red Rocks | [Red Rocks.jpg](https://warcraft.wiki.gg/wiki/File:Red_Rocks.jpg) | - | - |
 | 1412-rolling-plains | Rolling Plains | [Rolling Plains.jpg](https://warcraft.wiki.gg/wiki/File:Rolling_Plains.jpg) | - | - |
 | 1412-stonebull-lake | Stonebull Lake | [BloodhoofVillageStonebullLake.jpg](https://warcraft.wiki.gg/wiki/File:BloodhoofVillageStonebullLake.jpg) | - | - |
-| 1412-thunder-bluff | Thunder Bluff | [Old Hatreds - Mulgore - Thunder Bluff 1.jpg](https://warcraft.wiki.gg/wiki/File:Old_Hatreds_-_Mulgore_-_Thunder_Bluff_1.jpg) | - | - |
+| 1412-thunder-bluff | Thunder Bluff | [Crossroads - Thunder Bluff.jpg](https://warcraft.wiki.gg/wiki/File:Crossroads_-_Thunder_Bluff.jpg) | - | - |
 | 1412-thunderhorn-water-well | Thunderhorn Water Well | [Thunderhorn Waterwell.jpg](https://warcraft.wiki.gg/wiki/File:Thunderhorn_Waterwell.jpg) | - | - |
 | 1412-venture-co-mine | Venture Co. Mine | [Venture Co. MineInterior.jpg](https://warcraft.wiki.gg/wiki/File:Venture_Co._MineInterior.jpg) | - | - |
 | 1412-wildmane-water-well | Wildmane Water Well | [Wildmane Waterwell.jpg](https://warcraft.wiki.gg/wiki/File:Wildmane_Waterwell.jpg) | - | - |
 | 1412-windfury-ridge | Windfury Ridge | [Windfury Ridge.jpg](https://warcraft.wiki.gg/wiki/File:Windfury_Ridge.jpg) | - | - |
 | 1412-winterhoof-water-well | Winterhoof Water Well | [Winterhoof Waterwell.jpg](https://warcraft.wiki.gg/wiki/File:Winterhoof_Waterwell.jpg) | - | - |
-| 1413-agamagor | Agama'gor | [Agamagor.jpg](https://warcraft.wiki.gg/wiki/File:Agamagor.jpg) | - | - |
 | 1413-bael-modan | Bael Modan | [BaelModan.jpg](https://warcraft.wiki.gg/wiki/File:BaelModan.jpg) | - | - |
 | 1413-baeldun-keep | Bael'dun Keep | [Bael'dun Keep.jpg](https://warcraft.wiki.gg/wiki/File:Bael%27dun_Keep.jpg) | - | - |
 | 1413-blackthorn-ridge | Blackthorn Ridge | [Blackthorn Ridge.jpg](https://warcraft.wiki.gg/wiki/File:Blackthorn_Ridge.jpg) | - | - |
 | 1413-boulder-lode-mine | Boulder Lode Mine | [Boulder Lode Mine.jpg](https://warcraft.wiki.gg/wiki/File:Boulder_Lode_Mine.jpg) | - | - |
-| 1413-bramblescar | Bramblescar | [Bramblescar.jpg](https://warcraft.wiki.gg/wiki/File:Bramblescar.jpg) | - | - |
 | 1413-camp-taurajo | Camp Taurajo | [Camp Taurajo.jpg](https://warcraft.wiki.gg/wiki/File:Camp_Taurajo.jpg) | - | - |
 | 1413-crossroads | Crossroads | [Crossroads.jpg](https://warcraft.wiki.gg/wiki/File:Crossroads.jpg) | - | - |
 | 1413-dreadmist-den | Dreadmist Den | [Dreadmist Den.jpg](https://warcraft.wiki.gg/wiki/File:Dreadmist_Den.jpg) | - | - |
@@ -66,9 +59,9 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1413-field-of-giants | Field of Giants | [Field of Giants.jpg](https://warcraft.wiki.gg/wiki/File:Field_of_Giants.jpg) | - | - |
 | 1413-forgotten-pools | Forgotten Pools | [The Forgotten Pools.jpg](https://warcraft.wiki.gg/wiki/File:The_Forgotten_Pools.jpg) | - | - |
 | 1413-fray-island | Fray Island | [Fray Island.jpg](https://warcraft.wiki.gg/wiki/File:Fray_Island.jpg) | - | - |
-| 1413-gold-road | Gold Road | [Gold Road Grunt HS.jpg](https://warcraft.wiki.gg/wiki/File:Gold_Road_Grunt_HS.jpg) | - | - |
+| 1413-gold-road | Gold Road | [Goldroad.jpg](https://warcraft.wiki.gg/wiki/File:Goldroad.jpg) | - | - |
 | 1413-groldom-farm | Grol'dom Farm | [Grol'dom Farm.jpg](https://warcraft.wiki.gg/wiki/File:Grol%27dom_Farm.jpg) | - | - |
-| 1413-lushwater-oasis | Lushwater Oasis | [Lushwater Oasis old.jpg](https://warcraft.wiki.gg/wiki/File:Lushwater_Oasis_old.jpg) | - | - |
+| 1413-lushwater-oasis | Lushwater Oasis | [Lushwater Oasis.jpg](https://warcraft.wiki.gg/wiki/File:Lushwater_Oasis.jpg) | - | - |
 | 1413-merchant-coast | Merchant Coast | [The Merchant Coast.jpg](https://warcraft.wiki.gg/wiki/File:The_Merchant_Coast.jpg) | - | - |
 | 1413-morshan-base-camp | Mor'shan Base Camp | [Mor'shan Base Camp.jpg](https://warcraft.wiki.gg/wiki/File:Mor%27shan_Base_Camp.jpg) | - | - |
 | 1413-morshan-rampart | Mor'shan Rampart | [Mor'shan Rampart.jpg](https://warcraft.wiki.gg/wiki/File:Mor%27shan_Rampart.jpg) | - | - |
@@ -80,8 +73,8 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1413-stagnant-oasis | Stagnant Oasis | [The Stagnant Oasis.jpg](https://warcraft.wiki.gg/wiki/File:The_Stagnant_Oasis.jpg) | - | - |
 | 1413-thorn-hill | Thorn Hill | [Thorn Hill.jpg](https://warcraft.wiki.gg/wiki/File:Thorn_Hill.jpg) | - | - |
 | 1413-tidus-stair | Tidus Stair | [The Tidus Stair.jpg](https://warcraft.wiki.gg/wiki/File:The_Tidus_Stair.jpg) | - | - |
-| 1413-wailing-caverns | Wailing Caverns | [Awaking Naralex.jpg](https://warcraft.wiki.gg/wiki/File:Awaking_Naralex.jpg) | - | - |
-| 1416-dalaran | Dalaran | [Violet Hold.jpg](https://warcraft.wiki.gg/wiki/File:Violet_Hold.jpg) | - | - |
+| 1413-wailing-caverns | Wailing Caverns | [Forged in the Barrens Wailing Caverns entrance.jpg](https://warcraft.wiki.gg/wiki/File:Forged_in_the_Barrens_Wailing_Caverns_entrance.jpg) | - | - |
+| 1416-dalaran | Dalaran | [Azeroth sky - Argus.jpg](https://warcraft.wiki.gg/wiki/File:Azeroth_sky_-_Argus.jpg) | - | - |
 | 1416-dandreds-fold | Dandred's Fold | [Dandred's Fold.jpg](https://warcraft.wiki.gg/wiki/File:Dandred%27s_Fold.jpg) | - | - |
 | 1416-lordamere-internment-camp | Lordamere Internment Camp | [Lordamere Internment Camp.jpg](https://warcraft.wiki.gg/wiki/File:Lordamere_Internment_Camp.jpg) | - | - |
 | 1416-ruins-of-alterac | Ruins of Alterac | [Ruins of Alterac.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Alterac.jpg) | - | - |
@@ -95,34 +88,32 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1417-dabyries-farmstead | Dabyrie's Farmstead | [Dabyrie's Farmstead.jpg](https://warcraft.wiki.gg/wiki/File:Dabyrie%27s_Farmstead.jpg) | - | - |
 | 1417-drowned-reef | Drowned Reef | [DrownedReef.jpg](https://warcraft.wiki.gg/wiki/File:DrownedReef.jpg) | - | - |
 | 1417-drywhisker-gorge | Drywhisker Gorge | [Drywhisker Gorge.jpg](https://warcraft.wiki.gg/wiki/File:Drywhisker_Gorge.jpg) | - | - |
-| 1417-faldirs-cove | Faldir's Cove | [Faldir's Cove original.jpg](https://warcraft.wiki.gg/wiki/File:Faldir%27s_Cove_original.jpg) | - | - |
+| 1417-faldirs-cove | Faldir's Cove | [Faldir's Cove.jpg](https://warcraft.wiki.gg/wiki/File:Faldir%27s_Cove.jpg) | - | - |
 | 1417-goshek-farm | Go'Shek Farm | [Go'Shek Farm.jpg](https://warcraft.wiki.gg/wiki/File:Go%27Shek_Farm.jpg) | - | - |
 | 1417-hammerfall | Hammerfall | [HammerfallBfA.jpg](https://warcraft.wiki.gg/wiki/File:HammerfallBfA.jpg) | - | - |
 | 1417-northfold-manor | Northfold Manor | [Northfold.jpg](https://warcraft.wiki.gg/wiki/File:Northfold.jpg) | - | - |
 | 1417-refuge-pointe | Refuge Pointe | [Refuge Pointe4.jpg](https://warcraft.wiki.gg/wiki/File:Refuge_Pointe4.jpg) | - | - |
-| 1417-stromgarde-keep | Stromgarde Keep | [Heartlands - Echoes of the Past.png](https://warcraft.wiki.gg/wiki/File:Heartlands_-_Echoes_of_the_Past.png) | - | - |
+| 1417-stromgarde-keep | Stromgarde Keep | [Stromgarde.jpg](https://warcraft.wiki.gg/wiki/File:Stromgarde.jpg) | - | - |
 | 1417-thandol-span | Thandol Span | [Thandol Span.jpg](https://warcraft.wiki.gg/wiki/File:Thandol_Span.jpg) | - | - |
-| 1417-thoradins-wall | Thoradin's Wall | [Old Hillsbrad - Thoradin's Wall.jpg](https://warcraft.wiki.gg/wiki/File:Old_Hillsbrad_-_Thoradin%27s_Wall.jpg) | - | - |
-| 1417-tower-of-arathor | Tower of Arathor | [StromgardeTowerNew.png](https://warcraft.wiki.gg/wiki/File:StromgardeTowerNew.png) | - | - |
+| 1417-thoradins-wall | Thoradin's Wall | [Thoradin's Wall Warfront.jpg](https://warcraft.wiki.gg/wiki/File:Thoradin%27s_Wall_Warfront.jpg) | - | - |
+| 1417-tower-of-arathor | Tower of Arathor | [Stromgarde Keep2.jpg](https://warcraft.wiki.gg/wiki/File:Stromgarde_Keep2.jpg) | - | - |
 | 1417-witherbark-village | Witherbark Village | [Witherbark.jpg](https://warcraft.wiki.gg/wiki/File:Witherbark.jpg) | - | - |
 | 1418-agmonds-end | Agmond's End | [Agmond's End.jpg](https://warcraft.wiki.gg/wiki/File:Agmond%27s_End.jpg) | - | - |
 | 1418-angor-fortress | Angor Fortress | [Angor Fortress.jpg](https://warcraft.wiki.gg/wiki/File:Angor_Fortress.jpg) | - | - |
 | 1418-apocryphans-rest | Apocryphan's Rest | [Apocryphans Rest.jpg](https://warcraft.wiki.gg/wiki/File:Apocryphans_Rest.jpg) | - | - |
 | 1418-camp-boff | Camp Boff | [Camp Boff.jpg](https://warcraft.wiki.gg/wiki/File:Camp_Boff.jpg) | - | - |
-| 1418-camp-cagg | Camp Cagg | [Camp Cagg.jpg](https://warcraft.wiki.gg/wiki/File:Camp_Cagg.jpg) | - | - |
 | 1418-camp-kosh | Camp Kosh | [Camp Kosh.jpg](https://warcraft.wiki.gg/wiki/File:Camp_Kosh.jpg) | - | - |
 | 1418-camp-wurg | Camp Wurg | [Camp Wurg.jpg](https://warcraft.wiki.gg/wiki/File:Camp_Wurg.jpg) | - | - |
 | 1418-dustbelch-grotto | Dustbelch Grotto | [Dustbelch Grotto.jpg](https://warcraft.wiki.gg/wiki/File:Dustbelch_Grotto.jpg) | - | - |
 | 1418-dustbowl | Dustbowl | [Dustbowl.jpg](https://warcraft.wiki.gg/wiki/File:Dustbowl.jpg) | - | - |
 | 1418-dustwind-gulch | Dustwind Gulch | [Dustwind Gulch.jpg](https://warcraft.wiki.gg/wiki/File:Dustwind_Gulch.jpg) | - | - |
 | 1418-hammertoes-digsite | Hammertoe's Digsite | [Hammertoe's Digsite.jpg](https://warcraft.wiki.gg/wiki/File:Hammertoe%27s_Digsite.jpg) | - | - |
-| 1418-kargath | Kargath | [Kargath.jpg](https://warcraft.wiki.gg/wiki/File:Kargath.jpg) | - | - |
+| 1418-kargath | Kargath | [Kargath Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Kargath_Ruins.jpg) | - | - |
 | 1418-lethlor-ravine | Lethlor Ravine | [Lethlor Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Lethlor_Ravine.jpg) | - | - |
 | 1418-makers-terrace | Maker's Terrace | [The Maker's Terrace.jpg](https://warcraft.wiki.gg/wiki/File:The_Maker%27s_Terrace.jpg) | - | - |
-| 1418-mirage-flats | Mirage Flats | [Mirage Flats.jpg](https://warcraft.wiki.gg/wiki/File:Mirage_Flats.jpg) | - | - |
 | 1418-uldaman | Uldaman | [Uldabosses.jpg](https://warcraft.wiki.gg/wiki/File:Uldabosses.jpg) | - | - |
 | 1418-valley-of-fangs | Valley of Fangs | [Valley of Fangs.jpg](https://warcraft.wiki.gg/wiki/File:Valley_of_Fangs.jpg) | - | - |
-| 1419-dark-portal | Dark Portal | [Burning Crusade Classic Dark Portal Key Art.jpg](https://warcraft.wiki.gg/wiki/File:Burning_Crusade_Classic_Dark_Portal_Key_Art.jpg) | - | - |
+| 1419-dark-portal | Dark Portal | [Dark Portal crater (Classic).jpg](https://warcraft.wiki.gg/wiki/File:Dark_Portal_crater_(Classic).jpg) | - | - |
 | 1419-dreadmaul-post | Dreadmaul Post | [Dreadmaul Post.jpg](https://warcraft.wiki.gg/wiki/File:Dreadmaul_Post.jpg) | - | - |
 | 1419-garrison-armory | Garrison Armory | [Garrison Armory.jpg](https://warcraft.wiki.gg/wiki/File:Garrison_Armory.jpg) | - | - |
 | 1419-nethergarde-keep | Nethergarde Keep | [Ruins of Nethergarde.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Nethergarde.jpg) | - | - |
@@ -147,7 +138,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1420-nightmare-vale | Nightmare Vale | [Nightmare Vale.jpg](https://warcraft.wiki.gg/wiki/File:Nightmare_Vale.jpg) | - | - |
 | 1420-north-coast | North Coast | [North Coast.jpg](https://warcraft.wiki.gg/wiki/File:North_Coast.jpg) | - | - |
 | 1420-ruins-of-lordaeron | Ruins of Lordaeron | [BfALordaeron Ruins 2.jpg](https://warcraft.wiki.gg/wiki/File:BfALordaeron_Ruins_2.jpg) | - | - |
-| 1420-scarlet-monastery | Scarlet Monastery | [Old Keyring on wall.jpg](https://warcraft.wiki.gg/wiki/File:Old_Keyring_on_wall.jpg) | - | - |
+| 1420-scarlet-monastery | Scarlet Monastery | [Scarlet Monastery 11.jpg](https://warcraft.wiki.gg/wiki/File:Scarlet_Monastery_11.jpg) | - | - |
 | 1420-scarlet-watch-post | Scarlet Watch Post | [Scarlet Watch Post.jpg](https://warcraft.wiki.gg/wiki/File:Scarlet_Watch_Post.jpg) | - | - |
 | 1420-shadow-grave | Shadow Grave | [Shadow Grave.jpg](https://warcraft.wiki.gg/wiki/File:Shadow_Grave.jpg) | - | - |
 | 1420-solliden-farmstead | Solliden Farmstead | [Solliden Farmstead.jpg](https://warcraft.wiki.gg/wiki/File:Solliden_Farmstead.jpg) | - | - |
@@ -157,7 +148,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1420-venomweb-vale | Venomweb Vale | [Venomweb Vale.jpg](https://warcraft.wiki.gg/wiki/File:Venomweb_Vale.jpg) | - | - |
 | 1420-whispering-gardens | Whispering Gardens | [Whispering Gardens.jpg](https://warcraft.wiki.gg/wiki/File:Whispering_Gardens.jpg) | - | - |
 | 1420-whispering-shore | Whispering Shore | [Whispering Shore.jpg](https://warcraft.wiki.gg/wiki/File:Whispering_Shore.jpg) | - | - |
-| 1421-ambermill | Ambermill | [Ambermill-old.jpg](https://warcraft.wiki.gg/wiki/File:Ambermill-old.jpg) | - | - |
+| 1421-ambermill | Ambermill | [Ambermill.jpg](https://warcraft.wiki.gg/wiki/File:Ambermill.jpg) | - | - |
 | 1421-berens-peril | Beren's Peril | [Beren's Peril cave.jpg](https://warcraft.wiki.gg/wiki/File:Beren%27s_Peril_cave.jpg) | - | - |
 | 1421-dawning-isles | Dawning Isles | [The Dawning Isles.jpg](https://warcraft.wiki.gg/wiki/File:The_Dawning_Isles.jpg) | - | - |
 | 1421-dead-field | Dead Field | [Dead Field.jpg](https://warcraft.wiki.gg/wiki/File:Dead_Field.jpg) | - | - |
@@ -165,7 +156,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1421-deep-elem-mine | Deep Elem Mine | [Deep Elem Mine area.jpg](https://warcraft.wiki.gg/wiki/File:Deep_Elem_Mine_area.jpg) | - | - |
 | 1421-fenris-isle | Fenris Isle | [Fenris Isle.jpg](https://warcraft.wiki.gg/wiki/File:Fenris_Isle.jpg) | - | - |
 | 1421-fenris-keep | Fenris Keep | [Fenris Keep area.jpg](https://warcraft.wiki.gg/wiki/File:Fenris_Keep_area.jpg) | - | - |
-| 1421-greymane-wall | Greymane Wall | [Greymane Wall original.jpg](https://warcraft.wiki.gg/wiki/File:Greymane_Wall_original.jpg) | - | - |
+| 1421-greymane-wall | Greymane Wall | [Battle for Gilneas - ss89.jpg](https://warcraft.wiki.gg/wiki/File:Battle_for_Gilneas_-_ss89.jpg) | - | - |
 | 1421-ivar-patch | Ivar Patch | [Ivar Patch.jpg](https://warcraft.wiki.gg/wiki/File:Ivar_Patch.jpg) | - | - |
 | 1421-lordamere-lake | Lordamere Lake | [Lordamere Lake.jpg](https://warcraft.wiki.gg/wiki/File:Lordamere_Lake.jpg) | - | - |
 | 1421-maldens-orchard | Malden's Orchard | [Malden's Orchard.jpg](https://warcraft.wiki.gg/wiki/File:Malden%27s_Orchard.jpg) | - | - |
@@ -173,27 +164,25 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1421-north-tides-run | North Tide's Run | [North Tide's Run.jpg](https://warcraft.wiki.gg/wiki/File:North_Tide%27s_Run.jpg) | - | - |
 | 1421-olsens-farthing | Olsen's Farthing | [Olsen's Farthing.jpg](https://warcraft.wiki.gg/wiki/File:Olsen%27s_Farthing.jpg) | - | - |
 | 1421-pyrewood-village | Pyrewood Village | [Pyrewood.jpg](https://warcraft.wiki.gg/wiki/File:Pyrewood.jpg) | - | - |
-| 1421-sepulcher | Sepulcher | [Sylvanas and friends at the Sepulcher.jpg](https://warcraft.wiki.gg/wiki/File:Sylvanas_and_friends_at_the_Sepulcher.jpg) | - | - |
-| 1421-shadowfang-keep | Shadowfang Keep | [Archmage Arugal HS.jpg](https://warcraft.wiki.gg/wiki/File:Archmage_Arugal_HS.jpg) | - | - |
+| 1421-sepulcher | Sepulcher | [The Sepulcher.jpg](https://warcraft.wiki.gg/wiki/File:The_Sepulcher.jpg) | - | - |
+| 1421-shadowfang-keep | Shadowfang Keep | [Shadowfang Keep2.jpg](https://warcraft.wiki.gg/wiki/File:Shadowfang_Keep2.jpg) | - | - |
 | 1421-shining-strand | Shining Strand | [Shining Strand.jpg](https://warcraft.wiki.gg/wiki/File:Shining_Strand.jpg) | - | - |
-| 1421-skittering-dark | Skittering Dark | [Skittering Dark.jpg](https://warcraft.wiki.gg/wiki/File:Skittering_Dark.jpg) | - | - |
 | 1421-south-tides-run | South Tide's Run | [South Tide's Run.jpg](https://warcraft.wiki.gg/wiki/File:South_Tide%27s_Run.jpg) | - | - |
-| 1421-valgans-field | Valgan's Field | [Valgan's Field.jpg](https://warcraft.wiki.gg/wiki/File:Valgan%27s_Field.jpg) | - | - |
 | 1422-caer-darrow | Caer Darrow | [Caer Darrow.jpg](https://warcraft.wiki.gg/wiki/File:Caer_Darrow.jpg) | - | - |
-| 1422-chillwind-camp | Chillwind Camp | [Chillwind Camp Ashbringer.jpg](https://warcraft.wiki.gg/wiki/File:Chillwind_Camp_Ashbringer.jpg) | - | - |
+| 1422-chillwind-camp | Chillwind Camp | [Chillwind camp.jpg](https://warcraft.wiki.gg/wiki/File:Chillwind_camp.jpg) | - | - |
 | 1422-dalsons-tears | Dalson's Tears | [Dalson's Tears.jpg](https://warcraft.wiki.gg/wiki/File:Dalson%27s_Tears.jpg) | - | - |
 | 1422-darrowmere-lake | Darrowmere Lake | [Darrowmere Lake.jpg](https://warcraft.wiki.gg/wiki/File:Darrowmere_Lake.jpg) | - | - |
 | 1422-felstone-field | Felstone Field | [Felstone Field.jpg](https://warcraft.wiki.gg/wiki/File:Felstone_Field.jpg) | - | - |
 | 1422-gahrrons-withering | Gahrron's Withering | [Gahrrons withering.jpg](https://warcraft.wiki.gg/wiki/File:Gahrrons_withering.jpg) | - | - |
 | 1422-hearthglen | Hearthglen | [Hearthglen.jpg](https://warcraft.wiki.gg/wiki/File:Hearthglen.jpg) | - | - |
-| 1422-mardenholde-keep | Mardenholde Keep | [Mardenholde Keep (original).jpg](https://warcraft.wiki.gg/wiki/File:Mardenholde_Keep_(original).jpg) | - | - |
+| 1422-mardenholde-keep | Mardenholde Keep | [Mardenholde Keep.jpg](https://warcraft.wiki.gg/wiki/File:Mardenholde_Keep.jpg) | - | - |
 | 1422-northridge-lumber-camp | Northridge Lumber Camp | [Northridge Lumber Camp.jpg](https://warcraft.wiki.gg/wiki/File:Northridge_Lumber_Camp.jpg) | - | - |
 | 1422-plaguemist-ravine | Plaguemist Ravine | [Plaguemist Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Plaguemist_Ravine.jpg) | - | - |
 | 1422-ruins-of-andorhal | Ruins of Andorhal | [Ruins of Andorhal.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Andorhal.jpg) | - | - |
-| 1422-scholomance | Scholomance | [Darkmaster Gandling 5.0.jpg](https://warcraft.wiki.gg/wiki/File:Darkmaster_Gandling_5.0.jpg) | - | - |
+| 1422-scholomance | Scholomance | [Viewing Room 5.0.jpg](https://warcraft.wiki.gg/wiki/File:Viewing_Room_5.0.jpg) | - | - |
 | 1422-sorrow-hill | Sorrow Hill | [Sorrow hill.jpg](https://warcraft.wiki.gg/wiki/File:Sorrow_hill.jpg) | - | - |
 | 1422-thondroril-river | Thondroril River | [Thondroril River.jpg](https://warcraft.wiki.gg/wiki/File:Thondroril_River.jpg) | - | - |
-| 1422-uthers-tomb | Uther's Tomb | [Harvest fest.jpg](https://warcraft.wiki.gg/wiki/File:Harvest_fest.jpg) | - | - |
+| 1422-uthers-tomb | Uther's Tomb | [Path to Uther's Tomb.jpg](https://warcraft.wiki.gg/wiki/File:Path_to_Uther%27s_Tomb.jpg) | - | - |
 | 1422-weeping-cave | Weeping Cave | [The Weeping Cavern.jpg](https://warcraft.wiki.gg/wiki/File:The_Weeping_Cavern.jpg) | - | - |
 | 1422-writhing-haunt | Writhing Haunt | [The Writhing Haunt.jpg](https://warcraft.wiki.gg/wiki/File:The_Writhing_Haunt.jpg) | - | - |
 | 1423-blackwood-lake | Blackwood Lake | [Blackwood Lake.jpg](https://warcraft.wiki.gg/wiki/File:Blackwood_Lake.jpg) | - | - |
@@ -217,7 +206,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1423-quellithien-lodge | Quel'Lithien Lodge | [Quel'Lithien Lodge.jpg](https://warcraft.wiki.gg/wiki/File:Quel%27Lithien_Lodge.jpg) | - | - |
 | 1423-scarlet-base-camp | Scarlet Base Camp | [Scarlet Base Camp.jpg](https://warcraft.wiki.gg/wiki/File:Scarlet_Base_Camp.jpg) | - | - |
 | 1423-scarlet-basilica | Scarlet Basilica | [The Scarlet Basilica.jpg](https://warcraft.wiki.gg/wiki/File:The_Scarlet_Basilica.jpg) | - | - |
-| 1423-stratholme | Stratholme | [Old version of Naxxramas still flying over Stratholme.jpg](https://warcraft.wiki.gg/wiki/File:Old_version_of_Naxxramas_still_flying_over_Stratholme.jpg) | - | - |
+| 1423-stratholme | Stratholme | [Stratholme gates2.jpg](https://warcraft.wiki.gg/wiki/File:Stratholme_gates2.jpg) | - | - |
 | 1423-terrordale | Terrordale | [Terrordale (Classic).jpg](https://warcraft.wiki.gg/wiki/File:Terrordale_(Classic).jpg) | - | - |
 | 1423-terrorweb-tunnel | Terrorweb Tunnel | [Terrorweb Tunnel 1.jpg](https://warcraft.wiki.gg/wiki/File:Terrorweb_Tunnel_1.jpg) | - | - |
 | 1423-tyrs-hand | Tyr's Hand | [Tyr's Hand 3.jpg](https://warcraft.wiki.gg/wiki/File:Tyr%27s_Hand_3.jpg) | - | - |
@@ -228,8 +217,8 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1424-corrahns-dagger | Corrahn's Dagger | [Bomb Spot in Corrahns Dagger.jpeg](https://warcraft.wiki.gg/wiki/File:Bomb_Spot_in_Corrahns_Dagger.jpeg) | - | - |
 | 1424-crushridge-hold | Crushridge Hold | [Crushridge Hold.jpg](https://warcraft.wiki.gg/wiki/File:Crushridge_Hold.jpg) | - | - |
 | 1424-darrow-hill | Darrow Hill | [Darrow Hill.jpg](https://warcraft.wiki.gg/wiki/File:Darrow_Hill.jpg) | - | - |
-| 1424-dun-garok | Dun Garok | [Old Hillsbrad - Dun Garok.jpg](https://warcraft.wiki.gg/wiki/File:Old_Hillsbrad_-_Dun_Garok.jpg) | - | - |
-| 1424-durnholde-keep | Durnholde Keep | [Old Durnholde - Orc Prisoners.jpg](https://warcraft.wiki.gg/wiki/File:Old_Durnholde_-_Orc_Prisoners.jpg) | - | - |
+| 1424-dun-garok | Dun Garok | [Dun Garok.jpg](https://warcraft.wiki.gg/wiki/File:Dun_Garok.jpg) | - | - |
+| 1424-durnholde-keep | Durnholde Keep | [Durnholde Keep Destroyed.jpg](https://warcraft.wiki.gg/wiki/File:Durnholde_Keep_Destroyed.jpg) | - | - |
 | 1424-eastern-strand | Eastern Strand | [Eastern Strand.jpg](https://warcraft.wiki.gg/wiki/File:Eastern_Strand.jpg) | - | - |
 | 1424-gallows-corner | Gallows' Corner | [Gallows' Corner.jpg](https://warcraft.wiki.gg/wiki/File:Gallows%27_Corner.jpg) | - | - |
 | 1424-gavins-naze | Gavin's Naze | [Bomb spot in Gavins Naze.jpeg](https://warcraft.wiki.gg/wiki/File:Bomb_spot_in_Gavins_Naze.jpeg) | - | - |
@@ -239,7 +228,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1424-misty-shore | Misty Shore | [Misty Shore.jpg](https://warcraft.wiki.gg/wiki/File:Misty_Shore.jpg) | - | - |
 | 1424-nethander-stead | Nethander Stead | [Nethander Stead.jpg](https://warcraft.wiki.gg/wiki/File:Nethander_Stead.jpg) | - | - |
 | 1424-purgation-isle | Purgation Isle | [Purgation Isle.jpg](https://warcraft.wiki.gg/wiki/File:Purgation_Isle.jpg) | - | - |
-| 1424-ravenholdt-manor | Ravenholdt Manor | [Old Hillsbrad - Ravenholdt.jpg](https://warcraft.wiki.gg/wiki/File:Old_Hillsbrad_-_Ravenholdt.jpg) | - | - |
+| 1424-ravenholdt-manor | Ravenholdt Manor | [Ravenholdt.jpg](https://warcraft.wiki.gg/wiki/File:Ravenholdt.jpg) | - | - |
 | 1424-slaughter-hollow | Slaughter Hollow | [Slaughter Hollow.jpg](https://warcraft.wiki.gg/wiki/File:Slaughter_Hollow.jpg) | - | - |
 | 1424-soferas-naze | Sofera's Naze | [Bomb spot in Soferas Naze.jpeg](https://warcraft.wiki.gg/wiki/File:Bomb_spot_in_Soferas_Naze.jpeg) | - | - |
 | 1424-southpoint-tower | Southpoint Tower | [Southpoint Tower.jpg](https://warcraft.wiki.gg/wiki/File:Southpoint_Tower.jpg) | - | - |
@@ -273,13 +262,13 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1426-coldridge-valley | Coldridge Valley | [Coldridge Valley.jpg](https://warcraft.wiki.gg/wiki/File:Coldridge_Valley.jpg) | - | - |
 | 1426-frostmane-hold | Frostmane Hold | [Frostmane Hold.jpg](https://warcraft.wiki.gg/wiki/File:Frostmane_Hold.jpg) | - | - |
 | 1426-gates-of-ironforge | Gates of Ironforge | [The Gates of Ironforge.jpg](https://warcraft.wiki.gg/wiki/File:The_Gates_of_Ironforge.jpg) | - | - |
-| 1426-gnomeregan | Gnomeregan | [The Old Dormitory.jpg](https://warcraft.wiki.gg/wiki/File:The_Old_Dormitory.jpg) | - | - |
+| 1426-gnomeregan | Gnomeregan | [Gnomeregan.jpg](https://warcraft.wiki.gg/wiki/File:Gnomeregan.jpg) | - | - |
 | 1426-golbolar-quarry | Gol'Bolar Quarry | [Gol'Bolar Quarry.jpg](https://warcraft.wiki.gg/wiki/File:Gol%27Bolar_Quarry.jpg) | - | - |
 | 1426-grizzled-den | Grizzled Den | [The Grizzled Den.jpg](https://warcraft.wiki.gg/wiki/File:The_Grizzled_Den.jpg) | - | - |
 | 1426-helms-bed-lake | Helm's Bed Lake | [Helm's Bed Lake.jpg](https://warcraft.wiki.gg/wiki/File:Helm%27s_Bed_Lake.jpg) | - | - |
 | 1426-iceflow-lake | Iceflow Lake | [Iceflow Lake.jpg](https://warcraft.wiki.gg/wiki/File:Iceflow_Lake.jpg) | - | - |
 | 1426-ironbands-compound | Ironband's Compound | [Ironband's Compound.jpg](https://warcraft.wiki.gg/wiki/File:Ironband%27s_Compound.jpg) | - | - |
-| 1426-ironforge | Ironforge | [Ironforge - Classic cinematic.jpg](https://warcraft.wiki.gg/wiki/File:Ironforge_-_Classic_cinematic.jpg) | - | - |
+| 1426-ironforge | Ironforge | [Finespindle's Leather Goods.jpg](https://warcraft.wiki.gg/wiki/File:Finespindle%27s_Leather_Goods.jpg) | - | - |
 | 1426-kharanos | Kharanos | [Kharanos.jpg](https://warcraft.wiki.gg/wiki/File:Kharanos.jpg) | - | - |
 | 1426-misty-pine-refuge | Misty Pine Refuge | [Misty Pine Refuge.jpg](https://warcraft.wiki.gg/wiki/File:Misty_Pine_Refuge.jpg) | - | - |
 | 1426-north-gate-outpost | North Gate Outpost | [North Gate Outpost.jpg](https://warcraft.wiki.gg/wiki/File:North_Gate_Outpost.jpg) | - | - |
@@ -306,46 +295,40 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1428-dracodar | Draco'dar | [Draco'dar.jpg](https://warcraft.wiki.gg/wiki/File:Draco%27dar.jpg) | - | - |
 | 1428-dreadmaul-rock | Dreadmaul Rock | [Dreadmaul Rock.jpg](https://warcraft.wiki.gg/wiki/File:Dreadmaul_Rock.jpg) | - | - |
 | 1428-morgans-vigil | Morgan's Vigil | [Morgan's Vigil.jpg](https://warcraft.wiki.gg/wiki/File:Morgan%27s_Vigil.jpg) | - | - |
-| 1428-pillar-of-ash | Pillar of Ash | [The Pillar of Ash.jpg](https://warcraft.wiki.gg/wiki/File:The_Pillar_of_Ash.jpg) | - | - |
 | 1428-ruins-of-thaurissan | Ruins of Thaurissan | [Ruins of Thaurissan.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Thaurissan.jpg) | - | - |
 | 1428-slither-rock | Slither Rock | [Slither Rock.jpg](https://warcraft.wiki.gg/wiki/File:Slither_Rock.jpg) | - | - |
 | 1428-terror-wing-path | Terror Wing Path | [Terror Wing Path.jpg](https://warcraft.wiki.gg/wiki/File:Terror_Wing_Path.jpg) | - | - |
 | 1429-brackwell-pumpkin-patch | Brackwell Pumpkin Patch | [Brackwell Pumpkin Patch.jpg](https://warcraft.wiki.gg/wiki/File:Brackwell_Pumpkin_Patch.jpg) | - | - |
 | 1429-crystal-lake | Crystal Lake | [Crystal Lake.jpg](https://warcraft.wiki.gg/wiki/File:Crystal_Lake.jpg) | - | - |
 | 1429-eastvale-logging-camp | Eastvale Logging Camp | [Eastvale.jpg](https://warcraft.wiki.gg/wiki/File:Eastvale.jpg) | - | - |
-| 1429-echo-ridge-mine | Echo Ridge Mine | [Echo Ridge Mine closed.jpg](https://warcraft.wiki.gg/wiki/File:Echo_Ridge_Mine_closed.jpg) | - | - |
-| 1429-fargodeep-mine | Fargodeep Mine | [Fargodeep Mine.jpg](https://warcraft.wiki.gg/wiki/File:Fargodeep_Mine.jpg) | - | - |
+| 1429-echo-ridge-mine | Echo Ridge Mine | [Echo Ridge Mine.jpg](https://warcraft.wiki.gg/wiki/File:Echo_Ridge_Mine.jpg) | - | - |
 | 1429-forests-edge | Forest's Edge | [Forest's Edge.jpg](https://warcraft.wiki.gg/wiki/File:Forest%27s_Edge.jpg) | - | - |
 | 1429-goldshire | Goldshire | [Goldshire.jpg](https://warcraft.wiki.gg/wiki/File:Goldshire.jpg) | - | - |
 | 1429-heroes-vigil | Heroes' Vigil | [Heroes' Vigil.jpg](https://warcraft.wiki.gg/wiki/File:Heroes%27_Vigil.jpg) | - | - |
 | 1429-jasperlode-mine | Jasperlode Mine | [Jasperlode Mine.jpg](https://warcraft.wiki.gg/wiki/File:Jasperlode_Mine.jpg) | - | - |
-| 1429-jerods-landing | Jerod's Landing | [Jerod's Landing.jpg](https://warcraft.wiki.gg/wiki/File:Jerod%27s_Landing.jpg) | - | - |
 | 1429-maclure-vineyards | Maclure Vineyards | [The Maclure Vineyards.jpg](https://warcraft.wiki.gg/wiki/File:The_Maclure_Vineyards.jpg) | - | - |
 | 1429-mirror-lake | Mirror Lake | [Mirror Lake.jpg](https://warcraft.wiki.gg/wiki/File:Mirror_Lake.jpg) | - | - |
 | 1429-mirror-lake-orchard | Mirror Lake Orchard | [Mirror Lake Orchard.jpg](https://warcraft.wiki.gg/wiki/File:Mirror_Lake_Orchard.jpg) | - | - |
 | 1429-northshire-abbey | Northshire Abbey | [Northshire Abbey.jpg](https://warcraft.wiki.gg/wiki/File:Northshire_Abbey.jpg) | - | - |
 | 1429-northshire-valley | Northshire Valley | [Northshireabbey.jpg](https://warcraft.wiki.gg/wiki/File:Northshireabbey.jpg) | - | - |
-| 1429-northshire-vineyards | Northshire Vineyards | [Northshire Vineyards.jpg](https://warcraft.wiki.gg/wiki/File:Northshire_Vineyards.jpg) | - | - |
-| 1429-ridgepoint-tower | Ridgepoint Tower | [Ridgepoint Tower.jpg](https://warcraft.wiki.gg/wiki/File:Ridgepoint_Tower.jpg) | - | - |
+| 1429-northshire-vineyards | Northshire Vineyards | [Northshire Vineyards Cata.jpg](https://warcraft.wiki.gg/wiki/File:Northshire_Vineyards_Cata.jpg) | - | - |
 | 1429-stone-cairn-lake | Stone Cairn Lake | [Stone Cairn Lake.jpg](https://warcraft.wiki.gg/wiki/File:Stone_Cairn_Lake.jpg) | - | - |
 | 1429-stonefield-farm | Stonefield Farm | [The Stonefield Farm.jpg](https://warcraft.wiki.gg/wiki/File:The_Stonefield_Farm.jpg) | - | - |
-| 1429-stormwind-city | Stormwind City | [Old Town.jpg](https://warcraft.wiki.gg/wiki/File:Old_Town.jpg) | - | - |
-| 1429-thunder-falls | Thunder Falls | [Thunder Falls.jpg](https://warcraft.wiki.gg/wiki/File:Thunder_Falls.jpg) | - | - |
-| 1429-tower-of-azora | Tower of Azora | [Azora.jpg](https://warcraft.wiki.gg/wiki/File:Azora.jpg) | - | - |
+| 1429-stormwind-city | Stormwind City | [Stormwind City Classic.jpg](https://warcraft.wiki.gg/wiki/File:Stormwind_City_Classic.jpg) | - | - |
+| 1429-thunder-falls | Thunder Falls | [Thunder Falls Defias.jpg](https://warcraft.wiki.gg/wiki/File:Thunder_Falls_Defias.jpg) | - | - |
 | 1429-westbrook-garrison | Westbrook Garrison | [Westbrook.png](https://warcraft.wiki.gg/wiki/File:Westbrook.png) | - | - |
 | 1430-aridens-camp | Ariden's Camp | [Ariden's Camp.jpg](https://warcraft.wiki.gg/wiki/File:Ariden%27s_Camp.jpg) | - | - |
 | 1430-deadmans-crossing | Deadman's Crossing | [Deadman's Crossing.jpg](https://warcraft.wiki.gg/wiki/File:Deadman%27s_Crossing.jpg) | - | - |
 | 1430-deadwind-ravine | Deadwind Ravine | [Deadwind Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Deadwind_Ravine.jpg) | - | - |
 | 1430-groshgok-compound | Grosh'gok Compound | [Grosh'gok Compound.jpg](https://warcraft.wiki.gg/wiki/File:Grosh%27gok_Compound.jpg) | - | - |
-| 1430-karazhan | Karazhan | [Chronicle Karazhan.jpg](https://warcraft.wiki.gg/wiki/File:Chronicle_Karazhan.jpg) | - | - |
+| 1430-karazhan | Karazhan | [Aa-karazhan-roost-425.jpg](https://warcraft.wiki.gg/wiki/File:Aa-karazhan-roost-425.jpg) | - | - |
 | 1430-masters-cellar | Master's Cellar | [The Master's Cellar.jpg](https://warcraft.wiki.gg/wiki/File:The_Master%27s_Cellar.jpg) | - | - |
-| 1430-morgans-plot | Morgan's Plot | [Morgan's Plot.jpg](https://warcraft.wiki.gg/wiki/File:Morgan%27s_Plot.jpg) | - | - |
+| 1430-morgans-plot | Morgan's Plot | [Morgan's Plot - Graveyard.jpg](https://warcraft.wiki.gg/wiki/File:Morgan%27s_Plot_-_Graveyard.jpg) | - | - |
 | 1430-sleeping-gorge | Sleeping Gorge | [Sleeping Gorge.jpg](https://warcraft.wiki.gg/wiki/File:Sleeping_Gorge.jpg) | - | - |
 | 1430-vice | Vice | [The Vice.jpg](https://warcraft.wiki.gg/wiki/File:The_Vice.jpg) | - | - |
 | 1431-addles-stead | Addle's Stead | [Addle's Stead.jpg](https://warcraft.wiki.gg/wiki/File:Addle%27s_Stead.jpg) | - | - |
-| 1431-beggars-haunt | Beggar's Haunt | [Beggar's Haunt.jpg](https://warcraft.wiki.gg/wiki/File:Beggar%27s_Haunt.jpg) | - | - |
+| 1431-beggars-haunt | Beggar's Haunt | [Beggar's Haunt grave.jpg](https://warcraft.wiki.gg/wiki/File:Beggar%27s_Haunt_grave.jpg) | - | - |
 | 1431-brightwood-grove | Brightwood Grove | [Brightwood Grove.jpg](https://warcraft.wiki.gg/wiki/File:Brightwood_Grove.jpg) | - | - |
-| 1431-darkened-bank | Darkened Bank | [The Darkened Bank.jpg](https://warcraft.wiki.gg/wiki/File:The_Darkened_Bank.jpg) | - | - |
 | 1431-darkshire | Darkshire | [Darkshire.jpg](https://warcraft.wiki.gg/wiki/File:Darkshire.jpg) | - | - |
 | 1431-dawning-wood-catacombs | Dawning Wood Catacombs | [Dawning Woods Catacombs.jpg](https://warcraft.wiki.gg/wiki/File:Dawning_Woods_Catacombs.jpg) | - | - |
 | 1431-forlorn-rowe | Forlorn Rowe | [Forlorn Rowe.jpg](https://warcraft.wiki.gg/wiki/File:Forlorn_Rowe.jpg) | - | - |
@@ -360,7 +343,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1431-vulgol-ogre-mound | Vul'Gol Ogre Mound | [Vul'Gol Ogre Mound.jpg](https://warcraft.wiki.gg/wiki/File:Vul%27Gol_Ogre_Mound.jpg) | - | - |
 | 1431-yorgen-farmstead | Yorgen Farmstead | [The Yorgen Farmstead.jpg](https://warcraft.wiki.gg/wiki/File:The_Yorgen_Farmstead.jpg) | - | - |
 | 1432-algaz-station | Algaz Station | [Algaz Station.jpg](https://warcraft.wiki.gg/wiki/File:Algaz_Station.jpg) | - | - |
-| 1432-dun-algaz | Dun Algaz | [Dun Algaz road.jpg](https://warcraft.wiki.gg/wiki/File:Dun_Algaz_road.jpg) | - | - |
+| 1432-dun-algaz | Dun Algaz | [DunAlgaz.jpg](https://warcraft.wiki.gg/wiki/File:DunAlgaz.jpg) | - | - |
 | 1432-farstrider-lodge | Farstrider Lodge | [The Farstrider Lodge.jpg](https://warcraft.wiki.gg/wiki/File:The_Farstrider_Lodge.jpg) | - | - |
 | 1432-grizzlepaw-ridge | Grizzlepaw Ridge | [Grizzlepaw Ridge.jpg](https://warcraft.wiki.gg/wiki/File:Grizzlepaw_Ridge.jpg) | - | - |
 | 1432-ironbands-excavation-site | Ironband's Excavation Site | [Ironband's Excavation Site.jpg](https://warcraft.wiki.gg/wiki/File:Ironband%27s_Excavation_Site.jpg) | - | - |
@@ -375,7 +358,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1433-althers-mill | Alther's Mill | [Alther's Mill.jpg](https://warcraft.wiki.gg/wiki/File:Alther%27s_Mill.jpg) | - | - |
 | 1433-galardell-valley | Galardell Valley | [Galardell Valley.jpg](https://warcraft.wiki.gg/wiki/File:Galardell_Valley.jpg) | - | - |
 | 1433-lake-everstill | Lake Everstill | [Lake Everstill.jpg](https://warcraft.wiki.gg/wiki/File:Lake_Everstill.jpg) | - | - |
-| 1433-lakeridge-highway | Lakeridge Highway | [Lakeridge Highway.jpg](https://warcraft.wiki.gg/wiki/File:Lakeridge_Highway.jpg) | - | - |
+| 1433-lakeridge-highway | Lakeridge Highway | [Redridge Mountains digsites.jpg](https://warcraft.wiki.gg/wiki/File:Redridge_Mountains_digsites.jpg) | - | - |
 | 1433-lakeshire | Lakeshire | [Lakeshire overview.jpg](https://warcraft.wiki.gg/wiki/File:Lakeshire_overview.jpg) | - | - |
 | 1433-redridge-canyons | Redridge Canyons | [Redridge Canyons.jpg](https://warcraft.wiki.gg/wiki/File:Redridge_Canyons.jpg) | - | - |
 | 1433-renders-camp | Render's Camp | [Render's Camp.jpg](https://warcraft.wiki.gg/wiki/File:Render%27s_Camp.jpg) | - | - |
@@ -384,14 +367,11 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1433-rethban-caverns | Rethban Caverns | [Rethban Caverns.jpg](https://warcraft.wiki.gg/wiki/File:Rethban_Caverns.jpg) | - | - |
 | 1433-stonewatch | Stonewatch | [Stonewatch2.jpg](https://warcraft.wiki.gg/wiki/File:Stonewatch2.jpg) | - | - |
 | 1433-stonewatch-falls | Stonewatch Falls | [Stonewatch Falls.jpg](https://warcraft.wiki.gg/wiki/File:Stonewatch_Falls.jpg) | - | - |
-| 1433-stonewatch-keep | Stonewatch Keep | [Stonewatch Keep.jpg](https://warcraft.wiki.gg/wiki/File:Stonewatch_Keep.jpg) | - | - |
-| 1433-stonewatch-tower | Stonewatch Tower | [Stonewatch Tower.jpg](https://warcraft.wiki.gg/wiki/File:Stonewatch_Tower.jpg) | - | - |
 | 1433-three-corners | Three Corners | [Three Corners 1.jpg](https://warcraft.wiki.gg/wiki/File:Three_Corners_1.jpg) | - | - |
-| 1433-tower-of-ilgalar | Tower of Ilgalar | [Tower of Ilgalar.jpg](https://warcraft.wiki.gg/wiki/File:Tower_of_Ilgalar.jpg) | - | - |
 | 1434-baliamah-ruins | Balia'mah Ruins | [Balia'mah Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Balia%27mah_Ruins.jpg) | - | - |
 | 1434-ballal-ruins | Bal'lal Ruins | [Bal'lal Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Bal%27lal_Ruins.jpg) | - | - |
 | 1434-bloodsail-compound | Bloodsail Compound | [Bloodsail Compound.jpg](https://warcraft.wiki.gg/wiki/File:Bloodsail_Compound.jpg) | - | - |
-| 1434-booty-bay | Booty Bay | [Old Port Authority.png](https://warcraft.wiki.gg/wiki/File:Old_Port_Authority.png) | - | - |
+| 1434-booty-bay | Booty Bay | [Booty Bay.jpg](https://warcraft.wiki.gg/wiki/File:Booty_Bay.jpg) | - | - |
 | 1434-cape-of-stranglethorn | Cape of Stranglethorn | [The Cape of Stranglethorn.jpg](https://warcraft.wiki.gg/wiki/File:The_Cape_of_Stranglethorn.jpg) | - | - |
 | 1434-crystal-shore | Crystal Shore | [Crystal Shore Oil Refinery.jpg](https://warcraft.wiki.gg/wiki/File:Crystal_Shore_Oil_Refinery.jpg) | - | - |
 | 1434-crystalvein-mine | Crystalvein Mine | [Crystalvein Mine.jpg](https://warcraft.wiki.gg/wiki/File:Crystalvein_Mine.jpg) | - | - |
@@ -413,7 +393,6 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1434-ruins-of-zulkunda | Ruins of Zul'Kunda | [Ruins of Zul'Kunda.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Zul%27Kunda.jpg) | - | - |
 | 1434-ruins-of-zulmamwe | Ruins of Zul'Mamwe | [Ruins of Zul'Mamwe.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Zul%27Mamwe.jpg) | - | - |
 | 1434-savage-coast | Savage Coast | [The Savage Coast.jpg](https://warcraft.wiki.gg/wiki/File:The_Savage_Coast.jpg) | - | - |
-| 1434-south-seas | South Seas | [South Seas Chronicle.jpg](https://warcraft.wiki.gg/wiki/File:South_Seas_Chronicle.jpg) | - | - |
 | 1434-southern-savage-coast | Southern Savage Coast | [Southern Savage Coast.jpg](https://warcraft.wiki.gg/wiki/File:Southern_Savage_Coast.jpg) | - | - |
 | 1434-spirit-den | Spirit Den | [Spirit Den.jpg](https://warcraft.wiki.gg/wiki/File:Spirit_Den.jpg) | - | - |
 | 1434-stockpile | Stockpile | [The Stockpile.jpg](https://warcraft.wiki.gg/wiki/File:The_Stockpile.jpg) | - | - |
@@ -427,7 +406,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1434-zulgurub | Zul'Gurub | [Zul'Gurub screenshoot.jpg](https://warcraft.wiki.gg/wiki/File:Zul%27Gurub_screenshoot.jpg) | - | - |
 | 1434-zuuldaia-ruins | Zuuldaia Ruins | [Zuuldaia Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Zuuldaia_Ruins.jpg) | - | - |
 | 1435-fallow-sanctuary | Fallow Sanctuary | [Fallow Sanctuary.jpg](https://warcraft.wiki.gg/wiki/File:Fallow_Sanctuary.jpg) | - | - |
-| 1435-harborage | Harborage | [The Harborage (original).jpg](https://warcraft.wiki.gg/wiki/File:The_Harborage_(original).jpg) | - | - |
+| 1435-harborage | Harborage | [The Harborage.jpg](https://warcraft.wiki.gg/wiki/File:The_Harborage.jpg) | - | - |
 | 1435-ithariuss-cave | Itharius's Cave | [Itharius's Cave.jpg](https://warcraft.wiki.gg/wiki/File:Itharius%27s_Cave.jpg) | - | - |
 | 1435-misty-reed-post | Misty Reed Post | [Misty Reed Post.jpg](https://warcraft.wiki.gg/wiki/File:Misty_Reed_Post.jpg) | - | - |
 | 1435-misty-reed-strand | Misty Reed Strand | [Misty Reed Strand.jpg](https://warcraft.wiki.gg/wiki/File:Misty_Reed_Strand.jpg) | - | - |
@@ -456,7 +435,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1436-saldeans-farm | Saldean's Farm | [Saldean's Farm.jpg](https://warcraft.wiki.gg/wiki/File:Saldean%27s_Farm.jpg) | - | - |
 | 1436-sentinel-hill | Sentinel Hill | [Burning Sentinel Hill.jpg](https://warcraft.wiki.gg/wiki/File:Burning_Sentinel_Hill.jpg) | - | - |
 | 1436-stendels-pond | Stendel's Pond | [Stendel's Pond.jpg](https://warcraft.wiki.gg/wiki/File:Stendel%27s_Pond.jpg) | - | - |
-| 1436-westfall-lighthouse | Westfall Lighthouse | [Westfall Lighthouse WoW.jpg](https://warcraft.wiki.gg/wiki/File:Westfall_Lighthouse_WoW.jpg) | - | - |
+| 1436-westfall-lighthouse | Westfall Lighthouse | [Murloc Raid 1.jpg](https://warcraft.wiki.gg/wiki/File:Murloc_Raid_1.jpg) | - | - |
 | 1437-angerfang-encampment | Angerfang Encampment | [Angerfang Encampment (Classic).jpg](https://warcraft.wiki.gg/wiki/File:Angerfang_Encampment_(Classic).jpg) | - | - |
 | 1437-baradin-bay | Baradin Bay | [Baradin Bay.jpg](https://warcraft.wiki.gg/wiki/File:Baradin_Bay.jpg) | - | - |
 | 1437-black-channel-marsh | Black Channel Marsh | [Black Channel Marsh.jpg](https://warcraft.wiki.gg/wiki/File:Black_Channel_Marsh.jpg) | - | - |
@@ -470,7 +449,6 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1437-ironbeards-tomb | Ironbeard's Tomb | [Ironbeard's Tomb.jpg](https://warcraft.wiki.gg/wiki/File:Ironbeard%27s_Tomb.jpg) | - | - |
 | 1437-lost-fleet | Lost Fleet | [The Lost Fleet.jpg](https://warcraft.wiki.gg/wiki/File:The_Lost_Fleet.jpg) | - | - |
 | 1437-menethil-bay | Menethil Bay | [Menethil Bay.jpg](https://warcraft.wiki.gg/wiki/File:Menethil_Bay.jpg) | - | - |
-| 1437-menethil-harbor | Menethil Harbor | [Arriving in Menethil by JJcanvas.jpg](https://warcraft.wiki.gg/wiki/File:Arriving_in_Menethil_by_JJcanvas.jpg) | - | - |
 | 1437-menethil-keep | Menethil Keep | [Menethil Keep flooded.jpg](https://warcraft.wiki.gg/wiki/File:Menethil_Keep_flooded.jpg) | - | - |
 | 1437-mosshide-fen | Mosshide Fen | [Mosshide Fen.jpg](https://warcraft.wiki.gg/wiki/File:Mosshide_Fen.jpg) | - | - |
 | 1437-raptor-ridge | Raptor Ridge | [Raptor Ridge.jpg](https://warcraft.wiki.gg/wiki/File:Raptor_Ridge.jpg) | - | - |
@@ -481,7 +459,6 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1438-aldrassil | Aldrassil | [Aldrassil.jpg](https://warcraft.wiki.gg/wiki/File:Aldrassil.jpg) | - | - |
 | 1438-banethil-barrow-den | Ban'ethil Barrow Den | [Ban'ethil Barrow Den.jpg](https://warcraft.wiki.gg/wiki/File:Ban%27ethil_Barrow_Den.jpg) | - | - |
 | 1438-banethil-hollow | Ban'ethil Hollow | [Ban'ethil Hollow.jpg](https://warcraft.wiki.gg/wiki/File:Ban%27ethil_Hollow.jpg) | - | - |
-| 1438-cleft | Cleft | [The Cleft.jpg](https://warcraft.wiki.gg/wiki/File:The_Cleft.jpg) | - | - |
 | 1438-darnassus | Darnassus | [Craftsmen's Terrace.jpg](https://warcraft.wiki.gg/wiki/File:Craftsmen%27s_Terrace.jpg) | - | - |
 | 1438-dolanaar | Dolanaar | [Dolanaar.jpg](https://warcraft.wiki.gg/wiki/File:Dolanaar.jpg) | - | - |
 | 1438-fel-rock | Fel Rock | [Fel Rock.jpg](https://warcraft.wiki.gg/wiki/File:Fel_Rock.jpg) | - | - |
@@ -489,7 +466,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1438-lake-alameth | Lake Al'Ameth | [Lake Al'Ameth.jpg](https://warcraft.wiki.gg/wiki/File:Lake_Al%27Ameth.jpg) | - | - |
 | 1438-oracle-glade | Oracle Glade | [The Oracle Glade.jpg](https://warcraft.wiki.gg/wiki/File:The_Oracle_Glade.jpg) | - | - |
 | 1438-pools-of-arlithrien | Pools of Arlithrien | [Pools Arlithrien.jpg](https://warcraft.wiki.gg/wiki/File:Pools_Arlithrien.jpg) | - | - |
-| 1438-ruttheran-village | Rut'theran Village | [Exploring Azeroth - Rut'theran Village.jpg](https://warcraft.wiki.gg/wiki/File:Exploring_Azeroth_-_Rut%27theran_Village.jpg) | - | - |
+| 1438-ruttheran-village | Rut'theran Village | [Rut'theran cata.jpg](https://warcraft.wiki.gg/wiki/File:Rut%27theran_cata.jpg) | - | - |
 | 1438-shadowglen | Shadowglen | [Shadowglen.jpg](https://warcraft.wiki.gg/wiki/File:Shadowglen.jpg) | - | - |
 | 1438-shadowthread-cave | Shadowthread Cave | [Shadowthread Cave.jpg](https://warcraft.wiki.gg/wiki/File:Shadowthread_Cave.jpg) | - | - |
 | 1438-starbreeze-village | Starbreeze Village | [Starbreeze Village.jpg](https://warcraft.wiki.gg/wiki/File:Starbreeze_Village.jpg) | - | - |
@@ -512,7 +489,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1439-wildbend-river | Wildbend River | [Wildbend River.jpg](https://warcraft.wiki.gg/wiki/File:Wildbend_River.jpg) | - | - |
 | 1440-astranaar | Astranaar | [Astranaar.jpg](https://warcraft.wiki.gg/wiki/File:Astranaar.jpg) | - | - |
 | 1440-bathrans-haunt | Bathran's Haunt | [Bathran's Haunt.jpg](https://warcraft.wiki.gg/wiki/File:Bathran%27s_Haunt.jpg) | - | - |
-| 1440-blackfathom-deeps | Blackfathom Deeps | [Aku'mai the Devourer.jpg](https://warcraft.wiki.gg/wiki/File:Aku%27mai_the_Devourer.jpg) | - | - |
+| 1440-blackfathom-deeps | Blackfathom Deeps | [Moonshrine Sanctum 1.jpg](https://warcraft.wiki.gg/wiki/File:Moonshrine_Sanctum_1.jpg) | - | - |
 | 1440-bloodtooth-camp | Bloodtooth Camp | [Bloodtooth Camp.jpg](https://warcraft.wiki.gg/wiki/File:Bloodtooth_Camp.jpg) | - | - |
 | 1440-bough-shadow | Bough Shadow | [Bough Shadow.jpg](https://warcraft.wiki.gg/wiki/File:Bough_Shadow.jpg) | - | - |
 | 1440-demon-fall-canyon | Demon Fall Canyon | [Demon Fall Canyon.jpg](https://warcraft.wiki.gg/wiki/File:Demon_Fall_Canyon.jpg) | - | - |
@@ -556,7 +533,6 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1441-highperch | Highperch | [Highperch.jpg](https://warcraft.wiki.gg/wiki/File:Highperch.jpg) | - | - |
 | 1441-ironstone-camp | Ironstone Camp | [Ironstone Camp.jpg](https://warcraft.wiki.gg/wiki/File:Ironstone_Camp.jpg) | - | - |
 | 1441-mirage-raceway | Mirage Raceway | [Mirage Raceway.jpg](https://warcraft.wiki.gg/wiki/File:Mirage_Raceway.jpg) | - | - |
-| 1441-razorfen-downs | Razorfen Downs | [Razorfen Downs concept.jpg](https://warcraft.wiki.gg/wiki/File:Razorfen_Downs_concept.jpg) | - | - |
 | 1441-roguefeather-den | Roguefeather Den | [Roguefeather Den.jpg](https://warcraft.wiki.gg/wiki/File:Roguefeather_Den.jpg) | - | - |
 | 1441-rustmaul-dig-site | Rustmaul Dig Site | [Rustmaul Dig Site.jpg](https://warcraft.wiki.gg/wiki/File:Rustmaul_Dig_Site.jpg) | - | - |
 | 1441-screeching-canyon | Screeching Canyon | [The Screeching Canyon.jpg](https://warcraft.wiki.gg/wiki/File:The_Screeching_Canyon.jpg) | - | - |
@@ -585,26 +561,20 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1442-webwinder-path | Webwinder Path | [Kromgar-Barricade.jpg](https://warcraft.wiki.gg/wiki/File:Kromgar-Barricade.jpg) | - | - |
 | 1442-windshear-crag | Windshear Crag | [Windshear Crag.jpg](https://warcraft.wiki.gg/wiki/File:Windshear_Crag.jpg) | - | - |
 | 1442-windshear-mine | Windshear Mine | [Windshear Mine.jpg](https://warcraft.wiki.gg/wiki/File:Windshear_Mine.jpg) | - | - |
-| 1443-bolgans-hole | Bolgan's Hole | [Bolgan's Hole old.jpg](https://warcraft.wiki.gg/wiki/File:Bolgan%27s_Hole_old.jpg) | - | - |
+| 1443-bolgans-hole | Bolgan's Hole | [Bolgan's Hole.jpg](https://warcraft.wiki.gg/wiki/File:Bolgan%27s_Hole.jpg) | - | - |
 | 1443-ethel-rethor | Ethel Rethor | [Ethel Rethor.jpg](https://warcraft.wiki.gg/wiki/File:Ethel_Rethor.jpg) | - | - |
-| 1443-gelkis-village | Gelkis Village | [Gelkis Village old.jpg](https://warcraft.wiki.gg/wiki/File:Gelkis_Village_old.jpg) | - | - |
-| 1443-ghost-walker-post | Ghost Walker Post | [Ghost Walker Post.jpg](https://warcraft.wiki.gg/wiki/File:Ghost_Walker_Post.jpg) | - | - |
+| 1443-gelkis-village | Gelkis Village | [Gelkis Village.jpg](https://warcraft.wiki.gg/wiki/File:Gelkis_Village.jpg) | - | - |
 | 1443-kodo-graveyard | Kodo Graveyard | [Kodograveyard.jpg](https://warcraft.wiki.gg/wiki/File:Kodograveyard.jpg) | - | - |
 | 1443-kolkar-village | Kolkar Village | [Kolkar Village.jpg](https://warcraft.wiki.gg/wiki/File:Kolkar_Village.jpg) | - | - |
 | 1443-kormeks-hut | Kormek's Hut | [Kormek's Hut.jpg](https://warcraft.wiki.gg/wiki/File:Kormek%27s_Hut.jpg) | - | - |
 | 1443-magram-village | Magram Village | [Magram Village.jpg](https://warcraft.wiki.gg/wiki/File:Magram_Village.jpg) | - | - |
-| 1443-mannoroc-coven | Mannoroc Coven | [Mannoroc Coven.jpg](https://warcraft.wiki.gg/wiki/File:Mannoroc_Coven.jpg) | - | - |
 | 1443-nijels-point | Nijel's Point | [Nijel's Point.jpg](https://warcraft.wiki.gg/wiki/File:Nijel%27s_Point.jpg) | - | - |
 | 1443-ranazjar-isle | Ranazjar Isle | [Ranazjar Isle - Retail.png](https://warcraft.wiki.gg/wiki/File:Ranazjar_Isle_-_Retail.png) | - | - |
 | 1443-sargeron | Sargeron | [Sargeron.jpg](https://warcraft.wiki.gg/wiki/File:Sargeron.jpg) | - | - |
-| 1443-sartheris-strand | Sar'theris Strand | [Sartheris Strand.jpg](https://warcraft.wiki.gg/wiki/File:Sartheris_Strand.jpg) | - | - |
-| 1443-scrabblescrews-camp | Scrabblescrew's Camp | [Scrabblescrews Camp.jpg](https://warcraft.wiki.gg/wiki/File:Scrabblescrews_Camp.jpg) | - | - |
-| 1443-shadowbreak-ravine | Shadowbreak Ravine | [Shadowbreak Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Shadowbreak_Ravine.jpg) | - | - |
-| 1443-shadowprey-village | Shadowprey Village | [Shadowprey Village.jpg](https://warcraft.wiki.gg/wiki/File:Shadowprey_Village.jpg) | - | - |
 | 1443-tethris-aran | Tethris Aran | [Tethris Aran.jpg](https://warcraft.wiki.gg/wiki/File:Tethris_Aran.jpg) | - | - |
 | 1443-thunder-axe-fortress | Thunder Axe Fortress | [Thunder Axe Fortress.jpg](https://warcraft.wiki.gg/wiki/File:Thunder_Axe_Fortress.jpg) | - | - |
-| 1443-valley-of-bones | Valley of Bones | [Valley of Bones east entrance old.jpg](https://warcraft.wiki.gg/wiki/File:Valley_of_Bones_east_entrance_old.jpg) | - | - |
-| 1443-valley-of-spears | Valley of Spears | [Valley of Spears east entrance old.jpg](https://warcraft.wiki.gg/wiki/File:Valley_of_Spears_east_entrance_old.jpg) | - | - |
+| 1443-valley-of-bones | Valley of Bones | [Valley Bones.jpg](https://warcraft.wiki.gg/wiki/File:Valley_Bones.jpg) | - | - |
+| 1443-valley-of-spears | Valley of Spears | [Valley spears.jpg](https://warcraft.wiki.gg/wiki/File:Valley_spears.jpg) | - | - |
 | 1444-camp-mojache | Camp Mojache | [Camp Mojache.jpg](https://warcraft.wiki.gg/wiki/File:Camp_Mojache.jpg) | - | - |
 | 1444-dire-maul | Dire Maul | [Dire Maul.jpg](https://warcraft.wiki.gg/wiki/File:Dire_Maul.jpg) | - | - |
 | 1444-dream-bough | Dream Bough | [Dream Bough.jpg](https://warcraft.wiki.gg/wiki/File:Dream_Bough.jpg) | - | - |
@@ -633,11 +603,10 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1444-woodpaw-den | Woodpaw Den | [Woodpaw Den.jpg](https://warcraft.wiki.gg/wiki/File:Woodpaw_Den.jpg) | - | - |
 | 1444-woodpaw-hills | Woodpaw Hills | [Woodpaw Hills.jpg](https://warcraft.wiki.gg/wiki/File:Woodpaw_Hills.jpg) | - | - |
 | 1444-writhing-deep | Writhing Deep | [The Writing Deep.jpg](https://warcraft.wiki.gg/wiki/File:The_Writing_Deep.jpg) | - | - |
-| 1445-alcaz-island | Alcaz Island | [Alcaz tower.jpg](https://warcraft.wiki.gg/wiki/File:Alcaz_tower.jpg) | - | - |
 | 1445-beezils-wreck | Beezil's Wreck | [Beezil's Wreck.jpg](https://warcraft.wiki.gg/wiki/File:Beezil%27s_Wreck.jpg) | - | - |
 | 1445-bloodfen-burrow | Bloodfen Burrow | [Bloodfen Burrow.jpg](https://warcraft.wiki.gg/wiki/File:Bloodfen_Burrow.jpg) | - | - |
 | 1445-bluefen | Bluefen | [Bluefen.jpg](https://warcraft.wiki.gg/wiki/File:Bluefen.jpg) | - | - |
-| 1445-brackenwall-village | Brackenwall Village | [Watch tower old.jpg](https://warcraft.wiki.gg/wiki/File:Watch_tower_old.jpg) | - | - |
+| 1445-brackenwall-village | Brackenwall Village | [Brackenwall Village.jpg](https://warcraft.wiki.gg/wiki/File:Brackenwall_Village.jpg) | - | - |
 | 1445-darkmist-cavern | Darkmist Cavern | [Darkmist Cavern.jpg](https://warcraft.wiki.gg/wiki/File:Darkmist_Cavern.jpg) | - | - |
 | 1445-den-of-flame | Den of Flame | [Den of Flame.jpg](https://warcraft.wiki.gg/wiki/File:Den_of_Flame.jpg) | - | - |
 | 1445-dragonmurk | Dragonmurk | [Dragonmurk.jpg](https://warcraft.wiki.gg/wiki/File:Dragonmurk.jpg) | - | - |
@@ -651,18 +620,18 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1445-quagmire | Quagmire | [Quagmire.jpg](https://warcraft.wiki.gg/wiki/File:Quagmire.jpg) | - | - |
 | 1445-sentry-point | Sentry Point | [Sentry Point.jpg](https://warcraft.wiki.gg/wiki/File:Sentry_Point.jpg) | - | - |
 | 1445-shady-rest-inn | Shady Rest Inn | [Shady Rest.jpg](https://warcraft.wiki.gg/wiki/File:Shady_Rest.jpg) | - | - |
-| 1445-stonemaul-ruins | Stonemaul Ruins | [Old Hatreds - Stonemaul - Arena.jpg](https://warcraft.wiki.gg/wiki/File:Old_Hatreds_-_Stonemaul_-_Arena.jpg) | - | - |
+| 1445-stonemaul-ruins | Stonemaul Ruins | [Stonemaul Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Stonemaul_Ruins.jpg) | - | - |
 | 1445-swamplight-manor | Swamplight Manor | [Swamplight Manor.jpg](https://warcraft.wiki.gg/wiki/File:Swamplight_Manor.jpg) | - | - |
-| 1445-theramore-isle | Theramore Isle | [Old Hatreds - Theramore Isle - Aviary.jpg](https://warcraft.wiki.gg/wiki/File:Old_Hatreds_-_Theramore_Isle_-_Aviary.jpg) | - | - |
-| 1445-tidefury-cove | Tidefury Cove | [Old Hatreds - Tidefury Cove - Castle.jpg](https://warcraft.wiki.gg/wiki/File:Old_Hatreds_-_Tidefury_Cove_-_Castle.jpg) | - | - |
+| 1445-theramore-isle | Theramore Isle | [Theramore's Fall (image3).jpg](https://warcraft.wiki.gg/wiki/File:Theramore%27s_Fall_(image3).jpg) | - | - |
+| 1445-tidefury-cove | Tidefury Cove | [Tidefury Cove.jpg](https://warcraft.wiki.gg/wiki/File:Tidefury_Cove.jpg) | - | - |
 | 1445-witch-hill | Witch Hill | [Witch Hill.jpg](https://warcraft.wiki.gg/wiki/File:Witch_Hill.jpg) | - | - |
 | 1445-wyrmbog | Wyrmbog | [Wyrmbog.jpg](https://warcraft.wiki.gg/wiki/File:Wyrmbog.jpg) | - | - |
 | 1446-abyssal-sands | Abyssal Sands | [Abyssal Sands.jpg](https://warcraft.wiki.gg/wiki/File:Abyssal_Sands.jpg) | - | - |
 | 1446-broken-pillar | Broken Pillar | [Broken Pillar.jpg](https://warcraft.wiki.gg/wiki/File:Broken_Pillar.jpg) | - | - |
-| 1446-caverns-of-time | Caverns of Time | [CoT entrance to Old Hillsbrad Foothills.jpg](https://warcraft.wiki.gg/wiki/File:CoT_entrance_to_Old_Hillsbrad_Foothills.jpg) | - | - |
+| 1446-caverns-of-time | Caverns of Time | [CoT.jpg](https://warcraft.wiki.gg/wiki/File:CoT.jpg) | - | - |
 | 1446-dunemaul-compound | Dunemaul Compound | [Dunemaul Compound.jpg](https://warcraft.wiki.gg/wiki/File:Dunemaul_Compound.jpg) | - | - |
 | 1446-eastmoon-ruins | Eastmoon Ruins | [Eastmoon Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Eastmoon_Ruins.jpg) | - | - |
-| 1446-gadgetzan | Gadgetzan | [Exploring Azeroth - Gadgetzan.jpg](https://warcraft.wiki.gg/wiki/File:Exploring_Azeroth_-_Gadgetzan.jpg) | - | - |
+| 1446-gadgetzan | Gadgetzan | [Broken Pillar - Shore.jpg](https://warcraft.wiki.gg/wiki/File:Broken_Pillar_-_Shore.jpg) | - | - |
 | 1446-gaping-chasm | Gaping Chasm | [The Gaping Chasm.jpg](https://warcraft.wiki.gg/wiki/File:The_Gaping_Chasm.jpg) | - | - |
 | 1446-lands-end-beach | Land's End Beach | [Land's End Beach.jpg](https://warcraft.wiki.gg/wiki/File:Land%27s_End_Beach.jpg) | - | - |
 | 1446-lost-rigger-cove | Lost Rigger Cove | [Lost Rigger Cove.jpg](https://warcraft.wiki.gg/wiki/File:Lost_Rigger_Cove.jpg) | - | - |
@@ -673,8 +642,8 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1446-southmoon-ruins | Southmoon Ruins | [Southmoon Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Southmoon_Ruins.jpg) | - | - |
 | 1446-steamwheedle-port | Steamwheedle Port | [Steamwheedle Port.jpg](https://warcraft.wiki.gg/wiki/File:Steamwheedle_Port.jpg) | - | - |
 | 1446-thistleshrub-valley | Thistleshrub Valley | [Thistleshrub Valley.jpg](https://warcraft.wiki.gg/wiki/File:Thistleshrub_Valley.jpg) | - | - |
-| 1446-uldum | Uldum | [Uldum Artwork.jpg](https://warcraft.wiki.gg/wiki/File:Uldum_Artwork.jpg) | - | - |
-| 1446-valley-of-the-watchers | Valley of the Watchers | [Exploring Azeroth - Valley of the Watchers.jpg](https://warcraft.wiki.gg/wiki/File:Exploring_Azeroth_-_Valley_of_the_Watchers.jpg) | - | - |
+| 1446-uldum | Uldum | [Halls of Origination overview.jpg](https://warcraft.wiki.gg/wiki/File:Halls_of_Origination_overview.jpg) | - | - |
+| 1446-valley-of-the-watchers | Valley of the Watchers | [Valley of the Watchers.jpg](https://warcraft.wiki.gg/wiki/File:Valley_of_the_Watchers.jpg) | - | - |
 | 1446-waterspring-field | Waterspring Field | [Waterspring Field flooded.jpg](https://warcraft.wiki.gg/wiki/File:Waterspring_Field_flooded.jpg) | - | - |
 | 1446-wavestrider-beach | Wavestrider Beach | [Wavestrider Beach flooded.jpg](https://warcraft.wiki.gg/wiki/File:Wavestrider_Beach_flooded.jpg) | - | - |
 | 1446-zalashjis-den | Zalashji's Den | [Zalashji's Den flooded.jpg](https://warcraft.wiki.gg/wiki/File:Zalashji%27s_Den_flooded.jpg) | - | - |
@@ -703,35 +672,31 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1447-tower-of-eldara | Tower of Eldara | [Tower of Eldara.jpg](https://warcraft.wiki.gg/wiki/File:Tower_of_Eldara.jpg) | - | - |
 | 1447-ursolan | Ursolan | [Ursolan.jpg](https://warcraft.wiki.gg/wiki/File:Ursolan.jpg) | - | - |
 | 1447-valormok | Valormok | [ValormokNew.png](https://warcraft.wiki.gg/wiki/File:ValormokNew.png) | - | - |
-| 1448-bloodvenom-falls | Bloodvenom Falls | [Bloodvenom Falls.jpg](https://warcraft.wiki.gg/wiki/File:Bloodvenom_Falls.jpg) | - | - |
 | 1448-bloodvenom-post | Bloodvenom Post | [Bloodvenom Post.jpg](https://warcraft.wiki.gg/wiki/File:Bloodvenom_Post.jpg) | - | - |
 | 1448-bloodvenom-river | Bloodvenom River | [Bloodvenom River.jpg](https://warcraft.wiki.gg/wiki/File:Bloodvenom_River.jpg) | - | - |
 | 1448-deadwood-village | Deadwood Village | [Deadwood Village rear.jpg](https://warcraft.wiki.gg/wiki/File:Deadwood_Village_rear.jpg) | - | - |
 | 1448-emerald-sanctuary | Emerald Sanctuary | [Emerald Sanctuary.jpg](https://warcraft.wiki.gg/wiki/File:Emerald_Sanctuary.jpg) | - | - |
 | 1448-felpaw-village | Felpaw Village | [Felpaw Village.jpg](https://warcraft.wiki.gg/wiki/File:Felpaw_Village.jpg) | - | - |
 | 1448-irontree-cavern | Irontree Cavern | [Irontree Cavern - Classic.jpg](https://warcraft.wiki.gg/wiki/File:Irontree_Cavern_-_Classic.jpg) | - | - |
-| 1448-irontree-woods | Irontree Woods | [Irontree Woods.jpg](https://warcraft.wiki.gg/wiki/File:Irontree_Woods.jpg) | - | - |
+| 1448-irontree-woods | Irontree Woods | [Felwood digsites.jpg](https://warcraft.wiki.gg/wiki/File:Felwood_digsites.jpg) | - | - |
 | 1448-jadefire-glen | Jadefire Glen | [Jadefire Glen.jpg](https://warcraft.wiki.gg/wiki/File:Jadefire_Glen.jpg) | - | - |
-| 1448-jadefire-run | Jadefire Run | [Jadefire Run.jpg](https://warcraft.wiki.gg/wiki/File:Jadefire_Run.jpg) | - | - |
-| 1448-jaedenar | Jaedenar | [Shadow Hold.jpg](https://warcraft.wiki.gg/wiki/File:Shadow_Hold.jpg) | - | - |
+| 1448-jaedenar | Jaedenar | [Jaedenar.jpg](https://warcraft.wiki.gg/wiki/File:Jaedenar.jpg) | - | - |
 | 1448-morlosaran | Morlos'Aran | [Morlos'Aran.jpg](https://warcraft.wiki.gg/wiki/File:Morlos%27Aran.jpg) | - | - |
-| 1448-ruins-of-constellas | Ruins of Constellas | [Felwood digsites.jpg](https://warcraft.wiki.gg/wiki/File:Felwood_digsites.jpg) | - | - |
+| 1448-shadow-hold | Shadow Hold | [Shadow Hold.jpg](https://warcraft.wiki.gg/wiki/File:Shadow_Hold.jpg) | - | - |
 | 1448-shatter-scar-vale | Shatter Scar Vale | [Shatter Scar Vale.jpg](https://warcraft.wiki.gg/wiki/File:Shatter_Scar_Vale.jpg) | - | - |
-| 1448-shrine-of-the-deceiver | Shrine of the Deceiver | [Shrine of the Deceiver.jpg](https://warcraft.wiki.gg/wiki/File:Shrine_of_the_Deceiver.jpg) | - | - |
 | 1448-talonbranch-glade | Talonbranch Glade | [Talonbranch Glade.jpg](https://warcraft.wiki.gg/wiki/File:Talonbranch_Glade.jpg) | - | - |
-| 1448-timbermaw-hold | Timbermaw Hold | [Timbermaw Hold.jpg](https://warcraft.wiki.gg/wiki/File:Timbermaw_Hold.jpg) | - | - |
+| 1448-timbermaw-hold | Timbermaw Hold | [Timbermaw Hold - Azshara.jpg](https://warcraft.wiki.gg/wiki/File:Timbermaw_Hold_-_Azshara.jpg) | - | - |
 | 1449-fire-plume-ridge | Fire Plume Ridge | [Fire Plume Ridge2.jpg](https://warcraft.wiki.gg/wiki/File:Fire_Plume_Ridge2.jpg) | - | - |
-| 1449-fungal-rock | Fungal Rock | [Fungal Rock.jpg](https://warcraft.wiki.gg/wiki/File:Fungal_Rock.jpg) | - | - |
+| 1449-fungal-rock | Fungal Rock | [Fungal Rock cata.jpg](https://warcraft.wiki.gg/wiki/File:Fungal_Rock_cata.jpg) | - | - |
 | 1449-golakka-hot-springs | Golakka Hot Springs | [Golakka Hot Springs pool.jpg](https://warcraft.wiki.gg/wiki/File:Golakka_Hot_Springs_pool.jpg) | - | - |
 | 1449-ironstone-plateau | Ironstone Plateau | [Ironstone Plateau.jpg](https://warcraft.wiki.gg/wiki/File:Ironstone_Plateau.jpg) | - | - |
 | 1449-lakkari-tar-pits | Lakkari Tar Pits | [Lakkari Tar Pits.jpg](https://warcraft.wiki.gg/wiki/File:Lakkari_Tar_Pits.jpg) | - | - |
-| 1449-marshals-refuge | Marshal's Refuge | [Marshal's Refuge Cave.jpg](https://warcraft.wiki.gg/wiki/File:Marshal%27s_Refuge_Cave.jpg) | - | - |
+| 1449-marshals-refuge | Marshal's Refuge | [Marshal's Refuge (Cataclysm).jpg](https://warcraft.wiki.gg/wiki/File:Marshal%27s_Refuge_(Cataclysm).jpg) | - | - |
 | 1449-marshlands | Marshlands | [The Marshlands.jpg](https://warcraft.wiki.gg/wiki/File:The_Marshlands.jpg) | - | - |
 | 1449-slithering-scar | Slithering Scar | [Slithering Scar area.jpg](https://warcraft.wiki.gg/wiki/File:Slithering_Scar_area.jpg) | - | - |
 | 1449-terror-run | Terror Run | [Terror Run area.jpg](https://warcraft.wiki.gg/wiki/File:Terror_Run_area.jpg) | - | - |
 | 1450-lake-eluneara | Lake Elune'ara | [Lake Elune'ara.jpg](https://warcraft.wiki.gg/wiki/File:Lake_Elune%27ara.jpg) | - | - |
 | 1450-nighthaven | Nighthaven | [Nighthaven.jpg](https://warcraft.wiki.gg/wiki/File:Nighthaven.jpg) | - | - |
-| 1450-shrine-of-remulos | Shrine of Remulos | [Shrine of Remulos.jpg](https://warcraft.wiki.gg/wiki/File:Shrine_of_Remulos.jpg) | - | - |
 | 1450-stormrage-barrow-dens | Stormrage Barrow Dens | [Stormrage Barrow Dens.jpg](https://warcraft.wiki.gg/wiki/File:Stormrage_Barrow_Dens.jpg) | - | - |
 | 1451-bones-of-grakkarond | Bones of Grakkarond | [Bones of Grakkarond.jpg](https://warcraft.wiki.gg/wiki/File:Bones_of_Grakkarond.jpg) | - | - |
 | 1451-bronzebeard-encampment | Bronzebeard Encampment | [Bronzebeard Camp.jpg](https://warcraft.wiki.gg/wiki/File:Bronzebeard_Camp.jpg) | - | - |
@@ -743,7 +708,7 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1451-ortells-hideout | Ortell's Hideout | [Ortell's Hideout.jpg](https://warcraft.wiki.gg/wiki/File:Ortell%27s_Hideout.jpg) | - | - |
 | 1451-ravaged-twilight-camp | Ravaged Twilight Camp | [Ravaged Twilight Camp.jpg](https://warcraft.wiki.gg/wiki/File:Ravaged_Twilight_Camp.jpg) | - | - |
 | 1451-scarab-dais | Scarab Dais | [The Scarab Dais.jpg](https://warcraft.wiki.gg/wiki/File:The_Scarab_Dais.jpg) | - | - |
-| 1451-scarab-wall | Scarab Wall | [Ahn'Qiraj War WoW Classic Wallpaper.jpg](https://warcraft.wiki.gg/wiki/File:Ahn%27Qiraj_War_WoW_Classic_Wallpaper.jpg) | - | - |
+| 1451-scarab-wall | Scarab Wall | [AhnQirajWarClassic.jpg](https://warcraft.wiki.gg/wiki/File:AhnQirajWarClassic.jpg) | - | - |
 | 1451-southwind-village | Southwind Village | [Southwind Horde base.jpg](https://warcraft.wiki.gg/wiki/File:Southwind_Horde_base.jpg) | - | - |
 | 1451-staghelm-point | Staghelm Point | [Staghelm Point Alliance base.jpg](https://warcraft.wiki.gg/wiki/File:Staghelm_Point_Alliance_base.jpg) | - | - |
 | 1451-swarming-pillar | Swarming Pillar | [The Swarming Pillar.jpg](https://warcraft.wiki.gg/wiki/File:The_Swarming_Pillar.jpg) | - | - |
@@ -758,20 +723,19 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | 1452-everlook | Everlook | [Everlook.jpg](https://warcraft.wiki.gg/wiki/File:Everlook.jpg) | - | - |
 | 1452-frostfire-hot-springs | Frostfire Hot Springs | [Frostfire Hot Springs.jpg](https://warcraft.wiki.gg/wiki/File:Frostfire_Hot_Springs.jpg) | - | - |
 | 1452-frostsaber-rock | Frostsaber Rock | [Frostsaber Rock.jpg](https://warcraft.wiki.gg/wiki/File:Frostsaber_Rock.jpg) | - | - |
-| 1452-frostwhisper-gorge | Frostwhisper Gorge | [Frostwhisper Gorge.jpg](https://warcraft.wiki.gg/wiki/File:Frostwhisper_Gorge.jpg) | - | - |
+| 1452-frostwhisper-gorge | Frostwhisper Gorge | [Frostwhisper Gorge Cataclysm.jpg](https://warcraft.wiki.gg/wiki/File:Frostwhisper_Gorge_Cataclysm.jpg) | - | - |
 | 1452-hidden-grove | Hidden Grove | [The Hidden Grove.jpg](https://warcraft.wiki.gg/wiki/File:The_Hidden_Grove.jpg) | - | - |
 | 1452-ice-thistle-hills | Ice Thistle Hills | [Ice Thistle Hills.jpg](https://warcraft.wiki.gg/wiki/File:Ice_Thistle_Hills.jpg) | - | - |
 | 1452-lake-keltheril | Lake Kel'Theril | [Lake Kel'Theril.jpg](https://warcraft.wiki.gg/wiki/File:Lake_Kel%27Theril.jpg) | - | - |
 | 1452-mazthoril | Mazthoril | [Mazthoril.jpg](https://warcraft.wiki.gg/wiki/File:Mazthoril.jpg) | - | - |
-| 1452-moon-horror-den | Moon Horror Den | [Moon Horror Den.jpg](https://warcraft.wiki.gg/wiki/File:Moon_Horror_Den.jpg) | - | - |
+| 1452-moon-horror-den | Moon Horror Den | [Moon Horror Den (Cataclysm).jpg](https://warcraft.wiki.gg/wiki/File:Moon_Horror_Den_(Cataclysm).jpg) | - | - |
 | 1452-owl-wing-thicket | Owl Wing Thicket | [Owl Wing Thicket.jpg](https://warcraft.wiki.gg/wiki/File:Owl_Wing_Thicket.jpg) | - | - |
 | 1452-ruins-of-keltheril | Ruins of Kel'Theril | [The Ruins of Kel'Theril.jpg](https://warcraft.wiki.gg/wiki/File:The_Ruins_of_Kel%27Theril.jpg) | - | - |
 | 1452-starfall-village | Starfall Village | [Starfall Village.jpg](https://warcraft.wiki.gg/wiki/File:Starfall_Village.jpg) | - | - |
 | 1452-timbermaw-post | Timbermaw Post | [Timbermaw Post.jpg](https://warcraft.wiki.gg/wiki/File:Timbermaw_Post.jpg) | - | - |
 | 1452-winterfall-village | Winterfall Village | [Winterfall Village.jpg](https://warcraft.wiki.gg/wiki/File:Winterfall_Village.jpg) | - | - |
 | 1453-champions-hall | Champions' Hall | [Champions' Hall.jpg](https://warcraft.wiki.gg/wiki/File:Champions%27_Hall.jpg) | - | - |
-| 1453-deeprun-tram | Deeprun Tram | [Deeprun Boards.jpg](https://warcraft.wiki.gg/wiki/File:Deeprun_Boards.jpg) | - | - |
-| 1453-valley-of-heroes | Valley of Heroes | [Stormwind City Classic.jpg](https://warcraft.wiki.gg/wiki/File:Stormwind_City_Classic.jpg) | - | - |
+| 1453-deeprun-tram | Deeprun Tram | [Deeprun Tram - Ironforge entrance.jpg](https://warcraft.wiki.gg/wiki/File:Deeprun_Tram_-_Ironforge_entrance.jpg) | - | - |
 | 1454-hall-of-legends | Hall of Legends | [Hall of Legends - Retail.jpg](https://warcraft.wiki.gg/wiki/File:Hall_of_Legends_-_Retail.jpg) | - | - |
 | 1454-ragefire-chasm | Ragefire Chasm | [Ragefire Chasm SoO.jpg](https://warcraft.wiki.gg/wiki/File:Ragefire_Chasm_SoO.jpg) | - | - |
 | 1456-elder-rise | Elder Rise | [Elder Rise.jpg](https://warcraft.wiki.gg/wiki/File:Elder_Rise.jpg) | - | - |
@@ -785,29 +749,28 @@ of World of Warcraft, (c) Blizzard Entertainment.
 | zone-1411 | Durotar (Classic) | [Durotar.jpg](https://warcraft.wiki.gg/wiki/File:Durotar.jpg) | - | - |
 | zone-1412 | Mulgore (Classic) | [Mulgore.jpg](https://warcraft.wiki.gg/wiki/File:Mulgore.jpg) | - | - |
 | zone-1413 | Barrens (Classic) | [The Barrens1.jpg](https://warcraft.wiki.gg/wiki/File:The_Barrens1.jpg) | - | - |
-| zone-1414 | Kalimdor | [TaxiMap1 Classic.png](https://warcraft.wiki.gg/wiki/File:TaxiMap1_Classic.png) | - | - |
-| zone-1415 | Eastern Kingdoms | [Eastern Kingdoms pre-WoW 1.jpg](https://warcraft.wiki.gg/wiki/File:Eastern_Kingdoms_pre-WoW_1.jpg) | - | - |
 | zone-1417 | Arathi Highlands (Classic) | [Circle of Outer Binding-old.jpg](https://warcraft.wiki.gg/wiki/File:Circle_of_Outer_Binding-old.jpg) | - | - |
-| zone-1419 | Blasted Lands (Classic) | [Dark Portal crater (Classic).jpg](https://warcraft.wiki.gg/wiki/File:Dark_Portal_crater_(Classic).jpg) | - | - |
 | zone-1420 | Tirisfal Glades (Classic) | [Tirisfal Glades.jpg](https://warcraft.wiki.gg/wiki/File:Tirisfal_Glades.jpg) | - | - |
+| zone-1422 | Western Plaguelands (Classic) | [Western Plaguelands woods.jpg](https://warcraft.wiki.gg/wiki/File:Western_Plaguelands_woods.jpg) | - | - |
 | zone-1423 | Eastern Plaguelands (Classic) | [EasternPlaguelandsScenery.jpg](https://warcraft.wiki.gg/wiki/File:EasternPlaguelandsScenery.jpg) | - | - |
 | zone-1424 | Hillsbrad Foothills (Classic) | [Hillsbrad.jpg](https://warcraft.wiki.gg/wiki/File:Hillsbrad.jpg) | - | - |
 | zone-1425 | Hinterlands (Classic) | [Hinterlands.jpg](https://warcraft.wiki.gg/wiki/File:Hinterlands.jpg) | - | - |
+| zone-1426 | Dun Morogh (Classic) | [Dun Morogh.jpg](https://warcraft.wiki.gg/wiki/File:Dun_Morogh.jpg) | - | - |
 | zone-1428 | Burning Steppes (Classic) | [Altar of Storms (Burning Steppes).jpg](https://warcraft.wiki.gg/wiki/File:Altar_of_Storms_(Burning_Steppes).jpg) | - | - |
 | zone-1429 | Elwynn Forest (Classic) | [Elwynn Forest.jpg](https://warcraft.wiki.gg/wiki/File:Elwynn_Forest.jpg) | - | - |
 | zone-1430 | Deadwind Pass (Classic) | [Deadwind pass.jpg](https://warcraft.wiki.gg/wiki/File:Deadwind_pass.jpg) | - | - |
 | zone-1431 | Duskwood (Classic) | [Duskwood.jpg](https://warcraft.wiki.gg/wiki/File:Duskwood.jpg) | - | - |
+| zone-1432 | Loch Modan (Classic) | [Loch Modan.jpg](https://warcraft.wiki.gg/wiki/File:Loch_Modan.jpg) | - | - |
 | zone-1433 | Redridge Mountains (Classic) | [Redridge Mountains-old.jpg](https://warcraft.wiki.gg/wiki/File:Redridge_Mountains-old.jpg) | - | - |
-| zone-1434 | Stranglethorn Vale (Classic) | [Stranglethorn concept.jpg](https://warcraft.wiki.gg/wiki/File:Stranglethorn_concept.jpg) | - | - |
 | zone-1435 | Swamp of Sorrows (Classic) | [Swamp of Sorrows.jpg](https://warcraft.wiki.gg/wiki/File:Swamp_of_Sorrows.jpg) | - | - |
 | zone-1436 | Westfall (Classic) | [BlizzCon 2018 - Classic Westfall.jpg](https://warcraft.wiki.gg/wiki/File:BlizzCon_2018_-_Classic_Westfall.jpg) | - | - |
+| zone-1438 | Teldrassil (Classic) | [Teldrassil.jpg](https://warcraft.wiki.gg/wiki/File:Teldrassil.jpg) | - | - |
 | zone-1439 | Darkshore (Classic) | [DarkshoreBeach.jpg](https://warcraft.wiki.gg/wiki/File:DarkshoreBeach.jpg) | - | - |
 | zone-1440 | Ashenvale (Classic) | [Ashenvale.jpg](https://warcraft.wiki.gg/wiki/File:Ashenvale.jpg) | - | - |
 | zone-1441 | Thousand Needles (Classic) | [The Great Lift.jpg](https://warcraft.wiki.gg/wiki/File:The_Great_Lift.jpg) | - | - |
 | zone-1442 | Stonetalon Mountains (Classic) | [Greatwood Vale.jpg](https://warcraft.wiki.gg/wiki/File:Greatwood_Vale.jpg) | - | - |
-| zone-1443 | Desolace (Classic) | [Desolace2.jpg](https://warcraft.wiki.gg/wiki/File:Desolace2.jpg) | - | - |
 | zone-1446 | Tanaris (Classic) | [Tanaris.jpg](https://warcraft.wiki.gg/wiki/File:Tanaris.jpg) | - | - |
 | zone-1449 | Un'Goro Crater (Classic) | [Un'Goro Crater.jpg](https://warcraft.wiki.gg/wiki/File:Un%27Goro_Crater.jpg) | - | - |
 | zone-1450 | Moonglade | [Moonglade.jpg](https://warcraft.wiki.gg/wiki/File:Moonglade.jpg) | - | - |
+| zone-1451 | Silithus (Classic) | [Silithus.jpg](https://warcraft.wiki.gg/wiki/File:Silithus.jpg) | - | - |
 | zone-1452 | Winterspring (Classic) | [Winterspring.jpg](https://warcraft.wiki.gg/wiki/File:Winterspring.jpg) | - | - |
-| zone-947 | Azeroth | [Azeroth Vanilla Globe.png](https://warcraft.wiki.gg/wiki/File:Azeroth_Vanilla_Globe.png) | - | - |

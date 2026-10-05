@@ -34,9 +34,10 @@ LUA = os.path.join(ROOT, "addons/SpokenZones/Data/Pictures.lua")
 # Shipped at twice the size the frame draws them (about 320 wide), so the game shrinks a picture
 # rather than stretching it: stretched, a 256-wide picture looked soft.
 W, H = 512, 256
-# The edge masks, at the size of the pictures; there are MASKS of them.
+# The edge masks, at the size of the pictures; there are MASKS of them, shared out so the places
+# of one zone each have a different edge.
 MASK_W, MASK_H = 512, 256
-MASKS = 4
+MASKS = 32
 MIN_W, MIN_H = 400, 200  # smaller than this is an icon or a thumbnail, not a picture
 # The page under the picture, as the game draws it (sampled from a screenshot of the panel), and
 # how far the picture is tinted toward it.
@@ -114,22 +115,36 @@ def make_mask(index):
 
 
 def save_mask(mask, path):
-    alpha = (mask * 255).astype(np.uint8)
-    rgba = np.dstack([np.full_like(alpha, 255)] * 3 + [alpha])
-    Image.fromarray(rgba, "RGBA").save(path)
+    """A mask as a DXT5 BLP: white, its alpha the mask. A quarter of the TGA's size."""
+    save_blp(Image.fromarray((mask * 255).astype(np.uint8), "L"), path, alpha=True)
 
 
 def crop(im):
-    """A 2:1 banner: the full width where the picture is taller, cut a little above the middle,
-    where a screenshot's sky gives way to the place."""
+    """A 2:1 banner, cut where the picture has the most in it: the band with the most detail
+    (edges), so a screenshot that is half empty sky is cut lower, around the place. Nudged toward
+    the middle, where two bands are near alike."""
     w, h = im.size
-    if w / h > 2:
-        cw = int(h * 2)
-        left = (w - cw) // 2
-        return im.crop((left, 0, left + cw, h))
-    ch = int(w / 2)
-    top = int((h - ch) * 0.45)
-    return im.crop((0, top, w, top + ch))
+    small = np.asarray(im.convert("L").resize((256, max(1, int(256 * h / w))), Image.BILINEAR)).astype(np.float64)
+    detail = np.hypot(ndimage.sobel(small, 0), ndimage.sobel(small, 1))
+    tall = w / h <= 2
+    profile = detail.mean(axis=1) if tall else detail.mean(axis=0)
+    length = len(profile)
+    window = int(round(length * ((w / 2) / h if tall else (2 * h) / w)))
+    window = max(1, min(length, window))
+    if window >= length:
+        start = 0
+    else:
+        sums = np.convolve(profile, np.ones(window), "valid")
+        middle = (length - window) / 2
+        bias = 1 - 0.15 * np.abs(np.arange(len(sums)) - middle) / max(1, middle)
+        start = int(np.argmax(sums * bias))
+    if tall:
+        ch = int(w / 2)
+        top = min(h - ch, int(round(start * h / length)))
+        return im.crop((0, top, w, top + ch))
+    cw = int(h * 2)
+    left = min(w - cw, int(round(start * w / length)))
+    return im.crop((left, 0, left + cw, h))
 
 
 def prepare(im, mask):
@@ -163,6 +178,25 @@ def from565(v):
     g = (v >> 5) & 63
     b = v & 31
     return np.stack([(r << 3) | (r >> 2), (g << 2) | (g >> 4), (b << 3) | (b >> 2)], axis=-1).astype(np.float64)
+
+
+def dxt5_alpha(a):
+    """DXT5 alpha blocks for an alpha array whose sides are multiples of 4 (or smaller than 4)."""
+    h, w = a.shape
+    bh, bw = max(1, (h + 3) // 4), max(1, (w + 3) // 4)
+    padded = np.pad(a, ((0, bh * 4 - h), (0, bw * 4 - w)), mode="edge").astype(np.float64)
+    blocks = padded.reshape(bh, 4, bw, 4).transpose(0, 2, 1, 3).reshape(bh * bw, 16)
+    a0, a1 = blocks.max(axis=1), blocks.min(axis=1)
+    a0 = np.where(a0 == a1, np.minimum(255, a0 + 1), a0)   # a0 > a1: the eight-step ramp
+    a1 = np.where(a0 == a1, np.maximum(0, a1 - 1), a1)
+    steps = np.stack([a0, a1] + [((7 - k) * a0 + k * a1) / 7 for k in range(1, 7)], axis=1)
+    idx = np.abs(blocks[:, :, None] - steps[:, None, :]).argmin(axis=2).astype(np.uint64)
+    bits = (idx << (3 * np.arange(16, dtype=np.uint64))).sum(axis=1)
+    out = np.zeros((len(blocks), 8), dtype=np.uint8)
+    out[:, 0], out[:, 1] = a0.astype(np.uint8), a1.astype(np.uint8)
+    for b in range(6):
+        out[:, 2 + b] = ((bits >> np.uint64(8 * b)) & np.uint64(255)).astype(np.uint8)
+    return out
 
 
 def dxt1(rgb):
@@ -199,12 +233,18 @@ def dxt1(rgb):
     return out.tobytes()
 
 
-def save_blp(im, path):
-    """A BLP2 of DXT1 blocks, with its smaller sizes for the game to draw it small."""
+def save_blp(im, path, alpha=False):
+    """A BLP2 of DXT1 blocks, with its smaller sizes for the game to draw it small. With alpha, a
+    white DXT5 whose alpha is `im` (a mask)."""
     mips = []
     level = im
     while True:
-        mips.append(dxt1(np.asarray(level.convert("RGB"))))
+        if alpha:
+            a = np.asarray(level)
+            colour = np.frombuffer(dxt1(np.full(a.shape + (3,), 255, dtype=np.uint8)), dtype=np.uint8).reshape(-1, 8)
+            mips.append(np.concatenate([dxt5_alpha(a), colour], axis=1).tobytes())
+        else:
+            mips.append(dxt1(np.asarray(level.convert("RGB"))))
         if level.size == (1, 1) or len(mips) == 16:
             break
         level = level.resize((max(1, level.size[0] // 2), max(1, level.size[1] // 2)), Image.LANCZOS)
@@ -219,7 +259,8 @@ def save_blp(im, path):
     with open(path, "wb") as f:
         f.write(b"BLP2")
         f.write(struct.pack("<I", 1))
-        f.write(struct.pack("<BBBB", 2, 0, 0, 1))  # DXT, no alpha, DXT1, mipmaps
+        # DXT; DXT5 with eight bits of alpha, or DXT1 with none; mipmaps.
+        f.write(struct.pack("<BBBB", 2, 8, 7, 1) if alpha else struct.pack("<BBBB", 2, 0, 0, 1))
         f.write(struct.pack("<II", *im.size))
         f.write(struct.pack("<16I", *offsets))
         f.write(struct.pack("<16I", *sizes))
@@ -294,7 +335,17 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     masks = [make_mask(i + 1) for i in range(MASKS)]
     for i, mask in enumerate(masks):
-        save_mask(mask, os.path.join(OUT, "Mask%d.tga" % (i + 1)))
+        save_mask(mask, os.path.join(OUT, "Mask%d.blp" % (i + 1)))
+    # Each zone's places take the masks in a shuffled order of their own, so no two places in one
+    # zone (32 at most share one only past that) have the same edge.
+    order = {}
+    for pid, p in manifest.items():
+        order.setdefault(p["parent"], []).append(pid)
+    mask_of = {}
+    for parent, ids in order.items():
+        deck = list(seeded("zone%d" % parent).permutation(MASKS) + 1)
+        for n, pid in enumerate(sorted(ids)):
+            mask_of[pid] = int(deck[n % MASKS])
 
     placed, written, skipped, by_file = [], 0, [], {}
     for pid, p in manifest.items():
@@ -311,7 +362,7 @@ def main():
         if im.size[0] < MIN_W or im.size[1] < MIN_H:
             skipped.append(pid)
             continue
-        chosen = {"texture": pid, "mask": zlib.crc32(pid.encode()) % MASKS + 1}
+        chosen = {"texture": pid, "mask": mask_of[pid]}
         out = os.path.join(OUT, pid + ".blp")
         if args.force or not os.path.exists(out):
             save_blp(prepare(im.convert("RGB"), masks[chosen["mask"] - 1]), out)
@@ -323,6 +374,12 @@ def main():
 
     write_lua(placed)
     write_credits(placed)
+    # Pictures no place uses any more, and the old TGA masks, go.
+    if not only:
+        keep = {pl["texture"] + ".blp" for pl in placed} | {"Mask%d.blp" % (i + 1) for i in range(MASKS)} | {"CREDITS.md"}
+        for f in os.listdir(OUT):
+            if f not in keep:
+                os.remove(os.path.join(OUT, f))
     total = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT))
     print("written %d, placed %d, too small %d, folder %.1f MB" % (written, len(placed), len(skipped), total / 1e6))
     if skipped:

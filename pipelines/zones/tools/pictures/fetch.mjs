@@ -10,7 +10,7 @@
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { API, CACHE, ROOT, USER_AGENT, THROTTLE_MS, sleep } from "../lib/wiki.mjs";
@@ -25,11 +25,20 @@ const THUMB_WIDTH = 1024;
 const refresh = process.argv.includes("--refresh");
 
 // Files that are never a picture of the place: maps, icons, interface art, card game art.
-const NOT_A_PLACE = /(^vz-|\bmap\b|minimap|worldmap|icon|^inv[_ ]|achievement|ability[_ ]|spell[_ ]|ui[-_ ]|banner|tcg|hearthstone|loading ?screen|logo|\.gif$|\.svg$|portrait|faction|crest|emblem|symbol)/i;
+const NOT_A_PLACE = /(^vz-|\bmap\b|minimap|worldmap|taximap|adventuremap|globe|icon|^inv[_ ]|achievement|ability[_ ]|spell[_ ]|ui[-_ ]|banner|tcg|hearthstone|\bhs\b|card|loading ?screen|logo|\.gif$|\.svg$|portrait|faction|crest|emblem|symbol|wc[123]\b|warcraft ?(i|ii|iii|3)\b|\bw3\b|\broc\b|\btft\b|reign of chaos|frozen throne|old hatreds|pre-?wow|\brpg\b|wrpg|concept|chronicle|cinematic|artwork|key ?art|\bart\b|illustration|exploring azeroth|comic|manga|novel|painting|sketch|wallpaper|promo|glowei)/i;
 // Files the wiki names as the place before Cataclysm.
-const CLASSIC = /(classic|vanilla|pre-?cata|original|old\b|wow ?1\b)/i;
+const CLASSIC = /(classic|vanilla|pre-?cata)/i;
 // Files named for a later expansion.
-const LATER = /(cataclysm|cata\d|\bcata\b|post-?cata|mists|pandaria|draenor|\bwod\b|legion|\bbfa\b|battle for azeroth|shadowlands|dragonflight|war within|midnight|\btbc\b|\bwotlk\b|\bmop\b|\bdf\b|\bsl\b|8\.\d|9\.\d|10\.\d|11\.\d)/i;
+const LATER = /(mists|pandaria|draenor|\bwod\b|legion|\bbfa\b|battle for azeroth|shadowlands|dragonflight|war within|midnight|\btbc\b|\bwotlk\b|\bmop\b|\bdf\b|\bsl\b|8\.\d|9\.\d|10\.\d|11\.\d)/i;
+// Files named for Cataclysm, which reshaped most of the old world: refused, except in the zones
+// it left as they were (UNCHANGED, by uiMapID), where its screenshots show the Classic place.
+const CATACLYSM = /(cataclysm|cata\d|\bcata\b|post-?cata)/i;
+const UNCHANGED = new Set([1412, 1438, 1429, 1430, 1449, 1450, 1452, 1455, 1456, 1457, 1458]);
+// Azeroth and the continents have no picture: their pages carry maps, not views of a place.
+const NO_PICTURE = new Set(["zone-947", "zone-1414", "zone-1415"]);
+// A picture chosen by hand after looking (choices.json beside this script): the wiki file to use
+// for a place, or null for none.
+const CHOICES = join(HERE, "choices.json");
 
 async function api(params) {
   const url = `${API}?${new URLSearchParams({ format: "json", formatversion: "2", ...params })}`;
@@ -43,7 +52,7 @@ async function api(params) {
 }
 
 // Every entry with a wiki source: { id, parent, key, name, title }.
-async function entries() {
+export async function entries() {
   const out = [];
   const zones = await readFile(join(DATA, "Zones.lua"), "utf8");
   let id;
@@ -73,7 +82,7 @@ async function entries() {
 }
 
 // For each title: its lead image and every image it uses, following redirects.
-async function pageImages(titles) {
+export async function pageImages(titles) {
   const found = new Map();
   for (let i = 0; i < titles.length; i += 50) {
     const batch = titles.slice(i, i + 50);
@@ -102,11 +111,13 @@ async function pageImages(titles) {
 }
 
 // A page's pictures in the order they are wanted: those the wiki names as Classic, then the lead
-// image, then the other photo-like images, leaving out any named for a later expansion. The first
-// big enough to use is taken (see main).
-function candidates(page) {
+// image, then the other photo-like images, leaving out art from outside the game (Warcraft III,
+// concept art, comics, the card games, maps) and any named for a later expansion. The first big
+// and wide enough is taken (see main), unless choices.json names another.
+function candidates(page, parent) {
   if (!page) return [];
-  const usable = (f) => /\.(jpe?g|png|webp)$/i.test(f) && !NOT_A_PLACE.test(f.replace(/^File:/, "")) && !LATER.test(f);
+  const later = (f) => LATER.test(f) || (!UNCHANGED.has(parent) && CATACLYSM.test(f));
+  const usable = (f) => /\.(jpe?g|png|webp)$/i.test(f) && !NOT_A_PLACE.test(f.replace(/^File:/, "")) && !later(f);
   const photos = page.images.filter(usable);
   const out = photos.filter((f) => CLASSIC.test(f)).map((file) => ({ file, era: "classic" }));
   if (page.lead && usable(page.lead)) out.push({ file: page.lead, era: "lead" });
@@ -114,10 +125,12 @@ function candidates(page) {
   const seen = new Set();
   return out.filter((c) => !seen.has(c.file) && seen.add(c.file));
 }
-// Smaller than this is a map marker or a thumbnail, not a picture of the place.
-const MIN_WIDTH = 400, MIN_HEIGHT = 200;
+// Smaller than this is a map marker or a thumbnail, not a picture of the place; narrower than
+// MIN_ASPECT is a portrait or a poster, which no 2:1 banner can be cut from.
+const MIN_WIDTH = 600, MIN_HEIGHT = 300, MIN_ASPECT = 1.25;
+const fits = (i) => i && i.width >= MIN_WIDTH && i.height >= MIN_HEIGHT && i.width / i.height >= MIN_ASPECT;
 
-async function imageInfo(files) {
+export async function imageInfo(files) {
   const info = new Map();
   for (let i = 0; i < files.length; i += 50) {
     const json = await api({ action: "query", prop: "imageinfo", iiprop: "url|size|extmetadata",
@@ -148,24 +161,33 @@ async function main() {
   console.log(`${all.length} entries, ${todo.length} to ask the wiki about`);
 
   const pages = await pageImages([...new Set(todo.map((e) => e.title))]);
-  const options = new Map(todo.map((e) => [e.id, candidates(pages.get(e.title))]));
+  const choices = existsSync(CHOICES) ? JSON.parse(await readFile(CHOICES, "utf8")) : {};
+  const options = new Map(todo.map((e) => [e.id, candidates(pages.get(e.title), e.parent)]));
+  // A file chosen by hand is asked about even where the rules turned it down.
+  for (const e of todo) {
+    const pick = choices[e.id];
+    if (pick && !options.get(e.id).some((c) => c.file === pick)) options.get(e.id).unshift({ file: pick, era: "chosen" });
+  }
   const files = [...new Set([...options.values()].flat().map((c) => c.file))];
   const info = await imageInfo(files);
   const chosen = new Map();
   for (const e of todo) {
-    chosen.set(e.id, options.get(e.id).find((c) => {
-      const i = info.get(c.file);
-      return i && i.width >= MIN_WIDTH && i.height >= MIN_HEIGHT;
-    }) || null);
+    let pick = null;
+    if (NO_PICTURE.has(e.id) || choices[e.id] === null) pick = null;
+    else if (choices[e.id]) pick = options.get(e.id).find((c) => c.file === choices[e.id]) || null;
+    else pick = options.get(e.id).find((c) => fits(info.get(c.file))) || null;
+    chosen.set(e.id, pick);
   }
 
   const pictures = { ...old.pictures };
   for (const e of todo) {
     const c = chosen.get(e.id);
     const i = c && info.get(c.file);
+    // The others that pass, for choosing another by hand (choices.json).
+    const others = options.get(e.id).filter((o) => o.file !== c?.file && fits(info.get(o.file))).map((o) => o.file);
     pictures[e.id] = i
-      ? { parent: e.parent, key: e.key, title: e.title, file: c.file, era: c.era, ...i }
-      : { parent: e.parent, key: e.key, title: e.title, file: null };
+      ? { parent: e.parent, key: e.key, title: e.title, file: c.file, era: c.era, ...i, others }
+      : { parent: e.parent, key: e.key, title: e.title, file: null, others };
   }
 
   await mkdir(RAW, { recursive: true });
@@ -193,4 +215,7 @@ async function main() {
     `(classic ${count("classic")}, lead ${count("lead")}, other ${count("other")}), none ${values.filter((p) => !p.file).length}`);
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+// Run, unless imported (gallery.mjs uses the functions above).
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((err) => { console.error(err); process.exit(1); });
+}
