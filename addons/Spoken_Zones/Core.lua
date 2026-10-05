@@ -32,7 +32,6 @@ local defaults = {
 	-- Wide enough that a zone's name fits on one line beside the header's round buttons.
 	panelWidth = 360,
 	fontSize = 12,
-	showHoverPreview = true,
 	showPictures = true,
 	showMinimapButton = true,
 	voiceEnabled = true,
@@ -355,7 +354,7 @@ function SpokenZones:GetAreaNameAt(mapID, x, y)
 end
 
 -- What the cursor is over, at a normalised canvas position on the map `mapID`.
--- Shared by the click handler and the hover preview so both agree.
+-- Shared by the click handler and the map highlight so both agree.
 --
 -- Returns kind ("zone"|"subzone"), display name, lore entry, and the resolved
 -- uiMapID for the "zone" case. Returns nil when nothing is resolvable.
@@ -453,9 +452,6 @@ local function SetupHooks()
 	end
 	if SpokenZones.SetupSubzoneClicks then
 		SpokenZones:SetupSubzoneClicks()
-	end
-	if SpokenZones.SetupHoverPreview then
-		SpokenZones:SetupHoverPreview()
 	end
 	if SpokenZones.SetupMapHighlight then
 		SpokenZones:SetupMapHighlight()
@@ -887,7 +883,7 @@ local function CmdHelp()
 	local L = SpokenZones.L
 	SpokenZones:Print(L.CMD_HEADING)
 	for _, key in ipairs({
-		"CMD_STATUS", "CMD_OPTIONS", "CMD_WINDOW", "CMD_PANEL", "CMD_HOVER",
+		"CMD_STATUS", "CMD_OPTIONS", "CMD_WINDOW", "CMD_PANEL",
 		"CMD_PLAY", "CMD_STOP", "CMD_VOICE", "CMD_AUTOPLAY", "CMD_AUDIO",
 		"CMD_LANG", "CMD_DISCOVER", "CMD_FORGET", "CMD_MINIMAP",
 		"CMD_DEBUG", "CMD_VERIFY", "CMD_DUMP",
@@ -926,13 +922,6 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 			local enabled = SpokenZones:ToggleMinimapButton()
 			SpokenZones:Print("minimap button %s", enabled and "shown" or "hidden")
 		end
-	elseif cmd == "hover" then
-		local enabled = not SpokenZones:Get("showHoverPreview")
-		SpokenZones:Set("showHoverPreview", enabled)
-		if not enabled and SpokenZones.HideHoverPreview then
-			SpokenZones.HideHoverPreview()
-		end
-		SpokenZones:Print("hover preview %s", enabled and "enabled" or "disabled")
 	elseif cmd == "play" then
 		CmdPlay()
 	elseif cmd == "stop" then

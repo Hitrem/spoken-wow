@@ -92,7 +92,6 @@ UI/ReportButton.lua
 UI/LorePage.lua
 UI/MapPanel.lua
 UI/SubzoneClick.lua
-UI/HoverPreview.lua
 UI/MapHighlight.lua
 UI/LoreWindow.lua
 UI/MinimapButton.lua
