@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Downloads every picture on each zone's and area's warcraft.wiki.gg page into a folder per
-// place, to choose from by eye: <out>/<Zone>/<Place>/<wiki file name>. The picture fetch.mjs chose
+// Downloads every picture on each zone's and area's warcraft.wiki.gg pages into a folder per
+// place, to choose from by eye: the page the lore cites (often "<Zone> (Classic)") and the main
+// page, which carries far more (concept art, every expansion's screenshots): <out>/<Zone>/<Place>/<wiki file name>. The picture fetch.mjs chose
 // is prefixed "[picked] ". Only icons, animations and pictures under MIN_WIDTH wide are left out.
 // A choice goes into choices.json as { "<manifest id>": "File:<wiki file name>" }.
 //
@@ -28,7 +29,11 @@ async function main() {
   const zones = await readFile(join(ROOT, "addons/Spoken_Zones/Data/enUS/Zones.lua"), "utf8");
   const zoneName = new Map([...zones.matchAll(/\[(\d+)\] = \{\s*\n\s*name = "([^"]+)"/g)].map((m) => [Number(m[1]), m[2]]));
 
-  const pages = await pageImages([...new Set(all.map((e) => e.title))]);
+  // The main page beside the Classic one the lore cites: "Arathi Highlands (Classic)" has 41
+  // pictures, "Arathi Highlands" 137.
+  const main = (t) => t.replace(/ \(Classic\)$/, "");
+  const pages = await pageImages([...new Set(all.flatMap((e) => [e.title, main(e.title)]))]);
+  const imagesOf = (e) => [...new Set([e.title, main(e.title)].flatMap((t) => pages.get(t)?.images || []))];
   const pictureFile = (f) => /\.(jpe?g|png|webp)$/i.test(f) && !/(^File:.*_\d\d\.png$|icon)/i.test(f);
   const files = [...new Set([...pages.values()].flatMap((p) => p.images.filter(pictureFile)))];
   console.log(`${files.length} pictures on ${pages.size} pages`);
@@ -37,13 +42,13 @@ async function main() {
   await mkdir(STORE, { recursive: true });
   let fetched = 0, placed = 0;
   for (const e of all) {
-    const page = pages.get(e.title);
-    if (!page) continue;
+    const images = imagesOf(e);
+    if (!images.length) continue;
     const zone = safe(zoneName.get(e.parent) || String(e.parent));
     const place = e.id.startsWith("zone-") ? `${zone} (the zone)` : safe(e.title.replace(/ \(Classic\)$/, ""));
     const dir = join(OUT, zone, place);
     const picked = manifest[e.id]?.file;
-    for (const file of page.images.filter(pictureFile)) {
+    for (const file of images.filter(pictureFile)) {
       const i = info.get(file);
       if (!i || i.width < MIN_WIDTH) continue;
       const name = safe(file.replace(/^File:/, ""));
