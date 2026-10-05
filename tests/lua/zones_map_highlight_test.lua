@@ -28,14 +28,15 @@ WorldMapFrame.IsCanvasMouseFocus = function() return overCanvas end
 WorldMapFrame.ScrollContainer = { GetNormalizedCursorPosition = function() return cursor[1], cursor[2] end }
 local function Point(px, py) cursor[1], cursor[2] = px / 1002, py / 668 end
 
--- The areas a click resolves, as SpokenZones:ResolveAt does: Razor Hill in the small rectangle,
--- the Valley of Trials in the rest of the big one, and an area with no story beyond.
+-- The areas a click resolves, as SpokenZones:ResolveAt does: Razor Hill in the left of the small
+-- rectangle (its overlay's rectangle reaches past it), the Valley of Trials in the rest of the
+-- big one, and an area with no story beyond.
 local Z = {}
 function Z:IsPartOn() return true end
 function Z:IsZoneMap(mapID) return mapID == 1411 end
 function Z:ResolveAt(_, x, y)
     local px, py = x * 1002, y * 668
-    if px >= 200 and px <= 300 and py >= 100 and py <= 180 then return "subzone", "Razor Hill", { name = "Razor Hill" } end
+    if px >= 200 and px <= 265 and py >= 100 and py <= 180 then return "subzone", "Razor Hill", { name = "Razor Hill" } end
     if px >= 100 and px <= 400 and py >= 50 and py <= 250 then return "subzone", "Valley of Trials", { name = "Valley" } end
     return "subzone", "Kolkar Crag", nil
 end
@@ -57,11 +58,18 @@ Point(250, 140)
 Run()
 local lit = Shown()
 Expect("over an area with a story it lights up at once", state.frame:IsShown() and state.frame:GetAlpha(), 0.35)
-Expect("...in the smallest overlay holding the cursor", #lit == 1 and lit[1]:GetTexture(), 21)
+Expect("...in the overlay of the area a click there opens", #lit == 1 and lit[1]:GetTexture(), 21)
 Expect("...at the overlay's place on the map", select(4, lit[1]:GetPoint(1)) == 200 and select(5, lit[1]:GetPoint(1)) == -100, true)
 Expect("...its size the overlay's", lit[1]:GetWidth() == 100 and lit[1]:GetHeight() == 80, true)
 local u = lit[1].texCoord
 Expect("...cut from the part of its tile the overlay uses", u[2] == 100 / 128 and u[4] == 80 / 128, true)
+
+-- Inside the small overlay's rectangle, but where a click opens the Valley of Trials: the
+-- Valley's overlay lights, not the small one around the cursor.
+Point(290, 140)
+Run()
+lit = Shown()
+Expect("where an overlay reaches into a neighbour, the neighbour a click opens lights", #lit == 2 and lit[1]:GetTexture(), 11)
 
 Point(120, 60)
 Run()

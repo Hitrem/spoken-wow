@@ -9,14 +9,17 @@
 -- tiles exactly as Blizzard's MapExplorationPin lays it out. It lights and goes out at once, as
 -- the continent map's own highlight does.
 --
--- Overlays do not say which area they belong to. Each has a hit rectangle around it, and where
--- several hold the cursor the smallest wins: an area inside another's rectangle is the one the
--- cursor is meant for.
+-- Overlays do not say which area they belong to, and an overlay's rectangle reaches into its
+-- neighbours. So each overlay is matched to an area once per map: the area a click resolves to
+-- at most points of a grid over its rectangle. What lights is then the overlay of the area a
+-- click at the cursor would open, never a neighbour's that happens to hold the cursor.
 
 local ADDON_NAME, SpokenZones = ...
 
 -- How bright the lit area is.
 local HIGHLIGHT_ALPHA = 0.35
+-- Points across and down an overlay's rectangle asked which area they are in.
+local SAMPLES = 6
 
 local state = { tiles = {} }
 SpokenZones.mapHighlight = state
@@ -37,6 +40,7 @@ local function Overlays(mapID)
 		state.overlaysFor = mapID
 		local ok, list = pcall(C_MapExplorationInfo.GetExploredMapTextures, mapID)
 		state.overlays = ok and list or {}
+		state.areaOf = {}
 	end
 	return state.overlays
 end
@@ -65,6 +69,36 @@ local function Area(info)
 	return (r.right - r.left) * (r.bottom - r.top)
 end
 
+-- The area an overlay is of: the one most points of a grid over its rectangle resolve to. False
+-- where none resolves. Asked once per overlay while the map stays the same.
+local function AreaOf(info, mapID, layer)
+	local known = state.areaOf[info]
+	if known ~= nil then
+		return known
+	end
+	local r = info.hitRect
+	local scaleX, scaleY = 1, 1
+	if r.right <= 1 and r.bottom <= 1 then
+		scaleX, scaleY = layer.layerWidth, layer.layerHeight
+	end
+	local votes, best, most = {}, false, 0
+	for i = 1, SAMPLES do
+		for j = 1, SAMPLES do
+			local px = (r.left + (r.right - r.left) * (i - 0.5) / SAMPLES) * scaleX
+			local py = (r.top + (r.bottom - r.top) * (j - 0.5) / SAMPLES) * scaleY
+			local kind, name = SpokenZones:ResolveAt(mapID, px / layer.layerWidth, py / layer.layerHeight)
+			if kind == "subzone" and name then
+				votes[name] = (votes[name] or 0) + 1
+				if votes[name] > most then
+					best, most = name, votes[name]
+				end
+			end
+		end
+	end
+	state.areaOf[info] = best
+	return best
+end
+
 --- The overlay to light at the map's normalised position x, y, with its art layer: only over an
 --- area whose story a click would open.
 local function Target()
@@ -90,7 +124,7 @@ local function Target()
 	if not x or not y then
 		return nil
 	end
-	local kind, _, entry = SpokenZones:ResolveAt(mapID, x, y)
+	local kind, name, entry = SpokenZones:ResolveAt(mapID, x, y)
 	if kind ~= "subzone" or not entry then
 		return nil
 	end
@@ -101,7 +135,8 @@ local function Target()
 	local px, py = x * layer.layerWidth, y * layer.layerHeight
 	local best
 	for _, info in ipairs(Overlays(mapID)) do
-		if Holds(info, layer, px, py) and (not best or Area(info) < Area(best)) then
+		if Holds(info, layer, px, py) and AreaOf(info, mapID, layer) == name
+			and (not best or Area(info) < Area(best)) then
 			best = info
 		end
 	end
