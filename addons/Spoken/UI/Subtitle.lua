@@ -28,19 +28,13 @@ local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 local PAGE_OUT, PAGE_IN = .18, .28
 local PAUSED_FADE = .25
 local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
--- The progress line under the words, laid out as Spoken Subtitles lays its own -- PROGRESS_SHARE of the
--- background's width, the cast bar's spark at the fill's end -- as far under the last line as the
--- words are under the name (Subtitle:Layout) --
--- and framed as the game frames a status bar (UIWidgetTemplateStatusBar, the module cards' meter):
--- its border's ends and middle, its dark middle and its yellow fill, scaled to PROGRESS_HEIGHT.
--- Without that art, Spoken Subtitles' own hairline and gold fill.
+-- The progress line follows Spoken Subtitles' layout and spark, framed as the game frames a status
+-- bar (UIWidgetTemplateStatusBar). Without that art, Spoken Subtitles' own hairline.
 local PROGRESS_SHARE, PROGRESS_HEIGHT = 0.45, 7
 local PROGRESS_LINE = [[Interface\AddOns\Spoken\Textures\SubtitleLine]]
 local SPARK = [[Interface\CastingBar\UI-CastingBar-Spark]]
--- Called from the global environment, not SpokenEnv: the client builds part of its answer from
--- Vector2DMixin, which it looks up in the caller's environment without SpokenEnv's fallback to
--- _G, and from here it failed with "unable to find mixin or metatable (Vector2DMixin)". Layout.lua,
--- which runs in the global environment, calls it without trouble.
+-- Called through the global environment: the client looks up Vector2DMixin in the caller's
+-- environment, and from SpokenEnv it fails with "unable to find mixin or metatable".
 local AtlasInfo = setfenv(function(name)
     return C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(name) or nil
 end, _G)
@@ -229,8 +223,7 @@ function Subtitle:Build()
     self.shadow:SetTexture(SHADOW)
     -- Hung from the top, so an eased height grows downward.
     self.shadow:SetPoint("TOP", frame, "TOP", 0, 0)
-    -- The buttons hang from the background's foot, as the progress bar does, so they follow it as
-    -- it eases to a new page's size rather than jumping there with the frame.
+    -- Hung from the background's foot, so the buttons follow it as it eases to a new size.
     self.controls:SetPoint("TOP", self.shadow, "BOTTOM", 0, -2)
 
     self.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -272,7 +265,6 @@ function Subtitle:Build()
         self.fillRoom, self.progressHeight, self.progressBroken = 0, 0, true
     end
 
-    -- What waits behind the line, at the row's end: a grey dot and "+2" (Subtitle:CountWaiting).
     self.moreDot = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     self.more = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     for _, part in ipairs({ self.moreDot, self.more }) do
@@ -291,9 +283,7 @@ function Subtitle:Build()
     self:Place()
 end
 
---- The progress bar: the game's status bar frame where the client has its art, Spoken Subtitles'
---- hairline where it has not. `self.track` is the frame it fills along, `self.fillRoom` how far in
---- from each end the fill runs.
+--- `self.track` is the frame the fill runs along; `self.fillRoom`, how far in from each end it runs.
 function Subtitle:BuildProgress()
     local frame = self.frame
     local track = CreateFrame("Frame", nil, frame)
@@ -302,8 +292,6 @@ function Subtitle:BuildProgress()
         AtlasInfo("widgetstatusbar-bordercenter")
     local yellow = AtlasInfo("widgetstatusbar-fill-yellow")
     self.fillRoom = 0
-    -- The game's frame where it can be built; anything failing on the way falls back to the plain
-    -- line, said once, rather than stopping the subtitle being built at all.
     local framed = left and right and middle and yellow and fill.SetAtlas
         and tonumber(middle.height) and tonumber(left.width) and tonumber(right.width) and true or false
     if framed then
@@ -324,20 +312,17 @@ function Subtitle:BuildProgress()
         self.progressHeight = 2
     end
     fill:SetPoint("LEFT", track, "LEFT", self.fillRoom, 0)
-    -- Hung from the background's foot and sized from its width, so the bar follows the background
-    -- as it eases to a new page's size instead of jumping there ahead of it (ShowProgress).
+    -- Hung from the background's foot, so the bar follows it as it eases.
     track:SetPoint("BOTTOM", self.shadow, "BOTTOM", 0, BOTTOM_PAD)
     local spark = track:CreateTexture(nil, "OVERLAY", nil, 1)
     spark:SetTexture(SPARK)
     if spark.SetBlendMode then spark:SetBlendMode("ADD") end
-    -- Taller than the bar, so its glow reaches a little past the frame above and below, as it
-    -- did past the plain hairline.
+    -- Taller than the bar, so its glow reaches past the frame.
     spark:SetSize(12, framed and self.progressHeight + 9 or 14)
     spark:SetPoint("CENTER", fill, "RIGHT")
     self.track, self.fill, self.spark = track, fill, spark
 end
 
---- The game's status bar frame round the progress bar (Subtitle:BuildProgress).
 function Subtitle:FrameProgress(track, fill, left, right, middle, yellow)
     do
         -- As the cards' meter lays the art out: the fill 8 inside the border's ends and 2 short of
@@ -370,9 +355,6 @@ function Subtitle:FrameProgress(track, fill, left, right, middle, yellow)
     end
 end
 
---- The picture before the name, built as the Small Window builds its portrait (MinimalPlayer:
---- BuildPortrait), at PICTURE: the round background, the viewport the face or icon is drawn in,
---- and over them the ring with its badge.
 function Subtitle:BuildPicture()
     local k = PICTURE / 90
     local host = CreateFrame("Frame", nil, self.frame)
@@ -449,7 +431,6 @@ function Subtitle:PlaceRow(left)
     self.label:SetPoint("LEFT", self.dot, "RIGHT", LABEL_GAP, 0)
     self.pausedLabel:ClearAllPoints()
     self.pausedLabel:SetPoint("LEFT", self.labelText and self.dot or self.title, "RIGHT", LABEL_GAP, 0)
-    -- The waiting count after whatever ends the row now.
     local last = self.shownPaused and self.pausedLabel or (self.labelText and self.label or self.title)
     local shown = (self.waiting or 0) > 0
     self.moreDot:SetShown(shown)
@@ -525,7 +506,6 @@ function Subtitle:Layout(text)
         self.lines[index]:Hide()
     end
     local wordsBottom = TOP_PAD + titleHeight + TITLE_GAP + #self.rows * (lineHeight + LINE_GAP) - LINE_GAP
-    -- The progress line under the words, where the setting has it.
     self.progressShown = self:ProgressWanted()
     for _, part in ipairs({ self.track, self.fill, self.spark }) do part:SetShown(self.progressShown) end
     -- As far under the words as the words are under the name: the name sits in the middle of the
@@ -751,8 +731,7 @@ function Subtitle:Update()
         self.frame:Show()
     end
     self:SetWanted(wanted)
-    -- Report follows the line on screen. With none, it stays while the subtitle fades out, as the
-    -- other controls do, and goes with it (Tick): hidden here, it vanished ahead of everything else.
+    -- Report stays while the subtitle fades out, and goes with it (Tick).
     if speaking or self.sample then self:Corner(speaking and Transcript.clip or nil) end
     if self.wanted then
         self.revealed = nil
@@ -786,8 +765,7 @@ local function RoundButton(parent, glyphSize)
     return Actions.RoundButton(parent, glyphSize)
 end
 
---- Stop or Replay, skip and Report, in a row centred under the subtitle, outside its words. They
---- fade in while the pointer is over the subtitle or them, and out after it leaves (Tick).
+--- They fade in while the pointer is over the subtitle or them, and out after it leaves (Tick).
 function Subtitle:BuildControls()
     local frame = self.frame
     local controls = CreateFrame("Frame", nil, frame)
@@ -920,12 +898,10 @@ function Subtitle:Tick(elapsed)
     end
 end
 
---- The fill along the progress line: how far the voice has got through the line. Held where it
---- stopped while the queue is stopped, as the words are.
+--- Held where the voice stopped while the queue is stopped, as the words are.
 function Subtitle:ShowProgress()
     if not self.progressShown then return end
-    -- Read only while the line is the one speaking. Once it has ended the subtitle fades out with
-    -- the bar where the voice left it, rather than snapping back to the start as it goes.
+    -- Read only while this line speaks, so the bar fades out where the voice left it.
     local length = self.clip and tonumber(self.clip.length) or 0
     if self.wanted and not self.sample and length > 0 and Transcript.clip == self.clip then
         self.share = math.max(0, math.min(1, Transcript:AudioElapsed() / length))
@@ -937,8 +913,7 @@ function Subtitle:ShowProgress()
     self.fill:SetWidth(math.max(0.01, room * (self.share or 0)))
 end
 
---- How many lines wait behind the one on screen, shown at the row's end as "+2" after a dot. A
---- change lays the row out again, and it slides to its new middle as for "(Stopped)".
+--- Lines waiting behind the one on screen, shown as "+2".
 function Subtitle:Waiting()
     if self.sample or not self.clip or Transcript.clip ~= self.clip then return 0 end
     return math.max(0, SoundQueue:GetQueueSize() - 1)

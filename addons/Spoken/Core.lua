@@ -93,7 +93,6 @@ Defaults = {
             -- "letter": each word typed in; "word": each word appears whole.
             TypewriterBy = "letter",
             SubtitleShadow = 0.6,
-            -- The progress line under the subtitle's words.
             SubtitleProgress = true,
             SubtitleScale = 1,
         },
