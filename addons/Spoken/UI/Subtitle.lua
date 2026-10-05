@@ -931,8 +931,9 @@ function Subtitle:ShowProgress()
         self.share = math.max(0, math.min(1, Transcript:AudioElapsed() / length))
     end
     local size = self.shadowSize or self.shadowWant
-    if size then self.track:SetWidth(math.floor(size.w * PROGRESS_SHARE)) end
-    local room = math.max(0, (self.track:GetWidth() or 0) - 2 * self.fillRoom)
+    local width = size and math.floor(size.w * PROGRESS_SHARE)
+    if width then self.track:SetWidth(width) else width = self.track:GetWidth() or 0 end
+    local room = math.max(0, width - 2 * self.fillRoom)
     self.fill:SetWidth(math.max(0.01, room * (self.share or 0)))
 end
 
