@@ -309,6 +309,36 @@ def write_lua(placed):
         f.write("\n".join(lines) + "\n")
 
 
+def baked_masks():
+    """The mask each texture was last written with, by texture, from the Pictures.lua write_lua made."""
+    if not os.path.exists(LUA):
+        return {}
+    return {t: int(m) for t, m in re.findall(r'\{ "([^"]+)", (\d+) \}', open(LUA, encoding="utf-8").read())}
+
+
+def deal_masks(places, baked):
+    """Each place's mask, by id. Each zone's places take the masks in a shuffled order of their own,
+    so no two places in one zone (32 at most share one only past that) have the same edge. A place
+    keeps the mask its texture was written with, so adding a place to a zone writes that one
+    texture, not the zone's."""
+    order = {}
+    for p in places:
+        order.setdefault(p["parent"], []).append(p["id"])
+    mask_of = {}
+    for parent, ids in order.items():
+        taken = set()
+        for pid in sorted(ids):
+            # Past MASKS places a zone repeats masks anyway, so a repeat is no clash to undo.
+            if baked.get(pid) and (baked[pid] not in taken or len(ids) > MASKS):
+                mask_of[pid] = baked[pid]
+                taken.add(baked[pid])
+        deck = [int(m) for m in seeded("zone%d" % parent).permutation(MASKS) + 1]
+        free = [m for m in deck if m not in taken]
+        for n, pid in enumerate(sorted(pid for pid in ids if pid not in mask_of)):
+            mask_of[pid] = free[n] if n < len(free) else deck[n % MASKS]
+    return mask_of
+
+
 def write_credits(placed):
     lines = [
         "# Zone pictures",
@@ -384,39 +414,37 @@ def reviewed(choices):
     """The reviewed places: { id, parent, key, title, path, old } for each "<place> - new.png"."""
     zones, areas = lore_names()
     world = os.path.join(choices, "Azeroth")
-    found = []
+    found, homed = [], set()
     for dp, _, fs in os.walk(world):
-        place = os.path.basename(dp)
-        if place + " - new.png" not in fs:
-            continue
         # Azeroth[/<continent>]/<zone>[/<city>][/<area>], the tree Lore of Azeroth shows: a zone such
         # as Zephras Isle sits straight under Azeroth, a city inside the zone around it, and the
         # world and each continent are places too.
         rel = ["Azeroth"] + [p for p in os.path.relpath(dp, world).split(os.sep) if p != "."]
-        old = next((f for f in fs if f.startswith(place + " - old")), None)
-        found.append((rel, {"path": os.path.join(dp, place + " - new.png"), "old": old and os.path.join(dp, old)}))
-
-    def area_of(rel):
+        name = rel[-1]
         zone = len(rel) > 1 and zones.get(rel[-2])
-        return zone if zone and rel[-1] in areas.get(zone, {}) else None
+        area = zone if zone and name in areas.get(zone, {}) else None
+        if name in zones and not area:
+            homed.add(name)
+        if name + " - new.png" in fs:
+            old = next((f for f in fs if f.startswith(name + " - old")), None)
+            found.append((rel, area, {"path": os.path.join(dp, name + " - new.png"), "old": old and os.path.join(dp, old)}))
 
-    # A zone with a folder of its own somewhere (Eastern Kingdoms/Alterac Mountains) makes a folder
-    # of that name inside another zone (Hillsbrad Foothills/Alterac Mountains) that zone's area. A
-    # city has no such folder: Elwynn Forest/Stormwind City is the city.
-    homed = {rel[-1] for rel, _ in found if rel[-1] in zones and not area_of(rel)}
+    # A zone with a folder of its own somewhere (Eastern Kingdoms/Alterac Mountains, Riverglades)
+    # makes a folder of that name inside a zone (Hillsbrad Foothills/Alterac Mountains,
+    # Riverglades/Riverglades) that zone's area. A city has no such folder: Elwynn Forest/Stormwind
+    # City is the city.
+    cities = zones.keys() - homed
     out, unknown = [], []
-    for rel, entry in found:
-        zone = area_of(rel)
-        # An area named as its own zone (Riverglades/Riverglades) is the area, the zone's folder
-        # being the zone.
-        if zone and (rel[-1] not in zones or rel[-1] in homed or rel[-1] == rel[-2]):
-            key, name = areas[zone][rel[-1]]
+    for rel, area, entry in found:
+        name = rel[-1]
+        if area and name not in cities:
+            key, title = areas[area][name]
             # The manifest id, as fetch.mjs entries() spells it.
             slug = re.sub(r"[^a-z0-9]+", "-", key).strip("-")
-            out.append({**entry, "id": "%d-%s" % (zone, slug), "parent": zone, "key": key, "title": name})
-        elif rel[-1] in zones:
-            zid = zones[rel[-1]]
-            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": rel[-1]})
+            out.append({**entry, "id": "%d-%s" % (area, slug), "parent": area, "key": key, "title": title})
+        elif name in zones:
+            zid = zones[name]
+            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": name})
         else:
             unknown.append("/".join(rel))
     return out, unknown
@@ -435,22 +463,8 @@ def main():
     masks = [make_mask(i + 1) for i in range(MASKS)]
     for i, mask in enumerate(masks):
         save_mask(mask, os.path.join(OUT, "Mask%d.blp" % (i + 1)))
-    # Each zone's places take the masks in a shuffled order of their own, so no two places in one
-    # zone (32 at most share one only past that) have the same edge.
-    order = {}
-    for p in places:
-        order.setdefault(p["parent"], []).append(p["id"])
-    mask_of = {}
-    for parent, ids in order.items():
-        deck = list(seeded("zone%d" % parent).permutation(MASKS) + 1)
-        for n, pid in enumerate(sorted(ids)):
-            mask_of[pid] = int(deck[n % MASKS])
-
-    # The mask each texture was last written with: a place added to its zone deals the later places
-    # other masks, and their textures carry the old edge until rewritten.
-    baked = {}
-    if os.path.exists(LUA):
-        baked = {t: int(m) for t, m in re.findall(r'\{ "([^"]+)", (\d+) \}', open(LUA, encoding="utf-8").read())}
+    baked = baked_masks()
+    mask_of = deal_masks(places, baked)
     placed, written, shared = [], 0, {}
     for p in sorted(places, key=lambda p: p["id"]):
         # One texture for a picture several places share (a subzone listed under two zones):

@@ -32,8 +32,9 @@ async function main() {
 
   // The main page beside the Classic one the lore cites: "Arathi Highlands (Classic)" has 41
   // pictures, "Arathi Highlands" 137.
-  const pages = await pageImages([...new Set(all.flatMap((e) => [e.title, stripClassicSuffix(e.title)]))]);
-  const imagesOf = (e) => [...new Set([e.title, stripClassicSuffix(e.title)].flatMap((t) => pages.get(t)?.images || []))];
+  const titles = (e) => [e.title, stripClassicSuffix(e.title)];
+  const pages = await pageImages([...new Set(all.flatMap(titles))]);
+  const imagesOf = (e) => [...new Set(titles(e).flatMap((t) => pages.get(t)?.images || []))];
   // Logos (WoW Classic's, Warcraft III's) sit on many place pages and are never a picture of one.
   const pictureFile = (f) => /\.(jpe?g|png|webp)$/i.test(f) && !/(^File:.*_\d\d\.png$|icon|logo)/i.test(f);
   const files = [...new Set([...pages.values()].flatMap((p) => p.images.filter(pictureFile)))];
