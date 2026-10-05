@@ -71,6 +71,15 @@ Expect("...nor one whose map has an overlay always drawn, nothing under it explo
 -- The game's word is followed: the Forever client reports Dalaran explored for every character.
 Expect("an area the client reports explored is found, whoever reports it", Z:IsFound(1416, "dalaran"), true)
 Expect("...and its zone", Z:IsFound(1416), true)
+-- Explored after the maps were read (a GM's .cheat explore): found once they are read again.
+Expect("an area not explored is not found", Z:IsFound(1426, "coldridge valley"), false)
+OVERLAYS[1426] = { { hitRect = { left = 0, right = 1000, top = 0, bottom = 500 }, area = 4 } }
+AREAS[4] = "Coldridge Valley"
+Expect("...explored since, it is not seen before the maps are read again", Z:IsFound(1426, "coldridge valley"), false)
+Z:RefreshFound()
+Expect("...and is found once they are", Z:IsFound(1426, "coldridge valley"), true)
+OVERLAYS[1426], AREAS[4] = nil, nil
+Z:RefreshFound()
 Expect("why a place is found is said", select(2, Z:IsFound(1411, "valley of trials")), "explored on the map")
 
 where.subzone = "Razor Hill Barracks"

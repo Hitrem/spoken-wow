@@ -23,7 +23,8 @@ local ADDON_NAME, SpokenZones = ...
 -- can hold a smaller area of its own, which only some points land in.
 local SAMPLES = 4
 
-local explored = {}       -- [mapID] = { zone = bool, keys = { [areaKey] = true } }, this session
+-- What the maps say, read once and kept until something may have changed it (RefreshFound).
+local explored = {}       -- [mapID] = { zone = bool, keys = { [areaKey] = true } }
 local exploredNames = {}  -- every explored area's name seen in a scan, for the cities
 
 local function CharDB()
@@ -88,7 +89,7 @@ local function Explored(mapID)
 end
 
 -- Every zone's map read, so a city is known explored by its name on the zone around it whichever
--- is asked about first (Darnassus sorts before Teldrassil). Once a session.
+-- is asked about first (Darnassus sorts before Teldrassil). Once until RefreshFound.
 local everyZone = false
 local function ScanEveryZone()
 	if everyZone then return end
@@ -98,10 +99,11 @@ local function ScanEveryZone()
 	end
 end
 
---- Scan the zone the character is in again, so a discovery made since shows.
+--- Forget what the maps said, so they are read again when next asked: exploring anywhere since
+--- (a GM's .cheat explore too) shows. Called when the world map or Lore of Azeroth opens and when
+--- the game reports something explored.
 function SpokenZones:RefreshFound()
-	local _, mapID = self:GetLoreWithFallback(self:GetPlayerMapID())
-	if mapID then Scan(mapID) end
+	explored, exploredNames, everyZone = {}, {}, false
 end
 
 --- Whether the character has found the zone `mapID` (areaKey nil) or its area `areaKey`, and
@@ -177,5 +179,13 @@ local function RecordVisit()
 end
 
 function SpokenZones:SetupDiscovery()
-	self:OnZoneChanged(RecordVisit)
+	local function Refresh() SpokenZones:RefreshFound() end
+	-- The game says when exploration changes, where it has the event; a zone change covers the rest.
+	self:OnZoneChanged(function() RecordVisit(); Refresh() end)
+	if WorldMapFrame and WorldMapFrame.HookScript then WorldMapFrame:HookScript("OnShow", Refresh) end
+	local events = CreateFrame and CreateFrame("Frame")
+	if events then
+		pcall(events.RegisterEvent, events, "MAP_EXPLORATION_UPDATED")
+		events:SetScript("OnEvent", Refresh)
+	end
 end
