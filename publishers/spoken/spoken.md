@@ -3,7 +3,7 @@ curseforge: 1700375
 wago: QN53yXKB
 slug: spoken-player
 name: Spoken Player
-summary: Performative AI voiceover for WoW Forever and Classic. Quest dialogue, NPC gossip, zone lore and books, read aloud. Spoken Quests, Spoken Zones and Spoken Books in one download.
+summary: Expressive, character-driven AI voiceover for WoW Forever and Classic. Quest dialogue, NPC gossip, zone lore and books, read aloud. Spoken Quests, Spoken Zones and Spoken Books in one download.
 categories:
   - Audio & Video
   - Roleplay
@@ -11,7 +11,7 @@ categories:
 license: MIT
 ---
 
-**Performative AI voiceover for WoW Forever and Classic.** NPCs speak their quest text and gossip, zones tell their stories, and books read themselves aloud. One download carries everything; add the voice packs you want.
+**Expressive, character-driven AI voiceover for WoW Forever and Classic.** NPCs speak their quest text and gossip, zones tell their stories, and books read themselves aloud. One download carries everything; add the voice packs you want.
 
 **Voiced with care:**
 
