@@ -323,7 +323,11 @@ def write_credits(placed):
         "| --- | --- | --- |",
     ]
     cell = lambda s: (s or "").replace("|", "/").replace("\n", " ").strip()
+    seen = set()
     for p in sorted(placed, key=lambda p: p["texture"]):
+        if p["texture"] in seen:
+            continue
+        seen.add(p["texture"])
         src = p["source"]
         if not src:
             source = "unknown, added by hand"
@@ -422,13 +426,20 @@ def main():
         for n, pid in enumerate(sorted(ids)):
             mask_of[pid] = int(deck[n % MASKS])
 
-    placed, written = [], 0
-    for p in places:
-        chosen = {"texture": p["id"], "mask": mask_of[p["id"]]}
-        out = os.path.join(OUT, p["id"] + ".blp")
-        if args.force or not os.path.exists(out):
-            save_blp(prepare(Image.open(p["path"]).convert("RGB"), masks[chosen["mask"] - 1]), out)
-            written += 1
+    placed, written, shared = [], 0, {}
+    for p in sorted(places, key=lambda p: p["id"]):
+        # One texture for a picture several places share (a subzone listed under two zones):
+        # the first place's, its mask and all.
+        same = hashlib.md5(open(p["path"], "rb").read()).hexdigest()
+        if same in shared:
+            chosen = shared[same]
+        else:
+            chosen = {"texture": p["id"], "mask": mask_of[p["id"]]}
+            shared[same] = chosen
+            out = os.path.join(OUT, p["id"] + ".blp")
+            if args.force or not os.path.exists(out):
+                save_blp(prepare(Image.open(p["path"]).convert("RGB"), masks[chosen["mask"] - 1]), out)
+                written += 1
         md5 = p["old"] and hashlib.md5(open(p["old"], "rb").read()).hexdigest()
         placed.append({**p, **chosen, "source": by_hand.get(p["id"]) or sources.get(md5)})
         sys.stdout.write("\r  %d placed" % len(placed))
@@ -443,7 +454,7 @@ def main():
             os.remove(os.path.join(OUT, f))
     total = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT))
     missing = [pl["id"] for pl in placed if not pl["source"]]
-    print("written %d, placed %d, folder %.1f MB" % (written, len(placed), total / 1e6))
+    print("written %d, placed %d, textures %d, folder %.1f MB" % (written, len(placed), len(shared), total / 1e6))
     if unknown:
         print("folders not in the lore, skipped:", unknown)
     if missing:
