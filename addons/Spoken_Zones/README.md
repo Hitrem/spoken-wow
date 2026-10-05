@@ -1,5 +1,3 @@
-<!-- GENERATED from publishers/zones/spoken-zones.md by scripts/descriptions.mjs. Do not edit by hand. -->
-
 **Zone lore on the world map, for WoW Classic Era.** One of [Spoken](https://www.curseforge.com/wow/addons/spoken-player)'s modules: it comes in Spoken's download, beside Spoken Quests and Spoken Books, and narrates through it.
 
 Open the map and the lore of the zone you're looking at appears beside it. Click a named subzone and you get that place's story instead. Optionally, it's read aloud.

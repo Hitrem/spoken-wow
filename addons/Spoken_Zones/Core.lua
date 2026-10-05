@@ -32,6 +32,8 @@ local defaults = {
 	mapPanelCollapsed = false,
 	-- Wide enough that a zone's name fits on one line beside the header's round buttons.
 	panelWidth = 360,
+	loreWindowWidth = 880,
+	loreWindowHeight = 600,
 	fontSize = 12,
 	showHoverPreview = true,
 	showPictures = true,
