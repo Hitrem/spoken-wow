@@ -46,6 +46,8 @@ _G.GameFontHighlight = _G.GameFontHighlight or { GetFont = function() return "fo
 local Z = H.NewZoneLore()
 Z.Zones = { [1411] = { name = "Durotar", full = "Durotar is a cracked, red land." },
     [1426] = { name = "Dun Morogh", pending = true },
+    -- A city: a zone of its own, listed inside the zone around it.
+    [1454] = { name = "Orgrimmar", full = "The orcs' city." },
     [947] = { name = "Azeroth", full = "The world." },
     [1414] = { name = "Kalimdor", full = "The western continent." },
     [1415] = { name = "Eastern Kingdoms", full = "The eastern continent." },
@@ -119,7 +121,7 @@ Collect(window)
 local shown = {}
 for _, row in ipairs(rows) do if row.shown ~= false and row.row then table.insert(shown, row.label.text) end end
 Expect("the places are a tree: Azeroth, its continents, their zones, the chosen zone open",
-    table.concat(shown, "|"), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+    table.concat(shown, "|"), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 
 local function RowFor(label)
     for _, row in ipairs(rows) do if row.shown ~= false and row.row and row.label.text == label then return row end end
@@ -137,11 +139,25 @@ Expect("the open zone's minus closes it, its areas gone", Shown(), "Azeroth|East
 Expect("...with the plus in its place", RowFor("Durotar").toggle.texture, [[Interface\Buttons\UI-PlusButton-Up]])
 Expect("...and the zone still the one chosen", page.title.text, "Durotar")
 RowFor("Durotar").scripts.OnClick(RowFor("Durotar"))
-Expect("...and its plus opens it again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+Expect("...and its plus opens it again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 Expect("...with the minus back", RowFor("Durotar").toggle.texture, [[Interface\Buttons\UI-MinusButton-Up]])
 RowFor("Valley of Trials").scripts.OnClick(RowFor("Valley of Trials"))
 RowFor("Durotar").scripts.OnClick(RowFor("Durotar"))
 Expect("an area chosen, its zone's minus still closes it", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar")
+RowFor("Durotar").scripts.OnClick(RowFor("Durotar"))
+Shown()
+
+-- The city inside Durotar: chosen, it opens under Durotar, which stays open.
+RowFor("Orgrimmar").scripts.OnClick(RowFor("Orgrimmar"))
+Expect("a city is listed inside the zone around it", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
+Expect("...one level in, as an area is", RowFor("Orgrimmar").row.depth, RowFor("Valley of Trials").row.depth)
+Expect("...counted with the zone's areas", RowFor("Durotar").count.text, 3)
+Expect("...and not beside it on the continent", RowFor("Kalimdor").count.text, 1)
+Expect("...its page says the zone it is in", page.title.text .. ": " .. page.sub.text.text, "Orgrimmar: in Durotar")
+page.sub.scripts.OnClick(page.sub)
+Expect("...which leads back to the zone", page.title.text, "Durotar")
+RowFor("Durotar").scripts.OnClick(RowFor("Durotar"))
+Expect("the zone's minus closes it with its city", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar")
 RowFor("Durotar").scripts.OnClick(RowFor("Durotar"))
 Shown()
 
@@ -156,7 +172,7 @@ Expect("...leading up to the continent", page.title.text, "Kalimdor")
 Expect("a continent says it is in Azeroth, and how many zones it holds", page.sub.text.text, "in Azeroth · 1 zone")
 page.sub.scripts.OnClick(page.sub)
 Expect("...leading up to Azeroth", page.title.text, "Azeroth")
-Expect("Azeroth sits in nothing: it says what it holds", page.sub.text.text, "2 continents, 2 zones")
+Expect("Azeroth sits in nothing: it says what it holds", page.sub.text.text, "2 continents, 3 zones")
 Expect("...not counting a map this client has not got", RowFor("Somewhere Else"), nil)
 
 RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
@@ -205,7 +221,7 @@ rows = {}; Collect(window)
 shown = {}
 for _, row in ipairs(rows) do if row.shown ~= false and row.row then table.insert(shown, row.label.text) end end
 Expect("...and the tree comes back as it was before the search", table.concat(shown, "|"),
-    "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+    "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 search:SetText("nowhere")
 search.hooks.OnTextChanged[1](search)
 Expect("...and says when nothing matches", window.noMatch.shown, true)

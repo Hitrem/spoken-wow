@@ -61,6 +61,14 @@ for _, id in ipairs({ 1411, 1412, 1413, 1438, 1439, 1440, 1441, 1442, 1443, 1444
 for _, id in ipairs({ 1416, 1417, 1418, 1419, 1420, 1421, 1422, 1423, 1424, 1425, 1426, 1427, 1428,
 	1429, 1430, 1431, 1432, 1433, 1434, 1435, 1436, 1437, 1453, 1455, 1458 }) do KNOWN_CONTINENT[id] = 1415 end
 
+-- The cities, each listed inside the zone around it rather than beside it. The game has each as a
+-- zone of its own (its own map, under the continent), so the zone it stands in is read off the
+-- world: Stormwind City, Orgrimmar and Darnassus lie in that zone's map alone, and Ironforge,
+-- Undercity and Thunder Bluff are entered from it (the Gates of Ironforge are Dun Morogh's, the
+-- Ruins of Lordaeron Tirisfal's, and Thunder Bluff's mesa rises over Mulgore's plain).
+local CITY_IN = { [1453] = 1429, [1454] = 1411, [1455] = 1426, [1456] = 1412, [1457] = 1438, [1458] = 1420 }
+SpokenZones.CityIn = CITY_IN
+
 local function IsContinent(mapID)
 	return mapID == 1414 or mapID == 1415
 end
@@ -131,9 +139,18 @@ local function ZonesOf(continent)
 	if zonesOfContinent[continent] then return zonesOfContinent[continent] end
 	local list = {}
 	for _, mapID in ipairs(ZoneIDs()) do
-		if ContinentOf(mapID) == continent then table.insert(list, mapID) end
+		if ContinentOf(mapID) == continent and not CITY_IN[mapID] then table.insert(list, mapID) end
 	end
 	zonesOfContinent[continent] = list
+	return list
+end
+
+--- The cities inside the zone `mapID`, alphabetical.
+local function CitiesIn(mapID)
+	local list = {}
+	for _, city in ipairs(ZoneIDs()) do
+		if CITY_IN[city] == mapID then table.insert(list, city) end
+	end
 	return list
 end
 
@@ -170,27 +187,35 @@ local function Missing(mapID)
 	return not entry or SpokenZones:IsPending(entry)
 end
 
--- One zone's rows: itself, and its areas under it when it is open (or, while searching, the
--- areas that match). Nothing when neither it nor any area matches the search.
+-- One zone's rows: itself, and under it when it is open its city (a zone of its own, with its
+-- own areas) and its areas; while searching, the ones that match. Nothing when neither it nor
+-- anything inside matches the search. A zone stays open while its city is.
 local function ZoneRows(mapID, depth)
 	local subKeys = SubzoneKeys(mapID)
 	local zoneName = ZoneName(mapID)
-	local areas = {}
+	local open = expandedZone == mapID or CITY_IN[expandedZone] == mapID
+	local cities = CitiesIn(mapID)
+	local inside = {}
+	if filter ~= "" or open then
+		for _, city in ipairs(cities) do
+			for _, row in ipairs(ZoneRows(city, depth + 1)) do table.insert(inside, row) end
+		end
+	end
 	if subKeys then
 		for _, key in ipairs(subKeys) do
 			local entry = SpokenZones.Subzones[mapID][key]
 			local name = entry.name or key
-			if filter == "" and expandedZone == mapID or filter ~= "" and Matches(name) then
-				table.insert(areas, { kind = "subzone", mapID = mapID, key = key, label = name, depth = depth + 1,
+			if filter == "" and open or filter ~= "" and Matches(name) then
+				table.insert(inside, { kind = "subzone", mapID = mapID, key = key, label = name, depth = depth + 1,
 					missing = SpokenZones:IsPending(entry) })
 			end
 		end
 	end
-	if filter ~= "" and not Matches(zoneName) and #areas == 0 then return {} end
+	if filter ~= "" and not Matches(zoneName) and #inside == 0 then return {} end
 	local rows = { { kind = "zone", mapID = mapID, label = zoneName, depth = depth,
-		count = subKeys and #subKeys or 0, open = filter ~= "" and #areas > 0 or expandedZone == mapID,
+		count = (subKeys and #subKeys or 0) + #cities, open = filter ~= "" and #inside > 0 or open,
 		missing = Missing(mapID) } }
-	for _, area in ipairs(areas) do table.insert(rows, area) end
+	for _, row in ipairs(inside) do table.insert(rows, row) end
 	return rows
 end
 
@@ -308,7 +333,7 @@ function SpokenZones:PlaceLine(mapID, key)
 		return string.format(L.IN_ZONE_FMT, ZoneName(WORLD)) .. " · "
 			.. Count(#ZonesOf(mapID), L.ZONE_COUNT_FMT, L.ZONE_COUNT_ONE), WORLD
 	end
-	local parent = ContinentOf(mapID) or WORLD
+	local parent = CITY_IN[mapID] or ContinentOf(mapID) or WORLD
 	local subKeys = SubzoneKeys(mapID)
 	local line = string.format(L.IN_ZONE_FMT, ZoneName(parent))
 	if subKeys then
@@ -350,7 +375,12 @@ local function OnRowClick(self)
 	elseif row.kind == "zone" then
 		-- Clicking a zone both chooses it and opens or closes its areas: one zone at a time. Not
 		-- `open and nil or mapID`, which is mapID either way, so an open zone never closed.
-		if expandedZone == row.mapID then expandedZone = nil else expandedZone = row.mapID end
+		-- A city closes back to the zone around it, which stays open; that zone closes with it.
+		if expandedZone == row.mapID or CITY_IN[expandedZone] == row.mapID then
+			expandedZone = CITY_IN[row.mapID]
+		else
+			expandedZone = row.mapID
+		end
 		selection = { mapID = row.mapID, key = nil }
 	else
 		selection = { mapID = row.mapID, key = row.key }
