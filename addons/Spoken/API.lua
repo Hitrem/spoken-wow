@@ -303,9 +303,10 @@ end
 --- book or letter read out of them. Nil when it is not there.
 function Spoken:BagItemIcon(name)
     if not name or name == "" then return nil end
+    local bracketed = "[" .. name .. "]"
     return BagIcon(function(bag, slot)
         local _, link = SlotItem(bag, slot)
-        return link ~= nil and string.find(link, "[" .. name .. "]", 1, true) ~= nil
+        return link ~= nil and string.find(link, bracketed, 1, true) ~= nil
     end)
 end
 
