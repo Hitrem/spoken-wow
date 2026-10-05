@@ -43,7 +43,7 @@ assert(loadfile(ZONES .. "UI/MapHighlight.lua"))("SpokenZones", Z)
 Z:SetupMapHighlight()
 local state = Z.mapHighlight
 local tick = state.driver:GetScript("OnUpdate")
-local function Run(seconds) for _ = 1, math.ceil(seconds / 0.05) do tick(state.driver, 0.05) end end
+local function Run() tick(state.driver, 0.016) end
 local function Shown()
     local list = {}
     for _, tile in ipairs(state.tiles) do if tile:IsShown() then list[#list + 1] = tile end end
@@ -51,12 +51,12 @@ local function Shown()
 end
 
 Expect("built over the map's canvas", state.frame:GetParent(), canvas)
-Expect("dark until the cursor is over an area", state.alpha, 0)
+Expect("dark until the cursor is over an area", state.frame:IsShown(), false)
 
 Point(250, 140)
-Run(0.1)
+Run()
 local lit = Shown()
-Expect("over an area with a story it lights up at once", state.alpha, 0.35)
+Expect("over an area with a story it lights up at once", state.frame:IsShown() and state.frame:GetAlpha(), 0.35)
 Expect("...in the smallest overlay holding the cursor", #lit == 1 and lit[1]:GetTexture(), 21)
 Expect("...at the overlay's place on the map", select(4, lit[1]:GetPoint(1)) == 200 and select(5, lit[1]:GetPoint(1)) == -100, true)
 Expect("...its size the overlay's", lit[1]:GetWidth() == 100 and lit[1]:GetHeight() == 80, true)
@@ -64,31 +64,28 @@ local u = lit[1].texCoord
 Expect("...cut from the part of its tile the overlay uses", u[2] == 100 / 128 and u[4] == 80 / 128, true)
 
 Point(120, 60)
-Run(0.1)
+Run()
 lit = Shown()
 Expect("over the big area, its two tiles", #lit == 2 and lit[1]:GetTexture() == 11 and lit[2]:GetTexture() == 12, true)
 Expect("...the second as wide as what is left of it", lit[2]:GetWidth(), 44)
 Expect("...side by side", select(4, lit[2]:GetPoint(1)), 100 + 256)
 
 Point(800, 500)
-Run(0.05)
-Expect("off any area with a story it goes out, a little at a time", state.alpha > 0 and state.alpha < 0.35, true)
-Run(0.3)
-Expect("...and out", state.alpha, 0)
-Expect("...its tiles hidden", #Shown(), 0)
+Run()
+Expect("off any area with a story it goes out at once", state.frame:IsShown(), false)
 
 Point(250, 140)
 overCanvas = false
-Run(0.3)
-Expect("not while the cursor is on a pin", state.alpha, 0)
+Run()
+Expect("not while the cursor is on a pin", state.frame:IsShown(), false)
 overCanvas = true
 
 WorldMapFrame.mapID = 1414
-Run(0.3)
-Expect("not on a continent map, which has Blizzard's own", state.alpha, 0)
+Run()
+Expect("not on a continent map, which has Blizzard's own", state.frame:IsShown(), false)
 WorldMapFrame.mapID = 1411
-Run(0.3)
-Expect("back on the zone map it lights again", state.alpha, 0.35)
+Run()
+Expect("back on the zone map it lights again", state.frame:IsShown(), true)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll map highlight tests passed")

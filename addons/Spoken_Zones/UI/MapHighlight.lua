@@ -6,7 +6,8 @@
 -- (MapUtil.FindBestAreaNameAtMouse), and every explored area is drawn on the map as an
 -- exploration overlay: a texture in the area's shape (C_MapExplorationInfo.GetExploredMapTextures).
 -- The highlight is that overlay drawn again over the map, added at HIGHLIGHT_ALPHA, laid out in
--- tiles exactly as Blizzard's MapExplorationPin lays it out.
+-- tiles exactly as Blizzard's MapExplorationPin lays it out. It lights and goes out at once, as
+-- the continent map's own highlight does.
 --
 -- Overlays do not say which area they belong to. Each has a hit rectangle around it, and where
 -- several hold the cursor the smallest wins: an area inside another's rectangle is the one the
@@ -14,12 +15,10 @@
 
 local ADDON_NAME, SpokenZones = ...
 
-local THROTTLE = 0.03
--- How bright the lit area is, how quickly it lights up (at once, near enough: a slow rise read as
--- the map lagging behind the cursor) and how softly it goes out.
-local HIGHLIGHT_ALPHA, FADE_IN, FADE_OUT = 0.35, 0.05, 0.15
+-- How bright the lit area is.
+local HIGHLIGHT_ALPHA = 0.35
 
-local state = { tiles = {}, alpha = 0, wanted = nil, elapsed = 0 }
+local state = { tiles = {} }
 SpokenZones.mapHighlight = state
 
 -- The smallest power of two at least `n`, from 16: the size of a tile's file where the tile is
@@ -144,37 +143,19 @@ local function Light(info, layer)
 	end
 end
 
-local function OnUpdate(_, elapsed)
-	state.elapsed = state.elapsed + elapsed
-	if state.elapsed >= THROTTLE then
-		state.elapsed = 0
-		local info, layer = Target()
-		if info and info ~= state.lit then
-			Light(info, layer)
-			state.lit = info
-		end
-		state.wanted = info and true or nil
+-- Every frame, as the continent map's highlight follows the cursor.
+local function OnUpdate()
+	local info, layer = Target()
+	if info and info ~= state.lit then
+		Light(info, layer)
 	end
-	-- Toward lit or out, a frame at a time; the tiles stay laid out for the area last lit, so it
-	-- fades out in its own shape.
-	local goal = state.wanted and HIGHLIGHT_ALPHA or 0
-	if state.alpha ~= goal then
-		local step = HIGHLIGHT_ALPHA * elapsed / (goal > state.alpha and FADE_IN or FADE_OUT)
-		state.alpha = goal > state.alpha and math.min(goal, state.alpha + step) or math.max(goal, state.alpha - step)
-		state.frame:SetAlpha(state.alpha)
-	end
-	if state.alpha == 0 and state.lit and not state.wanted then
-		state.lit = nil
-		for _, tile in ipairs(state.tiles) do tile:Hide() end
-	end
+	state.lit = info
+	state.frame:SetShown(info ~= nil)
 end
 
 local function Reset()
-	state.overlaysFor, state.lit, state.wanted, state.alpha = nil, nil, nil, 0
-	if state.frame then
-		state.frame:SetAlpha(0)
-		for _, tile in ipairs(state.tiles) do tile:Hide() end
-	end
+	state.overlaysFor, state.lit = nil, nil
+	if state.frame then state.frame:Hide() end
 end
 
 function SpokenZones:SetupMapHighlight()
@@ -191,7 +172,8 @@ function SpokenZones:SetupMapHighlight()
 	local levels = WorldMapFrame.GetPinFrameLevelsManager and WorldMapFrame:GetPinFrameLevelsManager()
 	local explored = levels and levels.GetValidFrameLevel and levels:GetValidFrameLevel("PIN_FRAME_LEVEL_MAP_EXPLORATION")
 	frame:SetFrameLevel((explored or canvas:GetFrameLevel()) + 1)
-	frame:SetAlpha(0)
+	frame:SetAlpha(HIGHLIGHT_ALPHA)
+	frame:Hide()
 	frame:EnableMouse(false)
 	state.frame = frame
 
