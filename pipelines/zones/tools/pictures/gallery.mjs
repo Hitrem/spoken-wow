@@ -34,7 +34,8 @@ async function main() {
   const main = (t) => t.replace(/ \(Classic\)$/, "");
   const pages = await pageImages([...new Set(all.flatMap((e) => [e.title, main(e.title)]))]);
   const imagesOf = (e) => [...new Set([e.title, main(e.title)].flatMap((t) => pages.get(t)?.images || []))];
-  const pictureFile = (f) => /\.(jpe?g|png|webp)$/i.test(f) && !/(^File:.*_\d\d\.png$|icon)/i.test(f);
+  // Logos (WoW Classic's, Warcraft III's) sit on many place pages and are never a picture of one.
+  const pictureFile = (f) => /\.(jpe?g|png|webp)$/i.test(f) && !/(^File:.*_\d\d\.png$|icon|logo)/i.test(f);
   const files = [...new Set([...pages.values()].flatMap((p) => p.images.filter(pictureFile)))];
   console.log(`${files.length} pictures on ${pages.size} pages`);
   const info = await imageInfo(files);
