@@ -333,6 +333,8 @@ def write_credits(placed):
             source = "unknown, added by hand"
         elif src.startswith("http"):
             source = src
+        elif src.startswith("own:"):
+            source = cell(src[4:].strip())
         else:
             source = "[%s](https://warcraft.wiki.gg/wiki/File:%s)" % (cell(src), src.replace(" ", "_"))
         lines.append("| %s | %s | %s |" % (p["texture"], cell(p["title"]), source))
