@@ -161,15 +161,27 @@ local function Reveal(mapID)
 	if continent then continentOpen[continent] = true end
 end
 
+-- Whether this is the Forever client, which knows its own maps (Mount Hyjal's, 2482).
+local onForever
+local function OnForever()
+	if onForever == nil then
+		onForever = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(2482) ~= nil or false
+	end
+	return onForever
+end
+
 local function SubzoneKeys(mapID)
 	local tbl = SpokenZones.Subzones[mapID]
 	if not tbl then
 		return nil
 	end
 	if sortedSubzoneKeys[mapID] then return sortedSubzoneKeys[mapID] end
+	-- Not the areas only Forever has (Data/ForeverAreas.lua) on another client, which can never
+	-- report them: listed, they would never be found.
+	local foreverOnly = not OnForever() and SpokenZones.ForeverOnlyAreas and SpokenZones.ForeverOnlyAreas[mapID] or {}
 	local keys = {}
 	for key in pairs(tbl) do
-		table.insert(keys, key)
+		if not foreverOnly[key] then table.insert(keys, key) end
 	end
 	table.sort(keys, function(a, b)
 		return (tbl[a].name or a) < (tbl[b].name or b)

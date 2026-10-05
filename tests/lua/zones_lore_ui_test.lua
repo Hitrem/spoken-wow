@@ -56,7 +56,10 @@ Z.Zones = { [1411] = { name = "Durotar", full = "Durotar is a cracked, red land.
 local getMapInfo = _G.C_Map.GetMapInfo
 _G.C_Map.GetMapInfo = function(id) if id == 2482 then return nil end return getMapInfo(id) end
 Z.Subzones = { [1411] = { ["valley of trials"] = { name = "Valley of Trials", full = "Where the orcs learn." },
-    ["sen'jin village"] = { name = "Sen'jin Village", pending = true } } }
+    ["sen'jin village"] = { name = "Sen'jin Village", pending = true },
+    -- An area only Forever has: this client, Era, never lists it.
+    ["camp forever"] = { name = "Camp Forever", full = "Only on Forever." } } }
+Z.ForeverOnlyAreas = { [1411] = { ["camp forever"] = true } }
 function Z:GetLore(mapID) return self.Zones[mapID] end
 function Z:IsPending(entry) return entry and entry.pending or false end
 function Z:GetSubzoneLore() return nil end
@@ -174,6 +177,7 @@ page.sub.scripts.OnClick(page.sub)
 Expect("...leading up to Azeroth", page.title.text, "Azeroth")
 Expect("Azeroth sits in nothing: it says what it holds", page.sub.text.text, "2 continents, 3 zones")
 Expect("...not counting a map this client has not got", RowFor("Somewhere Else"), nil)
+Expect("an area only Forever has is not listed on another client", RowFor("Camp Forever"), nil)
 
 RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
 Expect("a place with no story says so, faded", page.body.text.text, Z.L.LORE_NOT_WRITTEN:format("Sen'jin Village"))
