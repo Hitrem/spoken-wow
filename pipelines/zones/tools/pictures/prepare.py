@@ -343,7 +343,7 @@ def write_credits(placed):
 
 
 def safe(s):
-    """A name as the choices folder spells it."""
+    """A name as the choices folder spells it: safe() in gallery.mjs, which must match."""
     return re.sub(r"\s+", " ", re.sub(r'[<>:"/\\|?*]', "", s)).strip()
 
 
@@ -383,8 +383,8 @@ def source_index():
 def reviewed(choices):
     """The reviewed places: { id, parent, key, title, path, old } for each "<place> - new.png"."""
     zones, areas = lore_names()
-    out, unknown = [], []
     world = os.path.join(choices, "Azeroth")
+    found = []
     for dp, _, fs in os.walk(world):
         place = os.path.basename(dp)
         if place + " - new.png" not in fs:
@@ -394,21 +394,29 @@ def reviewed(choices):
         # world and each continent are places too.
         rel = ["Azeroth"] + [p for p in os.path.relpath(dp, world).split(os.sep) if p != "."]
         old = next((f for f in fs if f.startswith(place + " - old")), None)
-        entry = {"path": os.path.join(dp, place + " - new.png"), "old": old and os.path.join(dp, old)}
+        found.append((rel, {"path": os.path.join(dp, place + " - new.png"), "old": old and os.path.join(dp, old)}))
+
+    def area_of(rel):
         zone = len(rel) > 1 and zones.get(rel[-2])
-        # A zone's folder first, wherever it sits: a city inside the zone around it
-        # (Elwynn Forest/Stormwind City) is the city, not an area of that name. Not an area named
-        # as its own zone (Riverglades/Riverglades), which the zone's folder already is.
-        if rel[-1] in zones and (len(rel) == 1 or rel[-1] != rel[-2]):
-            zid = zones[rel[-1]]
-            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": place})
-        elif zone and rel[-1] in areas.get(zone, {}):
+        return zone if zone and rel[-1] in areas.get(zone, {}) else None
+
+    # A zone with a folder of its own somewhere (Eastern Kingdoms/Alterac Mountains) makes a folder
+    # of that name inside another zone (Hillsbrad Foothills/Alterac Mountains) that zone's area. A
+    # city has no such folder: Elwynn Forest/Stormwind City is the city.
+    homed = {rel[-1] for rel, _ in found if rel[-1] in zones and not area_of(rel)}
+    out, unknown = [], []
+    for rel, entry in found:
+        zone = area_of(rel)
+        # An area named as its own zone (Riverglades/Riverglades) is the area, the zone's folder
+        # being the zone.
+        if zone and (rel[-1] not in zones or rel[-1] in homed or rel[-1] == rel[-2]):
             key, name = areas[zone][rel[-1]]
+            # The manifest id, as fetch.mjs entries() spells it.
             slug = re.sub(r"[^a-z0-9]+", "-", key).strip("-")
             out.append({**entry, "id": "%d-%s" % (zone, slug), "parent": zone, "key": key, "title": name})
         elif rel[-1] in zones:
             zid = zones[rel[-1]]
-            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": place})
+            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": rel[-1]})
         else:
             unknown.append("/".join(rel))
     return out, unknown
@@ -438,6 +446,11 @@ def main():
         for n, pid in enumerate(sorted(ids)):
             mask_of[pid] = int(deck[n % MASKS])
 
+    # The mask each texture was last written with: a place added to its zone deals the later places
+    # other masks, and their textures carry the old edge until rewritten.
+    baked = {}
+    if os.path.exists(LUA):
+        baked = {t: int(m) for t, m in re.findall(r'\{ "([^"]+)", (\d+) \}', open(LUA, encoding="utf-8").read())}
     placed, written, shared = [], 0, {}
     for p in sorted(places, key=lambda p: p["id"]):
         # One texture for a picture several places share (a subzone listed under two zones):
@@ -449,7 +462,7 @@ def main():
             chosen = {"texture": p["id"], "mask": mask_of[p["id"]]}
             shared[same] = chosen
             out = os.path.join(OUT, p["id"] + ".blp")
-            if args.force or not os.path.exists(out):
+            if args.force or not os.path.exists(out) or baked.get(p["id"]) != chosen["mask"]:
                 save_blp(prepare(Image.open(p["path"]).convert("RGB"), masks[chosen["mask"] - 1]), out)
                 written += 1
         md5 = p["old"] and hashlib.md5(open(p["old"], "rb").read()).hexdigest()
