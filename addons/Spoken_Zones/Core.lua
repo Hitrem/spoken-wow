@@ -971,6 +971,10 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 		end
 		SpokenZones:Print('simulating discovery of "%s"', tostring(areaName))
 		SpokenZones:OnAreaDiscovered(areaName)
+	elseif cmd == "found" then
+		-- What Lore of Azeroth counts as found for this character, and why: for finding a place
+		-- counted found that should not be.
+		if SpokenZones.PrintFound then SpokenZones:PrintFound() end
 	elseif cmd == "debug" then
 		local enabled = not SpokenZones:Get("debug")
 		SpokenZones:Set("debug", enabled)

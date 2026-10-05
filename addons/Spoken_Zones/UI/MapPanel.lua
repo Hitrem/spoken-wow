@@ -171,6 +171,11 @@ local function Refresh(mapID)
 		local key = SpokenZones:ResolveAreaKey(selected.areaName)
 		local line = SpokenZones:PlaceLine(mapID, key or name)
 		local back = function() SpokenZones:ClearSubzone() end
+		-- Not found yet: named, and no more, as Lore of Azeroth has it.
+		if SpokenZones.IsLocked and SpokenZones:IsLocked(mapID, key) then
+			page:Show({ title = name, subtitle = line, onSubtitle = back, text = L.NOT_DISCOVERED, missing = true })
+			return
+		end
 		if SpokenZones:IsPending(selected.entry) then
 			-- Named, listed, and honest about the rest: nothing to play and nothing written to
 			-- report on. Lore of Azeroth lists it all the same, so Open goes to its row there.
@@ -201,6 +206,10 @@ local function Refresh(mapID)
 		local up
 		caption, up = SpokenZones:PlaceLine(mapID)
 		if up and WorldMapFrame.SetMapID then onCaption = function() WorldMapFrame:SetMapID(up) end end
+	end
+	if SpokenZones.IsLocked and SpokenZones:IsLocked(foundOn) then
+		page:Show({ title = zoneName, subtitle = caption, onSubtitle = onCaption, text = L.NOT_DISCOVERED, missing = true })
+		return
 	end
 	if SpokenZones:IsPending(entry) then
 		page:Show({ title = zoneName, subtitle = caption, onSubtitle = onCaption,

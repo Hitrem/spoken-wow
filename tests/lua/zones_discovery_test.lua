@@ -19,6 +19,8 @@ local OVERLAYS = {
         { hitRect = { left = 100, right = 300, top = 300, bottom = 450 }, area = 1 },
         { hitRect = { left = 400, right = 600, top = 0, bottom = 100 }, area = 2 },
     },
+    -- Moonglade's map: one overlay the game always draws, with nothing under it explored.
+    [1450] = { { hitRect = { left = 0, right = 1000, top = 0, bottom = 500 } } },
 }
 _G.CreateVector2D = function(x, y) return { x = x, y = y } end
 _G.C_Map = _G.C_Map or {}
@@ -38,9 +40,9 @@ _G.C_MapExplorationInfo = {
 
 local where = { map = 1411, subzone = "" }
 _G.GetSubZoneText = function() return where.subzone end
-local Z = { Zones = { [1411] = {}, [1426] = {}, [1454] = {} }, Subzones = { [1411] = { ["valley of trials"] = {}, ["razor hill barracks"] = {}, ["orgrimmar"] = {} },
+local Z = { Zones = { [1411] = {}, [1426] = {}, [1454] = {}, [1450] = {} }, Subzones = { [1411] = { ["valley of trials"] = {}, ["razor hill barracks"] = {}, ["orgrimmar"] = {} },
     [1426] = { ["coldridge valley"] = {} } } }
-local names = { [1411] = "Durotar", [1426] = "Dun Morogh", [1454] = "Orgrimmar" }
+local names = { [1411] = "Durotar", [1426] = "Dun Morogh", [1454] = "Orgrimmar", [1450] = "Moonglade" }
 local settings = {}
 function Z:Get(key) return settings[key] end
 function Z:GetMapName(mapID) return names[mapID] end
@@ -63,6 +65,8 @@ Expect("an explored area is found", Z:IsFound(1411, "valley of trials"), true)
 Expect("...and its zone", Z:IsFound(1411), true)
 Expect("an area with no overlay is not found before it is stood in", Z:IsFound(1411, "razor hill barracks"), false)
 Expect("a zone with nothing explored is not found", Z:IsFound(1426), false)
+Expect("...nor one whose map has an overlay always drawn, nothing under it explored", Z:IsFound(1450), false)
+Expect("why a place is found is said", select(2, Z:IsFound(1411, "valley of trials")), "explored on the map")
 
 where.subzone = "Razor Hill Barracks"
 onZone()

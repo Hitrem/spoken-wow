@@ -326,6 +326,18 @@ RowFor("Eastern Kingdoms").scripts.OnClick(RowFor("Eastern Kingdoms"))
 Expect("a locked continent does not open", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
 RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
 Expect("a locked area cannot be chosen", RowFor("Sen'jin Village").row and RowFor("Durotar").selected, true)
+-- Opened from the map's panel, a place not discovered says so instead of telling its story.
+Z:ShowLoreFor(1411, "sen'jin village")
+Expect("a place not discovered, opened from elsewhere, says so", page.title.text .. ": " .. page.body.text.text, "Sen'jin Village: " .. Z.L.NOT_DISCOVERED)
+Expect("...with nothing to play", page.play.mapID, nil)
+Z.selected = { mapID = 1411, areaName = "Sen'jin Village", entry = Z.Subzones[1411]["sen'jin village"] }
+Z:RefreshPanel()
+Expect("the map's panel says so too", mapPage.body.text.text, Z.L.NOT_DISCOVERED)
+Z.selected = nil
+Z:RefreshPanel()
+Expect("...and tells a found zone's story", mapPage.title.text, "Durotar")
+Z:ShowLoreFor(1411, nil)
+Shown()
 showAll = true
 Z:RefreshLoreWindow()
 Expect("Unlock Undiscovered Places opens them all", Locked(), "")

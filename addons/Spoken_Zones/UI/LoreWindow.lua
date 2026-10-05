@@ -180,6 +180,20 @@ local function Discovered(mapID, key)
 	return SpokenZones:ShowsUndiscovered() or Found(mapID, key)
 end
 
+--- Whether a place is locked for this character: not found yet, with Unlock Undiscovered Places
+--- off. A continent is found through its zones; Azeroth always is. The page and the map's panel
+--- say so in its place rather than tell its story.
+function SpokenZones:IsLocked(mapID, key)
+	if self:ShowsUndiscovered() or mapID == WORLD then return false end
+	if not key and IsContinent(mapID) then
+		for _, zone in ipairs(ZonesOf(mapID)) do
+			if self:IsFound(zone) then return false end
+		end
+		return true
+	end
+	return not self:IsFound(mapID, key)
+end
+
 -- Discovered Only, the checkbox under the list: the places not found are left out of it.
 local function OnlyFound()
 	return SpokenZones:Get("loreDiscoveredOnly") == true
@@ -295,6 +309,20 @@ local function ShowEntry()
 	end
 
 	local mapID, key = selection.mapID, selection.key
+	-- Chosen from elsewhere (the map's panel), a place not found yet: named, and no more.
+	if SpokenZones:IsLocked(mapID, key) then
+		local entry = key and SpokenZones.Subzones[mapID] and SpokenZones.Subzones[mapID][key]
+		-- Where it sits, a click away: the zone for an area, the continent for a zone.
+		local up = key and mapID or (IsContinent(mapID) and WORLD or ContinentOf(mapID) or WORLD)
+		local line = string.format(L.IN_ZONE_FMT, ZoneName(up))
+		page:Show({ title = entry and (entry.name or key) or ZoneName(mapID), subtitle = line,
+			onSubtitle = up and function()
+				selection = { mapID = up, key = nil }
+				SpokenZones:RefreshLoreWindow()
+			end or nil,
+			text = L.NOT_DISCOVERED, missing = true })
+		return
+	end
 	if key then
 		local entry = SpokenZones.Subzones[mapID] and SpokenZones.Subzones[mapID][key]
 		if entry then
@@ -447,7 +475,7 @@ local function AcquireRow(index)
 	-- A padlock where the count goes, on a place not yet discovered: the group finder's own, grey.
 	-- None where the client has not got it; the grey name still says it.
 	row.lock = row:CreateTexture(nil, "ARTWORK")
-	row.lock:SetSize(12, 15)
+	row.lock:SetSize(10, 12)
 	row.lock:SetPoint("RIGHT", row, "RIGHT", -10, 0)
 	row.hasLock = Art.Atlas(row.lock, "LFG-lock", false)
 	if row.lock.SetDesaturated then row.lock:SetDesaturated(true) end
@@ -488,7 +516,8 @@ local function RenderList()
 			row.toggle:ClearAllPoints()
 			row.toggle:SetPoint("LEFT", row, "LEFT", 8 + indent, 0)
 			-- The game's own plus and minus, for anything with something inside to open.
-			if (item.total or item.count) > 0 and not item.locked then
+			-- Not where nothing inside would be listed: none found, with Discovered Only on.
+			if (item.total or item.count) > 0 and not item.locked and not (OnlyFound() and item.count == 0) then
 				row.toggle:SetTexture(item.open and [[Interface\Buttons\UI-MinusButton-Up]] or [[Interface\Buttons\UI-PlusButton-Up]])
 				row.toggle:Show()
 			else

@@ -42,7 +42,7 @@ end
 
 --- The explored areas on the map `mapID`, read off its overlays.
 local function Scan(mapID)
-	local result = { zone = false, keys = {} }
+	local result = { zone = false, keys = {}, why = {} }
 	explored[mapID] = result
 	local info = C_MapExplorationInfo
 	if not (info and info.GetExploredMapTextures and info.GetExploredAreaIDsAtPosition and C_Map.GetMapArtLayers) then
@@ -54,7 +54,8 @@ local function Scan(mapID)
 	if not ok or not overlays or not layer or layer.layerWidth == 0 then
 		return result
 	end
-	result.zone = #overlays > 0
+	-- Found by what is explored under its overlays, not by having overlays: some maps carry one
+	-- the game always draws (Moonglade's whole map), explored or not.
 	for _, overlay in ipairs(overlays) do
 		local r = overlay.hitRect
 		if r then
@@ -68,7 +69,9 @@ local function Scan(mapID)
 					for _, areaID in ipairs(okAt and ids or {}) do
 						local name = C_Map.GetAreaInfo(areaID)
 						if name then
-							exploredNames[name] = true
+							exploredNames[name] = exploredNames[name] or mapID
+							result.zone = true
+							result.why.zone = result.why.zone or ("explored on its map: " .. name)
 							local key = SpokenZones:ResolveAreaKey(name)
 							if key then result.keys[key] = true end
 						end
@@ -101,27 +104,51 @@ function SpokenZones:RefreshFound()
 	if mapID then Scan(mapID) end
 end
 
---- Whether the character has found the zone `mapID` (areaKey nil) or its area `areaKey`.
+--- Whether the character has found the zone `mapID` (areaKey nil) or its area `areaKey`, and
+--- as a second value why: what /spz found prints.
 function SpokenZones:IsFound(mapID, areaKey)
 	if not mapID then
 		return false
 	end
 	local visited = CharDB().visited
 	if areaKey then
-		return visited[VisitKey(mapID, areaKey)] == true or Explored(mapID).keys[areaKey] == true
+		if visited[VisitKey(mapID, areaKey)] then return true, "stood in" end
+		if Explored(mapID).keys[areaKey] then return true, "explored on the map" end
+		return false
 	end
-	if visited[VisitKey(mapID)] or Explored(mapID).zone or next(Explored(mapID).keys) then
-		return true
-	end
+	if visited[VisitKey(mapID)] then return true, "stood in" end
+	if Explored(mapID).zone then return true, Explored(mapID).why.zone end
 	ScanEveryZone()
 	local name = self:GetMapName(mapID)
 	if name and exploredNames[name] then
-		return true
+		return true, "its name explored on map " .. tostring(exploredNames[name])
 	end
 	for key in pairs(self.Subzones[mapID] or {}) do
-		if visited[VisitKey(mapID, key)] then return true end
+		if visited[VisitKey(mapID, key)] then return true, "stood in its area " .. key end
 	end
 	return false
+end
+
+--- Every place counted found, and why, for /spz found.
+function SpokenZones:PrintFound()
+	ScanEveryZone()
+	local lines = 0
+	for mapID in pairs(self.Zones or {}) do
+		local name = self:GetMapName(mapID) or tostring(mapID)
+		local found, why = self:IsFound(mapID)
+		if found then
+			self:Print("%s [%d]: %s", name, mapID, why or "?")
+			lines = lines + 1
+		end
+		for key in pairs(self.Subzones[mapID] or {}) do
+			local areaFound, areaWhy = self:IsFound(mapID, key)
+			if areaFound then
+				self:Print("  %s > %s: %s", name, key, areaWhy or "?")
+				lines = lines + 1
+			end
+		end
+	end
+	self:Print("%d found", lines)
 end
 
 --- Whether Lore of Azeroth lists every place or only those found.
