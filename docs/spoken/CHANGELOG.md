@@ -2,6 +2,12 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## 3.0.1 — 2026-10-05
+
+- **NPC voices are muted again under gossip and greetings.** In 3.0.0 an NPC's own greeting
+  played over Spoken's gossip line. It is silenced again as the window opens. Quest text still
+  fades the NPC's voice out instead of cutting it. *([rusty-key](https://github.com/rusty-key))*
+
 ## 3.0.0 — 2026-10-05
 
 **Spoken Player is now Spoken, and it comes with its modules.** One download holds Spoken,
