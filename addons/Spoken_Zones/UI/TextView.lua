@@ -433,11 +433,10 @@ function TextView:SetText(str)
 		self.picture:SetPoint("TOP", self.child, "TOP", 0, -PAD_TOP)
 		self.picture:Show()
 		pictureRoom = h + PICTURE_GAP
-		self.text:SetPoint("TOPLEFT", self.child, "TOPLEFT", 0, -(PAD_TOP + pictureRoom))
 	else
 		self.picture:Hide()
-		self.text:SetPoint("TOPLEFT", self.child, "TOPLEFT", 0, -PAD_TOP)
 	end
+	self.text:SetPoint("TOPLEFT", self.child, "TOPLEFT", 0, -(PAD_TOP + pictureRoom))
 
 	-- The quest text's face on a parchment page, as a quest's own words are written there.
 	local fontObject = self.ink and _G.QuestFont or GameFontHighlight

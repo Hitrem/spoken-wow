@@ -370,8 +370,8 @@ function Page:Show(entry)
 	local color = (entry.missing or entry.empty) and Art.FADED or Art.INK
 	self.body:SetColor(color[1], color[2], color[3])
 	-- The place's picture over a story that is there to read.
-	local audio, picture, mask = entry.audio, nil, nil
-	if audio then picture, mask = SpokenZones:Picture(audio[1], audio[2]) end
+	local picture, mask
+	if entry.audio then picture, mask = SpokenZones:Picture(entry.audio[1], entry.audio[2]) end
 	self.body:SetPicture(picture, mask)
 	self.body:SetText(entry.text or "")
 

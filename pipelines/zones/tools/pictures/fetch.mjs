@@ -13,7 +13,7 @@ import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { API, CACHE, ROOT, USER_AGENT, THROTTLE_MS, sleep } from "../lib/wiki.mjs";
+import { API, CACHE, ROOT, USER_AGENT, THROTTLE_MS, sleep, readJson, readJsonIfExists } from "../lib/wiki.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MANIFEST = join(HERE, "manifest.json");
@@ -156,12 +156,12 @@ export async function imageInfo(files) {
 
 async function main() {
   const all = await entries();
-  const old = existsSync(MANIFEST) ? JSON.parse(await readFile(MANIFEST, "utf8")) : { pictures: {} };
+  const old = existsSync(MANIFEST) ? await readJson(MANIFEST) : { pictures: {} };
   const todo = refresh ? all : all.filter((e) => !old.pictures[e.id]);
   console.log(`${all.length} entries, ${todo.length} to ask the wiki about`);
 
   const pages = await pageImages([...new Set(todo.map((e) => e.title))]);
-  const choices = existsSync(CHOICES) ? JSON.parse(await readFile(CHOICES, "utf8")) : {};
+  const choices = await readJsonIfExists(CHOICES);
   const options = new Map(todo.map((e) => [e.id, candidates(pages.get(e.title), e.parent)]));
   // A file chosen by hand is asked about even where the rules turned it down.
   for (const e of todo) {

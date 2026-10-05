@@ -12,7 +12,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { CACHE, ROOT, USER_AGENT, THROTTLE_MS, sleep } from "../lib/wiki.mjs";
+import { CACHE, ROOT, USER_AGENT, THROTTLE_MS, sleep, readJson } from "../lib/wiki.mjs";
 import { entries, pageImages, imageInfo } from "./fetch.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -24,7 +24,7 @@ const safe = (s) => s.replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, " ").trim();
 
 async function main() {
   const all = await entries();
-  const manifest = JSON.parse(await readFile(join(HERE, "manifest.json"), "utf8")).pictures;
+  const manifest = (await readJson(join(HERE, "manifest.json"))).pictures;
   const zones = await readFile(join(ROOT, "addons/Spoken_Zones/Data/enUS/Zones.lua"), "utf8");
   const zoneName = new Map([...zones.matchAll(/\[(\d+)\] = \{\s*\n\s*name = "([^"]+)"/g)].map((m) => [Number(m[1]), m[2]]));
 
