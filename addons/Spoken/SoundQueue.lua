@@ -411,7 +411,8 @@ function SoundQueue:PlaySound(clip)
         return
     end
 
-    self:MuteGameDialogue(channel)
+    -- A line read off an NPC's window cuts its voice; one starting elsewhere (a zone's story) fades it.
+    self:MuteGameDialogue(channel, clip.cutsGameDialogue)
 
     if clip.startCallback then
         clip.startCallback(clip)

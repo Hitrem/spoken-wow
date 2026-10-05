@@ -144,9 +144,10 @@ VO, env, Spoken = Boot()
 VO.Addon.db.profile.Audio.AutoToggleDialog = true
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
-Expect("the first quest clip fades the NPC's voice rather than cutting it", world.cvars.Sound_EnableDialog ~= "0", true)
+-- Cut, not faded: the line is read off the NPC's open window, and none of its greeting is heard.
+Expect("the first quest clip cuts the NPC's voice as it starts", world.cvars.Sound_EnableDialog, "0")
 stub.Advance(0.6)
-Expect("...then mutes the dialog channel", world.cvars.Sound_EnableDialog, "0")
+Expect("...and keeps the dialog channel muted", world.cvars.Sound_EnableDialog, "0")
 Spoken:StopAll()
 Expect("...and the last leaving restores it", world.cvars.Sound_EnableDialog, "1")
 

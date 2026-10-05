@@ -52,5 +52,16 @@ Close()
 Expect("...and one whose greeting window lists quests", Open("QUEST_GREETING"), "1")
 Close()
 
+-- A quest window whose quest cannot be told yet (no ID this early) mutes all the same, and the
+-- mute lifts itself with no line coming.
+stub.world.questID = 0
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.FireEvent("QUEST_DETAIL")
+Expect("a quest window with no quest known yet mutes the NPC at once", GetCVar("Sound_EnableDialog"), "0")
+stub.Advance(2)
+Expect("...and gives its voice back when no line comes", GetCVar("Sound_EnableDialog"), "1")
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quest NPC silence tests passed")

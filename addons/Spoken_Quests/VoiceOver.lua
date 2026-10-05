@@ -1143,13 +1143,12 @@ function Addon:MuteGreetingAhead(event)
             return
         end
     elseif QUEST_EVENTS[event] then
-        -- The quest ID can still be the previous quest's this early; the worst that costs is
-        -- one greeting muted for nothing, or one cut off as it was before.
+        -- The quest ID can still be missing this early. Then the NPC is muted anyway: waiting for
+        -- the line let the first moment of its greeting through, and with no line coming the mute
+        -- lifts itself. Kept only where the quest is known and no pack holds it.
         local questID = QuestIDFor(event)
-        if not questID or questID == 0 then
-            return
-        end
-        if not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
+        if questID and questID ~= 0
+            and not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
             return
         end
     else
