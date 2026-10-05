@@ -3,6 +3,12 @@
 Notable changes to Spoken Books and its sound pack. An addon update can use an
 existing compatible sound pack unless the release notes say otherwise.
 
+## 3.0.0-beta.4 — 2026-10-05
+
+- Ships inside Spoken 3.0.0-beta.4. A page read through DialogueUI shows what it is written on,
+  `/spb read` says why nothing started, and the strings are checked in every language. See
+  Spoken's changelog.
+
 ## 3.0.0-beta.3 — 2026-10-04
 
 - Ships inside Spoken 3.0.0-beta.3, in a folder renamed to `Spoken_Books`. Settings start fresh
