@@ -195,6 +195,22 @@ L.OPT_CANCEL = "Cancel"
 
 
 L.OPT_SECTION_EXTRAS = "Extras"
+-- UI/DialogueUIBridge.lua: the DialogueUI addon's quest and gossip window.
+L.OPT_SECTION_DIALOGUEUI = "DialogueUI"
+L.OPT_DUI_NOTE = "For the DialogueUI addon, whose window replaces the quest and gossip frames and hides the rest of the interface while it is open."
+L.OPT_DUI_CAPTIONS = "Mark the Words Being Read"
+L.OPT_DUI_CAPTIONS_TIP = "In DialogueUI's quest and gossip text, the words follow the line as Spoken's captions do. Whether they type out, light up or both is set on Spoken's page: Type Words Out and Highlight Words."
+L.OPT_DUI_AUTOSCROLL = "Keep the Words in View"
+L.OPT_DUI_AUTOSCROLL_TIP = "Scrolls DialogueUI's text when the words being read move out of sight."
+L.OPT_DUI_SHOW_PLAYER = "Show Spoken Over DialogueUI"
+L.OPT_DUI_SHOW_PLAYER_TIP = "DialogueUI hides the rest of the interface while it is open, Spoken's window or subtitles with it. On, they stay on screen where you put them; they cannot be moved until DialogueUI closes."
+L.OPT_DUI_PLAY_BUTTON = "Use DialogueUI's Play Button"
+L.OPT_DUI_PLAY_BUTTON_TIP = "DialogueUI's text-to-speech button plays the recording instead, when there is one. The button shows once text-to-speech is turned on in DialogueUI's settings."
+L.OPT_DUI_MISSING = "DialogueUI is not loaded."
+L.OPT_DUI_NO_PLAYER = "Needs the Spoken addon."
+L.OPT_DUI_OLD_PLAYER = "Needs a newer Spoken."
+L.OPT_DUI_UNKNOWN = "This version of DialogueUI is not recognised."
+L.REASON_DUI_CAPTIONS = "Turn on Mark the Words Being Read to use this."
 
 L.OPT_SECTION_START_OVER = "Start Over"
 L.OPT_REPORT_LINE_TIP = "Get a link to report a wrong reading or a mispronounced name."

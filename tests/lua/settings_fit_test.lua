@@ -84,7 +84,8 @@ local pages = { { name = "General", layout = _G.SpokenOptionsPanel.layout } }
 for _, page in ipairs(env.Options.pages or {}) do
     table.insert(pages, { name = page.name, layout = page.layout })
 end
-Expect("General and the three parts' pages are all here", #pages, 4)
+-- Every addon answers as loaded here, DialogueUI too, so its page is measured as well.
+Expect("General, the three parts' pages and the DialogueUI page are all here", #pages, 5)
 
 local BOX = Layout.BOX_MARGIN
 local function Label(row)

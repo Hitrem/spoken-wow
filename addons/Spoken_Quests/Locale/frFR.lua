@@ -128,6 +128,22 @@ L.OPT_PANEL_FOLLOWUP_TIP = "Certains PNJ parlent dans la fenêtre de discussion 
 L.OPT_CMD_FOLLOWUP = "Suite de quête"
 L.OPT_CMD_FOLLOWUP_DESC = "Rejoue les répliques de suite d'une quête comme si vous veniez de la rendre : /spq followup <questID> [start]"
 L.OPT_SECTION_EXTRAS = "Extras"
+-- UI/DialogueUIBridge.lua
+L.OPT_SECTION_DIALOGUEUI = "DialogueUI"
+L.OPT_DUI_NOTE = "Pour l'addon DialogueUI, dont la fenêtre remplace celles des quêtes et des dialogues et masque le reste de l'interface tant qu'elle est ouverte."
+L.OPT_DUI_CAPTIONS = "Marquer les mots lus"
+L.OPT_DUI_CAPTIONS_TIP = "Dans le texte des quêtes et des dialogues de DialogueUI, les mots suivent la voix comme les sous-titres de Spoken. Qu'ils s'écrivent, s'éclairent ou les deux se règle sur la page de Spoken : Effet machine à écrire et Surligner les mots."
+L.OPT_DUI_AUTOSCROLL = "Garder les mots en vue"
+L.OPT_DUI_AUTOSCROLL_TIP = "Fait défiler le texte de DialogueUI quand les mots lus sortent de la vue."
+L.OPT_DUI_SHOW_PLAYER = "Afficher Spoken sur DialogueUI"
+L.OPT_DUI_SHOW_PLAYER_TIP = "DialogueUI masque le reste de l'interface tant qu'il est ouvert, et avec lui la fenêtre ou les sous-titres de Spoken. Activé, ils restent à l'écran là où vous les avez placés ; ils ne peuvent pas être déplacés avant la fermeture de DialogueUI."
+L.OPT_DUI_PLAY_BUTTON = "Bouton Lecture de DialogueUI"
+L.OPT_DUI_PLAY_BUTTON_TIP = "Le bouton de synthèse vocale de DialogueUI lit l'enregistrement à la place, quand il y en a un. Le bouton apparaît une fois la synthèse vocale activée dans les options de DialogueUI."
+L.OPT_DUI_MISSING = "DialogueUI n'est pas chargé."
+L.OPT_DUI_NO_PLAYER = "Nécessite l'addon Spoken."
+L.OPT_DUI_OLD_PLAYER = "Nécessite une version plus récente de Spoken."
+L.OPT_DUI_UNKNOWN = "Cette version de DialogueUI n'est pas reconnue."
+L.REASON_DUI_CAPTIONS = "Activez l'option Marquer les mots lus pour utiliser ceci."
 
 -- Voice packs
 L.OPT_ROW_LANGUAGE = "Langue"

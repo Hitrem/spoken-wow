@@ -22,10 +22,11 @@ local Layout = SpokenLayout
 
 local CHANNELS = { "Master", "SFX", "Music", "Ambience", "Dialog" }
 
--- The three ways of showing a line, by the name Addon:PlayerStyle gives each.
+-- The ways of showing a line, by the name Addon:PlayerStyle gives each.
 local STYLE_LABELS = {
     minimal = L.OPT_STYLE_MINIMAL,
     classic = L.OPT_STYLE_CLASSIC,
+    dialogueui = L.OPT_STYLE_DIALOGUEUI,
     subtitle = L.OPT_STYLE_SUBTITLE,
     none = L.OPT_STYLE_NONE,
 }
@@ -52,8 +53,9 @@ local PARTS = {
         icon = [[Interface\Icons\INV_Misc_Map_01]], order = 3 },
 }
 
--- Sketches of the four ways of showing a line, in flat colour, for their tiles: a portrait
--- in gold, words as pale bars, a window as a darker box. Sized for four tiles to a row.
+-- Sketches of the ways of showing a line, in flat colour, for their tiles: a portrait in
+-- gold, words as pale bars, a window as a darker box. Sized for four tiles to a row, and
+-- narrow enough for the fifth, DialogueUI's, where it is installed.
 local SKETCHES = {
     minimal = function(art)
         local R, w = Layout.Rect, art.width
@@ -75,6 +77,21 @@ local SKETCHES = {
         R(art, x + 41, 36, 40, 2, 0.48, 0.58, 0.65, 0.8)
         R(art, x + 41, 42, 34, 2, 0.48, 0.58, 0.65, 0.6)
     end,
+    -- DialogueUI's page: parchment, its header strip with the face in the socket at its left
+    -- end and the title past it, the words in its dark ink, a slim scrollbar beside them.
+    dialogueui = function(art)
+        local R, w = Layout.Rect, art.width
+        local x = (w - 60) / 2
+        R(art, x, 6, 60, 48, 0.78, 0.68, 0.5, 1)
+        R(art, x + 3, 9, 54, 12, 0.45, 0.36, 0.24, 1)
+        R(art, x + 5, 10, 10, 10, 0.75, 0.6, 0.3, 1)
+        R(art, x + 18, 14, 26, 3, 0.95, 0.88, 0.7, 0.9)
+        R(art, x + 6, 26, 44, 2, 0.19, 0.17, 0.13, 0.85)
+        R(art, x + 6, 32, 40, 2, 0.19, 0.17, 0.13, 0.85)
+        R(art, x + 6, 38, 30, 2, 0.19, 0.17, 0.13, 0.85)
+        R(art, x + 53, 26, 2, 14, 0.5, 0.36, 0.24, 0.8)
+        R(art, x + 6, 47, 48, 1, 0.5, 0.36, 0.24, 0.8)
+    end,
     subtitle = function(art)
         local R, w = Layout.Rect, art.width
         R(art, (w - 32) / 2, 30, 32, 3, 1, 0.82, 0, 0.9)
@@ -94,12 +111,14 @@ local SKETCHES = {
 local STYLE_TEXTS = {
     minimal = L.OPT_STYLE_MINIMAL_TEXT,
     classic = L.OPT_STYLE_CLASSIC_TEXT,
+    dialogueui = L.OPT_STYLE_DIALOGUEUI_TEXT,
     subtitle = L.OPT_STYLE_SUBTITLE_TEXT,
     none = L.OPT_STYLE_NONE_TEXT,
 }
 local STYLE_TIPS = {
     minimal = L.WELCOME_STYLE_MINIMAL_TIP,
     classic = L.WELCOME_STYLE_CLASSIC_TIP,
+    dialogueui = L.WELCOME_STYLE_DIALOGUEUI_TIP,
     subtitle = L.WELCOME_STYLE_SUBTITLE_TIP,
     none = L.WELCOME_STYLE_NONE_TIP,
 }
@@ -126,7 +145,7 @@ function Options:Preview(style)
     PlayerFrame:RefreshConfig()
     Transcript:RefreshConfig()
     if Subtitle then Subtitle:ShowSample(style == "subtitle") end
-    PlayerFrame:ShowSample(style == "minimal" or style == "classic")
+    PlayerFrame:ShowSample(style == "minimal" or style == "classic" or style == "dialogueui")
 end
 
 -- Where Spoken lives outside the game: a row each, its icon and its address to copy, the game being
@@ -192,12 +211,14 @@ Options.STYLE_LABELS, Options.STYLE_TEXTS, Options.STYLE_TIPS = STYLE_LABELS, ST
 
 --- The ways of showing lines this client can offer, in the order they are listed: the narrator
 --- cards, and the legacy window's list. Subtitles Only first, the default; Voice Only last, its
---- card a sound's bars rising and falling, since there is nothing on screen to picture.
+--- card a sound's bars rising and falling, since there is nothing on screen to picture. The
+--- DialogueUI window only with DialogueUI installed: it is drawn in DialogueUI's own art.
 function Options:Styles()
     local styles = {}
     if not Transcript.unavailable then table.insert(styles, "subtitle") end
     if not Version.IsAnyLegacy then table.insert(styles, "minimal") end
     table.insert(styles, "classic")
+    if DialogueUITheme and DialogueUITheme:Available() then table.insert(styles, "dialogueui") end
     table.insert(styles, "none")
     return styles
 end
@@ -233,7 +254,14 @@ local function Build(canvas)
     local transcript = function() return Addon.db.profile.Transcript end
     local mm = function() return Addon.db.profile.Minimap.LibDBIcon end
     local function Style() return Addon:PlayerStyle() end
-    local function InWindow() local style = Style(); return style == "minimal" or style == "classic" end
+    local function InWindow()
+        local style = Style()
+        return style == "minimal" or style == "classic" or style == "dialogueui"
+    end
+    -- The DialogueUI window takes its size and its text's from DialogueUI's own window, with
+    -- rows of its own for them; the other two take the player's.
+    local function Dui() return Style() == "dialogueui" end
+    local function OwnSizes() return InWindow() and not Dui() end
     local function Small() return Style() == "minimal" end
     local function Subtitles() return Style() == "subtitle" end
     local function Words() return transcript().Enabled end
@@ -338,11 +366,13 @@ local function Build(canvas)
             function() return transcript().Enabled end,
             function(v) Transcript:SetEnabled(v) end, function() Options:UpdateRows() end), Shown)
         -- The word being read lit: the windows only. The subtitles type their words at their
-        -- own pace, where an estimated word timing would show every miss.
+        -- own pace, where an estimated word timing would show every miss. With DialogueUI
+        -- installed, also for its own quest text, which Spoken Quests marks the same way
+        -- (Spoken:GetCaption): there with any style, subtitles included.
         local highlight = layout:Checkbox(L.TRANSCRIPT_HIGHLIGHT, L.TRANSCRIPT_HIGHLIGHT_TIP,
             function() return transcript().HighlightWord end,
             function(v) transcript().HighlightWord = v end, refreshTranscript)
-        Only(highlight, InWindow)
+        Only(highlight, function() return InWindow() or DialogueUITheme:Available() end)
         Requires(highlight, Words, L.REASON_WORDS)
         local typewriter = layout:Checkbox(L.TRANSCRIPT_TYPEWRITER, L.TRANSCRIPT_TYPEWRITER_TIP,
             function() return transcript().Typewriter end,
@@ -369,7 +399,12 @@ local function Build(canvas)
     layout:Section(L.OPT_WINDOW_TITLE)
     Only(layout:Slider(L.OPT_SCALE, 0.5, 2, 0.05,
         function() return cfg().FrameScale end, function(v) cfg().FrameScale = v end, refresh,
-        nil, L.OPT_SCALE_TIP), InWindow)
+        nil, L.OPT_SCALE_TIP), OwnSizes)
+    -- The DialogueUI window's own size, theme and text are on the DialogueUI page
+    -- (UI/DialogueUIOptions.lua), with the rest of what is about DialogueUI.
+    if canvas then
+        Only(layout:Button(L.OPT_DUI_OPEN_PAGE, 200, function() DialogueUIOptions:Open() end), Dui)
+    end
     Only(layout:Checkbox(L.OPT_HIDE_PORTRAIT, L.OPT_HIDE_PORTRAIT_TIP,
         function() return cfg().HidePortrait end, function(v) cfg().HidePortrait = v end, refresh),
         InWindow)
@@ -399,10 +434,15 @@ local function Build(canvas)
             Only(row, InWindow)
             Requires(row, Words, L.REASON_WORDS)
         end
-        InWindowText(layout:Slider(L.TRANSCRIPT_SIZE, 12, 26, 1,
+        -- Size and lines are the DialogueUI window's to set, on its own page.
+        local function OwnText(row)
+            Only(row, OwnSizes)
+            Requires(row, Words, L.REASON_WORDS)
+        end
+        OwnText(layout:Slider(L.TRANSCRIPT_SIZE, 12, 26, 1,
             function() return transcript().FontSize end,
             function(v) transcript().FontSize = v end, refreshTranscript, Layout.Number, L.TRANSCRIPT_SIZE_TIP))
-        InWindowText(layout:Slider(L.TRANSCRIPT_LINES, 1, 2, 1,
+        OwnText(layout:Slider(L.TRANSCRIPT_LINES, 1, 2, 1,
             function() return transcript().Lines end,
             function(v) transcript().Lines = v end, refreshTranscript, Layout.Number, L.TRANSCRIPT_LINES_TIP))
         local SCROLL_LABELS = { centered = L.TRANSCRIPT_SCROLL_CENTERED, reading = L.TRANSCRIPT_SCROLL_READING,
@@ -912,6 +952,8 @@ function Options:Setup()
     -- Rows come and go with the way lines are shown; the window or scroller follows what is left.
     panel.layout.onResize = function() FitWindow() end
     self:UpdateRows()
+    -- Queued with the feature addons' pages, so it is listed after them.
+    if canvas and DialogueUIOptions then DialogueUIOptions:Setup() end
     if canvas then
         -- Spoken's entry in the game's settings, and each feature addon's page an entry nested
         -- under it (Options:RegisterPage).

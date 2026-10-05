@@ -43,6 +43,7 @@ dofile(addons .. 'Spoken/SoundQueue.lua')
 dofile(addons .. 'Spoken/Sources.lua')
 dofile(addons .. 'Spoken/Strings.lua')
 dofile(addons .. 'Spoken/UI/Layout.lua')
+dofile(addons .. 'Spoken/UI/DialogueUITheme.lua')
 dofile(addons .. 'Spoken/UI/Transcript.lua')
 -- The status bar art the subtitle's progress bar is framed with, as a modern client describes it.
 C_Texture=C_Texture or {}
@@ -65,6 +66,7 @@ E.Portrait={Configure=function(_,frame) frame.active='mock-model' end}
 dofile(addons .. 'Spoken/UI/Actions.lua')
 dofile(addons .. 'Spoken/UI/PlayerFrame.lua')
 dofile(addons .. 'Spoken/UI/MinimalPlayer.lua')
+dofile(addons .. 'Spoken/UI/DialogueUIPlayer.lua')
 E.Minimap={Setup=function() end}; E.Options={Setup=function() end}
 -- The windows first, with the word lit: the subtitles a first install shows are switched to
 -- below, and the defaults themselves are pinned in defaults_test.
@@ -341,7 +343,7 @@ Check(not M.frame.moving and not M.resizer:IsShown(),'the player lock controls t
 frameCfg.LockFrame=false; E.PlayerFrame:RefreshConfig(); M.header:Fire('OnDragStart')
 Check(M.frame.moving,'the existing header still moves the whole player')
 M.header:Fire('OnDragStop')
-frameCfg.MinimalPlayer=false; E.PlayerFrame:RefreshConfig()
+frameCfg.Window='classic'; E.PlayerFrame:RefreshConfig()
 local original=E.PlayerFrame.frame
 Check(T.frame:GetParent()==original and original:IsShown() and not M.frame:IsShown(),'switching skins attaches captions to the original player')
 Check(T.frame:GetTop()<original.portrait:GetBottom(),'original-skin captions stay below portrait and action controls')
@@ -355,7 +357,7 @@ local previousWidth=T.frame:GetWidth()
 original:SetWidth(620)
 Check(T.frame:GetWidth()>previousWidth,'resizing the original player reflows the attached text')
 CheckLayout()
-frameCfg.MinimalPlayer=true; frameCfg.FrameScale=.7; E.PlayerFrame:RefreshConfig()
+frameCfg.Window='minimal'; frameCfg.FrameScale=.7; E.PlayerFrame:RefreshConfig()
 Check(T.frame:GetParent()==M.frame and not original:IsShown(),'switching back restores attachment to the portrait player')
 for _,point in ipairs({'TOPLEFT','CENTER','BOTTOM'}) do
     M.frame:ClearAllPoints(); M.frame:SetPoint(point,UIParent,point,0,200)
@@ -647,7 +649,7 @@ S:ShowSample(true); S:ShowSample(false); Play(.6)
 Check(not S.frame:IsShown(),'hiding the sample hides the subtitle')
 
 SlashCmdList.SPOKEN('player minimal')
-Check(E.Addon:PlayerStyle()=='minimal' and frameCfg.MinimalPlayer,'the slash command picks the small window')
+Check(E.Addon:PlayerStyle()=='minimal' and frameCfg.Window=='minimal','the slash command picks the small window')
 source:Enqueue(Clip('back',line,10))
 Check(T.frame:IsShown() and not S.frame:IsShown() and M.frame:IsShown() and M.frame:GetHeight()>98,
     'the words return to the small window')
@@ -657,7 +659,7 @@ Check(E.PlayerFrame.frame:IsShown() and not M.frame:IsShown() and T.frame:GetPar
 SlashCmdList.SPOKEN('player subtitle')
 Check(S.frame:IsShown() and not T.frame:IsShown() and not E.PlayerFrame.frame:IsShown(),
     'switching to subtitles mid-line hides the window and shows the line')
-Check(not frameCfg.MinimalPlayer,'the large window is still remembered as the window chosen')
+Check(frameCfg.Window=='classic','the large window is still remembered as the window chosen')
 E.Addon:SetPlayerStyle('minimal'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
 Q:RemoveAllSoundsFromQueue()
 Check(#E.Callbacks.errors==0,table.concat(E.Callbacks.errors,'\n'))

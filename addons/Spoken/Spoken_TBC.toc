@@ -13,6 +13,8 @@
 ## Version: 3.0.1
 ## IconTexture: Interface\AddOns\Spoken\icon.tga
 ## SavedVariables: SpokenSettings
+## OptionalDeps: DialogueUI
+# DialogueUI, when installed, loads first so the DialogueUI window can read its art and size: UI/DialogueUITheme.lua.
 ## Group: Spoken
 ## X-Part-Of: Spoken
 ## X-Spoken-Player: 1

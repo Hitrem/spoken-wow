@@ -123,6 +123,22 @@ L.OPT_PART_SWITCH_TIP = "Activa o desactiva las voces de misiones y conversacion
 L.REASON_PART_OFF = "Activa «Activar módulo», arriba en esta página, para usar esto."
 L.REASON_AUTOPLAY = "Activa «Leer automáticamente» para usar esto."
 L.OPT_SECTION_EXTRAS = "Extras"
+-- UI/DialogueUIBridge.lua
+L.OPT_SECTION_DIALOGUEUI = "DialogueUI"
+L.OPT_DUI_NOTE = "Para el addon DialogueUI, cuya ventana sustituye a las de misiones y conversación y oculta el resto de la interfaz mientras está abierta."
+L.OPT_DUI_CAPTIONS = "Marcar las palabras leídas"
+L.OPT_DUI_CAPTIONS_TIP = "En el texto de misiones y conversación de DialogueUI, las palabras siguen a la voz como los subtítulos de Spoken. Si se van escribiendo, se resaltan o ambas cosas se elige en la página de Spoken: «Ir escribiendo el texto» y «Resaltar palabras»."
+L.OPT_DUI_AUTOSCROLL = "Mantener las palabras a la vista"
+L.OPT_DUI_AUTOSCROLL_TIP = "Desplaza el texto de DialogueUI cuando las palabras leídas salen de la vista."
+L.OPT_DUI_SHOW_PLAYER = "Ver Spoken sobre DialogueUI"
+L.OPT_DUI_SHOW_PLAYER_TIP = "DialogueUI oculta el resto de la interfaz mientras está abierta, y con ella la ventana o los subtítulos de Spoken. Activado, se quedan en pantalla donde los pusiste; no se pueden mover hasta que DialogueUI se cierre."
+L.OPT_DUI_PLAY_BUTTON = "Usar el botón de DialogueUI"
+L.OPT_DUI_PLAY_BUTTON_TIP = "El botón de texto a voz de DialogueUI reproduce la grabación en su lugar, cuando la hay. El botón aparece al activar el texto a voz en los ajustes de DialogueUI."
+L.OPT_DUI_MISSING = "DialogueUI no está cargado."
+L.OPT_DUI_NO_PLAYER = "Necesita el addon Spoken."
+L.OPT_DUI_OLD_PLAYER = "Necesita una versión más reciente de Spoken."
+L.OPT_DUI_UNKNOWN = "No se reconoce esta versión de DialogueUI."
+L.REASON_DUI_CAPTIONS = "Activa «Marcar las palabras leídas» para usar esto."
 L.OPT_ROW_LANGUAGE = "Idioma"
 
 -- Follow-up lines

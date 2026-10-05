@@ -43,6 +43,9 @@ local METHODS = {
     "EnumerateAddonsWithKey",
     -- frame, settings
     "GetPlayerFrame", "GetSettingsCategory", "OpenSettings", "AddSettingsLink", "RefreshPlayer",
+    "GetPlayerStyle", "SetPlayerHost", "AddDialogueUISettings",
+    -- captions, for another view of the line
+    "GetCaption", "GetCaptionOptions", "SplitCaption",
     -- contributions
     "ShowContribution", "AreContributeButtonsHidden",
 }

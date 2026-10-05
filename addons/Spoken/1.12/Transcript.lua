@@ -21,4 +21,7 @@ function Transcript:Dock() end
 function Transcript:SetEnabled() end
 function Transcript:Reset() end
 function Transcript:RefreshConfig() end
+function Transcript:SetStyle() end
+function Transcript:GetScroll() return 1, 1 end
+function Transcript:ScrollTo() end
 function Transcript:Describe() return "transcript: not available on this client" end

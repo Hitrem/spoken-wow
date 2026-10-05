@@ -289,6 +289,16 @@ function Player:EnqueuePrepared(soundData)
     return true
 end
 
+--- The queued clip reading the dialog's line, or nil. Matched by file rather than by the
+--- SoundData the handler built, so a line started from the quest log counts too.
+function Player:QueuedClipFor(line)
+    for _, clip in ipairs(self:Queued()) do
+        if clip.fileName == line.fileName then
+            return clip
+        end
+    end
+end
+
 function Player:Remove(soundData)
     if not self.source then
         return false

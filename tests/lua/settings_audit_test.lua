@@ -74,7 +74,8 @@ local pages = { { name = "Spoken", layout = _G.SpokenOptionsPanel.layout } }
 for _, page in ipairs(env.Options.pages or {}) do
     table.insert(pages, { name = page.name, layout = page.layout })
 end
-Expect("Spoken and the three modules' pages are all here", #pages, 4)
+-- Every addon answers as loaded here, DialogueUI too, so its page is built and worked as well.
+Expect("Spoken, the three modules' pages and the DialogueUI page are all here", #pages, 5)
 
 local function Controls(layout)
     local list = {}

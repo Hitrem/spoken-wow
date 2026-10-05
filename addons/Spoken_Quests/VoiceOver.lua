@@ -247,10 +247,13 @@ local SPEECH_EVENTS = {
 
 --- The line the open dialog would read, resolved against the packs, or nil when no dialog
 --- is open or no pack has its line. Asked without reading anything. The second value is
---- the client event it stands for.
+--- the client event it stands for. A caller that already knows the event passes it: under
+--- DialogueUI the event is the only record of which panel is up, and DialogueUI hears it
+--- before this addon's recorder does (UI/DialogueUIBridge.lua).
+---@param event string?
 ---@return SoundData?, string?
-function Addon:GetVisibleLine()
-    local event = GetVisibleDialogueEvent()
+function Addon:GetVisibleLine(event)
+    event = event or GetVisibleDialogueEvent()
     local quest = event and QUEST_EVENTS[event]
     local speech = event and SPEECH_EVENTS[event]
     local probe
@@ -323,6 +326,22 @@ local defaults = {
             VoiceLanguage = "auto",
             FallbackLanguage = "enUS",
         },
+        -- Inside DialogueUI's window, which replaces the quest and gossip frames and hides
+        -- the rest of the interface while it is open (UI/DialogueUIBridge.lua). They do nothing
+        -- without DialogueUI.
+        DialogueUI = {
+            -- DialogueUI's own text follows the line, as Spoken's captions do: typed out,
+            -- lit, or both, by Spoken's Type Words Out and Highlight Words.
+            Captions = true,
+            -- Keep the words being read in view when the text is longer than the window.
+            AutoScroll = true,
+            -- Keep the Spoken player, or its subtitles, on screen over DialogueUI. Off: DialogueUI
+            -- hides the rest of the interface on purpose, and its window, marked as the line
+            -- plays, already shows the words. A player who wants Spoken's too turns it on.
+            ShowPlayer = false,
+            -- DialogueUI's own Play button plays this addon's line.
+            PlayButton = true,
+        },
         DebugEnabled = false,
     },
     char = {
@@ -330,6 +349,9 @@ local defaults = {
         RecentQuestTitleToID = Version:IsBelowLegacyVersion(30300) and {},
     }
 }
+
+-- What Spoken's DialogueUI page's Defaults puts back (UI/SettingsPanel.lua).
+Addon.DialogueUIDefaults = defaults.profile.DialogueUI
 
 local lastGossipOptions
 local selectedGossipOption
@@ -472,6 +494,17 @@ function Addon:OnInitialize()
     end)
     if not dialogPlayButtonReady then
         Debug:Record("dialog-play-button-error", tostring(dialogPlayButtonError))
+    end
+
+    -- Inside DialogueUI's window. Guarded the same way: DialogueUI is someone else's addon,
+    -- and a change there must not take narration down with it.
+    local dialogueUIReady, dialogueUIError = pcall(function()
+        if DialogueUIBridge and DialogueUIBridge.Setup then
+            DialogueUIBridge:Setup()
+        end
+    end)
+    if not dialogueUIReady then
+        Debug:Record("dialogueui-error", tostring(dialogueUIError))
     end
 
     -- The lines NPCs say after a quest. Guarded the same way: a failed hook here must not
@@ -1125,35 +1158,49 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
-    if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source
-        or not Spoken.MuteGameDialogueAhead then
+    if not Spoken.MuteGameDialogueAhead or not self:ExpectedLine(event) then
         return
     end
-    if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
+    Spoken:MuteGameDialogueAhead(Player.source)
+end
+
+--- The text of the line about to be read on its own for the dialog that just opened, or nil
+--- when nothing will be: autoplay off, the packs still loading, no pack voicing it, a
+--- greeting already heard. Asked as the dialog opens, before its line is queued, by
+--- MuteGreetingAhead and by DialogueUI's bridge (UI/DialogueUIBridge.lua), which keeps the
+--- words it will type out from showing until then.
+---@param event string
+---@return string?
+function Addon:ExpectedLine(event)
+    if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source then
+        return nil
+    end
+    local speech, quest = SPEECH_EVENTS[event], QUEST_EVENTS[event]
+    if speech then
         -- The page text is not to be trusted yet (see the deferred read), so this asks only
         -- whether any pack voices this speaker at all.
         local guid = Utils:GetNPCGUID()
         local speaker = { unitGUID = guid, name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
         if not guid and not speaker.name then
-            return
+            return nil
         end
         if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
-            return
+            return nil
         end
-    elseif QUEST_EVENTS[event] then
+        return speech.text() or ""
+    elseif quest then
         -- The quest ID can still be the previous quest's this early; the worst that costs is
         -- one greeting muted for nothing, or one cut off as it was before.
         local questID = QuestIDFor(event)
         if not questID or questID == 0 then
-            return
+            return nil
         end
-        if not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
-            return
+        if not DataModules:PrepareSound({ event = quest.sound, questID = questID }) then
+            return nil
         end
-    else
-        return
+        return quest.text() or ""
     end
-    Spoken:MuteGameDialogueAhead(Player.source)
+    return nil
 end
 
 function Addon:QUEST_GREETING(event, manual)

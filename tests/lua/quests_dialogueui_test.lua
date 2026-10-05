@@ -1,0 +1,380 @@
+-- The quests addon inside DialogueUI's window (UI/DialogueUIBridge.lua): matching the caption to
+-- DialogueUI's paragraphs, typing them out and lighting the words being read as Spoken's
+-- settings say, putting the text back, rebuilt pages, the Play button DialogueUI draws for a
+-- voiceover provider, the player and the subtitles hosted over the window, and the settings
+-- DialogueUI's absence greys out. DialogueUI itself is a fake here, built from the parts of
+-- DUIQuestFrame the module reaches for. Run with `make test-player`.
+local here = arg[0]:match("^(.*)/[^/]*$") or "."
+package.path = here .. "/?.lua;" .. package.path
+local stub = require("wow_client_stub")
+local H = require("queue_helpers")
+local print = stub.print
+local world = stub.world
+local QUESTS = here .. "/../../addons/Spoken_Quests/"
+local SPOKEN = here .. "/../../addons/Spoken/"
+local Expect, Failures = H.Expecter(print)
+
+local GOLD, RED = "|cffffd100", "|cff9c1a1a"
+local QUEST_TEXT = "Greetings, Test. The wolves near the farm grow bolder every night.\n\n"
+    .. "Kill eight of them and bring me their pelts."
+
+---------------------------------------------------------------- a fake DialogueUI
+-- DialogueUI puts the NPC's name in front of the text and draws each line of it as its own
+-- FontString, from a pool it releases whenever it builds a page.
+local loaded = true
+_G.IsAddOnLoaded = function(name) return name == "DialogueUI" and loaded end
+local provider
+_G.DialogueUIAPI = { SetVOProvider = function(p) provider = p end }
+
+local DUI = stub.Widget("Frame")
+DUI.GetEffectiveScale = function() return 0.8 end
+DUI.ContentFrame = stub.Widget("Frame")
+DUI.ScrollFrame = stub.Widget("Frame")
+DUI.ScrollFrame.range = 400
+DUI.fontStringPool = { active = {} }
+function DUI.fontStringPool:EnumerateActive() return ipairs(self.active) end
+local function Build(text, flag)
+    for _, fs in ipairs(DUI.fontStringPool.active) do
+        fs:SetText(nil)
+        fs.ttsFlag = nil
+    end
+    DUI.fontStringPool.active = {}
+    for line in string.gmatch(text, "[^\n]+") do
+        local fs = DUI.ContentFrame:CreateFontString()
+        fs:SetText(line)
+        fs.ttsFlag = flag
+        table.insert(DUI.fontStringPool.active, fs)
+    end
+    return true
+end
+function DUI:HandleQuestDetail() return Build(world.npcName .. ": " .. world.questText, 3) end
+function DUI:HandleQuestProgress() return Build(world.progressText, 3) end
+function DUI:HandleQuestComplete() return Build(world.rewardText, 3) end
+function DUI:HandleQuestGreeting() return Build(world.greetingText or "", 0) end
+function DUI:HandleGossip() return Build(world.gossipText or "", 0) end
+function DUI:IsScrollable() return self.scrollable end
+function DUI:ScrollTo(value) self.scrolledTo = value end
+_G.DUIQuestFrame = DUI
+
+local function Paragraph(i) return DUI.fontStringPool.active[i]:GetText() end
+local function Lit()
+    local count = 0
+    for _, fs in ipairs(DUI.fontStringPool.active) do
+        local _, n = string.gsub(fs:GetText() or "", "|c", "")
+        count = count + n
+    end
+    return count
+end
+
+---------------------------------------------------------------- boot
+stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers()
+world.questID = 0; stub.ShowPanel(nil); world.gossipText = nil; world.greetingText = nil
+local VO, env = stub.LoadQuests(QUESTS, SPOKEN)
+dofile(QUESTS .. "UI/DialogueUIBridge.lua")
+local Bridge = VO.DialogueUIBridge
+VO.Addon:OnInitialize()
+VO.DataModules:Register("TestPack", {
+    SoundLengthLookupByFileName = { ["101-accept"] = 12, ["101-progress"] = 2 },
+    GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
+})
+stub.Advance(2)
+world.title = "Wolves"; world.questText = QUEST_TEXT; world.progressText = "Well?"
+world.rewardText = "Thank you."
+world.npcName = "Farmer Test"; world.npcGUID = "Creature-0-0-0-0-1234-0"
+local Spoken = _G.Spoken
+local driver = Bridge.driver
+-- Spoken's own Display settings, which DialogueUI's text follows.
+local words = env.Addon.db.profile.Transcript
+local dui = VO.Addon.db.profile.DialogueUI
+
+Expect("DialogueUI is hooked once every addon has loaded", Bridge.status, "hooked")
+Expect("the player keeps its own style", Spoken:GetPlayerStyle(), "classic")
+Expect("...and the quests addon is its voiceover provider", provider and provider.name, "Spoken Quests")
+local function Tick(seconds)
+    stub.Advance(seconds or 0)
+    driver.scripts.OnUpdate(driver, 0.06)
+end
+
+---------------------------------------------------------------- matching, as pure functions
+local function Paras(...)
+    local list = {}
+    for _, text in ipairs({ ... }) do
+        table.insert(list, { text = text, words = Bridge.MarkLinks(text, Spoken:SplitCaption(text)) })
+    end
+    return list
+end
+local caption = Spoken:SplitCaption("Hello there, traveller. Safe roads.")
+local map, span = Bridge.Align(caption, Paras("Farmer Test: Hello there, traveller.", "Safe roads."))
+Expect("the NPC name DialogueUI puts in front is skipped", map and map[1] and map[1].p .. ":" .. map[1].w, "1:3")
+Expect("...and the next paragraph continues the match", map and map[4] and map[4].p .. ":" .. map[4].w, "2:1")
+Expect("...the line covers both paragraphs", span and span.first .. "-" .. span.last, "1-2")
+map, span = Bridge.Align(caption, Paras("Hello there, traveller. Safe roads.", "Hello there, traveller. Safe roads."))
+Expect("with gossip history kept above, the current page is the one matched", map and map[1] and map[1].p, 2)
+Expect("...and only it is the line's", span and span.first .. "-" .. span.last, "2-2")
+Expect("a line DialogueUI is not showing matches nothing",
+    Bridge.Align(caption, Paras("The Barrens are wide and dry.")), nil)
+local chinese = Spoken:SplitCaption("你好，勇士。")
+map = Bridge.Align(chinese, Paras("农夫：你好，勇士。"))
+Expect("Chinese matches character by character", map and map[1] and map[1].w, 3)
+Expect("a word carrying a link or colour is never compared", Bridge.Key("|cffff0000Name|r"), nil)
+Expect("...nor is bare punctuation", Bridge.Key("--"), nil)
+local linked = Paras("Bring me the |Hitem:1|h[Linen Bolt of Cloth]|h today.")[1].words
+Expect("the words inside a link are never matched either", linked[5].inLink and linked[6].inLink, true)
+Expect("...but those after it are", linked[8].inLink, nil)
+Expect("dark text gets the red highlight", Bridge.ColorFor(0.2, 0.1, 0.05), RED)
+Expect("light text gets the captions' gold", Bridge.ColorFor(0.9, 0.85, 0.8), GOLD)
+Expect("a word and its neighbour are wrapped, nothing else",
+    Bridge.Wrap("a bc d", { { first = 3, last = 4 } }, GOLD), "a " .. GOLD .. "bc|r d")
+Expect("the last word of a paragraph keeps the one before it lit",
+    table.concat({ Bridge.Pick({ [1] = { p = 1 }, [2] = { p = 1 }, [3] = { p = 2 } }, 2) }, ","), "2,1")
+Expect("a word the window lacks lights the last one it has",
+    table.concat({ Bridge.Pick({ [1] = { p = 1 }, [2] = { p = 1 } }, 3) }, ","), "2,1")
+
+-- Typing out, as the captions type: nothing before the voice, up to the word being read.
+local paras = Paras("Farmer Test: Hello there, traveller.", "Safe roads.")
+map, span = Bridge.Align(caption, paras)
+local function Cut(fields)
+    fields.typewriter = fields.typewriter ~= false
+    local p, byte = Bridge.Cut(fields, map, span, paras)
+    return p and (p .. ":" .. byte) or "all"
+end
+Expect("before the voice starts nothing of the line shows", Cut({ progress = 0, speaking = false }), "1:0")
+Expect("while it speaks, up to and with the word being read",
+    Cut({ progress = 0.1, speaking = true, activeWord = 2 }), "1:25")
+Expect("...into the next paragraph", Cut({ progress = 0.9, speaking = true, activeWord = 4 }), "2:4")
+Expect("once it has finished, all of it", Cut({ progress = 1, speaking = false }), "all")
+Expect("a clip with no length to time it shows all of it", Cut({ speaking = false }), "all")
+Expect("with Type Words Out off, all of it", Cut({ typewriter = false, progress = 0.1, speaking = true, activeWord = 1 }), "all")
+
+---------------------------------------------------------------- the highlight alone
+words.HighlightWord, words.Typewriter = true, false
+DUI:HandleQuestDetail()
+local original1, original2 = Paragraph(1), Paragraph(2)
+world.questID = 101
+VO.Addon:QUEST_DETAIL()
+Expect("the line is queued", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
+Tick(0.1)
+Expect("the first two words light up in DialogueUI's text", Paragraph(1),
+    "Farmer Test: " .. GOLD .. "Greetings,|r " .. GOLD .. "Test.|r The wolves near the farm grow bolder every night.")
+Expect("...and nothing in the next paragraph", Paragraph(2), original2)
+DUI.scrollable = true
+DUI.ScrollFrame.height = 40
+Tick(9)
+Expect("later the light has moved to the second paragraph", Paragraph(1), original1)
+Expect("...two words of it", Lit(), 2)
+Expect("...and DialogueUI was scrolled to keep them in view", DUI.scrolledTo ~= nil, true)
+
+-- An item reward resolving makes DialogueUI build the page again, into fresh FontStrings.
+local before = DUI.fontStringPool.active[2]
+DUI:HandleQuestDetail()
+Tick(0)
+Expect("a rebuilt page is lit again", Lit(), 2)
+Expect("...and the FontString DialogueUI released is left alone", before:GetText(), nil)
+
+dui.Captions = false
+Tick(0)
+Expect("turning the module's switch off puts the text back", Paragraph(2), original2)
+dui.Captions = true
+Tick(0)
+Expect("...and on again lights it", Lit(), 2)
+words.HighlightWord = false
+Tick(0)
+Expect("Spoken's Highlight Words off: DialogueUI's own text", Paragraph(1) .. Paragraph(2), original1 .. original2)
+words.HighlightWord = true
+words.Enabled = false
+Tick(0)
+Expect("...and with Spoken's Show Words off, which greys it", Lit(), 0)
+words.Enabled = true
+Tick(0)
+Expect("...lit again when it is back on", Lit(), 2)
+
+Tick(5)
+Expect("when the line ends DialogueUI's own text is back", Paragraph(1) .. Paragraph(2), original1 .. original2)
+Expect("...with nothing lit", Lit(), 0)
+
+---------------------------------------------------------------- typing out
+words.HighlightWord, words.Typewriter = false, true
+Spoken:StopAll()
+-- DialogueUI draws the page as the dialog opens; Spoken Quests reads it a moment later.
+-- The words the line will type out must not show in between, or they flash up and vanish.
+DUI:HandleQuestDetail()
+Expect("a page about to be read is blank from the frame it is built in",
+    Paragraph(1) .. "|" .. Paragraph(2), "|")
+Tick(0.4)
+Expect("...and stays blank while its line is on its way", Paragraph(1) .. "|" .. Paragraph(2), "|")
+VO.Addon:QUEST_DETAIL()
+Tick(0.1)
+Expect("the text types out as the voice reads it", Paragraph(1), "Farmer Test: Greetings,")
+Expect("...the paragraph it has not reached is blank", Paragraph(2), "")
+Expect("...and nothing is lit", Lit(), 0)
+Tick(9)
+Expect("later the first paragraph is whole", Paragraph(1), original1)
+local typed = Paragraph(2)
+Expect("...and the second is typed part way", typed ~= "" and typed ~= original2
+    and string.sub(original2, 1, string.len(typed)) == typed, true)
+words.HighlightWord = true
+Tick(0)
+local lit = Paragraph(2)
+Expect("with Highlight Words on too, the word being read is lit at the end of what is typed",
+    string.find(lit, GOLD, 1, true) ~= nil and string.sub(lit, -2) == "|r", true)
+Expect("...and the word after it is not shown to be lit", Lit(), 1)
+Tick(5)
+Expect("when the line ends the whole text is back", Paragraph(1) .. Paragraph(2), original1 .. original2)
+
+Spoken:StopAll()
+DUI:HandleQuestDetail()
+Tick(2)
+Expect("a line that never comes: the page shows whole after a moment", Paragraph(1) .. Paragraph(2),
+    original1 .. original2)
+world.questID = 102
+DUI:HandleQuestDetail()
+Expect("a page with no recording shows whole at once", Paragraph(1), original1)
+world.questID = 101
+VO.Addon:SetAutoplay(false)
+DUI:HandleQuestDetail()
+Expect("...and so does one with Read Automatically off, which waits for the Play button", Paragraph(1), original1)
+VO.Addon:SetAutoplay(true)
+words.Typewriter = false
+DUI:HandleQuestDetail()
+Expect("...and every page with Type Words Out off", Paragraph(1), original1)
+words.Typewriter = true
+
+-- Another part's line playing while DialogueUI is open -- a zone's lore, a book page -- is
+-- not DialogueUI's text, even word for word.
+Spoken:StopAll()
+DUI:HandleQuestDetail()
+local zones = Spoken:RegisterSource("zones", { title = "Zones", addon = "Spoken_Zones" })
+zones:Enqueue({ key = "z:12", path = "z12.ogg", length = 12,
+    present = { header = "Elwynn Forest", transcript = QUEST_TEXT, bullet = "zone",
+        portrait = { kind = "texture", texture = "Book" } } })
+Expect("a zone clip is playing", Spoken:GetCurrent() and Spoken:GetCurrent().key, "z:12")
+Tick(1)
+Expect("...and DialogueUI's text is left as it is", Paragraph(1) .. Paragraph(2), original1 .. original2)
+Spoken:StopAll()
+words.HighlightWord, words.Typewriter = false, true
+
+---------------------------------------------------------------- DialogueUI's Play button
+Expect("DialogueUI is told there is a recording for the page", provider.doesFileExist("quest", 101, "detail"), true)
+Expect("...not playing yet", provider.isPlaying(), false)
+provider.playFile()
+Expect("Play queues it", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
+Expect("...and DialogueUI sees it playing", provider.isPlaying(), true)
+provider.playFile()
+Expect("Play again, or DialogueUI's own autoplay, does not queue it twice", Spoken:GetQueueSize(), 1)
+-- Accepting a quest closes DialogueUI, which then tells its provider to stop (its "TTS Auto
+-- Stop", on by default). The line plays on, as it does without DialogueUI.
+DUI:Hide()
+provider.stopPlaying()
+Expect("closing DialogueUI does not cut the line off", Spoken:GetQueueSize(), 1)
+DUI:Show()
+provider.stopPlaying()
+Expect("Stop removes it", Spoken:GetQueueSize(), 0)
+-- Answered for what the client is showing, which is the page DialogueUI asks about.
+world.questID = 102
+Expect("no recording, no button", provider.doesFileExist("quest", 102, "detail"), false)
+world.questID = 101
+dui.PlayButton = false
+Expect("with the setting off DialogueUI is told there is nothing", provider.doesFileExist("quest", 101, "detail"), false)
+dui.PlayButton = true
+
+---------------------------------------------------------------- the player over the window
+local frame = env.PlayerFrame.frame
+driver.scripts.OnShow(driver)
+Expect("by default the player is left out of DialogueUI's window", frame:GetParent(), _G.UIParent)
+Expect("...and can still be dragged", env.Addon:IsFrameLocked(), false)
+driver:Hide()
+driver.scripts.OnHide(driver)
+driver:Show()
+dui.ShowPlayer = true
+driver.scripts.OnShow(driver)
+Expect("turned on, while DialogueUI is open the player sits on its window", frame:GetParent(), DUI)
+Expect("...the same size on screen", frame:GetScale(), env.Addon.db.profile.Frame.FrameScale / 0.8)
+Expect("...and cannot be dragged", env.Addon:IsFrameLocked(), true)
+driver:Hide()
+driver.scripts.OnHide(driver)
+Expect("when it closes the player goes back to UIParent", frame:GetParent(), _G.UIParent)
+Expect("...at its own size", frame:GetScale(), env.Addon.db.profile.Frame.FrameScale)
+Expect("...and can be dragged again", env.Addon:IsFrameLocked(), false)
+driver:Show()
+dui.ShowPlayer = false
+driver.scripts.OnShow(driver)
+Expect("with the setting off the player is left alone", frame:GetParent(), _G.UIParent)
+dui.ShowPlayer = true
+driver:Hide()
+driver.scripts.OnHide(driver)
+
+-- Subtitles Only is the default style, and DialogueUI hides them with UIParent too.
+env.Addon:SetPlayerStyle("subtitle")
+env.PlayerFrame:RefreshConfig()
+VO.Addon:QUEST_DETAIL()
+local Subtitle = env.Subtitle
+Subtitle:Update()
+local subtitle = Subtitle.frame
+Expect("the subtitles are up", subtitle ~= nil and subtitle:GetParent() == _G.UIParent, true)
+local strata
+subtitle.SetFrameStrata = function(_, value) strata = value end
+local anchor = subtitle.anchor and subtitle.anchor.y
+driver:Show()
+driver.scripts.OnShow(driver)
+Expect("while DialogueUI is open the subtitles sit on its window", subtitle:GetParent(), DUI)
+Expect("...the same size on screen", subtitle:GetScale(), (words.SubtitleScale or 1) / 0.8)
+Expect("...above it", strata, "FULLSCREEN")
+Expect("...in the same place", subtitle.anchor and subtitle.anchor.y, anchor)
+Subtitle:Update()
+Expect("...and stay there as they update", subtitle:GetParent(), DUI)
+driver:Hide()
+driver.scripts.OnHide(driver)
+Expect("when it closes they go back to UIParent", subtitle:GetParent(), _G.UIParent)
+Expect("...at their own size", subtitle:GetScale(), words.SubtitleScale or 1)
+Expect("...and their own strata, under the game's panels", strata, "LOW")
+Spoken:StopAll()
+env.Addon:SetPlayerStyle("classic")
+driver:Show()
+
+---------------------------------------------------------------- the settings
+-- On Spoken's DialogueUI page, Spoken > DialogueUI, with the DialogueUI window's own; the
+-- Quests page keeps none of them.
+local panel = stub.LoadQuestsPanel(QUESTS, VO)
+panel:Setup()
+local Page = env.DialogueUIOptions
+local layout = Page.layout
+Expect("Spoken built its DialogueUI page", layout ~= nil, true)
+local function Row(label)
+    for _, entry in ipairs(layout.entries) do
+        if entry.label == label then return entry.frame end
+    end
+end
+local captions, scroll = Row(VO.L.OPT_DUI_CAPTIONS), Row(VO.L.OPT_DUI_AUTOSCROLL)
+Expect("the panel has the DialogueUI options", captions ~= nil and Row(VO.L.OPT_DUI_SHOW_PLAYER) ~= nil
+    and Row(VO.L.OPT_DUI_PLAY_BUTTON) ~= nil and scroll ~= nil, true)
+layout:Refresh()
+Expect("...live while DialogueUI is loaded", captions and captions.layoutReason, nil)
+loaded = false
+layout:Refresh()
+Expect("...greyed out once it is not, saying so", captions and captions.layoutReason, VO.L.OPT_DUI_MISSING)
+loaded = true
+local hooks = DUI.HandleGossip
+-- false, not nil: the fake widget answers any capitalised name with a function.
+DUI.HandleGossip = false
+layout:Refresh()
+Expect("...or that this DialogueUI is not one it knows", captions and captions.layoutReason, VO.L.OPT_DUI_UNKNOWN)
+DUI.HandleGossip = hooks
+dui.Captions = false
+layout:Refresh()
+Expect("scrolling waits on the words being marked", scroll and scroll.layoutReason, VO.L.REASON_DUI_CAPTIONS)
+dui.Captions = true
+layout:Refresh()
+Expect("...and wakes with them", scroll and scroll.layoutReason, nil)
+for _, entry in ipairs(panel.panel.layout.entries) do
+    if entry.label == VO.L.OPT_DUI_CAPTIONS then Expect("...and the Quests page has none of them", entry.label, nil) end
+end
+dui.Captions, dui.PlayButton = false, false
+Page:Reset()
+Expect("the DialogueUI page's Defaults puts them back", dui.Captions and dui.PlayButton, true)
+Expect("diagnostics describe it", string.find(Bridge:Describe(), "words=true", 1, true) ~= nil, true)
+
+if Failures() > 0 then
+    print(string.format("\n%d DialogueUI test(s) failed", Failures()))
+    os.exit(1)
+end
+print("\nAll DialogueUI tests passed")

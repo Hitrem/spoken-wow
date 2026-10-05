@@ -194,6 +194,12 @@ local function Widget(kind, name)
     function w:GetID() return self.id end
     function w:SetParent(p) self.parent = p end
     function w:GetParent() return self.parent end
+    -- Kept rather than swallowed: a player hosted over another frame (Addon:ApplyHost) is
+    -- scaled to keep its size on screen, and the scale is what a test reads back. The
+    -- effective scale is the frame's own; a test standing in for a host sets its own.
+    function w:SetScale(v) self.scale = v end
+    function w:GetScale() return self.scale or 1 end
+    function w:GetEffectiveScale() return self.scale or 1 end
     -- What a frame was built with, and what hangs off it: the quest log's play buttons find
     -- the client's own objective icon by walking the list's children and asking both.
     function w:GetObjectType() return self.frameType or self.kind end
@@ -939,6 +945,10 @@ local function EmbedTimers(addon)
     function addon:CancelTimer(timer)
         if timer then timer.at = nil end
     end
+    -- The windows' progress bars read how long the queue's timer has left.
+    function addon:TimeLeft(timer)
+        return timer and timer.at and math.max(0, timer.at - world.time) or 0
+    end
     return addon
 end
 libs["AceTimer-3.0"] = { Embed = function(_, target) return EmbedTimers(target) end }
@@ -1051,11 +1061,11 @@ end
 function M.LoadSpoken(addonDirectory)
     for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources", "OtherSounds",
         "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN",
-        "Locale/zhTW", "UI/Layout", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
-        "UI/MinimalPlayer", "UI/MinimapButton",
+        "Locale/zhTW", "UI/Layout", "UI/DialogueUITheme", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
+        "UI/MinimalPlayer", "UI/DialogueUIPlayer", "UI/MinimapButton",
         -- Real LibDeflate, not a hand-faked stub library: Contribute:Encode's round trip through
         -- actual compression is the point of testing it at all.
-        "UI/Options", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
+        "UI/Options", "UI/DialogueUIOptions", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     local env = _G.SpokenEnv
@@ -1066,7 +1076,7 @@ function M.LoadSpoken(addonDirectory)
     -- These suites exercise the original layout, not the subtitles a first install shows
     -- (defaults_test pins those). The Minimal Classic layout, including switching back to
     -- this one, has its own UI/timer fixture.
-    env.Addon.db.profile.Frame.MinimalPlayer = false
+    env.Addon.db.profile.Frame.Window = "classic"
     env.Addon.db.profile.Frame.SubtitlePlayer = false
     return env
 end
@@ -1229,6 +1239,9 @@ end
 --- files, on top of an addon already loaded by LoadQuests or LoadQuestsAlone.
 function M.LoadQuestsPanel(addonDirectory, VO)
     dofile(addonDirectory .. "UI/Layout.lua")
+    -- Its DialogueUI section is built only with the module there, which a test of the module
+    -- has loaded and hooked already.
+    if not VO.DialogueUIBridge then dofile(addonDirectory .. "UI/DialogueUIBridge.lua") end
     dofile(addonDirectory .. "UI/SettingsPanel.lua")
     return VO.SettingsPanel
 end

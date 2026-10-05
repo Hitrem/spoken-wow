@@ -25,7 +25,7 @@ SpokenEnv.SoundUtils={
 }
 SpokenEnv.Options={Open=function() end}
 ''')
-for name in ['Callbacks.lua','SoundQueue.lua','Sources.lua','Strings.lua','UI/Transcript.lua','UI/Subtitle.lua','UI/Portrait.lua','UI/StaticPortrait.lua','UI/Actions.lua','UI/PlayerFrame.lua','UI/MinimalPlayer.lua','API.lua']: load(name)
+for name in ['Callbacks.lua','SoundQueue.lua','Sources.lua','Strings.lua','UI/Transcript.lua','UI/Subtitle.lua','UI/Portrait.lua','UI/StaticPortrait.lua','UI/Actions.lua','UI/PlayerFrame.lua','UI/MinimalPlayer.lua','UI/DialogueUITheme.lua','UI/DialogueUIPlayer.lua','API.lua']: load(name)
 lua.execute('''
 local E=SpokenEnv
 local P,Q,A=E.MinimalPlayer,E.SoundQueue,E.Addon
@@ -116,10 +116,10 @@ A.db.profile.Frame.LockFrame=false;P:StartDrag();assert(P.frame.moving)
 P.frame:StopMovingOrSizing()
 print("PASS: hidden portrait, audio-only mode, progress catch-up, movement lock")
 
-A.db.profile.Frame.MinimalPlayer=false;E.PlayerFrame:RefreshConfig()
+A.db.profile.Frame.Window='classic';E.PlayerFrame:RefreshConfig()
 assert(not P.frame:IsShown() and E.PlayerFrame.frame:IsShown())
 assert(Spoken:GetPlayerFrame()==E.PlayerFrame.frame)
-A.db.profile.Frame.MinimalPlayer=true;E.PlayerFrame:RefreshConfig()
+A.db.profile.Frame.Window='minimal';E.PlayerFrame:RefreshConfig()
 assert(P.frame:IsShown() and not E.PlayerFrame.frame:IsShown())
 P.frame.left=120;P.frame:SetWidth(450);P:StartDrag();P.frame.scripts.OnDragStop(P.frame)
 local saved=A:Layout().Minimal

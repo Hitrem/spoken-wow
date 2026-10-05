@@ -71,6 +71,10 @@ function MinimalPlayer:IsEnabled()
     return Addon.db and Addon:DisplayStyle() == "minimal"
 end
 
+-- The pieces the DialogueUI window (UI/DialogueUIPlayer.lua) builds its queue rows and
+-- labels from, so the two lists of waiting lines behave alike.
+MinimalPlayer.parts = { Font = Font, Removable = Removable, ShowRemove = ShowRemove, Label = Label, BADGES = BADGES }
+
 function MinimalPlayer:HideTooltip()
     local owner = GameTooltip:GetOwner()
     if BelongsTo(owner, self.frame) or BelongsTo(owner, self.menu) then GameTooltip_Hide() end
@@ -223,7 +227,7 @@ function MinimalPlayer:Initialize(original)
     self.resizer:SetNormalTexture(ART .. "SizeGrabber-Up")
     self.resizer:SetAlpha(0)
     self.resizer:SetScript("OnMouseDown", function(_, button)
-        if button ~= "LeftButton" or Config().LockFrame then return end
+        if button ~= "LeftButton" or Addon:IsFrameLocked() then return end
         self.sizing = true
         frame:StartSizing("BOTTOMRIGHT")
     end)
@@ -433,17 +437,21 @@ function MinimalPlayer:ToggleMenu()
     self:HideTooltip()
     self.menu:ClearAllPoints()
     self.menu:SetPoint("TOPLEFT", self.frame, "BOTTOMLEFT", Config().HidePortrait and 12 or 36, 8)
+    -- The window's parent, not UIParent: hosted over a dialog addon that hid UIParent, a
+    -- menu left there would open invisible. Same parent, so the same scale fits.
+    self.menu:SetParent(self.frame:GetParent())
+    self.menu:SetFrameStrata("TOOLTIP")
     self.menu:SetScale(self.frame:GetScale())
     self.menu:Show()
 end
 
 function MinimalPlayer:StartDrag()
-    if not Config().LockFrame then self.menu:Hide(); self.frame:StartMoving() end
+    if not Addon:IsFrameLocked() then self.menu:Hide(); self.frame:StartMoving() end
 end
 
 function MinimalPlayer:StopDrag()
     self.frame:StopMovingOrSizing()
-    if not Config().LockFrame then self:SaveLayout() end
+    if not Addon:IsFrameLocked() then self:SaveLayout() end
 end
 
 -- Saved as the width with the portrait, which RefreshConfig takes off when hidden.
@@ -562,7 +570,7 @@ function MinimalPlayer:LayoutQueue()
     -- so its left corners sit beneath the opaque disc and the text gets even margins.
     self.panel:SetPoint("TOPLEFT", self.frame, "TOPLEFT", Config().HidePortrait and 0 or 44, up and height or -6)
     self.panel:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 0, shown > 0 and not up and 2 - height or 10)
-    if self.resizer then self.resizer:SetShown(not Config().LockFrame and shown == 0) end
+    if self.resizer then self.resizer:SetShown(not Addon:IsFrameLocked() and shown == 0) end
     self.layingOut = false
 end
 
@@ -629,7 +637,7 @@ function MinimalPlayer:RefreshConfig(original)
     self.panel:SetBackdropBorderColor(r, g, b)
     self.trim:SetVertexColor(r, g, b)
     self.ring:SetVertexColor(r, g, b)
-    if cfg.LockFrame then frame:StopMovingOrSizing(); self.sizing = false end
+    if Addon:IsFrameLocked() then frame:StopMovingOrSizing(); self.sizing = false end
     -- Locked, clicks on the window pass through to the game, as the subtitle's do; its buttons
     -- still take theirs, and the header still opens the menu. Where the client cannot tell a
     -- click from the pointer passing over, the window keeps both.
@@ -637,6 +645,7 @@ function MinimalPlayer:RefreshConfig(original)
         frame:SetMouseMotionEnabled(true)
         frame:SetMouseClickEnabled(not cfg.LockFrame)
     end
+    Addon:ApplyHost(frame)
     self:Update()
 end
 
