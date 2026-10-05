@@ -58,7 +58,6 @@ local sortedSubzoneKeys = {}
 local filter = ""
 
 local SetMinimized
-local ApplyTextPaneVisibility
 
 --------------------------------------------------------------------------------
 -- Data ordering
@@ -373,9 +372,7 @@ local function OnRowClick(self)
 	else
 		selection = { mapID = row.mapID, key = row.key }
 	end
-	if minimized then
-		SetMinimized(false)
-	end
+	SetMinimized(false)
 	SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
 	SpokenZones:RefreshLoreWindow()
 end
@@ -521,7 +518,6 @@ function SpokenZones:RefreshLoreWindow(scrollToSelection)
 		ScrollToSelection(list)
 	end
 	ShowEntry()
-	ApplyTextPaneVisibility()
 end
 
 --------------------------------------------------------------------------------
@@ -547,16 +543,20 @@ local function ScreenMaxWidth()
 	return math.floor((UIParent:GetWidth() or 1920) * 0.95)
 end
 
-local function ApplyResizeBounds(frame)
+local function ScreenMaxHeight()
+	return math.floor((UIParent:GetHeight() or 1080) * 0.95)
+end
+
+local function ApplyResizeBounds()
 	local maxW = minimized and CollapsedWidth() or ScreenMaxWidth()
-	local maxH = math.floor((UIParent:GetHeight() or 1080) * 0.95)
+	local maxH = ScreenMaxHeight()
 	local minW = minimized and CollapsedWidth() or WINDOW_MIN_WIDTH
 	local minH = WINDOW_MIN_HEIGHT
-	if frame.SetResizeBounds then
-		frame:SetResizeBounds(minW, minH, maxW, maxH)
+	if window.SetResizeBounds then
+		window:SetResizeBounds(minW, minH, maxW, maxH)
 	else
-		frame:SetMinResize(minW, minH)
-		frame:SetMaxResize(maxW, maxH)
+		window:SetMinResize(minW, minH)
+		window:SetMaxResize(maxW, maxH)
 	end
 end
 
@@ -586,8 +586,7 @@ local function ExpandedWidth()
 end
 
 local function SavedHeight()
-	local maxH = math.floor((UIParent:GetHeight() or 1080) * 0.95)
-	return SavedSize("loreWindowHeight", WINDOW_MIN_HEIGHT, maxH, WINDOW_HEIGHT)
+	return SavedSize("loreWindowHeight", WINDOW_MIN_HEIGHT, ScreenMaxHeight(), WINDOW_HEIGHT)
 end
 
 local function SaveWindowSize()
@@ -605,7 +604,7 @@ local function SaveWindowSize()
 end
 
 local function SetCollapseArrow()
-	if minimizeFrame and minimizeFrame.MaximizeButton and minimizeFrame.MinimizeButton then
+	if minimizeFrame then
 		minimizeFrame.MaximizeButton:SetShown(minimized)
 		minimizeFrame.MinimizeButton:SetShown(not minimized)
 		return
@@ -622,37 +621,16 @@ local function SetCollapseArrow()
 	end
 end
 
-ApplyTextPaneVisibility = function()
-	if not window or not window.pageInset then
-		return
-	end
-	local show = not minimized
-	window.pageInset:SetShown(show)
-	if page and page.frame then
-		page.frame:SetShown(show)
-	elseif page and page.SetShown then
-		page:SetShown(show)
-	end
-end
-
 SetMinimized = function(want)
-	if not window then
+	if not window or want == minimized then
 		return
 	end
-	minimized = want and true or false
-	resizer:SetShown(true)
-	window:SetResizable(true)
-	ApplyResizeBounds(window)
+	minimized = want
+	ApplyResizeBounds()
 	PinTopLeft()
-	if minimized then
-		window:SetWidth(CollapsedWidth())
-		ApplyTextPaneVisibility()
-		SetCollapseArrow()
-	else
-		window:SetWidth(ExpandedWidth())
-		SetCollapseArrow()
-		SpokenZones:RefreshLoreWindow()
-	end
+	window:SetWidth(minimized and CollapsedWidth() or ExpandedWidth())
+	window.pageInset:SetShown(not minimized)
+	SetCollapseArrow()
 end
 
 -- The game's portrait frame where the client has it: its border, title bar, portrait and close
@@ -691,15 +669,13 @@ local function BuildWindow()
 	window:EnableMouse(true)
 	window:SetMovable(true)
 	window:SetResizable(true)
-	ApplyResizeBounds(window)
 	window:SetClampedToScreen(true)
 	window:RegisterForDrag("LeftButton")
 	window:SetScript("OnDragStart", window.StartMoving)
-	window:SetScript("OnDragStop", function(self)
-		self:StopMovingOrSizing()
-		SaveWindowSize()
-	end)
+	window:SetScript("OnDragStop", window.StopMovingOrSizing)
 	window:SetScript("OnShow", function()
+		-- The screen may have changed size since the bounds were last set.
+		ApplyResizeBounds()
 		if PlaySound and SOUNDKIT and SOUNDKIT.IG_SPELLBOOK_OPEN then PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN) end
 	end)
 	window:SetScript("OnHide", function()
@@ -731,6 +707,7 @@ local function BuildWindow()
 			end)
 			mm.MaximizeButton:SetScript("OnClick", function()
 				SetMinimized(false)
+				SpokenZones:RefreshLoreWindow()
 			end)
 		else
 			minimizeButton = CreateFrame("Button", nil, window)
@@ -740,6 +717,7 @@ local function BuildWindow()
 			minimizeButton:SetHighlightTexture(PANEL_HI)
 			minimizeButton:SetScript("OnClick", function()
 				SetMinimized(not minimized)
+				if not minimized then SpokenZones:RefreshLoreWindow() end
 			end)
 		end
 		SetCollapseArrow()
@@ -748,7 +726,7 @@ local function BuildWindow()
 	-- Inside the frame's border and under its title bar; a templated frame's portrait takes the
 	-- top-left corner, so the search box starts to its right.
 	local top = window.templated and -24 or -36
-	local left = window.templated and 6 or 14
+	local left, right = ListMargins()
 
 	-- The places: an inset down the left, the game's own, with the search box over it.
 	searchBox = CreateFrame("EditBox", nil, window, "SearchBoxTemplate")
@@ -798,7 +776,7 @@ local function BuildWindow()
 	local okPage, pageInset = pcall(CreateFrame, "Frame", nil, window, "InsetFrameTemplate")
 	if not okPage or not pageInset then pageInset = CreateFrame("Frame", nil, window) end
 	pageInset:SetPoint("TOPLEFT", inset, "TOPRIGHT", 6, 38)
-	pageInset:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", window.templated and -6 or -12, window.templated and 6 or 12)
+	pageInset:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -right, window.templated and 6 or 12)
 	window.pageInset = pageInset
 	local holder = CreateFrame("Frame", nil, pageInset)
 	holder:SetPoint("TOPLEFT", pageInset, "TOPLEFT", 3, -3)
@@ -903,7 +881,6 @@ function SpokenZones:ToggleLoreWindow()
 	end
 
 	if searchBox and searchBox:GetText() ~= "" then searchBox:SetText("") end
-	ApplyResizeBounds(window)
 	window:Show()
 	SpokenZones:RefreshLoreWindow(true)
 end
@@ -919,10 +896,9 @@ function SpokenZones:ShowLoreFor(mapID, areaKey)
 	Reveal(mapID)
 	selection = { mapID = mapID, key = areaKey }
 	if searchBox and searchBox:GetText() ~= "" then searchBox:SetText("") end
-	ApplyResizeBounds(window)
 	window:Show()
 	-- Asked for an entry, so show it: a window closed collapsed would reopen as the bare list.
-	if minimized then SetMinimized(false) end
+	SetMinimized(false)
 	SpokenZones:RefreshLoreWindow(true)
 end
 
