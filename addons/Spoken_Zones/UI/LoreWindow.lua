@@ -295,6 +295,9 @@ local function ShowEntry()
 		audio = { mapID, nil }, report = { mapID, nil } })
 end
 
+-- "1 zone", or "%d zones" through its format.
+local function Count(n, many, one) return n == 1 and one or string.format(many, n) end
+
 --- The line under a place's name, in Lore of Azeroth and beside the map alike: where it sits and,
 --- for a continent or a zone, what it holds -- Azeroth its two continents and every zone, a
 --- continent its zones, a zone its areas. An area (`key`) says only which zone it is in. Returns
@@ -302,7 +305,6 @@ end
 --- zone, Azeroth for a continent; nil for Azeroth, which has nothing above it.
 function SpokenZones:PlaceLine(mapID, key)
 	if key then return string.format(L.IN_ZONE_FMT, ZoneName(mapID)), mapID end
-	local function Count(n, many, one) return n == 1 and one or string.format(many, n) end
 	if mapID == WORLD then
 		return Count(#Continents(), L.CONTINENT_COUNT_FMT, L.CONTINENT_COUNT_ONE) .. ", "
 			.. Count(#ZoneIDs(), L.ZONE_COUNT_FMT, L.ZONE_COUNT_ONE), nil
