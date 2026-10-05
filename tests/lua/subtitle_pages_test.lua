@@ -28,6 +28,14 @@ end
 local short = "A short line."
 Expect("a line of four lines or fewer is one page", #Subtitle:Paginate(short), 1)
 
+-- The most any page of `list` has of what `measure` counts.
+local function Most(list, measure)
+    local top = 0
+    for _, page in ipairs(list) do top = math.max(top, measure(page)) end
+    return top
+end
+local function Lines(page) return #Subtitle:Wrap(page) end
+
 -- Twelve sentences of about 50 characters: well past four lines.
 local sentences = {}
 for i = 1, 12 do
@@ -35,8 +43,7 @@ for i = 1, 12 do
 end
 local long = table.concat(sentences, " ")
 local pages = Subtitle:Paginate(long)
-local most = 0
-for _, page in ipairs(pages) do most = math.max(most, #Subtitle:Wrap(page)) end
+local most = Most(pages, Lines)
 Expect("a long line is split into several pages", #pages > 2, true)
 Expect("...none longer than four lines", most <= 4, true)
 Expect("...each ending at a sentence end", pages[1]:sub(-1), ".")
@@ -47,8 +54,7 @@ local run = {}
 for i = 1, 80 do run[i] = "word" .. i end
 local endless = table.concat(run, " ") .. "."
 pages = Subtitle:Paginate(endless)
-most = 0
-for _, page in ipairs(pages) do most = math.max(most, #Subtitle:Wrap(page)) end
+most = Most(pages, Lines)
 Expect("a phrase longer than four lines is cut between words", #pages > 1 and most <= 4, true)
 Expect("...losing none of them", Words(table.concat(pages, " ")), Words(endless))
 
@@ -57,11 +63,6 @@ local function Count(page)
     local n = 0
     for _ in page:gmatch("[.!?]") do n = n + 1 end
     return n
-end
-local function Most(list, measure)
-    local top = 0
-    for _, page in ipairs(list) do top = math.max(top, measure(page)) end
-    return top
 end
 Expect("three sentences to a page unless set", Most(Subtitle:Paginate(long), Count), 3)
 
