@@ -437,8 +437,7 @@ Check(not T.frame:IsShown() and not M.frame:IsShown() and not E.PlayerFrame.fram
 Check(S.frame:IsShown() and S.frame:GetParent()==UIParent,'the subtitle is a frame of its own')
 Check(S.frame:GetFrameStrata()=='LOW','...drawn under the panels of the game, so a window opened over it covers it')
 Check(S.title:GetText()=='NPC sub','the speaker names the subtitle')
--- As Spoken Subtitles has it: the speaker's picture before the name, and what the line belongs to
--- in grey after it.
+-- The speaker's picture before the name, and what the line belongs to in grey after it.
 Check(S.picture:IsShown() and S.viewport.active~=nil,"the subtitle shows the speaker's picture")
 do
     local _,_,_,pictureX=S.picture:GetPoint(1)

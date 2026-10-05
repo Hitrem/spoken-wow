@@ -23,7 +23,6 @@ local BADGES = {
     book = [[Interface\GossipFrame\TrainerGossipIcon]],
     zone = [[Interface\WorldMap\UI-World-Icon]],
 }
--- The subtitle's picture wears the same badges (Subtitle:ConfigurePicture).
 MinimalPlayer.BADGES = BADGES
 local function Clamp(n, low, high) return math.max(low, math.min(high, n)) end
 -- The frame still resizes while the UI is torn down, after AceDB strips it (Addon:Profile).

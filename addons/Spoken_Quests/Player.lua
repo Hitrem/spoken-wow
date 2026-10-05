@@ -91,9 +91,7 @@ local function CreatureFor(soundData)
     return nil
 end
 
--- What a line from something with no face shows: a quest from an item shows the item's own icon,
--- found in the bags as the item that starts the quest; one from a wanted poster or another
--- object, which has no icon of its own, a posted notice.
+-- A line from something faceless shows the item that starts the quest, else a posted notice.
 local NOTICE = [[Interface\Icons\INV_Misc_Note_01]]
 local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
 local function Faceless(soundData)

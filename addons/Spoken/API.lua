@@ -207,12 +207,8 @@ function Spoken:VoicePack(module, lang)
     return PACK_FOLDERS[module] .. "_" .. lang, url
 end
 
--- The game's zone icons -- its zone achievements' -- as copies shipped in Textures/Zones, so every
--- client has them, and the world map's globe for Azeroth. Keyed by uiMapID. A city is part of its
--- zone and takes the zone's icon, as an area does; Teldrassil, which has no icon of its own, takes
--- Darnassus's, its tree. Forever's own zones, which the game has no icon for, have ones drawn for
--- Spoken in the same style. A map not listed takes its parent's, up to the continent's
--- (Spoken:ZoneIcon).
+-- Zone icons by uiMapID, copied into Textures/Zones so every client has them. A city takes its
+-- zone's icon, Teldrassil takes Darnassus's, and a map not listed takes its parent's.
 local ZONE_ART = [[Interface\AddOns\Spoken\Textures\Zones\]]
 local ZONE_ICONS = {
     [947] = "Azeroth", [1414] = "Kalimdor", [1415] = "EasternKingdoms",
@@ -227,20 +223,17 @@ local ZONE_ICONS = {
     [1445] = "DustwallowMarsh", [1446] = "Tanaris", [1447] = "Azshara", [1448] = "Felwood",
     [1449] = "UngoroCrater", [1451] = "Silithus", [1452] = "Winterspring", [1438] = "Teldrassil",
     [2482] = "MountHyjal",
-    -- The cities, each its zone's.
     [1453] = "ElwynnForest", [1454] = "Durotar", [1455] = "DunMorogh", [1456] = "Mulgore",
     [1457] = "Teldrassil", [1458] = "TirisfalGlades",
     -- Forever's own zones, drawn for Spoken.
     [2521] = "ZephrasIsle", [2524] = "DarkspearIslands", [2548] = "Riverglades", [2652] = "Shendralas",
 }
--- The icons' own bevelled border, trimmed as the game trims an icon in a round frame. The globe is
--- round already, with nothing to trim.
+-- Trims the icons' bevelled border, as the game does in a round frame. The globe needs none.
 local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
 local WHOLE = { 0, 1, 0, 1 }
 Spoken.ZONE_ICONS = ZONE_ICONS
 
---- The icon for the map `mapID`, or for the nearest map above it that has one, with the crop to
---- draw it with; nil for a map with none, itself or above it.
+--- The icon for `mapID` or its nearest ancestor that has one, with its crop.
 function Spoken:ZoneIcon(mapID)
     local depth = 0
     while mapID and depth < 6 do
@@ -253,8 +246,7 @@ function Spoken:ZoneIcon(mapID)
     return nil
 end
 
--- The player's bags, for the icon of an item a line comes from: the item that starts a quest, the
--- book being read. C_Container where the client has it, the old bag functions where it has not.
+-- C_Container where the client has it, else the old bag functions.
 local function BagSlots(bag)
     if C_Container and C_Container.GetContainerNumSlots then return C_Container.GetContainerNumSlots(bag) or 0 end
     return GetContainerNumSlots and GetContainerNumSlots(bag) or 0
@@ -292,15 +284,13 @@ local function BagIcon(test)
     return nil
 end
 
---- The icon of the item in the player's bags that starts quest `questID`, with its crop: the
---- picture for a quest that came from an item. Nil when no such item is there.
+--- The icon of the bag item that starts `questID`, with its crop.
 function Spoken:QuestItemIcon(questID)
     if not questID then return nil end
     return BagIcon(function(bag, slot) return SlotQuest(bag, slot) == questID end)
 end
 
---- The icon of the item called `name` in the player's bags, with its crop: the picture for a
---- book or letter read out of them. Nil when it is not there.
+--- The icon of the bag item named `name`, with its crop.
 function Spoken:BagItemIcon(name)
     if not name or name == "" then return nil end
     local bracketed = "[" .. name .. "]"

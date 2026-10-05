@@ -1,9 +1,7 @@
 setfenv(1, SpokenEnv)
 
--- Captions as a subtitle: the speaker's picture and name, what the line belongs to, and the line
--- typed in beneath, centred low on the screen over a soft shadow. Ported from LoreTeller
--- Forever's subtitle style; the picture and the grey title after the name follow shorley's
--- Spoken Subtitles.
+-- Captions as a subtitle, after LoreTeller Forever's subtitle style, with the picture and the grey
+-- title after the name from shorley's Spoken Subtitles.
 --
 -- One of the narrator styles (Addon:PlayerStyle), the one with no window: the two windows
 -- hide while it is chosen. This file owns only its frame and how the text is revealed. The
@@ -26,10 +24,7 @@ local SHADOW_ROOM = 26        -- how far the shadow reaches past the subtitle's 
 local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 -- A page fades out before the next fades in; the shadow eases to the new page's size.
 local PAGE_OUT, PAGE_IN = .18, .28
--- "(paused)" fades in over the title after the name, and out again, over this long.
 local PAUSED_FADE = .25
--- The picture before the name: the Small Window's round frame at this size, with a face, a zone's
--- icon or a book in it. The name starts PICTURE_GAP after it; what follows the name, LABEL_GAP on.
 local PICTURE, PICTURE_GAP, LABEL_GAP = 36, 8, 6
 local SIZE_EASE = 10
 -- The controls shown on hover: the windows' round pause button, skip, and Report.
@@ -230,22 +225,19 @@ function Subtitle:Build()
     self.title:SetTextColor(1, .82, 0)
     self.title:SetShadowColor(0, 0, 0, 1)
     self.title:SetShadowOffset(1, -1)
-    -- A grey dot between the name and what follows it, as Spoken Subtitles parts them.
     self.dot = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     self.dot:SetTextColor(.62, .62, .62)
     self.dot:SetShadowColor(0, 0, 0, 1)
     self.dot:SetShadowOffset(1, -1)
     self.dot:SetText("•")
-    -- What the line belongs to, in grey after the name: the quest's title, the area a zone's story
-    -- is about, the book's page. Cut short with an ellipsis where the row would run too wide.
+    -- Cut short with an ellipsis where the row would run too wide.
     self.label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     self.label:SetJustifyH("LEFT")
     self.label:SetWordWrap(false)
     self.label:SetTextColor(.62, .62, .62)
     self.label:SetShadowColor(0, 0, 0, 1)
     self.label:SetShadowOffset(1, -1)
-    -- With no window there is no paused portrait to say so: "(paused)" takes the label's place
-    -- instead, the two fading across (Subtitle:Animate) rather than snapping.
+    -- No window shows the stop, so "(paused)" takes the label's place, fading across.
     self.pausedLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     self.pausedLabel:SetJustifyH("LEFT")
     self.pausedLabel:SetTextColor(.62, .62, .62)
@@ -264,9 +256,6 @@ function Subtitle:Build()
     self:Place()
 end
 
---- The picture before the name, built as the Small Window builds its portrait (MinimalPlayer:
---- BuildPortrait), at PICTURE: the round background, the viewport the face or icon is drawn in,
---- and over them the ring with its badge.
 function Subtitle:BuildPicture()
     local k = PICTURE / 90
     local host = CreateFrame("Frame", nil, self.frame)
@@ -296,8 +285,7 @@ function Subtitle:BuildPicture()
     self.picture, self.viewport, self.badge = host, viewport, badge
 end
 
---- The clip's picture in the viewport: its speaker's face where one was captured, else the
---- picture the clip names (a zone's icon, a book), round, with the badge for its kind of line.
+--- The speaker's face where one was captured, else the clip's own picture, with its badge.
 function Subtitle:ConfigurePicture(clip)
     local viewport = self.viewport
     if not StaticPortrait:Configure(viewport, clip) then Portrait:Configure(viewport, clip) end
@@ -309,15 +297,11 @@ function Subtitle:ConfigurePicture(clip)
     self.badge:SetShown(texture ~= nil)
 end
 
---- The title row's height: the picture's, or the name's where that is taller.
 function Subtitle:RowHeight()
     return math.max(PICTURE, self.title:GetStringHeight() or 0)
 end
 
---- The title row's width as it shows `paused` or not: the picture and the name, then, where the line
---- belongs to something, a dot and its title -- "(paused)" in the title's place while paused --
---- and where it does not, "(paused)" alone after the name. Centred on that, the row is centred on
---- what can be seen. The title is cut to keep the row within the subtitle's widest.
+--- The row's visible width, so it centres on what shows. The title is cut to keep it within WIDTH.
 function Subtitle:RowWidth(paused)
     local start = PICTURE + PICTURE_GAP + (self.title:GetStringWidth() or 0)
     if self.labelText then
@@ -330,9 +314,6 @@ function Subtitle:RowWidth(paused)
     return start + (paused and LABEL_GAP + (self.pausedLabel:GetStringWidth() or 0) or 0)
 end
 
---- The row laid out from `left`, an offset from the frame's middle: the picture, the name level with
---- its middle, the dot and the title after it, and "(paused)" in the title's place, or after the
---- name where there is no title.
 function Subtitle:PlaceRow(left)
     left = math.floor(left + .5)
     local textY = -TOP_PAD - math.floor((self:RowHeight() - (self.title:GetStringHeight() or 0)) / 2)
@@ -426,13 +407,11 @@ function Subtitle:Layout(text)
     self.revealed = nil
 end
 
---- The frame and its shadow sized to the rows and the title row, which goes across the middle.
 function Subtitle:Fit()
     if not self.rowsWidest then return end
     local row = self:RowWidth(self.shownPaused)
     local widest = math.max(self.rowsWidest, row)
-    -- Centred on what it shows. Pausing changes that, and the row slides to its new middle (Animate);
-    -- a new line starts in place.
+    -- A new line starts in place; a pause slides the row to its new middle.
     self.rowWant = -row / 2
     if not self.rowLeft then self.rowLeft = self.rowWant end
     self:PlaceRow(self.rowLeft)
@@ -494,7 +473,6 @@ function Subtitle:Prepare(clip, text)
     self.rowLeft = nil
     self.title:SetText(title)
     self.label:SetText(label or "")
-    -- The dot parts the name from what the line belongs to; with nothing after the name, no dot.
     self.dot:SetShown(label ~= nil)
     self:ConfigurePicture(clip)
     -- A clip with no usable length still pages and types, at LoreTeller's reading pace.

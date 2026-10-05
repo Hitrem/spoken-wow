@@ -21,9 +21,7 @@ local PACK_FORMAT = 1
 -- second copy of the same texture is a second thing to keep in step.
 local BOOK_TEXTURE = [[Interface\AddOns\Spoken\Textures\Book]]
 
--- What the page is on, as its picture while it is read: a book or letter from the bags shows the
--- item's own icon; a page on something in the world shows its material -- a stone tablet, a
--- marble one, a bronze or silver plaque, a valentine -- and anything else the book.
+-- A page's picture: a bag item's own icon, else the material it is on, else the book.
 local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
 local MATERIALS = {
 	Stone = [[Interface\Icons\INV_Misc_StoneTablet_01]],
@@ -34,10 +32,8 @@ local MATERIALS = {
 }
 SpokenBooks.MATERIALS = MATERIALS
 
---- The picture for the page now open, whichever frame shows it: the game's reading frame, or one
---- an addon such as DialogueUI draws in its place, which hides the game's. Open is what the item
---- text events say (lastPage, Events.lua). A page queued with nothing open -- from the settings --
---- has nothing to look at, and takes the book.
+--- Open is what the item text events say, not the game's frame, which DialogueUI hides. A page
+--- queued with nothing open takes the book.
 function SpokenBooks:PagePicture()
 	if self.lastPage then
 		local item = ItemTextGetItem and ItemTextGetItem()

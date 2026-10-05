@@ -92,8 +92,7 @@ end
 local BOOK = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Textures\\Book"
 local warnedNoPlayer = false
 
---- A zone's picture while its story plays: the zone's icon, which Spoken ships, and for a subzone
---- its zone's; the book where Spoken is not there to give one, or has no icon for the place.
+--- The zone's icon, or its zone's for a subzone; the book without Spoken or an icon.
 function SpokenZones:Portrait(mapID)
 	local icon, crop
 	if Spoken and Spoken.ZoneIcon then icon, crop = Spoken:ZoneIcon(mapID) end
@@ -568,7 +567,6 @@ function SpokenZones:NewLoreSound(mapID, areaKey)
 			label = label,
 			transcript = entry and entry.full,
 			bullet = "zone",
-			-- A zone has no speaker: its picture is the zone's icon (Spoken:ZoneIcon).
 			portrait = self:Portrait(mapID),
 			actions = ACTIONS,
 		},

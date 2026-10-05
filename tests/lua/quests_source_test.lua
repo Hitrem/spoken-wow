@@ -67,9 +67,8 @@ Expect("the watcher's stage is recorded", VO.Debug.runtime.stage, "playing")
 Expect("the player shows it", env.PlayerFrame.frame.container.name:GetText(), "Innkeeper Test")
 
 ---------------------------------------------------------------- a quest from an object or an item
--- A wanted poster has no face: the game paints one as an empty black disc. Its line shows a posted
--- notice, and the Small Window never captures the poster as a face. A quest from an item shows the
--- item's own icon, found in the bags as the item that starts the quest.
+-- A wanted poster's line shows a posted notice, never a captured face (the game paints an object
+-- black). A quest from an item shows the item's icon.
 VO, env, Spoken = Boot()
 local unitExists = _G.UnitExists
 _G.UnitExists = function(unit) return unit ~= "npc" and unit ~= "questnpc" end
