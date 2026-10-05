@@ -375,7 +375,7 @@ function _G.PlaySoundFile(path, channel)
     world.playedChannels[#world.played] = channel
     return true, #world.played
 end
-function _G.StopSound(handle) table.insert(world.stopped, handle) end
+function _G.StopSound(handle, fadeMs) table.insert(world.stopped, handle); world.lastStopFade = fadeMs end
 function _G.PlayMusic(path) table.insert(world.music, path) end
 function _G.StopMusic() table.insert(world.music, false) end
 -- How many frames CreateFrame has built, across every name and kind: a model probe built

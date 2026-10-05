@@ -194,6 +194,13 @@ quests:Enqueue(first); quests:Enqueue(second)
 Q:PauseQueue()
 Q:Skip()
 Expect("Skip on a stopped queue plays the next line", Q:IsPaused() == false and world.played[2], second.path)
+-- A line skipped mid-word fades out, as Stop does, rather than cutting off.
+Fresh()
+local speakingNow = H.Clip({ length = 5 })
+quests:Enqueue(speakingNow); quests:Enqueue(H.Clip())
+world.lastStopFade = nil
+Q:Skip()
+Expect("Skip fades the line speaking out", world.lastStopFade, 400)
 
 ---------------------------------------------------------------- the pause between lines
 Fresh()

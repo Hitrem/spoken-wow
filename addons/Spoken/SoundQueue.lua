@@ -237,6 +237,9 @@ local function Discard(clip, reason)
     AfterRemoval()
 end
 
+-- A line skipped or taken away mid-word fades out, as Stop does, rather than cutting off.
+local REMOVE_FADE_MS = 400
+
 ---@param clip SpokenClip
 ---@param finishedPlaying? boolean
 function SoundQueue:RemoveSoundFromQueue(clip, finishedPlaying)
@@ -262,7 +265,7 @@ function SoundQueue:RemoveSoundFromQueue(clip, finishedPlaying)
     local wasSpeaking = clip.nextSoundTimer ~= nil
     if removedIndex == 1 then
         if not finishedPlaying then
-            SoundUtils:StopSound(clip)
+            SoundUtils:StopSound(clip, REMOVE_FADE_MS)
         else
             clip.handle = nil
         end
