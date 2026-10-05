@@ -717,24 +717,15 @@ function Options:PackCount(source)
     return getn(packs)
 end
 
---- Whether a module has its voices, apart from whether it is enabled: "Voice Pack", and how
---- many of its packs are installed out of how many there are, as 2/4. A module whose voices come
---- in parts counts them itself (`packCount`); otherwise its packs are one pack, there or not.
---- Nothing for a module that is not installed.
+--- Whether a module has its voices, apart from whether it is enabled: "Voice Packs" and how many
+--- of its packs are installed, in any language. Not out of how many there are: a player needs
+--- their own language's, not all of them. Nothing for a module that is not installed.
 function Options:PartVoice(key)
     local source = Sources:Get(key)
     if not source then return nil end
-    local have, total
-    if source.packCount then
-        local ok, a, b = pcall(source.packCount)
-        if ok then have, total = a, b end
-    end
-    if not total then
-        local count = self:PackCount(source)
-        if not count then return nil end
-        have, total = count > 0 and 1 or 0, 1
-    end
-    return have == 0 and "muted" or "neutral", L.PART_VOICE, format(L.PART_VOICE_COUNT_FMT, have, total)
+    local have = self:PackCount(source)
+    if not have then return nil end
+    return have == 0 and "muted" or "neutral", L.PART_VOICE, tostring(have)
 end
 
 --- Every AceDB object a profile choice applies to: the player's, then each installed part's

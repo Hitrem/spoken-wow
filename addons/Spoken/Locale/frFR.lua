@@ -182,8 +182,7 @@ L.PART_OFF = "Désactivé : rien n'est lu"
 L.PART_NO_PACK = "Aucun pack de voix installé"
 L.PART_ONE_PACK = "Pack de voix installé"
 L.PART_PACKS_FMT = "%1$d packs de voix installés"
-L.PART_VOICE = "Pack de voix"
-L.PART_VOICE_COUNT_FMT = "%1$d/%2$d"
+L.PART_VOICE = "Packs de voix"
 
 -- Language
 L.OPT_LANGUAGE_TITLE = "Langue"
