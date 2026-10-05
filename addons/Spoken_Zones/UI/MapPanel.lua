@@ -13,7 +13,19 @@ local L = SpokenZones.L
 
 local Art = SpokenZones.Art
 
-local panel, page
+local panel, page, toggle
+
+-- Space between the map's frame and the panel's: a small gap, so the two read as neighbours
+-- rather than one frame.
+local GAP = 2
+-- The action slot border's opening is 36/66 of its image, so the icon fills it at about
+-- BORDER_SIZE * 36 / 66; larger, the border overlaps the icon's edge, smaller leaves a gap.
+local ICON_SIZE = 40
+local BORDER_SIZE = 74
+-- How far the button's left edge tucks under the map's frame, so it reads as attached to it.
+local TOGGLE_TUCK = 2
+-- Lore of Azeroth's portrait, so the button reads as the way back to the same lore.
+local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map_01]]
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -51,16 +63,15 @@ local function BuildPanel()
 	panel:SetFrameLevel(WorldMapFrame:GetFrameLevel() + 10)
 	panel:EnableMouse(true)
 
-	-- Closed, it stays closed until the map is next opened; the setting turns it off for good.
+	-- Closed, it stays closed until the button on the map's edge reopens it; the setting turns it
+	-- off for good.
 	local close = CreateFrame("Button", nil, panel, panel.templated and "UIPanelCloseButtonDefaultAnchors"
 		or "UIPanelCloseButton")
 	if not panel.templated then close:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -8, -8) end
 	close:SetScript("OnClick", function()
-		panel.dismissed = true
-		panel:Hide()
+		SpokenZones:SetMapPanelCollapsed(true)
 	end)
 	panel.close = close
-	WorldMapFrame:HookScript("OnHide", function() panel.dismissed = nil end)
 
 	-- The page inside the panel's border, under its title bar.
 	local holder = CreateFrame("Frame", nil, panel)
@@ -92,13 +103,43 @@ local function BuildPanel()
 	SpokenZones.panel = panel
 end
 
+-- The way back to a folded panel has to live on the map, not on the panel it reopens. Folding it
+-- needs nothing more than the panel's own close button.
+local function BuildToggle()
+	toggle = CreateFrame("Button", "SpokenZonesPanelToggle", WorldMapFrame)
+	toggle:SetSize(ICON_SIZE, ICON_SIZE)
+	toggle:SetFrameStrata(panel:GetFrameStrata())
+	toggle:SetFrameLevel(panel:GetFrameLevel())
+	local icon = toggle:CreateTexture(nil, "ARTWORK")
+	icon:SetAllPoints()
+	icon:SetTexture(TOGGLE_ICON)
+	icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	local border = toggle:CreateTexture(nil, "OVERLAY")
+	border:SetTexture([[Interface\Buttons\UI-Quickslot2]])
+	border:SetSize(BORDER_SIZE, BORDER_SIZE)
+	border:SetPoint("CENTER")
+	toggle:SetPushedTexture([[Interface\Buttons\UI-Quickslot-Depress]])
+	toggle:SetHighlightTexture([[Interface\Buttons\ButtonHilight-Square]], "ADD")
+	toggle:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", -TOGGLE_TUCK, -ICON_SIZE)
+	toggle:SetScript("OnClick", function()
+		SpokenZones:SetMapPanelCollapsed(false)
+	end)
+	toggle:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(L.MAP_PANEL_EXPAND)
+		GameTooltip:Show()
+	end)
+	toggle:SetScript("OnLeave", GameTooltip_Hide)
+	-- However the button goes -- clicked, the map maximised or closed -- its tooltip goes with it.
+	toggle:SetScript("OnHide", function(self)
+		if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+	end)
+	toggle:Hide()
+end
+
 --------------------------------------------------------------------------------
 -- Layout
 --------------------------------------------------------------------------------
-
--- Space between the map's frame and the panel's: a small gap, so the two read as neighbours
--- rather than one frame.
-local GAP = 2
 
 -- Always on the map's right, beside the quest log as the game lays its own panels out.
 local function ApplyAnchors()
@@ -109,8 +150,8 @@ local function ApplyAnchors()
 end
 
 -- Maximised, the map fills the screen and a side panel would sit off-screen, so
--- the panel only shows in windowed mode.
-local function ShouldShow()
+-- the panel only shows in windowed mode. Whether it is folded away is a separate question.
+local function Available()
 	-- Switched off in Spoken's settings, the part puts nothing on the map.
 	if not SpokenZones:IsPartOn() then
 		return false
@@ -119,9 +160,6 @@ local function ShouldShow()
 		return false
 	end
 	if WorldMapFrame.IsMaximized and WorldMapFrame:IsMaximized() then
-		return false
-	end
-	if panel and panel.dismissed then
 		return false
 	end
 	return true
@@ -136,18 +174,19 @@ local function Refresh(mapID)
 		return
 	end
 
-	if not ShouldShow() then
-		panel:Hide()
-		return
-	end
-
 	mapID = mapID or SpokenZones:GetDisplayedMapID()
-	if not mapID then
+	if not Available() or not mapID then
 		panel:Hide()
+		toggle:Hide()
 		return
 	end
 
-	panel:Show()
+	local collapsed = SpokenZones:Get("mapPanelCollapsed")
+	toggle:SetShown(collapsed)
+	panel:SetShown(not collapsed)
+	if collapsed then
+		return
+	end
 
 	local zoneName = SpokenZones:GetMapName(mapID) or ("uiMapID " .. tostring(mapID))
 
@@ -218,6 +257,11 @@ function SpokenZones:RefreshPanel()
 	Refresh(SpokenZones:GetDisplayedMapID())
 end
 
+function SpokenZones:SetMapPanelCollapsed(collapsed)
+	SpokenZones:Set("mapPanelCollapsed", collapsed)
+	Refresh()
+end
+
 -- Re-apply width and font after an options change. TextView re-wraps itself
 -- when the width actually changes, via its OnSizeChanged.
 function SpokenZones:ApplyPanelOptions()
@@ -239,6 +283,7 @@ function SpokenZones:SetupMapPanel()
 	end
 
 	BuildPanel()
+	BuildToggle()
 	ApplyAnchors()
 
 	-- Re-evaluate visibility whenever the map changes shape. Leatrix_Maps hooks
