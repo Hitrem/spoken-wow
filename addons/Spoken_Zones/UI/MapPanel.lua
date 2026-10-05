@@ -169,7 +169,6 @@ local function Refresh(mapID)
 		-- reaches the corpus key only through the alias table, and normalising a non-Latin name
 		-- yields nil -- which would silently retarget the buttons at the zone's lore.
 		local key = SpokenZones:ResolveAreaKey(selected.areaName)
-		-- As Lore of Azeroth says it: which zone the area is in, and a click back to the zone's story.
 		local line = SpokenZones:PlaceLine(mapID, key or name)
 		local back = function() SpokenZones:ClearSubzone() end
 		if SpokenZones:IsPending(selected.entry) then
@@ -194,9 +193,7 @@ local function Refresh(mapID)
 	end
 
 	-- Fallback hit an ancestor (a dungeon or micro-map inheriting its zone's lore); say so rather
-	-- than silently mislabelling the text. Otherwise the line Lore of Azeroth has under the name,
-	-- where a click takes the map one level up, the panel following it: a zone to its continent,
-	-- a continent to Azeroth.
+	-- than silently mislabelling the text.
 	local caption, onCaption = "", nil
 	if foundOn ~= mapID then
 		caption = string.format(L.MAP_LORE_FOR_FMT, SpokenZones:GetMapName(foundOn) or "parent zone")
