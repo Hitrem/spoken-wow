@@ -13,7 +13,7 @@ local Expect, Failures = H.Expecter(print)
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers(); stub.ResetFrames()
 
 -- The atlases the client has, as Blizzard's own frames use them (wow-ui-source, forever).
-local ATLASES = { ["spellbook-Page-Right-C60"] = true, ["spellbook-divider"] = true,
+local ATLASES = { ["spellbook-Page-Right-C60"] = true, ["spellbook-divider"] = true, ["LFG-lock"] = true,
     ["QuestDetailsBackgrounds"] = true, ["questlog-frame"] = true, ["questlog-frame-filigree"] = true,
     ["Professions_Recipe_Hover"] = true }
 _G.C_Texture = { GetAtlasInfo = function(name) return ATLASES[name] and { width = 64, height = 11 } or nil end }
@@ -315,6 +315,9 @@ found["1415"] = true
 Z:RefreshLoreWindow(); Shown()
 Expect("...a continent found only through its zones, not by being on its map", Locked(), "Eastern Kingdoms|Sen'jin Village")
 found["1415"] = nil
+Expect("...a padlock in place of the count", RowFor("Eastern Kingdoms").lock.shown ~= false and RowFor("Eastern Kingdoms").count.shown == false, true)
+Expect("...and on a locked area", RowFor("Sen'jin Village").lock.shown ~= false, true)
+Expect("...none on a place found", RowFor("Valley of Trials").lock.shown, false)
 RowFor("Sen'jin Village").scripts.OnEnter(RowFor("Sen'jin Village"))
 Expect("...not lit under the pointer", RowFor("Sen'jin Village").over, false)
 Expect("...a zone's count its areas found out of all, and the share of them", RowFor("Durotar").count.text, "1/2 • 50%")

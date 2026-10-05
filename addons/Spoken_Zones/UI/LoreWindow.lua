@@ -444,6 +444,16 @@ local function AcquireRow(index)
 	row.count:SetPoint("RIGHT", row, "RIGHT", -10, 0)
 	row.count:SetJustifyH("RIGHT")
 
+	-- A padlock where the count goes, on a place not yet discovered: the group finder's own, grey.
+	-- None where the client has not got it; the grey name still says it.
+	row.lock = row:CreateTexture(nil, "ARTWORK")
+	row.lock:SetSize(12, 15)
+	row.lock:SetPoint("RIGHT", row, "RIGHT", -10, 0)
+	row.hasLock = Art.Atlas(row.lock, "LFG-lock", false)
+	if row.lock.SetDesaturated then row.lock:SetDesaturated(true) end
+	row.lock:SetAlpha(0.6)
+	row.lock:Hide()
+
 	row:SetScript("OnClick", OnRowClick)
 	row:SetScript("OnEnter", function(self) self.over = not (self.row and self.row.locked); Light(self) end)
 	row:SetScript("OnLeave", function(self) self.over = false; Light(self) end)
@@ -466,7 +476,11 @@ local function RenderList()
 		y = y + height
 
 		row.label:ClearAllPoints()
-		row.label:SetPoint("RIGHT", row.count, "LEFT", -6, 0)
+		-- Locked, the padlock in the count's place.
+		local locked = item.locked and row.hasLock
+		row.lock:SetShown(locked and true or false)
+		row.count:SetShown(not locked)
+		row.label:SetPoint("RIGHT", locked and row.lock or row.count, "LEFT", -6, 0)
 		local indent = (item.depth or 0) * DEPTH_STEP
 		if item.kind ~= "subzone" then
 			row.label:SetFontObject("GameFontNormal")
