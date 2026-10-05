@@ -76,6 +76,8 @@ E.Addon:Enable()
 local T,Q,M=E.Transcript,E.SoundQueue,E.MinimalPlayer
 local source=E.Sources:Register('quests',{interClipGap=.55})
 local cfg=E.Addon.db.profile.Transcript
+-- The checks up to the scroll-mode section were written for page-by-page following.
+cfg.ScrollMode='page'
 
 local assertions=0
 local function Check(v,message) assertions=assertions+1; assert(v,message) end
@@ -241,12 +243,14 @@ Check(T.manualScroll and T.page==math.floor((firstVisible-1)/2)+1,'collapsing ke
 T:Follow()
 cfg.HighlightWord=false; T:RefreshConfig()
 Check(HighlightCount()==0 and T.activeWord==word,'highlight can be disabled while captions keep following')
-cfg.HighlightWord=true; cfg.AutoScroll=false; T:RefreshConfig()
+cfg.HighlightWord=true; cfg.ScrollMode='off'; T:RefreshConfig()
 local heldPage=T.page
 Advance(3)
 Check(T.page==heldPage,'disabling Follow keeps the chosen caption page')
 T:Follow()
 Check(T.page>heldPage and HighlightCount()>=1,'Follow re-enables automatic page changes')
+Check(cfg.ScrollMode=='centered','...in the default mode')
+cfg.ScrollMode='page'
 Q:RemoveAllSoundsFromQueue()
 
 local held=true
@@ -371,6 +375,7 @@ Q:RemoveAllSoundsFromQueue()
 local multilingual='Welcome, Windbeard!\nПривет путник. '..string.rep('世界',60)..' '..string.rep('W',90)..' The end.'
 -- Every word on the page, not typed out: this is about wrapping, not timing.
 cfg.Typewriter=false
+cfg.ScrollMode='page' -- the check below turns pages by hand
 source:Enqueue(Clip('unicode',multilingual,120))
 for _,size in ipairs({12,26}) do
     for _,width in ipairs({300,900}) do
@@ -406,6 +411,38 @@ local override=Clip('override','Fallback text',10); override.present.transcript=
 source:Enqueue(override)
 Check(T.text=='Display this instead','explicit source transcript takes precedence')
 Q:RemoveAllSoundsFromQueue()
+
+-- Scroll modes. Centered keeps the line being read in the middle; reading keeps it a third
+-- of the way down; both glide there, a fraction of a line at a time.
+E.Addon:Layout().CaptionsExpanded=true; cfg.ScrollMode='centered'; T:RefreshConfig()
+source:Enqueue(Clip('scroll',long,60))
+local function Settle() T.frame:Fire('OnUpdate',1) end
+local function ActiveLine() return T:ActiveSegment(T:GetProgress()).line end
+Advance(20); Settle()
+Check(T.topTarget==ActiveLine()-3,'centered keeps the line being read fourth of eight')
+local settled=T.top
+Advance(1.5)
+local target=T.topTarget
+Check(target>settled,'the next line moves the target')
+T.frame:Fire('OnUpdate',.03)
+Check(T.top>settled and T.top<target,'the text glides part of the way, not a whole line at once')
+local _,shown=Captions()
+Check(shown==9,'mid-glide the line sliding in shows under the page')
+Settle()
+Check(T.top==target,'and settles on the line')
+local _,settledShown=Captions()
+Check(settledShown==8,'with the page back to its eight lines')
+cfg.ScrollMode='reading'; T:Update(); Settle()
+Check(T.topTarget==ActiveLine()-2,'reading keeps the line a third of the way down')
+cfg.ScrollMode='centered'; T:Update()
+T.frame:Fire('OnMouseWheel',1)
+Check(T.manualScroll and T.topTarget<target,'the wheel scrolls back by lines, holding there')
+T:ScrollTo(1)
+Check(T.top==1 and T.manualScroll,'a scrollbar drag lands at once')
+T:Follow()
+Check(not T.manualScroll,'clicking the captions follows the voice again')
+Q:RemoveAllSoundsFromQueue()
+E.Addon:Layout().CaptionsExpanded=false; T:RefreshConfig()
 
 -- The subtitle player: no window, just the words in a centred frame of their own, typed in
 -- at the voice's pace. The client runs OnUpdate only on shown frames, and so does Play.
