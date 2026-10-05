@@ -6,6 +6,11 @@ The player and the sound pack are versioned independently — the pack moves whe
 rebuilt, the player when its Lua changes — so a section belongs to whichever of the two
 carries that version. The heading says which.
 
+## 3.0.0-beta.4 — player — 2026-10-05
+
+- Ships inside Spoken 3.0.0-beta.4: Stop and Replay instead of pause, and NPC voices kept for
+  gossip. See Spoken's changelog.
+
 ## 3.0.0-beta.3 — player — 2026-10-04
 
 - Ships inside Spoken 3.0.0-beta.3, in a folder renamed to `Spoken_Quests`. Settings start fresh

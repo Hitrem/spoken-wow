@@ -2,6 +2,40 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## 3.0.0-beta.4 — 2026-10-05
+
+- **Stop and Replay replace Pause.** The game can't resume a sound part-way through, so the
+  button now says what it does: Stop while a line plays (the line stays, marked "(Stopped)"),
+  Replay to hear it from the start, Play once it has ended. The windows, the subtitle, the
+  minimap menu and the key binding all follow. Skip on a stopped queue plays the next line, and
+  a reload never starts you stopped.
+- **Play no longer cuts off the line speaking.** A line you start by hand queues behind it.
+- **Pause Between Lines** (Audio, 1 second by default, 0 to 5) puts quiet between one line and
+  the next. Book pages read on without it.
+- **The subtitle has a picture and a progress bar**, after shorley's Spoken Subtitles: the
+  NPC's face, the item that started the quest, a posted notice, the tablet or plaque a page is
+  written on, or the zone's icon, then the name and what the line belongs to. A progress bar
+  sits under the words (**Show Progress** turns it off), "+N" says how many lines wait, and
+  Stop or Replay, Skip and Report sit in a row underneath.
+- **Sentences at Once** (1 to 4, 3 by default) sets how many sentences the subtitle shows to a
+  page. A sentence too long for a page turns at its commas and dashes rather than mid-phrase.
+- **NPC voices are kept for gossip and greetings**, and faded rather than cut when a quest's
+  text plays.
+- **Zone pictures**: a picture of each zone and area above its story, in the Zone Lore panel
+  and in Lore of Azeroth. **Show Pictures** turns them off.
+- Zone Lore: the line under a place's name ("in Durotar", "in Kalimdor") is in the
+  map panel too, and goes one level up when clicked.
+- Zone Lore offers Russian, Korean or Chinese lore on a client of another language when its
+  font can draw them.
+- Zone narration no longer starts automatically while flying. Thanks to Jared-Mac.
+- Forever's Zephras Isle, Darkspear Islands, Riverglades and Shen'dralas have zone icons.
+- Books: a plaque read through DialogueUI shows the plaque, not a book, and `/spb read` says
+  why nothing started.
+- Portraits work on 2.4.3 and 3.3.5 again, and come back to the subtitle after switching from
+  the Small Window.
+- Links: Wago and Buy Me a Coffee.
+- Every tooltip and setting re-read against what it does, in all nine languages.
+
 ## 3.0.0-beta.3 — 2026-10-04
 
 - **The modules have new folder names**: `Spoken_Quests`, `Spoken_Books` and `Spoken_Zones`.
