@@ -602,10 +602,8 @@ local function SyncListWidth()
 		local right = window.templated and 6 or 12
 		local width = math.max((window:GetWidth() or CollapsedWidth()) - left - right, LIST_WIDTH * 0.5)
 		window.inset:SetWidth(width)
-		listChild:SetWidth(math.max(width - 8, 80))
 	else
 		window.inset:SetWidth(LIST_WIDTH)
-		listChild:SetWidth(LIST_WIDTH - 8)
 	end
 end
 
@@ -732,7 +730,7 @@ local function BuildWindow()
 	end)
 	window:Hide()
 
-	local close = window.CloseButton
+	local close = type(window.CloseButton) == "table" and window.CloseButton
 	if close then
 		local buttonSize = math.max((close:GetWidth() > 0 and close:GetWidth() or 32) - 2, 24)
 		close:SetSize(buttonSize, buttonSize)
@@ -952,6 +950,8 @@ function SpokenZones:ShowLoreFor(mapID, areaKey)
 	if searchBox and searchBox:GetText() ~= "" then searchBox:SetText("") end
 	ApplyResizeBounds(window)
 	window:Show()
+	-- Asked for an entry, so show it: a window closed collapsed would reopen as the bare list.
+	if minimized then SetMinimized(false) end
 	SpokenZones:RefreshLoreWindow(true)
 end
 
