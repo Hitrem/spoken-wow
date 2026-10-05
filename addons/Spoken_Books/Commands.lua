@@ -29,6 +29,12 @@ function SpokenBooks:ReadOrExplain()
 		Print("nothing to read -- open a book first")
 	elseif not self:HasAudio(pageId) then
 		Print(self:DescribeMissingAudio())
+	elseif not self.source then
+		Print("nothing can read it -- Spoken Books reads through Spoken, which is not installed")
+	elseif not self:IsQueued(pageId) then
+		Print("Spoken did not take this page")
+	elseif Spoken:IsPaused() then
+		Print("this page is waiting -- Spoken is stopped; press Replay to carry on")
 	else
 		Print("already reading this page")
 	end
