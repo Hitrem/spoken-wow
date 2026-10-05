@@ -490,7 +490,7 @@ function TextView:SetPicture(file, mask)
 	if not file then return end
 	self.picture:SetTexture(file)
 	if self.pictureMask then
-		self.pictureMask:SetTexture(mask or [[Interface\Buttons\WHITE8X8]], "CLAMPTOBLACKADDITIONAL", "CLAMPTOBLACKADDITIONAL")
+		self.pictureMask:SetTexture(mask or [[Interface\Buttons\WHITE8X8]], "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
 	end
 end
 
