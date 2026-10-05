@@ -16,7 +16,7 @@
 import { readFile } from "node:fs/promises";
 
 import { zonesLua, subzonesLua } from "../lib/loredata.mjs";
-import { loadClientAreas } from "../lib/era.mjs";
+import { loadClientAreas, loadMisplacedAreas } from "../lib/era.mjs";
 import { BASE_LOCALE, CODES } from "../lib/locales.mjs";
 import { emitZones, emitSubzones } from "./lua.mjs";
 import { isEnabled, readCurrent, readNames, writeCorpus } from "./store.mjs";
@@ -47,7 +47,12 @@ async function main() {
   // as history; the addon only ships what a client can ask for -- either client, since
   // it ships for both, which is why this is the union and not the Era seed alone.
   const client = await loadClientAreas();
-  const rows = allRows.filter((row) => row.kind !== "subzone" || client.keys.has(row.key));
+  // And each place once, under the zone the client puts it in: not a city again inside the
+  // zone around it, nor an area again in a neighbour (seed/misplaced-areas.json).
+  const misplaced = await loadMisplacedAreas();
+  const rows = allRows.filter(
+    (row) => row.kind !== "subzone" || (client.keys.has(row.key) && !misplaced.has(`${row.mapID}/${row.key}`)),
+  );
   const unreachable = allRows.length - rows.length;
   if (unreachable) {
     console.log(
