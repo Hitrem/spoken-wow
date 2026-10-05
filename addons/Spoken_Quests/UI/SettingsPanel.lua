@@ -165,11 +165,12 @@ function SettingsPanel:Setup()
         layout:Note(L.OPT_NO_PACK, nil, 16)
     end
     local listed = {}
-    -- The packs for what the player will hear: the voice language's, then the fallback's. Each
-    -- language's row is built whatever is chosen and shown while that language is wanted, so a
-    -- change of language on Spoken's page shows at once.
-    local function Wanted(code)
-        return code == Language:GetVoiceLanguage() or code == Language:GetFallbackLanguage()
+    -- The packs to get are the voice language's; any pack installed is listed too. Not the
+    -- fallback's to get: on an esMX client English's five rows buried the one that mattered. Each
+    -- row is built whatever is chosen and shown while it is wanted, so a change of language on
+    -- Spoken's page shows at once.
+    local function Wanted(code, addon)
+        return code == Language:GetVoiceLanguage() or Present(addon) ~= nil
     end
     local function PackRow(module, label)
         listed[module.AddonName] = true
@@ -189,12 +190,12 @@ function SettingsPanel:Setup()
         if folder then
             local code = locale.code
             layout:ShowWhen(PackRow({ AddonName = folder, URL = url }, Language:GetNativeName(code)),
-                function() return Wanted(code) end)
+                function() return Wanted(code, folder) end)
         end
     end
-    -- English's, split by faction, where English is wanted: the fallback a player hears by default.
+    -- English's, split by faction, where English is the voice or the pack is installed.
     for _, module in DataModules:GetAvailableModules() do
-        layout:ShowWhen(PackRow(module), function() return Wanted(Language.BASE) end)
+        layout:ShowWhen(PackRow(module), function() return Wanted(Language.BASE, module.AddonName) end)
     end
     -- A pack the list does not know, as another language's, after the ones it does.
     for _, module in DataModules:GetPresentModules() do

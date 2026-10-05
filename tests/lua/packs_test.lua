@@ -82,7 +82,9 @@ Expect("an English client is offered English's packs, then one it has that the l
         Name(L, L.OPT_PACK_SHARED), Name(L, L.OPT_PACK_GOSSIP), Name(L, "TestPack") }, "|"))
 local spanish, ES = Shown("esES")
 Expect("a Spanish client is offered the Spanish pack first", spanish[1], Name(ES, "Español (España)"))
-Expect("...then English's, which it falls back on", spanish[2], Name(ES, ES.OPT_PACK_ALL))
-Expect("...and no other language's", #spanish, #english + 1)
+-- Not English's to get, though English is what it falls back on: on an esMX client its five rows
+-- buried the one that mattered. A pack installed is listed whatever its language.
+Expect("...then only the pack it has installed, not English's to get", table.concat(spanish, "|", 2),
+    Name(ES, "TestPack"))
 
 if Failures() > 0 then stub.print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
