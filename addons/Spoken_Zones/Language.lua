@@ -113,15 +113,12 @@ end
 -- Whether `text` draws in the lore's font. A glyph the font lacks draws as nothing, or as the
 -- same box as any other: the language's own name is measured against as many characters no font
 -- has (the private use area), and the same width means none of its letters drew.
+-- The page pins its text to a font file (UI/TextView.lua), the client's own or the quest text's
+-- on a parchment page, and a file has none of the font object's fallbacks for other alphabets:
+-- the name is drawn in each of those files, and has to draw in both.
 local probe
-function SpokenZones:FontDraws(text)
-	if not (UIParent and UIParent.CreateFontString) then
-		return false
-	end
-	if not probe then
-		probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-		probe:Hide()
-	end
+local function draws(text, path)
+	probe:SetFont(path, 12, "")
 	probe:SetText(text)
 	local width = probe:GetStringWidth() or 0
 	local count = 0
@@ -132,6 +129,27 @@ function SpokenZones:FontDraws(text)
 	local missing = probe:GetStringWidth() or 0
 	probe:SetText("")
 	return width > 0 and math.abs(width - missing) > 0.5
+end
+
+function SpokenZones:FontDraws(text)
+	if not (UIParent and UIParent.CreateFontString) then
+		return false
+	end
+	if not probe then
+		probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+		probe:Hide()
+	end
+	local tried = false
+	for _, fontObject in ipairs({ _G.GameFontHighlight, _G.QuestFont }) do
+		local path = fontObject and fontObject.GetFont and fontObject:GetFont()
+		if path then
+			tried = true
+			if not draws(text, path) then
+				return false
+			end
+		end
+	end
+	return tried
 end
 
 -- Whether this client's fonts can draw this language. The lore panel takes its

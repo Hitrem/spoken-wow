@@ -153,28 +153,51 @@ Expect("G. a client claiming Italian still reads English on Auto", Z:GetAutoLang
 -- A language of another script is offered where the lore's font draws it: a German client whose
 -- font has Cyrillic offers Russian, and none offers Korean or Chinese without their glyphs. The
 -- font is asked by drawing the language's own name against as many characters no font has.
-Z = InstallOn("deDE", nil)
-Z.drawable = {}
-local fontHas = { [208] = true, [209] = true }   -- Cyrillic's lead bytes: this font draws it
+-- The page pins its text to a font file, which has none of the font object's fallbacks for other
+-- alphabets: the name is drawn in the lore's own files, and a file without Cyrillic offers no
+-- Russian even where the font object would have drawn it.
+local fontHas = {   -- Cyrillic's lead bytes, by the file that draws them
+    ["Fonts\\FRIZQT__.TTF"] = { [208] = true, [209] = true },
+    ["Fonts\\QUEST.TTF"] = { [208] = true, [209] = true },
+    ["Fonts\\LATIN.TTF"] = {},
+}
 local realParent = _G.UIParent.CreateFontString
+local realHighlight, realQuest = _G.GameFontHighlight, _G.QuestFont
+local function Faces(highlight, quest)
+    _G.GameFontHighlight = { GetFont = function() return highlight, 12 end }
+    _G.QuestFont = { GetFont = function() return quest, 12 end }
+end
 _G.UIParent.CreateFontString = function()
-    local fs = { text = "" }
+    local fs = { text = "", font = nil }
     function fs:SetText(t) self.text = t end
+    function fs:SetFont(path) self.font = path end
     function fs:Hide() end
     function fs:GetStringWidth()
+        local has = fontHas[self.font] or { [208] = true, [209] = true }   -- the object's fallbacks
         local w = 0
         for ch in self.text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-            w = w + (fontHas[ch:byte(1)] and 7 or 10)   -- a glyph it has, or the same box as any other
+            w = w + (has[ch:byte(1)] and 7 or 10)   -- a glyph it has, or the same box as any other
         end
         return w
     end
     return fs
 end
+Faces("Fonts\\FRIZQT__.TTF", "Fonts\\QUEST.TTF")
+Z = InstallOn("deDE", nil)
+Z.drawable = {}
 Expect("H. a German client whose font has Cyrillic offers Russian", Z:CanRenderLanguage("ruRU"), true)
 Expect("H. ...but not Korean, which it cannot draw", Z:CanRenderLanguage("koKR"), false)
 Expect("H. ...nor Chinese", Z:CanRenderLanguage("zhCN"), false)
 Expect("H. a Latin language needs no asking", Z:CanRenderLanguage("frFR"), true)
+Faces("Fonts\\LATIN.TTF", "Fonts\\QUEST.TTF")
+Z.drawable = {}
+Expect("H. a font file without Cyrillic offers no Russian, whatever its object falls back to",
+    Z:CanRenderLanguage("ruRU"), false)
+Faces("Fonts\\FRIZQT__.TTF", "Fonts\\LATIN.TTF")
+Z.drawable = {}
+Expect("H. ...nor where only the parchment page's file lacks it", Z:CanRenderLanguage("ruRU"), false)
 _G.UIParent.CreateFontString = realParent
+_G.GameFontHighlight, _G.QuestFont = realHighlight, realQuest
 
 stub.SetLocale("enUS")
 
