@@ -31,11 +31,8 @@ local EDGE_OUT = 2            -- ...reaching past the edge, over the clip line: 
 local TOP_SCALE = .5
 -- The text's room above and below, so at rest it is clear of both fades.
 local PAD_TOP, PAD_BOTTOM = FADE * TOP_SCALE + SOLID, FADE + SOLID
--- A place's picture above its text (TextView:SetPicture): 2:1, as wide as the text up to
--- PICTURE_MOST and centred over it, cut by its frayed edge mask, and PICTURE_GAP above the
--- words. Capped, so the lore window's wide page shows it a little bigger than the map's panel does
--- rather than across the whole page. Drawn at PICTURE_ALPHA, so the page's own grain shows faintly
--- through it.
+-- Pictures are 2:1 and capped at PICTURE_MOST, so the wide lore window shows them only a little
+-- bigger, and drawn at PICTURE_ALPHA so the page's grain shows through.
 local PICTURE_MOST, PICTURE_GAP, PICTURE_ALPHA = 400, 10, 0.95
 
 local TextView = {}
@@ -378,7 +375,7 @@ function SpokenZones:CreateTextView(parent)
 	BuildScrollBar(view, parent)
 	BuildFade(view, parent)
 
-	-- The place's picture, cut by its frayed edge mask where the client has mask textures.
+	-- Masked only where the client has mask textures.
 	local picture = child:CreateTexture(nil, "ARTWORK")
 	picture:SetAlpha(PICTURE_ALPHA)
 	picture:Hide()
@@ -422,7 +419,6 @@ function TextView:SetText(str)
 
 	self.text:SetText(self.lastText)
 
-	-- The picture over the text, or the text at the top.
 	local pictureRoom = 0
 	self.text:ClearAllPoints()
 	if self.pictureFile and width > 0 then

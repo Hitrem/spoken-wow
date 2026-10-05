@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-// Fetches a picture for every zone and subzone page in Data/enUS from warcraft.wiki.gg: the
-// image each lore entry's wiki page shows, preferring one the wiki marks as Classic (or vanilla)
-// over the page's lead image, which is often a later expansion's screenshot. Writes
-// manifest.json beside this script (which page, which file, its licence and author) and the
-// downloads to cache/pictures/raw/. tools/pictures/prepare.py turns those into the game's textures.
+// Fetches a picture for every zone and area page from warcraft.wiki.gg, preferring one the wiki
+// marks as Classic over the lead image, which is often a later expansion's. Writes manifest.json
+// (page, file, licence, author) and the downloads to cache/pictures/raw/; prepare.py makes the textures.
 //
 // Usage: node tools/pictures/fetch.mjs [--refresh]
 //   --refresh  ask the wiki again for pages already in the manifest (downloads stay cached)
@@ -110,10 +108,8 @@ export async function pageImages(titles) {
   return found;
 }
 
-// A page's pictures in the order they are wanted: those the wiki names as Classic, then the lead
-// image, then the other photo-like images, leaving out art from outside the game (Warcraft III,
-// concept art, comics, the card games, maps) and any named for a later expansion. The first big
-// and wide enough is taken (see main), unless choices.json names another.
+// A page's pictures by preference: those named Classic, then the lead image, then other photos,
+// leaving out art from outside the game and any named for a later expansion.
 function candidates(page, parent) {
   if (!page) return [];
   const later = (f) => LATER.test(f) || (!UNCHANGED.has(parent) && CATACLYSM.test(f));

@@ -33,7 +33,6 @@ local defaults = {
 	panelWidth = 360,
 	fontSize = 12,
 	showHoverPreview = true,
-	-- A picture of the place above its story (Data/Pictures.lua).
 	showPictures = true,
 	showMinimapButton = true,
 	voiceEnabled = true,
@@ -185,8 +184,7 @@ function SpokenZones:IsPending(entry)
 	return (entry.full or "") == "" and (entry.short or "") == ""
 end
 
---- The picture of a place (Data/Pictures.lua): the texture and the mask that frays its edge, or
---- nil where it has none or the pictures are turned off.
+--- The place's picture and its edge mask, or nil without one or with pictures turned off.
 function SpokenZones:Picture(mapID, key)
 	local pictures = self.pictures and mapID and self.pictures[mapID]
 	local picture = pictures and pictures[key or ""]
