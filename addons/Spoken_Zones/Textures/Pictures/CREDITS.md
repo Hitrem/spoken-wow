@@ -116,6 +116,7 @@ page gives its uploader and terms.
 | 1422-mardenholde-keep | Mardenholde Keep | [Mardenholde Keep (original).jpg](https://warcraft.wiki.gg/wiki/File:Mardenholde_Keep_(original).jpg) |
 | 1422-northridge-lumber-camp | Northridge Lumber Camp | [Northridge Lumber Camp.jpg](https://warcraft.wiki.gg/wiki/File:Northridge_Lumber_Camp.jpg) |
 | 1422-plaguemist-ravine | Plaguemist Ravine | [Plaguemist Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Plaguemist_Ravine.jpg) |
+| 1422-ruins-of-andorhal | Ruins of Andorhal | [Ruins of Andorhal.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Andorhal.jpg) |
 | 1422-scholomance | Scholomance | [Viewing Room 5.0.jpg](https://warcraft.wiki.gg/wiki/File:Viewing_Room_5.0.jpg) |
 | 1422-sorrow-hill | Sorrow Hill | [Sorrow hill.jpg](https://warcraft.wiki.gg/wiki/File:Sorrow_hill.jpg) |
 | 1422-thondroril-river | Thondroril River | [Thondroril River.jpg](https://warcraft.wiki.gg/wiki/File:Thondroril_River.jpg) |
