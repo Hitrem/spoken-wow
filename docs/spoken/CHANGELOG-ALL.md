@@ -3,7 +3,7 @@
 The meta addon: no audio and no code, only required dependencies. Versioned on its own, apart
 from the player whose changelog is CHANGELOG.md beside this one.
 
-## 2.0.2 — 2026-10-05
+## 3.0.0 — 2026-10-05
 
 - Installs Spoken Player 3.0.0, which now carries Spoken Quests, Spoken Zones and Spoken Books,
   with the English voice packs. It no longer pulls in the retired Spoken Quests, Spoken Zones
