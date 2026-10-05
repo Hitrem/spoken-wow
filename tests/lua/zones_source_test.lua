@@ -53,7 +53,9 @@ Expect("...resolves the pack path", zone.path, [[Interface\AddOns\ZoneLoreAudio\
 Expect("...and the pack's duration", zone.length, 81.9)
 Expect("...header is the zone", zone.present.header, "Durotar")
 Expect("...label is the zone too", zone.present.label, "Durotar")
-Expect("...portrait is the book", zone.present.portrait.kind .. ":" .. zone.present.portrait.texture, "texture:" .. BOOK)
+Expect("...portrait is the zone's icon, trimmed of its border", zone.present.portrait.kind .. ":" .. zone.present.portrait.texture
+    .. ":" .. table.concat(zone.present.portrait.texCoord, ","), "texture:" .. [[Interface\AddOns\Spoken\Textures\Zones\Durotar]] .. ":0.08,0.92,0.08,0.92")
+Expect("...and the book for a map with no icon", Z:Portrait(9999).texture, BOOK)
 Expect("...with Report as its only action", zone.present.actions[1].id, "report")
 Expect("...and nothing else", zone.present.actions[2], nil)
 Expect("...remembers where it came from", zone.mapID, 1411)
@@ -190,7 +192,7 @@ env, Z = Boot()
 local labels = {}
 for _, entry in ipairs(env.Minimap:BuildMenu()) do table.insert(labels, entry.text) end
 Expect("the zones addon adds its entries to the one button", table.concat(labels, "|"),
-    "Play/Pause|Stop|Settings|Open Lore of Azeroth|Zones Settings")
+    "Stop or Replay|Stop All|Settings|Open Lore of Azeroth|Zones Settings")
 Expect("...and registers no button of its own", stub.ldbObjects.SpokenZones, nil)
 
 ---------------------------------------------------------------- without the player

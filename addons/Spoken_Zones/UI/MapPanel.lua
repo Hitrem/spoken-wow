@@ -164,23 +164,22 @@ local function Refresh(mapID)
 		-- Prefer the name the client reported, which is what the player sees on the map ("The
 		-- Bulwark"), over the wiki page title ("Bulwark").
 		local name = selected.areaName or selected.entry.name or ""
-		local back = function() SpokenZones:ClearSubzone() end
 		-- Audio, the report link and Lore of Azeroth are keyed by the canonical form, not the name
 		-- the client reported. Resolve, not Normalise: on a localized client the reported name
 		-- reaches the corpus key only through the alias table, and normalising a non-Latin name
 		-- yields nil -- which would silently retarget the buttons at the zone's lore.
 		local key = SpokenZones:ResolveAreaKey(selected.areaName)
+		local line = SpokenZones:PlaceLine(mapID, key or name)
+		local back = function() SpokenZones:ClearSubzone() end
 		if SpokenZones:IsPending(selected.entry) then
 			-- Named, listed, and honest about the rest: nothing to play and nothing written to
 			-- report on. Lore of Azeroth lists it all the same, so Open goes to its row there.
-			page:Show({ title = name, subtitle = L.BACK_TO_ZONE:format(zoneName), onSubtitle = back,
-				text = L.LORE_NOT_WRITTEN:format(name), missing = true, contribute = { mapID, name },
-				lore = { mapID, key } })
+			page:Show({ title = name, subtitle = line, onSubtitle = back, text = L.LORE_NOT_WRITTEN:format(name),
+				missing = true, contribute = { mapID, name }, lore = { mapID, key } })
 			return
 		end
-		page:Show({ title = name, subtitle = L.BACK_TO_ZONE:format(zoneName), onSubtitle = back,
-			text = selected.entry.full or selected.entry.short or "", audio = { mapID, key }, report = { mapID, key },
-			lore = { mapID, key } })
+		page:Show({ title = name, subtitle = line, onSubtitle = back, text = selected.entry.full or selected.entry.short or "",
+			audio = { mapID, key }, report = { mapID, key }, lore = { mapID, key } })
 		return
 	end
 
@@ -195,19 +194,23 @@ local function Refresh(mapID)
 
 	-- Fallback hit an ancestor (a dungeon or micro-map inheriting its zone's lore); say so rather
 	-- than silently mislabelling the text.
-	local caption = ""
+	local caption, onCaption = "", nil
 	if foundOn ~= mapID then
 		caption = string.format(L.MAP_LORE_FOR_FMT, SpokenZones:GetMapName(foundOn) or "parent zone")
+	else
+		local up
+		caption, up = SpokenZones:PlaceLine(mapID)
+		if up and WorldMapFrame.SetMapID then onCaption = function() WorldMapFrame:SetMapID(up) end end
 	end
 	if SpokenZones:IsPending(entry) then
-		page:Show({ title = zoneName, subtitle = caption,
+		page:Show({ title = zoneName, subtitle = caption, onSubtitle = onCaption,
 			text = L.LORE_NOT_WRITTEN:format(SpokenZones:GetMapName(foundOn) or zoneName), missing = true,
 			contribute = { foundOn, nil }, lore = { foundOn, nil } })
 		return
 	end
 	-- foundOn, not mapID: a dungeon showing its parent zone's text should read that same parent
 	-- zone's narration, and a report on it belongs to the line the text actually came from.
-	page:Show({ title = zoneName, subtitle = caption, text = entry.full or entry.short or "",
+	page:Show({ title = zoneName, subtitle = caption, onSubtitle = onCaption, text = entry.full or entry.short or "",
 		audio = { foundOn, nil }, report = { foundOn, nil }, lore = { foundOn, nil } })
 end
 

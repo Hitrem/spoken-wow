@@ -110,11 +110,51 @@ function SpokenZones:IsLanguageReady(code)
 	return (entry and entry.ready) and true or false
 end
 
+-- A missing glyph draws as nothing or as a box, so `text` is measured against as many private-use
+-- characters, which no font has: the same width means none of it drew. The page pins font files,
+-- which lack the font object's fallbacks, so the text must draw in each of them.
+local probe
+local function draws(text, path)
+	probe:SetFont(path, 12, "")
+	probe:SetText(text)
+	local width = probe:GetStringWidth() or 0
+	local count = 0
+	for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do
+		count = count + 1
+	end
+	probe:SetText(string.rep("\238\128\128", count))
+	local missing = probe:GetStringWidth() or 0
+	probe:SetText("")
+	return width > 0 and math.abs(width - missing) > 0.5
+end
+
+function SpokenZones:FontDraws(text)
+	if not (UIParent and UIParent.CreateFontString) then
+		return false
+	end
+	if not probe then
+		probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+		probe:Hide()
+	end
+	local tried = false
+	for _, fontObject in ipairs({ _G.GameFontHighlight, _G.QuestFont }) do
+		local path = fontObject and fontObject.GetFont and fontObject:GetFont()
+		if path then
+			tried = true
+			if not draws(text, path) then
+				return false
+			end
+		end
+	end
+	return tried
+end
+
 -- Whether this client's fonts can draw this language. The lore panel takes its
 -- font from GameFontHighlight (see UI/TextView.lua), which is the *client's*
 -- font, so Chinese lore on a German client is a screen of boxes -- a bug report
 -- that looks like corrupted data. English is always allowed: it is what the addon
 -- falls back to when nothing else can be selected, and every client can draw it.
+-- Another script is tested once a session by drawing the language's own name.
 function SpokenZones:CanRenderLanguage(code)
 	if code == BASE then
 		return true
@@ -127,7 +167,14 @@ function SpokenZones:CanRenderLanguage(code)
 		return true
 	end
 	local client = byCode[self.clientLocale]
-	return client ~= nil and client.script == locale.script
+	if client ~= nil and client.script == locale.script then
+		return true
+	end
+	self.drawable = self.drawable or {}
+	if self.drawable[code] == nil then
+		self.drawable[code] = self:FontDraws(locale.native)
+	end
+	return self.drawable[code]
 end
 
 --------------------------------------------------------------------------------

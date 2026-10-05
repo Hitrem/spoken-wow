@@ -49,7 +49,7 @@ local function OnTooltipShow(tooltip)
 
 	tooltip:AddLine(" ")
 	tooltip:AddLine(SpokenZones.L.MINIMAP_LEFT_CLICK:format(SpokenZones.L.MENU_LORE_WINDOW), 0.7, 0.7, 0.7)
-	tooltip:AddLine("|cff66bbffRight-click|r open settings", 0.7, 0.7, 0.7)
+	tooltip:AddLine("|cff66bbffRight-click|r Open settings", 0.7, 0.7, 0.7)
 end
 
 function SpokenZones:SetupMinimapButton()

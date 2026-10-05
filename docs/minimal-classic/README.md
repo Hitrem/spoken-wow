@@ -23,7 +23,7 @@ flavors have not been visually verified.
 
 | Interaction | Action |
 |---|---|
-| Click portrait | Pause, or restart the line from the beginning |
+| Click portrait | Stop the line, or Replay it from the beginning |
 | Click narration title | Skip the line, as in the original player |
 | Click plus/minus button | Expand/collapse the waiting queue; the number beside it counts waiting lines |
 | Scroll expanded queue | Browse more than four waiting lines |
@@ -40,8 +40,9 @@ The hidden-portrait and optional-action settings remain effective in this
 layout.
 
 An empty queue hides the player. Test a quest with available narration when
-checking it. WoW cannot resume a sound partway through: play after pause
-restarts the line, and the progress bar resets accordingly.
+checking it. WoW cannot resume a sound partway through, so there is no pause:
+Stop keeps the line, Replay plays it from the beginning, and the progress bar
+resets accordingly.
 
 ## Design previews
 

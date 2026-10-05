@@ -852,9 +852,9 @@ Before this, a held discovery was indistinguishable from a discovery that failed
 
 While anything is playing or queued, a movable frame appears: a portrait, the zone
 above the area being narrated, the backlog under that, and **Read** and **Report**
-beside it. Clicking the portrait pauses. Drag it by the handle on the portrait's
-corner; `/spz bar` brings it back to the middle of the screen; the options panel
-turns it off.
+beside it. Clicking the portrait stops the story, and again replays it. Drag it by
+the handle on the portrait's corner; `/sp reset` brings it back to the middle of the
+screen; the options panel turns it off.
 
 It is ported from `VoiceOverRedux`, the quest-voiceover addon, and is deliberately
 the same widget down to the atlas coordinates — a player running both should not
@@ -872,12 +872,11 @@ reachable while that description is on screen — and narration deliberately out
 both panels. Without this frame, closing the map would leave a clip running with no
 way to stop it short of `/spz stop`.
 
-**Pause restarts from the beginning.** The client can start and stop a sound file
-and nothing in between: there is no seek, and no way to ask how far into a clip
-playback has reached. Redux's pause button has the same limitation and the same
-implementation — `SoundQueue:PauseQueue` calls `Utils:StopSound`, and `ResumeQueue`
-calls `PlaySound` from the top. The tooltip says so, rather than letting the player
-find out forty seconds in.
+**Stop and Replay, not pause.** The client can start and stop a sound file and
+nothing in between: there is no seek, and no way to ask how far into a clip playback
+has reached. So the button says what it does: Stop while a story is read, Replay
+once it is stopped, which plays it from the beginning, and Play when it has ended
+(`SoundQueue:PauseQueue` and `ResumeQueue` keep their old names).
 
 #### What replaced the playback bar
 
@@ -887,10 +886,6 @@ reserved for stopping outright. The player supersedes it: the backlog is now
 listed rather than counted in a tooltip, so skipping one entry is clicking that
 entry and stopping everything is `/spz stop`, and neither needs a button that means
 two things depending on state.
-
-`/spz bar` kept its name — it is what people type when a frame has ended up
-somewhere unreachable — but now recentres the player rather than reanchoring it to
-the minimap.
 
 ### One clip at a time, stopped only on purpose
 
@@ -1462,7 +1457,6 @@ here:     node tools/seed-from-dump.mjs           # report differences
 /spz autoplay                toggle narrating areas as you discover them
 /spz discover [area]         pretend to discover an area (dev)
 /spz forget                  replay the login greeting on next login (dev)
-/spz bar                     move the player back to the middle of the screen
 /spz minimap                 show or hide the minimap button
 /spz debug                   report area names on map click
 /spz dump                    enumerate the map tree (dev)

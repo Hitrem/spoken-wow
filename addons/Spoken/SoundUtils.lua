@@ -17,14 +17,50 @@ SoundUtils = {}
 local CHANNEL_CVARS = { SFX = "Sound_EnableSFX", Music = "Sound_EnableMusic", Ambience = "Sound_EnableAmbience", Dialog = "Sound_EnableDialog" }
 local mutedByPlayer = {}
 
+-- A fadeOut mute steps the Dialog volume down, switches the channel off, then restores the volume,
+-- so the player's own setting never changes. Unmuting mid-fade or logging out restores it at once.
+local DIALOG_FADE, FADE_STEP = 0.5, 0.05
+local fade
+local function EndFade()
+    if not fade then return end
+    Addon:CancelTimer(fade.timer)
+    if fade.volume then SetCVar("Sound_DialogVolume", fade.volume) end
+    fade = nil
+end
+-- OtherSounds fades the Dialog volume itself when it lowers NPC voices. Two fades on one volume
+-- undo each other, so then the mute only switches the channel off.
+local function OthersLowerDialog()
+    local audio = Addon.db and Addon.db.profile.Audio
+    local lower = audio and audio.LowerOthers
+    return lower and lower.Enabled and (lower.Dialog or 1) < 1 and OtherSounds and OtherSounds:IsAvailable()
+end
+
 ---@param channel string
 ---@param muted boolean
-function SoundUtils:MuteChannel(channel, muted)
+---@param fadeOut boolean? fade the Dialog channel out rather than cut it
+function SoundUtils:MuteChannel(channel, muted, fadeOut)
     local cvar = CHANNEL_CVARS[channel]
     if not cvar or (mutedByPlayer[channel] or false) == (muted or false) then
         return
     end
     mutedByPlayer[channel] = muted or nil
+    if channel == "Dialog" then EndFade() end
+    if muted and fadeOut and channel == "Dialog" and Addon and Addon.ScheduleRepeatingTimer then
+        local volume = tonumber(GetCVar("Sound_DialogVolume")) or 1
+        local ours = not OthersLowerDialog()
+        local started = GetTime()
+        fade = { volume = ours and volume or nil }
+        fade.timer = Addon:ScheduleRepeatingTimer(function()
+            local k = (GetTime() - started) / DIALOG_FADE
+            if k >= 1 then
+                SetCVar(cvar, 0)
+                EndFade()
+            elseif ours then
+                SetCVar("Sound_DialogVolume", volume * (1 - k))
+            end
+        end, FADE_STEP)
+        return
+    end
     SetCVar(cvar, muted and 0 or 1)
 end
 

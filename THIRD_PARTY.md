@@ -59,14 +59,32 @@ None of this is the project's to license, and the MIT grant does not reach it.
   apply to it.
 - **Map images, portrait frames and icons** derived from game assets
   (`PortraitFrameAtlas`, the continent maps) are Blizzard's.
+- **Zone icons** (`addons/Spoken/Textures/Zones/*.tga`): the game's zone achievement icons and the
+  world map's globe, copied from the game's files so every client has them; the pictures for
+  Spoken Zones' lines. They are Blizzard's. Forever's own zones, which have no icon in the game
+  (Zephras Isle, Darkspear Islands, Riverglades, Shen'dralas), have icons made for this project
+  in the same style.
+- **Zone pictures** (`addons/Spoken_Zones/Textures/Pictures/*.blp`): screenshots of the game from
+  each place's [Warcraft Wiki](https://warcraft.wiki.gg) page, cropped, tinted and edged by
+  `pipelines/zones/tools/pictures/prepare.py`. The game in them is Blizzard's; each source file's
+  wiki page gives its uploader and terms, listed per picture in that folder's `CREDITS.md`. The
+  edge masks (`Mask*.blp`) are made for this project.
 - **Lore page art** (`addons/Spoken_Zones/Textures/Art/*.tga`): the spellbook's parchment,
   divider and backplate, and the quest log's details page and frame, cut from the game's UI
   files (Forever client) so the page looks the same on every client. They are Blizzard's.
-- **Link icons** (`addons/Spoken/Textures/Link*.tga`): the GitHub, Discord and CurseForge logos,
-  each white on a square of its brand colour. GitHub's and Discord's shapes come from
-  [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons), CurseForge's from
-  [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0). The logos are trademarks of
-  GitHub, Inc., Discord Inc. and Overwolf (CurseForge), used only to link to those sites.
+- **Subtitle background and progress line** (`addons/Spoken/Textures/SubtitleBand.tga`,
+  `SubtitleLine.tga`): the band shade and the line's gold fill from shorley's
+  [Spoken Subtitles](https://github.com/shorley-gm/spoken-subtitles) (MIT), used as they are
+  there.
+- **Stop and Replay glyphs** (`addons/Spoken/Textures/GlyphStop.tga`, `GlyphReplay.tga`): drawn
+  for this project in the gold of the player's play and pause glyphs; Stop is built from the
+  pause glyph's bar.
+- **Link icons** (`addons/Spoken/Textures/Link*.tga`): the GitHub, Discord, CurseForge, Wago and
+  Buy Me a Coffee logos, each on a square of its brand colour. GitHub's and Discord's shapes come
+  from [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons), CurseForge's and Buy Me
+  a Coffee's from [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0), Wago's from
+  the logo on addons.wago.io. The logos are trademarks of GitHub, Inc., Discord Inc., Overwolf
+  (CurseForge), Wago and Buy Me a Coffee, used only to link to those sites.
 - **Minimal Classic player textures** (`addons/Spoken/Textures/Minimal*.tga`)
   also derive from Blizzard UI artwork. Sources and adaptations are listed in
   [`docs/minimal-classic/ARTWORK.md`](docs/minimal-classic/ARTWORK.md).

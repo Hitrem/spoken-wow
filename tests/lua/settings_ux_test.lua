@@ -390,16 +390,17 @@ do
 end
 
 ---------------------------------------------------------------- links out of the game
--- GitHub, Discord and CurseForge, a row each: the icon in a module card's icon frame where a row's
+-- GitHub, Discord, CurseForge, Wago and Rusty's Buy Me a Coffee page, a row each: the icon in a module card's icon frame where a row's
 -- label starts, then a box holding the address. The game cannot open a page, so the address is
 -- there to copy: a click selects it, and nothing typed over it stays.
 do
     local links = env.Options.links
-    Expect("Spoken's page has its links", links ~= nil and #links, 3)
+    Expect("Spoken's page has its links", links ~= nil and #links, 5)
     if links then
         local names = {}
         for _, frame in ipairs(links) do table.insert(names, frame.layoutLink.title) end
-        Expect("...GitHub, Discord and CurseForge", table.concat(names, " "), "GitHub Discord CurseForge")
+        Expect("...GitHub, Discord, CurseForge, Wago and Buy Me a Coffee", table.concat(names, ", "),
+            "GitHub, Discord, CurseForge, Wago, Buy Me a Coffee")
         local caption
         for _, item in ipairs(home.items) do
             for _, row in ipairs(item.rows or {}) do

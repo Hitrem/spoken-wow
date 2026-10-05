@@ -96,14 +96,32 @@ function Actions.RoundButton(parent, glyphSize, name)
     return button
 end
 
---- Play's glyph while `paused` (or not yet started), Pause's while it speaks: the two cells of
---- the portrait atlas the subtitle and the windows' mini pause draw.
-function Actions.SetPauseGlyph(button, paused)
-    local left = paused and 0 or 93
-    button.glyph:SetTexture(PORTRAIT_ATLAS)
-    button.glyph:SetTexCoord(left / PORTRAIT_ATLAS_SIZE, (left + 93) / PORTRAIT_ATLAS_SIZE,
-        419 / PORTRAIT_ATLAS_SIZE, 512 / PORTRAIT_ATLAS_SIZE)
-    button.playing = not paused
+-- A line's button shows one of three glyphs: Play for a line not yet queued, Stop while it
+-- speaks, Replay once it is stopped and still at the head. Play is the portrait atlas's cell;
+-- Stop and Replay are drawn in its gold, each in a 93-wide cell of a 128 canvas.
+local GLYPH_STOP = [[Interface\AddOns\Spoken\Textures\GlyphStop]]
+local GLYPH_REPLAY = [[Interface\AddOns\Spoken\Textures\GlyphReplay]]
+local CELL = 93 / 128
+
+function Actions.Glyph(texture, state)
+    if state == "stop" or state == "replay" then
+        texture:SetTexture(state == "stop" and GLYPH_STOP or GLYPH_REPLAY)
+        texture:SetTexCoord(0, CELL, 0, CELL)
+        return
+    end
+    texture:SetTexture(PORTRAIT_ATLAS)
+    texture:SetTexCoord(0, 93 / PORTRAIT_ATLAS_SIZE, 419 / PORTRAIT_ATLAS_SIZE, 512 / PORTRAIT_ATLAS_SIZE)
+end
+
+--- Stop while the head plays, Replay once it is stopped.
+function Actions.HeadState()
+    return SoundQueue:IsPaused() and "replay" or "stop"
+end
+
+--- A round button's glyph for `state`, remembered on it for its tooltip.
+function Actions.SetPlayGlyph(button, state)
+    Actions.Glyph(button.glyph, state)
+    button.state, button.playing = state, state == "stop"
 end
 
 local PORTRAIT_MASK = [[Interface\CharacterFrame\TempPortraitAlphaMask]]
@@ -142,8 +160,10 @@ end
 function Actions.NewRound(parent, kind, name, icon)
     if kind == "play" then
         local button = Actions.RoundButton(parent, 12, name)
-        Actions.SetPauseGlyph(button, true)
-        function button:SetPlaying(playing) Actions.SetPauseGlyph(self, not playing) end
+        Actions.SetPlayGlyph(button, "play")
+        --- "play", "stop" or "replay".
+        function button:SetState(state) Actions.SetPlayGlyph(self, state) end
+        function button:SetPlaying(playing) Actions.SetPlayGlyph(self, playing and "stop" or "play") end
         -- Greyed, as a button with nothing to play.
         button:HookScript("OnDisable", function(self)
             if self.glyph.SetDesaturated then self.glyph:SetDesaturated(true) end

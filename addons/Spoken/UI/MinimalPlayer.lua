@@ -23,6 +23,7 @@ local BADGES = {
     book = [[Interface\GossipFrame\TrainerGossipIcon]],
     zone = [[Interface\WorldMap\UI-World-Icon]],
 }
+MinimalPlayer.BADGES = BADGES
 local function Clamp(n, low, high) return math.max(low, math.min(high, n)) end
 -- The frame still resizes while the UI is torn down, after AceDB strips it (Addon:Profile).
 local function Config() return Addon:Profile("Frame") end
@@ -294,8 +295,9 @@ function MinimalPlayer:BuildPortrait()
         self:UpdateControls()
         if not self:HasClip() or self.menu:IsShown() then return end
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-        GameTooltip:SetText(SoundQueue:IsPaused() and L.PLAY or L.PAUSE)
-        GameTooltip:AddLine(L.PAUSE_TOOLTIP, 1, 1, 1, true)
+        local stopped = SoundQueue:IsPaused()
+        GameTooltip:SetText(stopped and L.REPLAY or L.STOP)
+        GameTooltip:AddLine(stopped and L.REPLAY_TOOLTIP or L.STOP_TOOLTIP, 1, 1, 1, true)
         GameTooltip:AddLine(L.MIN_MENU_HINT, 1, .82, 0, true)
         GameTooltip:Show()
     end)
@@ -327,7 +329,7 @@ function MinimalPlayer:BuildMenu()
         table.insert(self.menuButtons, button)
         return button
     end
-    self.menuPlay = Item(L.PAUSE, function() if SoundQueue:CanBePaused() then SoundQueue:TogglePauseQueue() end end)
+    self.menuPlay = Item(L.STOP, function() if SoundQueue:CanBePaused() then SoundQueue:TogglePauseQueue() end end)
     self.menuSkip = Item(L.MIN_SKIP, function() SoundQueue:Skip() end)
     self.menuStop = Item(L.MIN_STOP_ALL, function() SoundQueue:RemoveAllSoundsFromQueue() end)
     self.menuQueue = Item(L.QUEUE_TITLE, function() self:ToggleQueue() end)
@@ -463,14 +465,13 @@ end
 function MinimalPlayer:UpdateControls()
     if not self.clip then return end
     local paused, playing = SoundQueue:IsPaused(), SoundQueue:IsPlaying()
-    local left = paused and 0 or 93
-    self.pause:GetNormalTexture():SetTexCoord(left / 512, (left + 93) / 512, 419 / 512, 1)
+    Actions.Glyph(self.pause:GetNormalTexture(), Actions.HeadState())
     self.pause:GetNormalTexture():SetAlpha((paused or MouseIsOver(self.pause)) and .9 or 0)
     self.pause.wash:SetShown(paused and not playing)
     self.bar:SetStatusBarColor(paused and .48 or .86, paused and .44 or .67, paused and .32 or .14)
     local held = not paused and not playing and SoundQueue:GetHeldReason(self.clip)
     self.title.text:SetText(held and format("%s |cffaaaa88(%s)|r", Label(self.clip), held) or Label(self.clip))
-    self.menuPlay.text:SetText(paused and L.MIN_RESTART or L.PAUSE)
+    self.menuPlay.text:SetText(paused and L.REPLAY or L.STOP)
     self.menuQueue.text:SetText(format("%s (%d)", L.QUEUE_TITLE, Waiting()))
     for _, button in ipairs({ self.menuPlay, self.menuSkip, self.menuStop }) do
         if SoundQueue:CanBePaused() then button:Enable(); button.text:SetAlpha(1)
@@ -486,7 +487,7 @@ function MinimalPlayer:UpdateProgress()
         -- The queue's timer includes the source's trailing gap and any initial
         -- silence. TimeLeft therefore also handles hidden UI and replay accurately.
         local remaining = Addon:TimeLeft(clip.nextSoundTimer)
-        self.seconds = Clamp(duration + (clip.source.interClipGap or 0) - remaining, 0, duration)
+        self.seconds = Clamp(duration + SoundQueue:GapAfter(clip) - remaining, 0, duration)
     elseif not SoundQueue:IsPaused() then self.seconds = 0 end
     self.bar:SetValue(duration > 0 and (self.seconds or 0) / duration or 0)
 end

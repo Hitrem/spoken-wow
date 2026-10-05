@@ -138,6 +138,10 @@ local LINKS = {
         url = "https://discord.gg/HEGUgn6Yf", tip = "LINK_DISCORD_TIP" },
     { name = "CurseForge", icon = [[Interface\AddOns\Spoken\Textures\LinkCurseForge]],
         url = "https://www.curseforge.com/wow/addons/spoken-player", tip = "LINK_CURSEFORGE_TIP" },
+    { name = "Wago", icon = [[Interface\AddOns\Spoken\Textures\LinkWago]],
+        url = "https://addons.wago.io/addons/spoken-player", tip = "LINK_WAGO_TIP" },
+    { name = "Buy Me a Coffee", icon = [[Interface\AddOns\Spoken\Textures\LinkBuyMeACoffee]],
+        url = "https://buymeacoffee.com/rustykey", tip = "LINK_COFFEE_TIP" },
 }
 Options.LINKS = LINKS
 
@@ -416,9 +420,15 @@ local function Build(canvas)
         ForSubtitles(layout:Slider(L.OPT_SUBTITLE_SIZE, 0.6, 1.6, 0.05,
             function() return transcript().SubtitleScale end,
             function(v) transcript().SubtitleScale = v end, refreshSubtitle, nil, L.OPT_SUBTITLE_SIZE_TIP))
+        ForSubtitles(layout:Slider(L.OPT_SUBTITLE_SENTENCES, 1, 4, 1,
+            function() return transcript().SubtitleSentences or 3 end,
+            function(v) transcript().SubtitleSentences = v end, refreshSubtitle, Layout.Number, L.OPT_SUBTITLE_SENTENCES_TIP))
         ForSubtitles(layout:Slider(L.TRANSCRIPT_SHADOW, 0, 1, 0.05,
             function() return transcript().SubtitleShadow end,
             function(v) transcript().SubtitleShadow = v end, refreshSubtitle, nil, L.TRANSCRIPT_SHADOW_TIP))
+        ForSubtitles(layout:Checkbox(L.OPT_SUBTITLE_PROGRESS, L.OPT_SUBTITLE_PROGRESS_TIP,
+            function() return transcript().SubtitleProgress ~= false end,
+            function(v) transcript().SubtitleProgress = v end, refreshSubtitle))
         panel.sampleButton = Only(layout:Button(L.SUBTITLE_SAMPLE_SHOW, 200, function()
             Subtitle:ShowSample(not Subtitle:IsShowingSample())
             Options:UpdateRows()
@@ -482,6 +492,9 @@ local function Build(canvas)
                 end
             end, function() Options:UpdateRows() end)
     end
+    layout:Slider(L.OPT_LINE_GAP, 0, 5, 0.25,
+        function() return audio().LineGap or 0 end, function(v) audio().LineGap = v end,
+        nil, Layout.Seconds, L.OPT_LINE_GAP_TIP)
     if OtherSounds:IsAvailable() then
         local lower = function() return audio().LowerOthers end
         local apply = function() OtherSounds:RefreshConfig(); Options:UpdateRows() end

@@ -91,6 +91,25 @@ local function CreatureFor(soundData)
     return nil
 end
 
+-- A line from something faceless shows the item that starts the quest, else a posted notice.
+local NOTICE = [[Interface\Icons\INV_Misc_Note_01]]
+local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
+local function Faceless(soundData)
+    local icon, crop
+    if Spoken and Spoken.QuestItemIcon then icon, crop = Spoken:QuestItemIcon(soundData.questID) end
+    return { kind = "texture", texture = icon or NOTICE, texCoord = crop or ICON_CROP }
+end
+
+local function PortraitFor(soundData)
+    if soundData.unitIsObjectOrItem then return Faceless(soundData) end
+    return {
+        kind = "model",
+        creatureID = CreatureFor(soundData),
+        animation = 60,
+        fallback = { kind = "texture", texture = BOOK },
+    }
+end
+
 -- The Stop Gossip control, anchored to the header as it always was. The one place the
 -- domain-agnostic frame is asked to host something quest-shaped.
 local STOP_GOSSIP = {
@@ -162,8 +181,7 @@ local REPORT = {
             -- is an English take even under a German selection, and its report is about that.
             ReportButton:ShowLink(target, clip.language)
         else
-            StaticPopup_Show("VOICEOVER_ERROR",
-                "This client cannot tell which line that was, so there is no address to report.")
+            StaticPopup_Show("VOICEOVER_ERROR", L.OPT_REPORT_NO_LINE)
         end
     end,
 }
@@ -184,17 +202,14 @@ function Player:Prepare(soundData)
     soundData.key = soundData.fileName
     soundData.path = soundData.filePath
     soundData.priority = gossip and "low" or "normal"
+    -- Gossip plays alongside the NPC's own voice; only quest text silences it.
+    soundData.keepsGameDialogue = gossip or nil
     soundData.present = {
         header = soundData.name or "",
         label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),
         bullet = BULLETS[event],
         tint = gossip and { 1, 1, 1 } or nil,
-        portrait = {
-            kind = "model",
-            creatureID = CreatureFor(soundData),
-            animation = 60,
-            fallback = { kind = "texture", texture = BOOK },
-        },
+        portrait = PortraitFor(soundData),
         actions = ACTIONS,
     }
     return soundData
@@ -225,6 +240,25 @@ function Player:Enqueue(soundData)
     return self:EnqueuePrepared(soundData)
 end
 
+--- A line asked for by hand: played at once when idle or stopped, else queued behind the line
+--- speaking.
+---@param soundData SoundData
+---@return boolean queued
+function Player:PlayNow(soundData)
+    if not self.source then
+        Debug:Record("player-missing", "The Spoken player addon is not installed")
+        return false
+    end
+    if not DataModules:PrepareSound(soundData) then
+        Debug:Record("data-lookup-failed", format("No sound entry for event %s, quest ID %s",
+            Enums.SoundEvent:GetName(soundData.event) or tostring(soundData.event), tostring(soundData.questID or "none")))
+        return false
+    end
+    self:Prepare(soundData)
+    local queued = self.source:PlayNow(soundData)
+    return queued and true or false
+end
+
 --- Hand the player a line whose file DataModules has already resolved.
 ---@param soundData SoundData
 ---@return boolean queued
@@ -252,7 +286,7 @@ function Player:EnqueuePrepared(soundData)
     end
 
     if Spoken:IsPaused() then
-        Debug:Record("queue-paused", "The voiceover is queued, but playback is paused; run /spq play")
+        Debug:Record("queue-paused", "The voiceover is queued, but playback is stopped; run /spq play")
     end
     return true
 end

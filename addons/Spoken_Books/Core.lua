@@ -164,6 +164,8 @@ function SpokenBooks:SetupSource()
 		-- Durations come from a generated lookup and are exact, so the gap only has to
 		-- separate two pages of prose rather than absorb a bad measurement.
 		interClipGap = 0.35,
+		-- A book's pages read on as one text: no pause between lines between them.
+		continuous = true,
 		-- What Spoken's settings show on this part's card: which voice packs are installed.
 		packs = function()
 			local names = {}

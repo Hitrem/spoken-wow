@@ -198,7 +198,7 @@ function DialogPlayButton:Setup()
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         if self:GetText() == L.OPT_STOP then
-            GameTooltip:SetText(L.OPT_STOP_TIP)
+            GameTooltip:SetText(L.OPT_DIALOG_STOP_TIP)
         else
             GameTooltip:SetText(L.OPT_READ_TIP)
             GameTooltip:AddLine(L.OPT_AUTOPLAY_OFF_TIP, 1, 0.8, 0.2, true)

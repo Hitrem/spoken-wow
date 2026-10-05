@@ -137,7 +137,7 @@ function SpokenBooks:SetupOptions()
 	layout:Section(L.OPT_SECTION_READ)
 	layout:Button(L.OPT_FORGET, 200, function()
 		local count = SpokenBooks:ForgetRead()
-		SpokenBooks:Print(L.OPT_FORGET_DONE_FMT:format(count, count == 1 and "" or "s"))
+		SpokenBooks:Print(L.OPT_FORGET_DONE_FMT:format(count))
 	end, L.OPT_FORGET_TIP)
 
 	-- Every voice pack, a row each, as on the quests page: its version where it is installed,
@@ -225,6 +225,7 @@ function SpokenBooks:OpenOptions()
 	if self.optionsPage and self.optionsPage.Open and self.optionsPage.Open() then return end
 	local category = category or (self.optionsPage and self.optionsPage.category)
 	if not (SpokenLayout and SpokenLayout.OpenCategory(category)) then
-		self:Print("open Game Menu -> Options -> AddOns -> Spoken Books")
+		self:Print(self.optionsPage and "open Game Menu -> Options -> AddOns -> Spoken -> Books"
+			or "open Game Menu -> Options -> AddOns -> Spoken Books")
 	end
 end

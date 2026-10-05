@@ -33,6 +33,7 @@ local defaults = {
 	panelWidth = 360,
 	fontSize = 12,
 	showHoverPreview = true,
+	showPictures = true,
 	showMinimapButton = true,
 	voiceEnabled = true,
 	-- Dialog so narration rides the player's dialog volume slider rather than
@@ -181,6 +182,15 @@ function SpokenZones:IsPending(entry)
 		return true
 	end
 	return (entry.full or "") == "" and (entry.short or "") == ""
+end
+
+--- The place's picture and its edge mask, or nil without one or with pictures turned off.
+function SpokenZones:Picture(mapID, key)
+	local pictures = self.pictures and mapID and self.pictures[mapID]
+	local picture = pictures and pictures[key or ""]
+	if not picture or self:Get("showPictures") == false then return nil end
+	local folder = [[Interface\AddOns\Spoken_Zones\Textures\Pictures\]]
+	return folder .. picture[1], folder .. "Mask" .. picture[2]
 end
 
 function SpokenZones:GetLore(mapID)
@@ -876,7 +886,7 @@ local function CmdHelp()
 	for _, key in ipairs({
 		"CMD_STATUS", "CMD_OPTIONS", "CMD_WINDOW", "CMD_PANEL", "CMD_HOVER",
 		"CMD_PLAY", "CMD_STOP", "CMD_VOICE", "CMD_AUTOPLAY", "CMD_AUDIO",
-		"CMD_LANG", "CMD_DISCOVER", "CMD_FORGET", "CMD_BAR", "CMD_MINIMAP",
+		"CMD_LANG", "CMD_DISCOVER", "CMD_FORGET", "CMD_MINIMAP",
 		"CMD_DEBUG", "CMD_VERIFY", "CMD_DUMP",
 	}) do
 		SpokenZones:Print(L[key])
@@ -962,11 +972,6 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 		end
 		SpokenZones:Print('simulating discovery of "%s"', tostring(areaName))
 		SpokenZones:OnAreaDiscovered(areaName)
-	elseif cmd == "bar" then
-		if SpokenZones.ResetPlayerPosition then
-			SpokenZones:ResetPlayerPosition()
-			SpokenZones:Print("player moved back to the middle of the screen")
-		end
 	elseif cmd == "debug" then
 		local enabled = not SpokenZones:Get("debug")
 		SpokenZones:Set("debug", enabled)

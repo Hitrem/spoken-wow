@@ -207,6 +207,99 @@ function Spoken:VoicePack(module, lang)
     return PACK_FOLDERS[module] .. "_" .. lang, url
 end
 
+-- Zone icons by uiMapID, copied into Textures/Zones so every client has them. A city takes its
+-- zone's icon, Teldrassil takes Darnassus's, and a map not listed takes its parent's.
+local ZONE_ART = [[Interface\AddOns\Spoken\Textures\Zones\]]
+local ZONE_ICONS = {
+    [947] = "Azeroth", [1414] = "Kalimdor", [1415] = "EasternKingdoms",
+    [1411] = "Durotar", [1412] = "Mulgore", [1413] = "Barrens", [1416] = "AlteracMountains",
+    [1417] = "ArathiHighlands", [1418] = "Badlands", [1419] = "BlastedLands", [1420] = "TirisfalGlades",
+    [1421] = "Silverpine", [1422] = "WesternPlaguelands", [1423] = "EasternPlaguelands",
+    [1424] = "HillsbradFoothills", [1425] = "Hinterlands", [1426] = "DunMorogh", [1427] = "SearingGorge",
+    [1428] = "BurningSteppes", [1429] = "ElwynnForest", [1430] = "DeadwindPass", [1431] = "Duskwood",
+    [1432] = "LochModan", [1433] = "RedridgeMountains", [1434] = "Stranglethorn", [1435] = "SwampOfSorrows",
+    [1436] = "Westfall", [1437] = "Wetlands", [1439] = "Darkshore", [1440] = "Ashenvale",
+    [1441] = "ThousandNeedles", [1442] = "Stonetalon", [1443] = "Desolace", [1444] = "Feralas",
+    [1445] = "DustwallowMarsh", [1446] = "Tanaris", [1447] = "Azshara", [1448] = "Felwood",
+    [1449] = "UngoroCrater", [1451] = "Silithus", [1452] = "Winterspring", [1438] = "Teldrassil",
+    [2482] = "MountHyjal",
+    [1453] = "ElwynnForest", [1454] = "Durotar", [1455] = "DunMorogh", [1456] = "Mulgore",
+    [1457] = "Teldrassil", [1458] = "TirisfalGlades",
+    -- Forever's own zones, drawn for Spoken.
+    [2521] = "ZephrasIsle", [2524] = "DarkspearIslands", [2548] = "Riverglades", [2652] = "Shendralas",
+}
+-- Trims the icons' bevelled border, as the game does in a round frame. The globe needs none.
+local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
+local WHOLE = { 0, 1, 0, 1 }
+Spoken.ZONE_ICONS = ZONE_ICONS
+
+--- The icon for `mapID` or its nearest ancestor that has one, with its crop.
+function Spoken:ZoneIcon(mapID)
+    local depth = 0
+    while mapID and depth < 6 do
+        local icon = ZONE_ICONS[mapID]
+        if icon then return ZONE_ART .. icon, icon == "Azeroth" and WHOLE or ICON_CROP end
+        local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
+        mapID = info and info.parentMapID
+        depth = depth + 1
+    end
+    return nil
+end
+
+-- C_Container where the client has it, else the old bag functions.
+local function BagSlots(bag)
+    if C_Container and C_Container.GetContainerNumSlots then return C_Container.GetContainerNumSlots(bag) or 0 end
+    return GetContainerNumSlots and GetContainerNumSlots(bag) or 0
+end
+local function SlotItem(bag, slot)
+    if C_Container and C_Container.GetContainerItemInfo then
+        local info = C_Container.GetContainerItemInfo(bag, slot)
+        if info then return info.iconFileID, info.hyperlink end
+        return nil
+    end
+    if GetContainerItemInfo then
+        local texture, _, _, _, _, _, link = GetContainerItemInfo(bag, slot)
+        return texture, link
+    end
+end
+local function SlotQuest(bag, slot)
+    if C_Container and C_Container.GetContainerItemQuestInfo then
+        local info = C_Container.GetContainerItemQuestInfo(bag, slot)
+        return info and info.questID
+    end
+    if GetContainerItemQuestInfo then
+        local _, questID = GetContainerItemQuestInfo(bag, slot)
+        return questID
+    end
+end
+local function BagIcon(test)
+    for bag = 0, NUM_BAG_SLOTS or 4 do
+        for slot = 1, BagSlots(bag) do
+            if test(bag, slot) then
+                local icon = SlotItem(bag, slot)
+                if icon then return icon, ICON_CROP end
+            end
+        end
+    end
+    return nil
+end
+
+--- The icon of the bag item that starts `questID`, with its crop.
+function Spoken:QuestItemIcon(questID)
+    if not questID then return nil end
+    return BagIcon(function(bag, slot) return SlotQuest(bag, slot) == questID end)
+end
+
+--- The icon of the bag item named `name`, with its crop.
+function Spoken:BagItemIcon(name)
+    if not name or name == "" then return nil end
+    local bracketed = "[" .. name .. "]"
+    return BagIcon(function(bag, slot)
+        local _, link = SlotItem(bag, slot)
+        return link ~= nil and string.find(link, bracketed, 1, true) ~= nil
+    end)
+end
+
 --- The voice language and the fallback the player chose for every module, as stored: "auto"
 --- or a language code, and a language code or "none". Either is nil while the player has not
 --- chosen it here, and the module then keeps its own.

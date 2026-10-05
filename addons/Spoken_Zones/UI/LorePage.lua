@@ -369,6 +369,9 @@ function Page:Show(entry)
 	-- Told to the view rather than painted on its text, which a re-wrap would repaint in full ink.
 	local color = (entry.missing or entry.empty) and Art.FADED or Art.INK
 	self.body:SetColor(color[1], color[2], color[3])
+	local picture, mask
+	if entry.audio then picture, mask = SpokenZones:Picture(entry.audio[1], entry.audio[2]) end
+	self.body:SetPicture(picture, mask)
 	self.body:SetText(entry.text or "")
 
 	local audio, report, contribute = entry.audio, entry.report, entry.contribute

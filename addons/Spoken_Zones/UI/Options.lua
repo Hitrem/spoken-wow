@@ -141,6 +141,9 @@ function SpokenZones:SetupOptions()
 	layout:Checkbox(L.OPT_HOVER,
 		L.OPT_HOVER_TIP,
 		Get("showHoverPreview"), Set("showHoverPreview"))
+	layout:Checkbox(L.OPT_PICTURES,
+		L.OPT_PICTURES_TIP,
+		Get("showPictures"), Set("showPictures"), RedrawEverything)
 	layout:Requires(layout:Slider(L.OPT_PANEL_WIDTH, 220, 520, 10,
 		Get("panelWidth"), Set("panelWidth"), RedrawPanel, SpokenLayout.Number, L.OPT_PANEL_WIDTH_TIP),
 		besideMap, L.REASON_MAP_PANEL)
@@ -164,9 +167,8 @@ function SpokenZones:SetupOptions()
 		-- The chosen language, which is not always the one on screen: a switch only takes
 		-- effect on the next load.
 		local chosen = SpokenZones:GetLanguagePreference() or SpokenZones:GetAutoLanguage()
-		if #available < 2 then
-			langNote:SetText(L.OPT_LANG_ONLY_ENGLISH)
-		elseif chosen ~= SpokenZones:GetLanguage() then
+		-- Only ever seen with a second language to choose: ShowWhen below hides it otherwise.
+		if chosen ~= SpokenZones:GetLanguage() then
 			langNote:SetText(L.OPT_LANG_RELOAD)
 		else
 			langNote:SetText(string.format(L.OPT_LANG_COUNT_FMT, #available))

@@ -121,6 +121,8 @@ SetVolumes()
 _G.SpokenSettings = nil
 env, quests = H.Fresh(stub, SPOKEN)
 O, Q = env.OtherSounds, env.SoundQueue
+-- Back to its default, so nothing in Audio differs from the defaults when AceDB strips them.
+env.Addon.db.profile.Audio.LineGap = nil
 SetVolumes()
 quests:Enqueue(H.Clip({ length = 20 }))
 stub.Advance(1.5)

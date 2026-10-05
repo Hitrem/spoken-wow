@@ -261,19 +261,19 @@ local function ShowEntry()
 		local entry = SpokenZones.Subzones[mapID] and SpokenZones.Subzones[mapID][key]
 		if entry then
 			local name = entry.name or key
-			local zoneName = ZoneName(mapID)
+			local line = SpokenZones:PlaceLine(mapID, key)
 			local back = function()
 				selection = { mapID = mapID, key = nil }
 				SpokenZones:RefreshLoreWindow()
 			end
 			if SpokenZones:IsPending(entry) then
-				page:Show({ title = name, subtitle = string.format(L.IN_ZONE_FMT, zoneName), onSubtitle = back,
+				page:Show({ title = name, subtitle = line, onSubtitle = back,
 					text = L.LORE_NOT_WRITTEN:format(name), missing = true, contribute = { mapID, name } })
 				return
 			end
 			-- Rows are keyed by the canonical form already, so this needs no normalising --
 			-- unlike the map panel, which starts from the name the client reports.
-			page:Show({ title = name, subtitle = string.format(L.IN_ZONE_FMT, zoneName), onSubtitle = back,
+			page:Show({ title = name, subtitle = line, onSubtitle = back,
 				text = entry.full or entry.short or "", audio = { mapID, key }, report = { mapID, key } })
 			return
 		end
@@ -281,26 +281,7 @@ local function ShowEntry()
 
 	local entry = SpokenZones:GetLore(mapID)
 	local name = ZoneName(mapID)
-	-- What it holds, and for a continent or a zone where it sits, a click away: Azeroth its two
-	-- continents and every zone; a continent its zones; a zone its areas.
-	local function Count(n, many, one) return n == 1 and one or string.format(many, n) end
-	local subtitle, up
-	if mapID == WORLD then
-		subtitle = Count(#Continents(), L.CONTINENT_COUNT_FMT, L.CONTINENT_COUNT_ONE) .. ", "
-			.. Count(#ZoneIDs(), L.ZONE_COUNT_FMT, L.ZONE_COUNT_ONE)
-	elseif IsContinent(mapID) then
-		subtitle = string.format(L.IN_ZONE_FMT, ZoneName(WORLD)) .. " · "
-			.. Count(#ZonesOf(mapID), L.ZONE_COUNT_FMT, L.ZONE_COUNT_ONE)
-		up = WORLD
-	else
-		local parent = ContinentOf(mapID) or WORLD
-		local subKeys = SubzoneKeys(mapID)
-		subtitle = string.format(L.IN_ZONE_FMT, ZoneName(parent))
-		if subKeys then
-			subtitle = subtitle .. " · " .. Count(#subKeys, L.SUBZONE_COUNT_FMT, L.SUBZONE_COUNT_ONE)
-		end
-		up = parent
-	end
+	local subtitle, up = SpokenZones:PlaceLine(mapID)
 	local onSubtitle = up and function()
 		selection = { mapID = up, key = nil }
 		SpokenZones:RefreshLoreWindow()
@@ -312,6 +293,28 @@ local function ShowEntry()
 	end
 	page:Show({ title = name, subtitle = subtitle, onSubtitle = onSubtitle, text = entry.full or entry.short or "",
 		audio = { mapID, nil }, report = { mapID, nil } })
+end
+
+local function Count(n, many, one) return n == 1 and one or string.format(many, n) end
+
+--- The line under a place's name: where it sits and how many places it holds. Also returns the
+--- map one level up, which a click on the line opens (nil for Azeroth).
+function SpokenZones:PlaceLine(mapID, key)
+	if key then return string.format(L.IN_ZONE_FMT, ZoneName(mapID)), mapID end
+	if mapID == WORLD then
+		return Count(#Continents(), L.CONTINENT_COUNT_FMT, L.CONTINENT_COUNT_ONE) .. ", "
+			.. Count(#ZoneIDs(), L.ZONE_COUNT_FMT, L.ZONE_COUNT_ONE), nil
+	elseif IsContinent(mapID) then
+		return string.format(L.IN_ZONE_FMT, ZoneName(WORLD)) .. " · "
+			.. Count(#ZonesOf(mapID), L.ZONE_COUNT_FMT, L.ZONE_COUNT_ONE), WORLD
+	end
+	local parent = ContinentOf(mapID) or WORLD
+	local subKeys = SubzoneKeys(mapID)
+	local line = string.format(L.IN_ZONE_FMT, ZoneName(parent))
+	if subKeys then
+		line = line .. " · " .. Count(#subKeys, L.SUBZONE_COUNT_FMT, L.SUBZONE_COUNT_ONE)
+	end
+	return line, parent
 end
 
 --------------------------------------------------------------------------------

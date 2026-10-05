@@ -135,6 +135,7 @@ for _,kind in ipairs({'Normal','Pushed','Highlight'}) do
     Widget['Get'..kind..'Texture']=function(self) return self[kind] end
 end
 function Widget:SetTexture(path) self.texture=path end
+function Widget:SetAtlas(name) self.atlas=name end
 function Widget:SetID(v) self.id=v end
 function Widget:GetID() return self.id end
 function Widget:SetOwner(v) self.owner=v end

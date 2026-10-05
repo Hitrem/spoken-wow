@@ -66,6 +66,59 @@ Expect("...the original fields survive for the dispatcher", clip.questID .. "/" 
 Expect("the watcher's stage is recorded", VO.Debug.runtime.stage, "playing")
 Expect("the player shows it", env.PlayerFrame.frame.container.name:GetText(), "Innkeeper Test")
 
+---------------------------------------------------------------- a quest from an object or an item
+-- A wanted poster's line shows a posted notice, never a captured face (the game paints an object
+-- black). A quest from an item shows the item's icon.
+VO, env, Spoken = Boot()
+local unitExists = _G.UnitExists
+_G.UnitExists = function(unit) return unit ~= "npc" and unit ~= "questnpc" end
+world.npcGUID = "GameObject-0-0-0-0-5555-0"; world.playerMapID = 1429
+world.questID = 102
+stub.ShowPanel("QuestFrameDetailPanel")
+VO.Addon:QUEST_DETAIL()
+local poster = Spoken:GetCurrent()
+Expect("a quest from an object shows a posted notice", poster and poster.present.portrait.kind .. ":"
+    .. tostring(poster.present.portrait.texture), "texture:" .. [[Interface\Icons\INV_Misc_Note_01]])
+Expect("...not a face captured from the object", env.StaticPortrait:Capture(poster), nil)
+-- 2.4.3 and 3.3.5 give hex GUIDs: a creature's still has its face, an object's still has none.
+do
+    local unitGUID, portrait, shown = _G.UnitGUID, _G.SetPortraitTexture, nil
+    _G.SetPortraitTexture = function() end
+    _G.UnitGUID = function(unit) return unit == "npc" and shown or nil end
+    local function Model(guid) return { present = { portrait = { kind = "model", unitGUID = guid } } } end
+    shown = "0xF130000B8A000123"
+    Expect("a creature's hex GUID still captures its face", env.StaticPortrait:Capture(Model(shown)) ~= nil, true)
+    shown = "0xF110000B8A000123"
+    Expect("...an object's hex GUID does not", env.StaticPortrait:Capture(Model(shown)), nil)
+    -- The subtitle and the Small Window share one texture per face; each takes it back in turn.
+    shown = "0xF130000B8A000123"
+    local subtitle, small = _G.CreateFrame("Frame"), _G.CreateFrame("Frame")
+    env.StaticPortrait:Configure(subtitle, Model(shown))
+    env.StaticPortrait:Configure(small, Model(shown))
+    env.StaticPortrait:Configure(subtitle, Model(shown))
+    Expect("a face shown in the Small Window comes back to the subtitle", subtitle.activeFrame
+        and subtitle.activeFrame:GetParent() == subtitle, true)
+    _G.UnitGUID, _G.SetPortraitTexture = unitGUID, portrait
+end
+_G.C_Container = {
+    GetContainerNumSlots = function(bag) return bag == 1 and 3 or 0 end,
+    GetContainerItemInfo = function(bag, slot) return slot == 2 and { iconFileID = 134939, hyperlink = "|cffffffff|Hitem:1307::|h[Gold Pickup Schedule]|h|r" } or nil end,
+    GetContainerItemQuestInfo = function(bag, slot) return { isQuestItem = slot == 2, questID = slot == 2 and 103 or nil } end,
+}
+world.questID = 103
+VO.Addon:QUEST_DETAIL()
+local fromItem
+for _, queued in ipairs(env.SoundQueue.sounds) do if queued.questID == 103 then fromItem = queued end end
+Expect("a quest from an item shows the item's icon", fromItem and fromItem.present.portrait.texture, 134939)
+Expect("...the icon found by name too, for a book read from the bags", Spoken:BagItemIcon("Gold Pickup Schedule"), 134939)
+_G.C_Container = nil
+Expect("a city takes its zone's icon, as an area does", Spoken:ZoneIcon(1455), [[Interface\AddOns\Spoken\Textures\Zones\DunMorogh]])
+Expect("...Azeroth the world map's globe", Spoken:ZoneIcon(947), [[Interface\AddOns\Spoken\Textures\Zones\Azeroth]])
+Expect("...a Forever zone the icon drawn for it", Spoken:ZoneIcon(2524), [[Interface\AddOns\Spoken\Textures\Zones\DarkspearIslands]])
+Expect("...and a map with none, itself or above it, none", Spoken:ZoneIcon(9999), nil)
+_G.UnitExists = unitExists
+world.npcGUID = "Creature-0-0-0-0-1234-0"; world.playerMapID = nil
+
 ---------------------------------------------------------------- gossip yields at the door
 VO, env, Spoken = Boot()
 world.gossipText = "Greetings, traveller."
@@ -91,7 +144,9 @@ VO, env, Spoken = Boot()
 VO.Addon.db.profile.Audio.AutoToggleDialog = true
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
-Expect("the first quest clip mutes the dialog channel", world.cvars.Sound_EnableDialog, "0")
+Expect("the first quest clip fades the NPC's voice rather than cutting it", world.cvars.Sound_EnableDialog ~= "0", true)
+stub.Advance(0.6)
+Expect("...then mutes the dialog channel", world.cvars.Sound_EnableDialog, "0")
 Spoken:StopAll()
 Expect("...and the last leaving restores it", world.cvars.Sound_EnableDialog, "1")
 
@@ -101,6 +156,7 @@ VO, env, Spoken = Boot()
 VO.Addon.db.profile.Audio.AutoToggleDialog = true
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
+stub.Advance(0.6)
 Expect("a quest line speaking mutes dialog before the logout", world.cvars.Sound_EnableDialog, "0")
 stub.Logout()
 Expect("...and logging out mid-line restores it", world.cvars.Sound_EnableDialog, "1")
@@ -112,6 +168,7 @@ VO.Addon.db.profile.Audio.AutoToggleDialog = true
 local zones = Spoken:RegisterSource("zones", { title = "Zones", addon = "Spoken_Zones", channel = function() return "Dialog" end })
 world.questID = 101
 VO.Addon:QUEST_DETAIL()
+stub.Advance(0.6)
 Expect("a quest line speaking mutes dialog", world.cvars.Sound_EnableDialog, "0")
 local z = H.Clip()
 Expect("a Dialog-channel clip is still admitted behind it", zones:Enqueue(z), z)
@@ -120,6 +177,7 @@ VO.Addon:QUEST_DETAIL()
 Spoken:Skip()
 Expect("the zones clip behind it speaks with dialog restored", world.cvars.Sound_EnableDialog, "1")
 Spoken:Skip()
+stub.Advance(0.6)
 Expect("the next quest line mutes it again", world.cvars.Sound_EnableDialog, "0")
 Spoken:Skip()
 Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
@@ -147,15 +205,14 @@ end
 VO, env, Spoken = MuteBoot()
 stub.ShowGossip("Greetings, traveller.")
 Open(VO, "GOSSIP_SHOW")
-Expect("a voiced NPC's gossip opening mutes dialog at once", world.cvars.Sound_EnableDialog, "0")
-Expect("...before its line is queued", Spoken:GetQueueSize(), 0)
+-- A trainer or a guard greeting the player up close keeps their own voice: only quest text
+-- silences it.
+Expect("a voiced NPC's gossip opening leaves the NPC's own voice on", world.cvars.Sound_EnableDialog, "1")
 stub.Advance(0.2)
-Expect("...the line is then read", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, GREETING_HASH)
-Expect("...with dialog still muted", world.cvars.Sound_EnableDialog, "0")
-stub.Advance(2)
-Expect("...past the mute's own deadline too", world.cvars.Sound_EnableDialog, "0")
+Expect("...the gossip line is then read", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, GREETING_HASH)
+stub.Advance(1)
+Expect("...alongside the NPC's voice, never muting it", world.cvars.Sound_EnableDialog, "1")
 Spoken:StopAll()
-Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
 
 VO, env, Spoken = MuteBoot()
 world.npcGUID = "Creature-0-0-0-0-9999-0"
@@ -186,8 +243,10 @@ VO, env, Spoken = MuteBoot()
 world.questID = 101
 stub.ShowPanel("QuestFrameDetailPanel")
 Open(VO, "QUEST_DETAIL")
-Expect("a quest dialog opening mutes dialog at once", world.cvars.Sound_EnableDialog, "0")
-stub.Advance(1)
+Expect("a quest dialog opening starts fading the NPC's voice out", world.cvars.Sound_EnableDialog, "1")
+stub.Advance(0.6)
+Expect("...and mutes it once faded", world.cvars.Sound_EnableDialog, "0")
+stub.Advance(0.4)
 Expect("...and its line is read under the mute", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
 Expect("...still muted", world.cvars.Sound_EnableDialog, "0")
 
@@ -233,7 +292,7 @@ VO, env, Spoken = Boot()
 local labels = {}
 for _, entry in ipairs(env.Minimap:BuildMenu()) do table.insert(labels, entry.text) end
 Expect("the quests addon adds its entries to the one button", table.concat(labels, "|"),
-    "Play/Pause|Stop|Settings|Quests Settings")
+    "Stop or Replay|Stop All|Settings|Quests Settings")
 Expect("...and registers no button of its own", stub.ldbObjects.SpokenQuests, nil)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end

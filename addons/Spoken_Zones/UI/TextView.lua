@@ -31,6 +31,9 @@ local EDGE_OUT = 2            -- ...reaching past the edge, over the clip line: 
 local TOP_SCALE = .5
 -- The text's room above and below, so at rest it is clear of both fades.
 local PAD_TOP, PAD_BOTTOM = FADE * TOP_SCALE + SOLID, FADE + SOLID
+-- Pictures are 2:1 and capped at PICTURE_MOST, so the wide lore window shows them only a little
+-- bigger, and drawn at PICTURE_ALPHA so the page's grain shows through.
+local PICTURE_MOST, PICTURE_GAP, PICTURE_ALPHA = 400, 10, 0.95
 
 local TextView = {}
 TextView.__index = TextView
@@ -372,6 +375,17 @@ function SpokenZones:CreateTextView(parent)
 	BuildScrollBar(view, parent)
 	BuildFade(view, parent)
 
+	-- Masked only where the client has mask textures.
+	local picture = child:CreateTexture(nil, "ARTWORK")
+	picture:SetAlpha(PICTURE_ALPHA)
+	picture:Hide()
+	view.picture = picture
+	if child.CreateMaskTexture and picture.AddMaskTexture then
+		view.pictureMask = child:CreateMaskTexture()
+		view.pictureMask:SetAllPoints(picture)
+		picture:AddMaskTexture(view.pictureMask)
+	end
+
 	-- An anchored frame has no resolved width until it has been laid out, so the
 	-- first SetText can arrive with width 0 and fail to wrap. Re-wrap whenever the
 	-- width actually changes. Setting the child/FontString width does not resize
@@ -405,6 +419,21 @@ function TextView:SetText(str)
 
 	self.text:SetText(self.lastText)
 
+	local pictureRoom = 0
+	self.text:ClearAllPoints()
+	if self.pictureFile and width > 0 then
+		local w = math.min(width, PICTURE_MOST)
+		local h = math.floor(w / 2)
+		self.picture:SetSize(w, h)
+		self.picture:ClearAllPoints()
+		self.picture:SetPoint("TOP", self.child, "TOP", 0, -PAD_TOP)
+		self.picture:Show()
+		pictureRoom = h + PICTURE_GAP
+	else
+		self.picture:Hide()
+	end
+	self.text:SetPoint("TOPLEFT", self.child, "TOPLEFT", 0, -(PAD_TOP + pictureRoom))
+
 	-- The quest text's face on a parchment page, as a quest's own words are written there.
 	local fontObject = self.ink and _G.QuestFont or GameFontHighlight
 	local fontPath = fontObject and fontObject.GetFont and fontObject:GetFont()
@@ -422,7 +451,7 @@ function TextView:SetText(str)
 		self.text:SetTextColor(self.color[1], self.color[2], self.color[3])
 	end
 
-	self.child:SetHeight((self.text:GetStringHeight() or 0) + PAD_TOP + PAD_BOTTOM)
+	self.child:SetHeight((self.text:GetStringHeight() or 0) + pictureRoom + PAD_TOP + PAD_BOTTOM)
 	self.frame:SetVerticalScroll(0)
 	self:UpdateScrollBar()
 	self:UpdateFade()
@@ -448,6 +477,17 @@ function SpokenZones:AddScrollBar(scroll, child, parent)
 	end
 	Fit()
 	return view
+end
+
+--- A picture above the text from the next SetText on: `file` a texture, `mask` the one fraying its
+--- edge. nil for none.
+function TextView:SetPicture(file, mask)
+	self.pictureFile = file
+	if not file then return end
+	self.picture:SetTexture(file)
+	if self.pictureMask then
+		self.pictureMask:SetTexture(mask or [[Interface\Buttons\WHITE8X8]], "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	end
 end
 
 --- Dark words for a parchment page, without the shadow that smudges them there.

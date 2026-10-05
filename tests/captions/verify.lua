@@ -44,6 +44,17 @@ dofile(addons .. 'Spoken/Sources.lua')
 dofile(addons .. 'Spoken/Strings.lua')
 dofile(addons .. 'Spoken/UI/Layout.lua')
 dofile(addons .. 'Spoken/UI/Transcript.lua')
+-- The status bar art the subtitle's progress bar is framed with, as a modern client describes it.
+C_Texture=C_Texture or {}
+C_Texture.GetAtlasInfo=C_Texture.GetAtlasInfo or function(name)
+    -- As the client does: it finds Vector2DMixin in the caller's environment, so a call from
+    -- Spoken's private one fails.
+    if getfenv(2)~=_G then error('unable to find mixin or metatable (Vector2DMixin)') end
+    local sizes={['widgetstatusbar-borderleft']={35,31},['widgetstatusbar-borderright']={35,31},
+        ['widgetstatusbar-bordercenter']={64,31},['widgetstatusbar-bgcenter']={64,18},['widgetstatusbar-fill-yellow']={256,15}}
+    local s=sizes[name]
+    return s and {width=s[1],height=s[2],file=0,leftTexCoord=0,rightTexCoord=1,topTexCoord=0,bottomTexCoord=1} or nil
+end
 dofile(addons .. 'Spoken/UI/Subtitle.lua')
 E.SoundUtils={WhyInaudible=function() end,IsMutedByPlayer=function() return false end,
     MuteChannel=function() end,TestSound=function() return true end,
@@ -59,6 +70,7 @@ E.Minimap={Setup=function() end}; E.Options={Setup=function() end}
 -- below, and the defaults themselves are pinned in defaults_test.
 E.Addon:InitDB()
 E.Addon.db.profile.Frame.SubtitlePlayer=false
+E.Addon.db.profile.Audio.LineGap=0
 E.Addon.db.profile.Transcript.HighlightWord=true
 E.Addon:Enable()
 local T,Q,M=E.Transcript,E.SoundQueue,E.MinimalPlayer
@@ -431,16 +443,43 @@ local function SubtitleLit()
     return false
 end
 local line='Hello there, traveller. The road ahead is long and the night is cold.'
-source:Enqueue(Clip('sub',line,10))
+source:Enqueue(Clip('sub',line,20))
 Check(not T.frame:IsShown() and not M.frame:IsShown() and not E.PlayerFrame.frame:IsShown(),
     'subtitles take the place of both windows')
 Check(S.frame:IsShown() and S.frame:GetParent()==UIParent,'the subtitle is a frame of its own')
 Check(S.frame:GetFrameStrata()=='LOW','...drawn under the panels of the game, so a window opened over it covers it')
 Check(S.title:GetText()=='NPC sub','the speaker names the subtitle')
+-- The speaker's picture before the name, and what the line belongs to in grey after it.
+Check(S.picture:IsShown() and S.viewport.active~=nil,"the subtitle shows the speaker's picture")
+do
+    local _,_,_,pictureX=S.picture:GetPoint(1)
+    local _,_,_,nameX=S.title:GetPoint(1)
+    Check(pictureX<nameX,'...before the name')
+end
+Check(S.dot:GetText()=='•' and select(2,S.dot:GetPoint(1))==S.title,'a dot follows the name')
+Check(S.label:GetText()=='Quest sub' and select(2,S.label:GetPoint(1))==S.dot,"...and the quest's title the dot")
 Check(S.frame:GetAlpha()==0 and Typed():gsub('%s','')=='','a new line fades in and types from nothing')
 Check(math.abs(S.frame:GetCenter()-UIParent:GetWidth()/2)<.001,'the subtitle is centred until moved')
 Play(1)
 Check(S.frame:GetAlpha()==1,'the fade-in completes')
+-- Spoken Subtitles' progress line under the words, and the buttons in a row under the subtitle.
+Check(not S.progressBroken and S.progressHeight==7 and S.fill.atlas=='widgetstatusbar-fill-yellow',"the progress bar is built in the game's status bar frame")
+Check(S.track:IsShown() and S.fill:GetWidth()>0.01 and S.fill:GetWidth()<S.track:GetWidth(),'the progress line fills as the line is read')
+Check(math.abs(S.track:GetWidth()-math.floor(S.shadowWant.w*.45))<1,'...across 45% of the background, as Spoken Subtitles draws it')
+do
+    -- The words as far under the name as the bar is under the words.
+    local nameToWords=S:RowHeight()-S.title:GetStringHeight()
+    nameToWords=math.floor(nameToWords/2)+8
+    Check(S.progressGap==nameToWords,'the bar sits as far under the words as the words sit under the name')
+end
+do
+    local point,relativeTo,relativePoint=S.controls:GetPoint(1)
+    Check(point=='TOP' and relativeTo==S.shadow and relativePoint=='BOTTOM','the buttons sit in a row under the background, easing with it')
+    local tall=S.frame:GetHeight()
+    cfg.SubtitleProgress=false; S:Update()
+    Check(not S.track:IsShown() and S.frame:GetHeight()<tall,'turned off, the progress line goes and the subtitle closes up')
+    cfg.SubtitleProgress=true; S:Update()
+end
 local partial=Typed()
 Check(partial~='' and partial~=line and line:find(partial,1,true)==1,'the typewriter has revealed the start of the line')
 Check(cfg.TypewriterBy=='letter','by default it types letter by letter')
@@ -454,8 +493,12 @@ end
 for _,row in ipairs(S.rows) do Check(S:Width(row.text)<=480,'every subtitle line fits inside the padding') end
 Q:PauseQueue(); Play(2)
 Check(Typed()==partial,'pausing holds the typing where the voice stopped')
+Check(S.pausedLabel:GetAlpha()==1 and S.label:GetAlpha()==0,"paused, (paused) takes the title's place after the name")
+Check(S.rowLeft==S.rowWant and S.rowWant==-S:RowWidth(true)/2,'...and the row slides to its new middle')
 Q:ResumeQueue()
 Check(Typed():gsub('%s','')=='' and S.frame:GetAlpha()==1,'resuming types again from the start without fading again')
+Play(.5)
+Check(S.pausedLabel:GetAlpha()==0 and S.label:GetAlpha()==1,'...and the title comes back on resuming')
 Play(9.7)
 Check(Typed()==line,'the whole line is typed before the voice finishes')
 cfg.Typewriter=false; T:RefreshConfig()
@@ -485,8 +528,9 @@ Play(.2)
 Check(S.controls:GetAlpha()==1,'...all the way')
 S.pause:Fire('OnClick')
 Play(.3)
-Check(Q:IsPaused() and S.title:GetText()=='NPC sub' and S.pausedLabel:GetText():find('paused',1,true)~=nil
-    and S.pausedLabel:GetAlpha()==1,'its pause button pauses the line, and "(paused)" fades in beside the title')
+Check(Q:IsPaused() and S.title:GetText()=='NPC sub' and S.pausedLabel:GetText()=='(Stopped)'
+    and S.pausedLabel:GetAlpha()==1,'its Stop button stops the line, and "(Stopped)" fades in beside the title')
+Check(S.pause.state=='replay','...and the button turns to Replay')
 S.pause:Fire('OnClick')
 Play(.05)
 Check(not Q:IsPaused() and S.pausedLabel:GetAlpha()>0 and S.pausedLabel:GetAlpha()<1,'...and plays it again, the label fading out')
@@ -517,7 +561,9 @@ S.frame:Fire('OnDragStart'); cursor[2]=100; S.frame:Fire('OnDragStop'); cursor[2
 Check(math.abs(S.frame:GetTop()-500)<.001,'locking the window locks the subtitle')
 frameCfg.LockFrame=false; E.PlayerFrame:RefreshConfig()
 source:Enqueue(Clip('short','Aye.',2)); Q:Skip()
-Check(S.title:GetText()=='NPC short' and S.frame:GetAlpha()==0,'the next line replaces the last and fades in')
+Check(S.switching and S.title:GetText()~='NPC short','skipping fades the last line out first, as a line ending on its own does')
+Play(.55)
+Check(S.title:GetText()=='NPC short' and S.wanted and S.frame:GetAlpha()<1,'...then the next fades in')
 Check(math.abs(S.frame:GetCenter()-droppedCenter)<.001 and math.abs(S.frame:GetTop()-500)<.001,
     'a shorter line stays centred where the subtitle was put')
 Q:RemoveAllSoundsFromQueue()
@@ -602,4 +648,72 @@ Check(snap.text=='Text from NPC','captured NPC text is preserved')
 GetQuestLogQuestText=function() error('client API unavailable') end
 local unavailable={event=V.Enums.SoundEvent.QuestAccept,questID=33,fileName='accept'}
 Check(pcall(V.Player.Prepare,V.Player,unavailable),'missing log APIs do not break playback')
+-- A zone's own story names the zone once: centred on the picture and the name, with no dot, and
+-- "(paused)" straight after the name.
+do
+    local zone={key='z',path='z',length=5,text='A zone.',present={header='Durotar',label='Durotar'}}
+    S:Prepare(zone,'A zone.'); S.shownPaused=false; S:Layout('A zone.')
+    local plain=S:RowWidth(false)
+    Check(not S.dot:IsShown() and S.label:GetText()=='' and plain==36+8+S.title:GetStringWidth()
+        and S.rowWant==-plain/2,"a zone's story names it once, centred, with no dot")
+    Check(select(2,S.pausedLabel:GetPoint(1))==S.title,'...and (paused) follows its name')
+end
+-- Report goes with the subtitle as it fades out after the last line, not ahead of it.
+do
+    local style=E.Addon:PlayerStyle()
+    E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+    local rc=Clip('rep','Report me.',5)
+    rc.present.actions={{id='report',icon='bug',anchor='topright',label='Report'}}
+    source:Enqueue(rc); Play(.7)
+    Check(S.report~=nil and S.report:IsShown(),'a line with Report shows the Report icon')
+    Q:RemoveAllSoundsFromQueue()
+    Check(not S.wanted and S.report~=nil and S.report:IsShown(),'...which stays while the subtitle fades out')
+    Play(.6)
+    Check(not S.reportButton:IsShown(),'...and goes once it has faded')
+    E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+end
+-- The progress bar follows the background as it eases, holds where the voice left it as the
+-- subtitle fades out, and the row counts what waits behind the line.
+do
+    local style=E.Addon:PlayerStyle()
+    E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+    source:Enqueue(Clip('pa','One two three four five six seven eight nine ten eleven twelve.',4))
+    source:Enqueue(Clip('pb','Next.',2))
+    source:Enqueue(Clip('pc','Last.',2))
+    Play(.7)
+    Check(S.waiting==2 and S.more:GetText()=='+2' and S.more:IsShown(),'lines waiting behind show "+2" on the row')
+    local point,relativeTo=S.track:GetPoint(1)
+    Check(point=='BOTTOM' and relativeTo==S.shadow,'the progress bar hangs from the background, so it eases with it')
+    Check(math.abs(S.track:GetWidth()-math.floor(S.shadowSize.w*.45))<1,'...and is sized from its eased width')
+    Q:Skip()
+    local slid=false
+    for _=1,24 do
+        Play(.05)
+        if S.wanted and S.rowLeft and S.rowWant and S.rowLeft~=S.rowWant then slid=true end
+    end
+    Check(S.waiting==1 and S.more:GetText()=='+1' and not slid,'after a skip the next line comes with its count in, the row not sliding')
+    Q:Skip(); Play(1.2)
+    Check(S.waiting==0 and not S.more:IsShown(),'with nothing waiting, no count')
+    Play(1.2)
+    local held=S.share
+    Q:RemoveAllSoundsFromQueue(); Play(.1)
+    Check(held>0 and S.share==held and not S.wanted,'when the line ends the bar holds where it was as the subtitle fades')
+    Play(.6)
+    E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+end
+-- Sentences at Once: the subtitle pages a long line into pages of that many sentences, 3 unless
+-- the player sets 1 to 4, never more than four lines, and a change re-pages the line on screen.
+do
+    local style=E.Addon:PlayerStyle()
+    E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+    Check(cfg.SubtitleSentences==3,'Sentences at Once is 3 to begin with')
+    local long=string.rep('A long sentence that keeps going on and on across the screen. ',8)
+    source:Enqueue(Clip('lines',long,30)); Play(.7)
+    Check(#S.rows<=4 and #S.pages>1,'a long line is paged, three sentences at most to a page')
+    cfg.SubtitleSentences=1; S:Update(); Play(.1)
+    Check(#S.rows==1 and S.pageSentences==1,'set to one, the line on screen is paged again a sentence at a time')
+    cfg.SubtitleSentences=3; S:Update()
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
+    E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+end
 print(string.format('PASS: %d checks using the real queue, both player layouts, captions, commands and quest adapter.',assertions))

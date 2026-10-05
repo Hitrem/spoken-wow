@@ -108,6 +108,25 @@ stub.FireEvent("ITEM_TEXT_CLOSED")
 SlashCmdList["SPOKENBOOKS"]("read")
 Expect("/spb read with no book open queues nothing", #QueuedPages(), 0)
 
+-- With the page already queued, /spb read says why nothing new started: reading, or stopped.
+do
+    local said
+    local chat = _G.DEFAULT_CHAT_FRAME.AddMessage
+    _G.DEFAULT_CHAT_FRAME.AddMessage = function(_, message) said = message end
+    stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_1, hasNext = true })
+    stub.FireEvent("ITEM_TEXT_READY")
+    SlashCmdList["SPOKENBOOKS"]("read")
+    Expect("/spb read on the page being read says so", said and said:find("already reading") ~= nil, true)
+    Spoken:Pause()
+    SlashCmdList["SPOKENBOOKS"]("read")
+    Expect("...and on a stopped one, that Spoken is stopped", said and said:find("Spoken is stopped") ~= nil, true)
+    Spoken:Resume()
+    B:StopReading()
+    stub.ClosePage()
+    stub.FireEvent("ITEM_TEXT_CLOSED")
+    _G.DEFAULT_CHAT_FRAME.AddMessage = chat
+end
+
 ---------------------------------------------------------------- reading each book only once
 B:StopReading()
 SpokenBooksCharacter.read = {}

@@ -136,6 +136,29 @@ local booksCodes = {}
 for _, locale in ipairs(B.LOCALES) do table.insert(booksCodes, locale.code) end
 Expect("the language list matches SpokenZones'", table.concat(booksCodes, " "), H.ZonesLocaleCodes(here))
 
+---------------------------------------------------------------- what the page is on
+-- Read in the reading frame, a page shows what it is on: a book from the bags its own icon, a
+-- stone tablet a tablet. Queued with no frame open, it shows the book.
+do
+    stub.SetLocale("enUS")
+    local Bk = Install({ ENGLISH })
+    Expect("a page queued with no frame open shows the book", Bk:ClipFor(PAGE).present.portrait.texture,
+        [[Interface\AddOns\Spoken\Textures\Book]])
+    -- Open as the item text events say, not as the game's frame shows: DialogueUI hides that frame
+    -- and draws its own.
+    Bk.lastPage = PAGE
+    _G.ItemTextGetItem = function() return "Worn Tablet" end
+    _G.ItemTextGetMaterial = function() return "Stone" end
+    Expect("...one on stone shows a stone tablet", Bk:ClipFor(PAGE).present.portrait.texture, Bk.MATERIALS.Stone)
+    -- The bags are Spoken's to search (Spoken:BagItemIcon); this test loads Books alone.
+    local spoken = _G.Spoken
+    _G.Spoken = { BagItemIcon = function(_, name) return name == "Worn Tablet" and 133741 or nil, { 0, 1, 0, 1 } end }
+    Expect("...and a book from the bags its own icon", Bk:ClipFor(PAGE).present.portrait.texture, 133741)
+    _G.Spoken = spoken
+    Bk.lastPage = nil
+    _G.ItemTextGetItem, _G.ItemTextGetMaterial = nil, nil
+end
+
 stub.SetLocale("enUS")
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll books language tests passed")

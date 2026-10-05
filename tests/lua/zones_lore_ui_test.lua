@@ -64,11 +64,16 @@ function Z:GetDisplayedMapID() return 1411 end
 function Z:IsVoiceEnabled() return true end
 function Z:HasAudio() return true end
 function Z:IsPlayingLore() return false end
+function Z:IsLoreAtHead() return false end
 function Z:OnAudioChanged() end
 function Z:OnMapChanged() end
 function Z:CanContribute() return true end
 function Z:ResolveAreaKey(name) return name and string.lower(name) end
 function Z:ClearSubzone() self.selected = nil; self:RefreshPanel() end
+-- Durotar has a picture; its areas have none.
+function Z:Picture(mapID, key)
+    if mapID == 1411 and not key then return "Pictures/zone-1411", "Pictures/Mask2" end
+end
 Z.ToggleLoreWindow = nil
 _G.hooksecurefunc = _G.hooksecurefunc or function() end
 
@@ -93,6 +98,14 @@ Z:ToggleLoreWindow()
 Expect("opening it lands on where the player stands", page.title.text, "Durotar")
 Expect("...the story in the spellbook's ink", page.body.ink and page.body.ink[1], 0.24)
 Expect("...with Play and Report for it", page.play.mapID == 1411 and page.report.mapID == 1411, true)
+Expect("...and the zone's picture above the story", page.body.picture:IsShown() and page.body.picture:GetTexture(), "Pictures/zone-1411")
+Expect("...its edge frayed by its mask", page.body.pictureMask:GetTexture(), "Pictures/Mask2")
+Expect("...a little see-through, so the parchment shows in it", page.body.picture:GetAlpha(), 0.95)
+Expect("...as wide as the words, up to its most", page.body.picture:GetWidth(), math.min(400, page.body.text:GetWidth()))
+Expect("...centred over them", select(1, page.body.picture:GetPoint(1)) == "TOP"
+    and select(2, page.body.picture:GetPoint(1)) == page.body.child, true)
+local _, _, _, _, textTop = page.body.text:GetPoint(1)
+Expect("...the words below it", textTop < -page.body.picture:GetHeight(), true)
 
 -- The list: Durotar open, its two areas under it, Dun Morogh closed.
 local rows = {}
@@ -219,10 +232,17 @@ Expect("...and shows the zone the map is on, with its story", mapPage.title.text
     "Durotar: Durotar is a cracked, red land.")
 Z.selected = { mapID = 1411, areaName = "Valley of Trials", entry = Z.Subzones[1411]["valley of trials"] }
 Z:RefreshPanel()
-Expect("an area clicked on the map shows its story, with a way back to the zone",
-    mapPage.title.text .. "|" .. mapPage.sub.text.text, "Valley of Trials|" .. Z.L.BACK_TO_ZONE:format("Durotar"))
+Expect("an area clicked on the map says which zone it is in, as Lore of Azeroth does",
+    mapPage.title.text .. "|" .. mapPage.sub.text.text, "Valley of Trials|" .. Z.L.IN_ZONE_FMT:format("Durotar"))
 mapPage.sub.scripts.OnClick(mapPage.sub)
-Expect("...which goes back", mapPage.title.text, "Durotar")
+Expect("...and the line goes back to the zone's story", mapPage.title.text, "Durotar")
+Expect("a zone's line is Lore of Azeroth's: its continent, and how many areas", mapPage.sub.text.text,
+    (Z:PlaceLine(1411)))
+local shownMap
+WorldMapFrame.SetMapID = function(_, id) shownMap = id end
+mapPage.sub.scripts.OnClick(mapPage.sub)
+Expect("...a click taking the map up to the continent", shownMap, 1414)
+WorldMapFrame.SetMapID = nil
 
 ---------------------------------------------------------------- Lore of Azeroth from the panel
 local opened

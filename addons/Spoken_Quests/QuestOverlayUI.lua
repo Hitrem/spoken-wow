@@ -168,7 +168,7 @@ function QuestOverlayUI:BindPlayButton(playButton, questID, soundTitle)
         local isPlaying = Player:Contains(soundData)
 
         if not isPlaying then
-            Player:Enqueue(soundData)
+            Player:PlayNow(soundData)
             QuestOverlayUI:SetPlayButtonState(self)
 
             soundData.stopCallback = function()

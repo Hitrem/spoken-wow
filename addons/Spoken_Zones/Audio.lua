@@ -92,6 +92,14 @@ end
 local BOOK = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Textures\\Book"
 local warnedNoPlayer = false
 
+--- The zone's icon, or its zone's for a subzone; the book without Spoken or an icon.
+function SpokenZones:Portrait(mapID)
+	local icon, crop
+	if Spoken and Spoken.ZoneIcon then icon, crop = Spoken:ZoneIcon(mapID) end
+	if icon then return { kind = "texture", texture = icon, texCoord = crop } end
+	return { kind = "texture", texture = BOOK }
+end
+
 -- The Spoken source this addon speaks through, or nil when the player addon is not
 -- installed. Said once, on the first thing that would have made a sound: a missing
 -- dependency that stays silent is the bug report nobody can reproduce.
@@ -101,7 +109,7 @@ local function Source()
 	end
 	if not warnedNoPlayer then
 		warnedNoPlayer = true
-		SpokenZones:Print("|cffffcc00the Spoken player addon is not installed|r -- lore cannot be read aloud without it")
+		SpokenZones:Print("|cffffcc00Spoken is not installed|r -- stories cannot be read aloud without it")
 	end
 	return nil
 end
@@ -559,8 +567,7 @@ function SpokenZones:NewLoreSound(mapID, areaKey)
 			label = label,
 			transcript = entry and entry.full,
 			bullet = "zone",
-			-- A zone has no speaker; the book is the whole answer.
-			portrait = { kind = "texture", texture = BOOK },
+			portrait = self:Portrait(mapID),
 			actions = ACTIONS,
 		},
 		-- Recorded when the clip starts rather than when it is queued, so that
