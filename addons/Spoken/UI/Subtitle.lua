@@ -12,9 +12,7 @@ Subtitle = {}
 -- The widest a line runs, padding included. LoreTeller matched Plumber's talking head.
 local WIDTH = 512
 local PAD, TOP_PAD, TITLE_GAP, BOTTOM_PAD, LINE_GAP = 16, 12, 8, 12, 2
--- How many sentences show at once, the player's setting (SubtitleSentences, 1 to 4), and never
--- more than MAX_LINES lines. Longer text is split into pages (Subtitle:Paginate), and each page
--- replaces the last once its share of the clip has played.
+-- The player's SubtitleSentences, 1 to 4. A page also never runs past MAX_LINES lines.
 local MAX_LINES, MAX_SENTENCES = 4, 4
 local function PageSentences()
     local sentences = tonumber(Addon:Profile("Transcript").SubtitleSentences) or 3
@@ -114,9 +112,8 @@ local function Sentences(text)
     return sentences
 end
 
--- Where a sentence pauses inside itself: after a comma, a semicolon, a colon or a dash, in Latin
--- script or in Chinese and Japanese punctuation. A closing quote or bracket, and the space after,
--- stay with the phrase they end.
+-- A phrase ends after a comma, semicolon, colon or dash, Latin or CJK. A closing quote or bracket,
+-- and the space after, stay with it.
 local PHRASE_ENDS = { [","] = true, [";"] = true, [":"] = true, ["\226\128\148"] = true, ["\226\128\147"] = true,
     ["\239\188\140"] = true, ["\227\128\129"] = true, ["\239\188\155"] = true, ["\239\188\154"] = true }
 local PHRASE_CLOSERS = { ['"'] = true, ["'"] = true, [")"] = true, ["]"] = true, ["\226\128\157"] = true,
@@ -185,11 +182,9 @@ function Subtitle:Wrap(text)
     return lines
 end
 
---- Pages of PageSentences() whole sentences each, fewer where they would run past MAX_LINES lines.
---- A sentence longer than MAX_LINES on its own turns at its phrases (Phrases), on pages of its own
---- with as many whole phrases to a page as fit; only a phrase longer still is cut between words.
---- Joined, the pages give back the text's words in order, which is what page timing and the active
---- word count on.
+--- Pages of whole sentences, at most PageSentences() and MAX_LINES lines each. A longer sentence turns
+--- at its phrases, and only a longer phrase between words. Joined, the pages give back the text's
+--- words in order, which page timing relies on.
 function Subtitle:Paginate(text)
     local most = PageSentences()
     self.pageSentences = most
@@ -212,8 +207,7 @@ function Subtitle:Paginate(text)
             if Fits(word) then
                 run = run .. word .. space
             else
-                -- One unbroken run longer than a page, as text written without spaces is:
-                -- cut between characters, as Wrap breaks it into lines.
+                -- An unbroken run longer than a page, as in text without spaces, is cut between characters.
                 for char in word:gmatch(UTF8_CHAR) do
                     if run ~= "" and not Fits(run .. char) then
                         runs[#runs + 1] = run
