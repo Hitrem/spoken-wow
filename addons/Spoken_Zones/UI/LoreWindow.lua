@@ -165,9 +165,10 @@ local function Matches(text)
 	return filter == "" or (text and string.find(string.lower(text), filter, 1, true) ~= nil)
 end
 
--- Whether the list shows a place: every place with Show Undiscovered Places on, otherwise only
--- those this character has found (Discovery.lua), and always the one chosen.
-local function Listed(mapID, key)
+-- Whether a place can be opened: every place with Unlock Undiscovered Places on, otherwise only
+-- those this character has found (Discovery.lua), and always the one chosen. The rest are listed
+-- greyed out.
+local function Discovered(mapID, key)
 	if SpokenZones:ShowsUndiscovered() then return true end
 	if selection and selection.mapID == mapID and (key == nil or selection.key == key) then return true end
 	return SpokenZones:IsFound(mapID, key)
@@ -179,29 +180,31 @@ local function Missing(mapID)
 end
 
 -- One zone's rows: itself, and its areas under it when it is open (or, while searching, the
--- areas that match). Nothing when neither it nor any area matches the search.
+-- areas that match). Nothing when neither it nor any area matches the search. A zone not yet
+-- discovered is listed locked: greyed out, and it does not open.
 local function ZoneRows(mapID, depth)
-	if not Listed(mapID) then return {} end
+	local locked = not Discovered(mapID)
 	local subKeys = SubzoneKeys(mapID)
 	local zoneName = ZoneName(mapID)
 	local areas = {}
 	local found = 0
 	if subKeys then
 		for _, key in ipairs(subKeys) do
-			local listed = Listed(mapID, key)
-			if listed then found = found + 1 end
+			local discovered = Discovered(mapID, key)
+			if discovered then found = found + 1 end
 			local entry = SpokenZones.Subzones[mapID][key]
 			local name = entry.name or key
-			if listed and (filter == "" and expandedZone == mapID or filter ~= "" and Matches(name)) then
+			if filter == "" and expandedZone == mapID and not locked or filter ~= "" and Matches(name) then
 				table.insert(areas, { kind = "subzone", mapID = mapID, key = key, label = name, depth = depth + 1,
-					missing = SpokenZones:IsPending(entry) })
+					missing = SpokenZones:IsPending(entry), locked = not discovered })
 			end
 		end
 	end
 	if filter ~= "" and not Matches(zoneName) and #areas == 0 then return {} end
 	local rows = { { kind = "zone", mapID = mapID, label = zoneName, depth = depth,
-		count = found, total = subKeys and #subKeys or 0, open = filter ~= "" and #areas > 0 or expandedZone == mapID,
-		missing = Missing(mapID) } }
+		count = found, total = subKeys and #subKeys or 0,
+		open = filter ~= "" and #areas > 0 or expandedZone == mapID and not locked,
+		missing = Missing(mapID), locked = locked } }
 	for _, area in ipairs(areas) do table.insert(rows, area) end
 	return rows
 end
@@ -226,15 +229,17 @@ local function BuildRowList()
 			end
 		end
 		local name = ZoneName(continent)
-		local listed = 0
+		local found = 0
 		for _, mapID in ipairs(ZonesOf(continent)) do
-			if Listed(mapID) then listed = listed + 1 end
+			if Discovered(mapID) then found = found + 1 end
 		end
-		-- A continent with none of its zones found yet stays out of the list.
-		if (listed > 0 or Listed(continent) and SpokenZones:ShowsUndiscovered()) and (not searching or Matches(name) or #zones > 0) then
+		-- A continent with none of its zones found yet is listed locked, and does not open.
+		local locked = found == 0 and not Discovered(continent)
+		if not searching or Matches(name) or #zones > 0 then
 			table.insert(continents, { kind = "continent", mapID = continent, label = name, depth = 1,
-				count = listed, total = #ZonesOf(continent), open = searching and #zones > 0 or (not searching and continentOpen[continent]),
-				missing = Missing(continent), zones = zones })
+				count = found, total = #ZonesOf(continent),
+				open = searching and #zones > 0 or (not searching and continentOpen[continent] and not locked),
+				missing = Missing(continent), zones = zones, locked = locked })
 		end
 	end
 	-- Zones on neither continent with a story, under Azeroth after them.
@@ -350,7 +355,7 @@ end
 
 local function OnRowClick(self)
 	local row = self.row
-	if not row then
+	if not row or row.locked then
 		return
 	end
 	-- While searching the list shows every match opened, whatever is open: a toggle would change
@@ -424,7 +429,7 @@ local function AcquireRow(index)
 	row.count:SetJustifyH("RIGHT")
 
 	row:SetScript("OnClick", OnRowClick)
-	row:SetScript("OnEnter", function(self) self.over = true; Light(self) end)
+	row:SetScript("OnEnter", function(self) self.over = not (self.row and self.row.locked); Light(self) end)
 	row:SetScript("OnLeave", function(self) self.over = false; Light(self) end)
 
 	rows[index] = row
@@ -462,14 +467,27 @@ local function RenderList()
 			-- Found out of all where some are not listed yet: 5/27.
 			local of = item.total and item.total > item.count and (item.count .. "/" .. item.total) or item.count
 			row.count:SetText(item.count > 0 and of or "")
-			if item.missing then row.label:SetTextColor(0.62, 0.55, 0.36) else row.label:SetTextColor(1, 0.82, 0) end
+			if item.locked then
+				row.label:SetTextColor(0.42, 0.42, 0.42)
+			elseif item.missing then
+				row.label:SetTextColor(0.62, 0.55, 0.36)
+			else
+				row.label:SetTextColor(1, 0.82, 0)
+			end
 		else
 			row.label:SetFontObject("GameFontHighlightSmall")
 			row.label:SetPoint("LEFT", row, "LEFT", 36 + indent, 0)
 			row.toggle:Hide()
 			row.count:SetText("")
 			-- A place with no story yet, greyed: still there to choose, and to write.
-			if item.missing then row.label:SetTextColor(0.5, 0.5, 0.5) else row.label:SetTextColor(0.92, 0.92, 0.92) end
+			-- One not yet discovered, darker still: listed, but it does not open.
+			if item.locked then
+				row.label:SetTextColor(0.32, 0.32, 0.32)
+			elseif item.missing then
+				row.label:SetTextColor(0.5, 0.5, 0.5)
+			else
+				row.label:SetTextColor(0.92, 0.92, 0.92)
+			end
 		end
 		row.label:SetText(item.label)
 

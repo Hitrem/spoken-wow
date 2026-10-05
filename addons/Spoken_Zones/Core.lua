@@ -33,7 +33,7 @@ local defaults = {
 	panelWidth = 360,
 	fontSize = 12,
 	showPictures = true,
-	-- Off, so Lore of Azeroth lists only the places this character has found (Discovery.lua).
+	-- Off, so Lore of Azeroth opens only the places this character has found (Discovery.lua).
 	showUndiscovered = false,
 	showMinimapButton = true,
 	voiceEnabled = true,

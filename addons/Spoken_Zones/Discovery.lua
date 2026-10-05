@@ -1,7 +1,7 @@
 -- SpokenZones -- which places this character has found, for Lore of Azeroth's list.
 --
--- Lore of Azeroth lists only the places found, with their count out of all, unless the player
--- turns on Show Undiscovered Places. A place counts as found when either:
+-- Lore of Azeroth opens only the places found and lists the rest greyed out, each count out of
+-- all, unless the player turns on Unlock Undiscovered Places. A place counts as found when either:
 --
 --   * the client has it explored. Every explored area is drawn on its zone's map as an
 --     exploration overlay, and asking which explored areas lie under those overlays

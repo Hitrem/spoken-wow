@@ -74,7 +74,7 @@ function Z:ClearSubzone() self.selected = nil; self:RefreshPanel() end
 function Z:Picture(mapID, key)
     if mapID == 1411 and not key then return "Pictures/zone-1411", "Pictures/Mask2" end
 end
--- Every place listed, as with Show Undiscovered Places on, until the checks for the found-only
+-- Every place listed, as with Unlock Undiscovered Places on, until the checks for the found-only
 -- list below turn it off.
 local showAll, found = true, {}
 function Z:ShowsUndiscovered() return showAll end
@@ -298,16 +298,31 @@ Expect("the map's panel on the quest details' copy", Z:CreateLorePage(createFram
 ATLASES["spellbook-Page-Right-C60"], ATLASES["QuestDetailsBackgrounds"] = true, true
 ATLASES["spellbook-divider"] = true
 
----------------------------------------------------------------- only the places found
+---------------------------------------------------------------- places not yet discovered
 -- Durotar and one of its areas found; Dun Morogh and Somewhere Else not.
+local function Locked()
+    local labels = {}
+    for _, row in ipairs(rows) do
+        if row.shown ~= false and row.row and row.row.locked then table.insert(labels, row.label.text) end
+    end
+    return table.concat(labels, "|")
+end
 showAll, found = false, { ["1411"] = true, ["1411/valley of trials"] = true }
 Z:ShowLoreFor(1411, nil)
-Expect("only the places found are listed, a continent with none found left out", Shown(), "Azeroth|Kalimdor|Durotar|Valley of Trials")
+Expect("every place is listed, discovered or not", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+Expect("...those not yet discovered locked: a continent with none found, an area not found", Locked(), "Eastern Kingdoms|Sen'jin Village")
+RowFor("Sen'jin Village").scripts.OnEnter(RowFor("Sen'jin Village"))
+Expect("...not lit under the pointer", RowFor("Sen'jin Village").over, false)
 Expect("...a zone's count its areas found out of all", RowFor("Durotar").count.text, "1/2")
 Expect("...and a plain count where all are found", RowFor("Kalimdor").count.text, 1)
+RowFor("Eastern Kingdoms").scripts.OnClick(RowFor("Eastern Kingdoms"))
+Expect("a locked continent does not open", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
+Expect("a locked area cannot be chosen", RowFor("Sen'jin Village").row and RowFor("Durotar").selected, true)
 showAll = true
 Z:RefreshLoreWindow()
-Expect("Show Undiscovered Places lists them all again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+Expect("Unlock Undiscovered Places opens them all", Locked(), "")
+Expect("...the continent opened before shows its zones again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
 Expect("...with plain counts", RowFor("Durotar").count.text, 2)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end

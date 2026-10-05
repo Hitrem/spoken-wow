@@ -141,8 +141,8 @@ L.MENU_LORE_WINDOW = "Open Lore of Azeroth"
 L.OPEN_IN_LORE_TIP = "This place's story in Lore of Azeroth, beside every other zone and area's."
 L.OPT_SECTION_LORE = "Lore of Azeroth"
 L.OPT_LORE_WINDOW_TIP = "The stories of the zones and areas you have discovered, to browse and listen to wherever you are."
-L.OPT_SHOW_UNDISCOVERED = "Show Undiscovered Places"
-L.OPT_SHOW_UNDISCOVERED_TIP = "Lists every zone and area, including those you have not discovered yet."
+L.OPT_SHOW_UNDISCOVERED = "Unlock Undiscovered Places"
+L.OPT_SHOW_UNDISCOVERED_TIP = "Lets you open every zone and area, including those you have not discovered yet. When off, they are greyed out."
 L.MENU_ZONE_SETTINGS = "Zones Settings"
 
 --------------------------------------------------------------------------------
