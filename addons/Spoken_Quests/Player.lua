@@ -184,8 +184,7 @@ function Player:Prepare(soundData)
     soundData.key = soundData.fileName
     soundData.path = soundData.filePath
     soundData.priority = gossip and "low" or "normal"
-    -- A trainer's or a guard's greeting is theirs to say: Spoken's gossip line plays without
-    -- silencing the NPC's own voice. Only quest text does (SoundQueue:PlaySound).
+    -- Gossip plays alongside the NPC's own voice; only quest text silences it.
     soundData.keepsGameDialogue = gossip or nil
     soundData.present = {
         header = soundData.name or "",

@@ -17,10 +17,8 @@ SoundUtils = {}
 local CHANNEL_CVARS = { SFX = "Sound_EnableSFX", Music = "Sound_EnableMusic", Ambience = "Sound_EnableAmbience", Dialog = "Sound_EnableDialog" }
 local mutedByPlayer = {}
 
--- Muting the game's NPC voices with `fadeOut` fades them first rather than cutting them mid-word:
--- the Dialog volume is stepped down over DIALOG_FADE, the channel switched off, and its volume put
--- back as it was, so the player's own setting is never changed. Unmuted before the fade ends, or
--- at logout, the volume goes straight back.
+-- A fadeOut mute steps the Dialog volume down, switches the channel off, then restores the volume,
+-- so the player's own setting never changes. Unmuting mid-fade or logging out restores it at once.
 local DIALOG_FADE, FADE_STEP = 0.5, 0.05
 local fade
 local function EndFade()
@@ -29,9 +27,8 @@ local function EndFade()
     if fade.volume then SetCVar("Sound_DialogVolume", fade.volume) end
     fade = nil
 end
--- Whether Lower Other Sounds turns NPC voices down while a line speaks (OtherSounds). It fades the
--- Dialog volume itself, so the fade here leaves the volume to it and only switches the channel off
--- at the end: two fades on one volume undid each other.
+-- OtherSounds fades the Dialog volume itself when it lowers NPC voices. Two fades on one volume
+-- undo each other, so then the mute only switches the channel off.
 local function OthersLowerDialog()
     local audio = Addon.db and Addon.db.profile.Audio
     local lower = audio and audio.LowerOthers

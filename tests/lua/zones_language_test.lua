@@ -150,12 +150,7 @@ Z = InstallItalian("itIT", {})
 Expect("G. a client claiming Italian still reads English on Auto", Z:GetAutoLanguage(), "enUS")
 
 ---------------------------------------------------------------- H. what the client's font draws
--- A language of another script is offered where the lore's font draws it: a German client whose
--- font has Cyrillic offers Russian, and none offers Korean or Chinese without their glyphs. The
--- font is asked by drawing the language's own name against as many characters no font has.
--- The page pins its text to a font file, which has none of the font object's fallbacks for other
--- alphabets: the name is drawn in the lore's own files, and a file without Cyrillic offers no
--- Russian even where the font object would have drawn it.
+-- Another script is offered only where every font file the page uses draws it.
 local fontHas = {   -- Cyrillic's lead bytes, by the file that draws them
     ["Fonts\\FRIZQT__.TTF"] = { [208] = true, [209] = true },
     ["Fonts\\QUEST.TTF"] = { [208] = true, [209] = true },

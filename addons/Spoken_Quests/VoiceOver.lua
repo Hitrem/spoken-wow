@@ -1129,9 +1129,7 @@ function Addon:MuteGreetingAhead(event)
         or not Spoken.MuteGameDialogueAhead then
         return
     end
-    -- Gossip and greetings leave the NPC's voice alone: a trainer or a guard greeting the player up
-    -- close was silenced the moment the window opened, as if a quest were being read. Only the
-    -- quest text silences it (faded, SoundQueue:MuteGameDialogue).
+    -- Only quest text silences the NPC; a gossip greeting keeps its voice.
     if QUEST_EVENTS[event] then
         -- The quest ID can still be the previous quest's this early; the worst that costs is
         -- one greeting muted for nothing, or one cut off as it was before.

@@ -110,12 +110,9 @@ function SpokenZones:IsLanguageReady(code)
 	return (entry and entry.ready) and true or false
 end
 
--- Whether `text` draws in the lore's font. A glyph the font lacks draws as nothing, or as the
--- same box as any other: the language's own name is measured against as many characters no font
--- has (the private use area), and the same width means none of its letters drew.
--- The page pins its text to a font file (UI/TextView.lua), the client's own or the quest text's
--- on a parchment page, and a file has none of the font object's fallbacks for other alphabets:
--- the name is drawn in each of those files, and has to draw in both.
+-- A missing glyph draws as nothing or as a box, so `text` is measured against as many private-use
+-- characters, which no font has: the same width means none of it drew. The page pins font files,
+-- which lack the font object's fallbacks, so the text must draw in each of them.
 local probe
 local function draws(text, path)
 	probe:SetFont(path, 12, "")
@@ -157,9 +154,7 @@ end
 -- font, so Chinese lore on a German client is a screen of boxes -- a bug report
 -- that looks like corrupted data. English is always allowed: it is what the addon
 -- falls back to when nothing else can be selected, and every client can draw it.
--- A client of the language's own script draws it; any other is asked by drawing the language's
--- name, once a session -- so a Western client whose font has Cyrillic offers Russian, and none
--- offers Chinese or Korean without the glyphs for it.
+-- Another script is tested once a session by drawing the language's own name.
 function SpokenZones:CanRenderLanguage(code)
 	if code == BASE then
 		return true

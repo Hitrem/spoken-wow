@@ -341,7 +341,7 @@ function SoundQueue:MuteGameDialogue(speakingOn)
         end
         return
     end
-    -- Faded down, not cut: the NPC's voice goes quiet under the line rather than stopping mid-word.
+    -- Faded, so the NPC is not cut off mid-word.
     SoundUtils:MuteChannel("Dialog", speakingOn ~= nil and speakingOn ~= "Dialog", true)
 end
 
@@ -396,9 +396,8 @@ function SoundQueue:PlaySound(clip)
         return
     end
 
-    -- A line that keeps the game's dialogue (a gossip greeting) talks alongside the NPC's own
-    -- voice rather than silencing it: only the quest text, the books and the zones' stories do.
-    -- A mute already held -- the line before it, or one taken ahead of a quest -- is lifted.
+    -- Gossip plays alongside the NPC's own voice, so it also lifts a mute left by the line before
+    -- it or taken ahead of a quest.
     self:MuteGameDialogue(not clip.keepsGameDialogue and channel or nil)
 
     if clip.startCallback then
