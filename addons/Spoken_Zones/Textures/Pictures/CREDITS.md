@@ -19,7 +19,6 @@ page gives its uploader and terms.
 | 1411-hidden-path | Hidden Path | [Hidden Path.jpg](https://warcraft.wiki.gg/wiki/File:Hidden_Path.jpg) |
 | 1411-jaggedswine-farm | Jaggedswine Farm | [Jaggedswine Farm.jpg](https://warcraft.wiki.gg/wiki/File:Jaggedswine_Farm.jpg) |
 | 1411-kolkar-crag | Kolkar Crag | [Kolkar Crag.jpg](https://warcraft.wiki.gg/wiki/File:Kolkar_Crag.jpg) |
-| 1411-orgrimmar | Orgrimmar | [Orgrimmar Gates Classic 2.jpg](https://warcraft.wiki.gg/wiki/File:Orgrimmar_Gates_Classic_2.jpg) |
 | 1411-razor-hill | Razor Hill | [Razor Hill.jpg](https://warcraft.wiki.gg/wiki/File:Razor_Hill.jpg) |
 | 1411-razor-hill-barracks | Razor Hill Barracks | [Razor Hill Barracks.jpg](https://warcraft.wiki.gg/wiki/File:Razor_Hill_Barracks.jpg) |
 | 1411-razormane-grounds | Razormane Grounds | [Razormane Grounds2.jpg](https://warcraft.wiki.gg/wiki/File:Razormane_Grounds2.jpg) |
@@ -46,7 +45,6 @@ page gives its uploader and terms.
 | 1412-red-rocks | Red Rocks | [Red Rocks.jpg](https://warcraft.wiki.gg/wiki/File:Red_Rocks.jpg) |
 | 1412-rolling-plains | Rolling Plains | [Rolling Plains.jpg](https://warcraft.wiki.gg/wiki/File:Rolling_Plains.jpg) |
 | 1412-stonebull-lake | Stonebull Lake | [Stonebull Lake.jpg](https://warcraft.wiki.gg/wiki/File:Stonebull_Lake.jpg) |
-| 1412-thunder-bluff | Thunder Bluff | [Thunder Bluff Cataclysm.jpg](https://warcraft.wiki.gg/wiki/File:Thunder_Bluff_Cataclysm.jpg) |
 | 1412-thunderhorn-water-well | Thunderhorn Water Well | [Thunderhorn Waterwell.jpg](https://warcraft.wiki.gg/wiki/File:Thunderhorn_Waterwell.jpg) |
 | 1412-venture-co-mine | Venture Co. Mine | [Venture Co Mine.jpg](https://warcraft.wiki.gg/wiki/File:Venture_Co_Mine.jpg) |
 | 1412-wildmane-water-well | Wildmane Water Well | [Wildmane Waterwell.jpg](https://warcraft.wiki.gg/wiki/File:Wildmane_Waterwell.jpg) |
@@ -153,7 +151,6 @@ page gives its uploader and terms.
 | 1420-solliden-farmstead | Solliden Farmstead | [Solliden Farmstead.jpg](https://warcraft.wiki.gg/wiki/File:Solliden_Farmstead.jpg) |
 | 1420-stillwater-pond | Stillwater Pond | [Stillwater Pond.jpg](https://warcraft.wiki.gg/wiki/File:Stillwater_Pond.jpg) |
 | 1420-terrace-of-repose | Terrace of Repose | [Terrace of Repose.jpg](https://warcraft.wiki.gg/wiki/File:Terrace_of_Repose.jpg) |
-| 1420-undercity | Undercity | [Undercity.jpg](https://warcraft.wiki.gg/wiki/File:Undercity.jpg) |
 | 1420-venomweb-vale | Venomweb Vale | [Venomweb Vale.jpg](https://warcraft.wiki.gg/wiki/File:Venomweb_Vale.jpg) |
 | 1420-whispering-gardens | Whispering Gardens | [Whispering Gardens.jpg](https://warcraft.wiki.gg/wiki/File:Whispering_Gardens.jpg) |
 | 1420-whispering-shore | Whispering Shore | [Whispering Shore.jpg](https://warcraft.wiki.gg/wiki/File:Whispering_Shore.jpg) |
@@ -188,7 +185,6 @@ page gives its uploader and terms.
 | 1422-hearthglen | Hearthglen | [Hearthglen.jpg](https://warcraft.wiki.gg/wiki/File:Hearthglen.jpg) |
 | 1422-mardenholde-keep | Mardenholde Keep | [Mardenholde Keep (original).jpg](https://warcraft.wiki.gg/wiki/File:Mardenholde_Keep_(original).jpg) |
 | 1422-northridge-lumber-camp | Northridge Lumber Camp | [Northridge Lumber Camp.jpg](https://warcraft.wiki.gg/wiki/File:Northridge_Lumber_Camp.jpg) |
-| 1422-plaguemist-ravine | Plaguemist Ravine | [Plaguemist Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Plaguemist_Ravine.jpg) |
 | 1422-ruins-of-andorhal | Ruins of Andorhal | [Ruins of Andorhal.jpg](https://warcraft.wiki.gg/wiki/File:Ruins_of_Andorhal.jpg) |
 | 1422-scholomance | Scholomance | [Viewing Room 5.0.jpg](https://warcraft.wiki.gg/wiki/File:Viewing_Room_5.0.jpg) |
 | 1422-sorrow-hill | Sorrow Hill | [Sorrow hill.jpg](https://warcraft.wiki.gg/wiki/File:Sorrow_hill.jpg) |
@@ -223,7 +219,6 @@ page gives its uploader and terms.
 | 1423-tyrs-hand | Tyr's Hand | [Tyr's Hand 3.jpg](https://warcraft.wiki.gg/wiki/File:Tyr's_Hand_3.jpg) |
 | 1423-undercroft | Undercroft | [The Undercroft.jpg](https://warcraft.wiki.gg/wiki/File:The_Undercroft.jpg) |
 | 1423-zulmashar | Zul'Mashar | [Zul'Mashar.jpg](https://warcraft.wiki.gg/wiki/File:Zul'Mashar.jpg) |
-| 1424-alterac-mountains | Alterac Mountains | [Alterac Mountains.jpg](https://warcraft.wiki.gg/wiki/File:Alterac_Mountains.jpg) |
 | 1424-azurelode-mine | Azurelode Mine | [Azurelode Mine.jpg](https://warcraft.wiki.gg/wiki/File:Azurelode_Mine.jpg) |
 | 1424-chillwind-point | Chillwind Point | [Chillwind Point.jpg](https://warcraft.wiki.gg/wiki/File:Chillwind_Point.jpg) |
 | 1424-corrahns-dagger | Corrahn's Dagger | [Corrahn's Dagger.jpg](https://warcraft.wiki.gg/wiki/File:Corrahn's_Dagger.jpg) |
@@ -256,6 +251,7 @@ page gives its uploader and terms.
 | 1425-hiriwatha | Hiri'watha | [Hiri'watha.jpg](https://warcraft.wiki.gg/wiki/File:Hiri'watha.jpg) |
 | 1425-jinthaalor | Jintha'Alor | [Jintha'Alor.jpg](https://warcraft.wiki.gg/wiki/File:Jintha'Alor.jpg) |
 | 1425-overlook-cliffs | Overlook Cliffs | [The Overlook Cliffs.jpg](https://warcraft.wiki.gg/wiki/File:The_Overlook_Cliffs.jpg) |
+| 1425-plaguemist-ravine | Plaguemist Ravine | [Plaguemist Ravine.jpg](https://warcraft.wiki.gg/wiki/File:Plaguemist_Ravine.jpg) |
 | 1425-queldanil-lodge | Quel'Danil Lodge | [Quel'Danil.jpg](https://warcraft.wiki.gg/wiki/File:Quel'Danil.jpg) |
 | 1425-revantusk-village | Revantusk Village | [Revantusk Village.jpg](https://warcraft.wiki.gg/wiki/File:Revantusk_Village.jpg) |
 | 1425-seradane | Seradane | [Seradane.jpg](https://warcraft.wiki.gg/wiki/File:Seradane.jpg) |
@@ -280,7 +276,6 @@ page gives its uploader and terms.
 | 1426-helms-bed-lake | Helm's Bed Lake | [Helm's Bed Lake.jpg](https://warcraft.wiki.gg/wiki/File:Helm's_Bed_Lake.jpg) |
 | 1426-iceflow-lake | Iceflow Lake | [Iceflow Lake.jpg](https://warcraft.wiki.gg/wiki/File:Iceflow_Lake.jpg) |
 | 1426-ironbands-compound | Ironband's Compound | [Ironband's Compound.jpg](https://warcraft.wiki.gg/wiki/File:Ironband's_Compound.jpg) |
-| 1426-ironforge | Ironforge | [The Commons.jpg](https://warcraft.wiki.gg/wiki/File:The_Commons.jpg) |
 | 1426-kharanos | Kharanos | [Kharanos.jpg](https://warcraft.wiki.gg/wiki/File:Kharanos.jpg) |
 | 1426-misty-pine-refuge | Misty Pine Refuge | [Misty Pine Refuge.jpg](https://warcraft.wiki.gg/wiki/File:Misty_Pine_Refuge.jpg) |
 | 1426-north-gate-outpost | North Gate Outpost | [North Gate Outpost.jpg](https://warcraft.wiki.gg/wiki/File:North_Gate_Outpost.jpg) |
@@ -331,7 +326,6 @@ page gives its uploader and terms.
 | 1429-ridgepoint-tower | Ridgepoint Tower | [Ridgepoint Tower.jpg](https://warcraft.wiki.gg/wiki/File:Ridgepoint_Tower.jpg) |
 | 1429-stone-cairn-lake | Stone Cairn Lake | [Stone Cairn Lake.jpg](https://warcraft.wiki.gg/wiki/File:Stone_Cairn_Lake.jpg) |
 | 1429-stonefield-farm | Stonefield Farm | [The Stonefield Farm.jpg](https://warcraft.wiki.gg/wiki/File:The_Stonefield_Farm.jpg) |
-| 1429-stormwind-city | Stormwind City | [Stormwind City Classic.jpg](https://warcraft.wiki.gg/wiki/File:Stormwind_City_Classic.jpg) |
 | 1429-thunder-falls | Thunder Falls | [Thunder Falls.jpg](https://warcraft.wiki.gg/wiki/File:Thunder_Falls.jpg) |
 | 1429-tower-of-azora | Tower of Azora | [Azora.jpg](https://warcraft.wiki.gg/wiki/File:Azora.jpg) |
 | 1429-westbrook-garrison | Westbrook Garrison | [Westbrook.png](https://warcraft.wiki.gg/wiki/File:Westbrook.png) |
@@ -483,7 +477,6 @@ page gives its uploader and terms.
 | 1438-banethil-barrow-den | Ban'ethil Barrow Den | [Ban'ethil Barrow Den.jpg](https://warcraft.wiki.gg/wiki/File:Ban'ethil_Barrow_Den.jpg) |
 | 1438-banethil-hollow | Ban'ethil Hollow | [Ban'ethil Hollow.jpg](https://warcraft.wiki.gg/wiki/File:Ban'ethil_Hollow.jpg) |
 | 1438-cleft | Cleft | [The Cleft.jpg](https://warcraft.wiki.gg/wiki/File:The_Cleft.jpg) |
-| 1438-darnassus | Darnassus | [Gates of Darnassus.jpg](https://warcraft.wiki.gg/wiki/File:Gates_of_Darnassus.jpg) |
 | 1438-dolanaar | Dolanaar | [Dolanaar.jpg](https://warcraft.wiki.gg/wiki/File:Dolanaar.jpg) |
 | 1438-gnarlpine-hold | Gnarlpine Hold | [Gnarlpine Hold.jpg](https://warcraft.wiki.gg/wiki/File:Gnarlpine_Hold.jpg) |
 | 1438-lake-alameth | Lake Al'Ameth | [Lake Al'Ameth.jpg](https://warcraft.wiki.gg/wiki/File:Lake_Al'Ameth.jpg) |
@@ -776,6 +769,7 @@ page gives its uploader and terms.
 | zone-1411 | Durotar | [Durotar.jpg](https://warcraft.wiki.gg/wiki/File:Durotar.jpg) |
 | zone-1412 | Mulgore | [Mulgore vista.jpg](https://warcraft.wiki.gg/wiki/File:Mulgore_vista.jpg) |
 | zone-1413 | The Barrens | [The Barrens1.jpg](https://warcraft.wiki.gg/wiki/File:The_Barrens1.jpg) |
+| zone-1416 | Alterac Mountains | [Alterac Mountains.jpg](https://warcraft.wiki.gg/wiki/File:Alterac_Mountains.jpg) |
 | zone-1417 | Arathi Highlands | [Arathi Highlands.jpg](https://warcraft.wiki.gg/wiki/File:Arathi_Highlands.jpg) |
 | zone-1418 | Badlands | unknown, added by hand |
 | zone-1419 | Blasted Lands | unknown, added by hand |
@@ -813,8 +807,11 @@ page gives its uploader and terms.
 | zone-1451 | Silithus | screenshot taken in the game for this addon |
 | zone-1452 | Winterspring | [Winterspring.jpg](https://warcraft.wiki.gg/wiki/File:Winterspring.jpg) |
 | zone-1453 | Stormwind City | unknown, added by hand |
+| zone-1454 | Orgrimmar | [Orgrimmar Gates Classic 2.jpg](https://warcraft.wiki.gg/wiki/File:Orgrimmar_Gates_Classic_2.jpg) |
 | zone-1455 | Ironforge | unknown, added by hand |
-| zone-1458 | Undercity | unknown, added by hand |
+| zone-1456 | Thunder Bluff | [Thunder Bluff Cataclysm.jpg](https://warcraft.wiki.gg/wiki/File:Thunder_Bluff_Cataclysm.jpg) |
+| zone-1457 | Darnassus | [Gates of Darnassus.jpg](https://warcraft.wiki.gg/wiki/File:Gates_of_Darnassus.jpg) |
+| zone-1458 | Undercity | [Undercity.jpg](https://warcraft.wiki.gg/wiki/File:Undercity.jpg) |
 | zone-2482 | Mount Hyjal | unknown, added by hand |
 | zone-2521 | Zephras Isle | unknown, added by hand |
 | zone-2524 | Darkspear Islands | unknown, added by hand |

@@ -389,13 +389,20 @@ def reviewed(choices):
         place = os.path.basename(dp)
         if place + " - new.png" not in fs:
             continue
-        # Azeroth[/<continent>]/<zone>[/<area>], the tree Lore of Azeroth shows: a zone such as
-        # Zephras Isle sits straight under Azeroth, and the world and each continent are places too.
+        # Azeroth[/<continent>]/<zone>[/<city>][/<area>], the tree Lore of Azeroth shows: a zone such
+        # as Zephras Isle sits straight under Azeroth, a city inside the zone around it, and the
+        # world and each continent are places too.
         rel = ["Azeroth"] + [p for p in os.path.relpath(dp, world).split(os.sep) if p != "."]
         old = next((f for f in fs if f.startswith(place + " - old")), None)
         entry = {"path": os.path.join(dp, place + " - new.png"), "old": old and os.path.join(dp, old)}
         zone = len(rel) > 1 and zones.get(rel[-2])
-        if zone and rel[-1] in areas.get(zone, {}):
+        # A zone's folder first, wherever it sits: a city inside the zone around it
+        # (Elwynn Forest/Stormwind City) is the city, not an area of that name. Not an area named
+        # as its own zone (Riverglades/Riverglades), which the zone's folder already is.
+        if rel[-1] in zones and (len(rel) == 1 or rel[-1] != rel[-2]):
+            zid = zones[rel[-1]]
+            out.append({**entry, "id": "zone-%d" % zid, "parent": zid, "key": None, "title": place})
+        elif zone and rel[-1] in areas.get(zone, {}):
             key, name = areas[zone][rel[-1]]
             slug = re.sub(r"[^a-z0-9]+", "-", key).strip("-")
             out.append({**entry, "id": "%d-%s" % (zone, slug), "parent": zone, "key": key, "title": name})
