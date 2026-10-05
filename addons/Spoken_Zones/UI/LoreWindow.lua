@@ -528,13 +528,22 @@ end
 -- Construction
 --------------------------------------------------------------------------------
 
+-- The list inset's margins inside the window, left and right.
+local function ListMargins()
+	if window and window.templated then
+		return 6, 6
+	end
+	return 14, 12
+end
+
+-- Collapsed at its narrowest, the list is as wide as it is beside the text.
 local function NaturalCollapsedWidth()
-	-- List inset plus the portrait frame's side margins.
-	return LIST_WIDTH + 48
+	local left, right = ListMargins()
+	return LIST_WIDTH + left + right
 end
 
 local function CollapsedMinWidth()
-	return math.floor(NaturalCollapsedWidth() * 1.3 * 0.75 + 0.5)
+	return NaturalCollapsedWidth()
 end
 
 -- Collapsed, the window holds only the list, which has no use for more room than this.
@@ -598,9 +607,8 @@ local function SyncListWidth()
 		return
 	end
 	if minimized then
-		local left = window.templated and 6 or 14
-		local right = window.templated and 6 or 12
-		local width = math.max((window:GetWidth() or CollapsedWidth()) - left - right, LIST_WIDTH * 0.5)
+		local left, right = ListMargins()
+		local width = math.max((window:GetWidth() or CollapsedWidth()) - left - right, LIST_WIDTH)
 		window.inset:SetWidth(width)
 	else
 		window.inset:SetWidth(LIST_WIDTH)
