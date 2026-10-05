@@ -11,9 +11,12 @@ section with no kind in its heading is the addon's. A language's pack numbers it
 
 ## 3.0.0-beta.4 — 2026-10-05
 
-- Ships inside Spoken 3.0.0-beta.4: a picture of each place above its story, the place line in
-  the map panel, more lore languages where the font can draw them, and no automatic narration
-  while flying. See Spoken's changelog.
+- **Spoken Zones is now part of Spoken**, and this download no longer carries the addon. It
+  leaves a `SpokenZones` folder that never loads, listed greyed out as "Spoken Zones (now in
+  Spoken)".
+- **Install [Spoken Player](https://www.curseforge.com/wow/addons/spoken-player)** instead: it
+  has Zones inside, in the `Spoken_Zones` folder. Then uninstall this download and delete the
+  `SpokenZones` folder from `Interface\AddOns`.
 
 ## 3.0.0-beta.3 — 2026-10-04
 

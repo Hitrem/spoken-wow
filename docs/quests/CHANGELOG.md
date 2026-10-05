@@ -8,8 +8,12 @@ carries that version. The heading says which.
 
 ## 3.0.0-beta.4 — player — 2026-10-05
 
-- Ships inside Spoken 3.0.0-beta.4: Stop and Replay instead of pause, and NPC voices kept for
-  gossip. See Spoken's changelog.
+- **Spoken Quests is now part of Spoken**, and this download no longer carries the addon. It
+  leaves a `SpokenQuests` folder that never loads, listed greyed out as "Spoken Quests (now in
+  Spoken)".
+- **Install [Spoken Player](https://www.curseforge.com/wow/addons/spoken-player)** instead: it
+  has Quests inside, in the `Spoken_Quests` folder. Then uninstall this download and delete the
+  `SpokenQuests` folder from `Interface\AddOns`.
 
 ## 3.0.0-beta.3 — player — 2026-10-04
 
