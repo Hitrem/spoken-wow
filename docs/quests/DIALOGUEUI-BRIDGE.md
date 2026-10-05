@@ -137,9 +137,12 @@ window closes goes back to UIParent and stays up.
 
 **Play button.** DialogueUI hears the client's quest event before Spoken Quests' recorder
 does. So the provider resolves the line from the page DialogueUI says it is showing, through
-`Addon:GetVisibleLine(event)`, rather than from the last recorded event. Play does nothing when
-the line is already queued, so DialogueUI's autoplay and Spoken Quests' autoplay don't read
-it twice. Stop works only while the window is open. DialogueUI also asks the provider to
+`Addon:GetVisibleLine(event)`, rather than from the last recorded event. Play reads the line
+at once (`Player:PlayPreparedNow`, through the player's `PlayNow`): whatever else was speaking,
+a zone's lore or a book page, is skipped rather than kept to resume, and the rest of the queue
+plays after. A line waiting behind another is brought forward. `isPlaying` answers for the line
+speaking, not merely queued, since DialogueUI's button stops a playing line and plays one that
+is not. Play does nothing while the line already speaks. Stop works only while the window is open. DialogueUI also asks the provider to
 stop as its window closes, and accepting a quest closes it. That comes from DialogueUI's
 "TTS Auto Stop" setting, which is on by default even with its text-to-speech off. Obeying it
 would cut every line short at the accept, so whether closing the dialog stops the line is

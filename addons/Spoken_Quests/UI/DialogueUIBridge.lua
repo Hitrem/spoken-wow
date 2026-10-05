@@ -643,6 +643,12 @@ function Bridge:AutoplayFor()
     return TheirAutoplay()
 end
 
+--- Whether `line` is the clip at the head of the player's queue: speaking, or paused on it.
+local function IsSpeaking(soundData)
+    local head = Spoken.GetCurrent and Spoken:GetCurrent()
+    return head ~= nil and head.fileName == soundData.fileName
+end
+
 local provider = {
     name = "Spoken Quests",
     -- DialogueUI hears the client's event before this addon's recorder does, so the event is
@@ -676,8 +682,12 @@ local provider = {
                 return
             end
         end
-        if line and not Player:QueuedClipFor(line) then
+        -- Now, whatever else is speaking: it is skipped (Player:PlayPreparedNow). Already
+        -- speaking, nothing to do; queued behind something else, brought to the front.
+        if line and not IsSpeaking(line) then
+            Player.playNow = true
             Addon:InvokeQuestHandler(lineEvent, "DialogueUI Play button", true)
+            Player.playNow = nil
         end
     end,
     -- Only while the window is up, i.e. its Stop button. DialogueUI also calls this as the
@@ -694,8 +704,10 @@ local provider = {
             Player:Remove(clip)
         end
     end,
+    -- Speaking, not just queued: DialogueUI's button stops a line that plays and plays one that
+    -- does not, and a line waiting behind another is one to bring forward, not to drop.
     isPlaying = function()
-        return line ~= nil and Player:QueuedClipFor(line) ~= nil
+        return line ~= nil and IsSpeaking(line)
     end,
     -- DialogueUI's floor, so its autoplay comes after this addon's.
     getAutoPlayDelay = function()

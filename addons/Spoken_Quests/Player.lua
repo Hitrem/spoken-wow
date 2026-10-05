@@ -267,6 +267,9 @@ function Player:EnqueuePrepared(soundData)
     end
 
     self:Prepare(soundData)
+    if self.playNow then
+        return self:PlayPreparedNow(soundData)
+    end
     local added, reason = self.source:Enqueue(soundData)
     if not added then
         if reason == "duplicate" then
@@ -285,6 +288,26 @@ function Player:EnqueuePrepared(soundData)
 
     if Spoken:IsPaused() then
         Debug:Record("queue-paused", "The voiceover is queued, but playback is stopped; run /spq play")
+    end
+    return true
+end
+
+--- A line the player asked for by a Play button that stands for the dialog on screen
+--- (DialogueUI's, UI/DialogueUIBridge.lua): started at once, in front of the queue, and
+--- whatever was speaking skipped rather than kept to resume -- the player chose this line
+--- over it. The rest of the queue plays after. Set `Player.playNow` around the read.
+---@param soundData SoundData
+---@return boolean playing
+function Player:PlayPreparedNow(soundData)
+    local interrupted = Spoken.GetCurrent and Spoken:GetCurrent()
+    local playing, reason = self.source:PlayNow(soundData)
+    if not playing then
+        Debug:Record("sound-disabled", reason or "refused")
+        return false
+    end
+    if interrupted and interrupted.key ~= soundData.key then
+        Debug:Record("skipped", format("Skipped %s for the line asked for", tostring(interrupted.key)))
+        self.source:Remove(interrupted)
     end
     return true
 end

@@ -270,6 +270,37 @@ Expect("closing DialogueUI does not cut the line off", Spoken:GetQueueSize(), 1)
 DUI:Show()
 provider.stopPlaying()
 Expect("Stop removes it", Spoken:GetQueueSize(), 0)
+-- Pressed while something else speaks -- a zone's lore, a book page -- Play reads the page
+-- at once, and what was speaking is skipped, not kept to resume; anything after it still plays.
+zones:Enqueue({ key = "z:13", path = "z13.ogg", length = 12,
+    present = { header = "Elwynn Forest", transcript = "Lore.", bullet = "zone",
+        portrait = { kind = "texture", texture = "Book" } } })
+zones:Enqueue({ key = "z:14", path = "z14.ogg", length = 12,
+    present = { header = "Teldrassil", transcript = "More lore.", bullet = "zone",
+        portrait = { kind = "texture", texture = "Book" } } })
+Expect("another part's line is speaking", Spoken:GetCurrent() and Spoken:GetCurrent().key, "z:13")
+provider.doesFileExist("quest", 101, "detail")
+Expect("...so DialogueUI's button offers Play", provider.isPlaying(), false)
+provider.playFile()
+Expect("Play reads the page at once", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
+Expect("...DialogueUI sees it playing", provider.isPlaying(), true)
+local keys = {}
+for _, clip in ipairs(Spoken:GetQueue()) do table.insert(keys, clip.key) end
+Expect("...the line it cut off skipped, and the next one still waiting", table.concat(keys, " "), "101-accept z:14")
+Spoken:StopAll()
+zones:StopAll()
+-- Waiting behind another line, the page's line is brought forward rather than dropped.
+zones:Enqueue({ key = "z:15", path = "z15.ogg", length = 12,
+    present = { header = "Darkshore", transcript = "Lore.", bullet = "zone",
+        portrait = { kind = "texture", texture = "Book" } } })
+VO.Addon:InvokeQuestHandler("QUEST_DETAIL", "test", true)
+Expect("the page's line queued behind another", Spoken:GetQueueSize(), 2)
+provider.doesFileExist("quest", 101, "detail")
+Expect("...is not playing, so the button offers Play", provider.isPlaying(), false)
+provider.playFile()
+Expect("...and Play brings it forward", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
+Spoken:StopAll()
+zones:StopAll()
 -- Answered for what the client is showing, which is the page DialogueUI asks about.
 world.questID = 102
 Expect("no recording, no button", provider.doesFileExist("quest", 102, "detail"), false)
