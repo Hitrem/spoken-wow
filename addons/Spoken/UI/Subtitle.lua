@@ -19,8 +19,8 @@ local PAGE_LINES = 4
 local FADE_IN, FADE_OUT = .6, .5
 -- Until it is dragged: the top edge, in UI units up from the bottom of the screen.
 local DEFAULT_TOP = 336
--- The background is Spoken Subtitles' band shade (shorley, MIT): stretched over the subtitle from
--- its top to its bottom and 40 past the words either side, as that addon lays it over its band.
+-- Spoken Subtitles' band shade (shorley, MIT), stretched over the subtitle and 40 past the words
+-- either side.
 local SHADOW = [[Interface\AddOns\Spoken\Textures\SubtitleBand]]
 local SHADOW_REACH = 40
 local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
@@ -211,8 +211,7 @@ function Subtitle:Build()
 
     self.shadow = frame:CreateTexture(nil, "BACKGROUND")
     self.shadow:SetTexture(SHADOW)
-    -- Hung from the frame's top, so an eased height grows it downward as the subtitle does,
-    -- rather than both ways from its middle.
+    -- Hung from the top, so an eased height grows downward.
     self.shadow:SetPoint("TOP", frame, "TOP", 0, 0)
 
     self.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -584,8 +583,7 @@ function Subtitle:Update()
     end
     local clip = speaking and Transcript.clip or self.sample
     if wanted and clip ~= self.clip then
-        -- A line still on screen goes first, faded out as when it ends on its own, and the new one
-        -- fades in after it (Tick). Skipping used to swap them at once.
+        -- A line still on screen fades out first, as when it ends, and the new one fades in after it.
         if speaking and self.clip and self.frame:IsShown() and self.frame:GetAlpha() > 0 then
             self.switching = true
             self:SetWanted(false)
@@ -641,8 +639,6 @@ function Subtitle:BuildControls()
     controls:Hide()
     self.controls, self.controlsAlpha = controls, 0
 
-    -- The windows' round button (PlayerFrame's mini pause): its ring, and Stop while the line
-    -- plays, Replay once it is stopped.
     local pause = RoundButton(controls, 12)
     pause:SetPoint("LEFT", controls, "LEFT", 0, 0)
     pause:SetScript("OnClick", function()

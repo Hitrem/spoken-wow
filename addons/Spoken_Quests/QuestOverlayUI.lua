@@ -168,8 +168,6 @@ function QuestOverlayUI:BindPlayButton(playButton, questID, soundTitle)
         local isPlaying = Player:Contains(soundData)
 
         if not isPlaying then
-            -- By hand: at once where nothing plays or the queue is stopped, behind the line
-            -- speaking otherwise.
             Player:PlayNow(soundData)
             QuestOverlayUI:SetPlayButtonState(self)
 

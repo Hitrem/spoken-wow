@@ -37,8 +37,7 @@ function Sources:Register(key, info)
         queueLimit = info.queueLimit,
         -- 0.55 is upstream's figure; it absorbs a duration that is slightly short.
         interClipGap = info.interClipGap or 0.55,
-        -- A source whose lines read on as one text (a book's pages): the player's pause between
-        -- lines (SoundQueue:GapAfter) is not put between them.
+        -- Pages of one book read on: no LineGap between them.
         continuous = info.continuous,
         channel = info.channel,
         admit = info.admit,

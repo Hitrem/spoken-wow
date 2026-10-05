@@ -752,9 +752,7 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
                 if clip.questID == questID and clip.event == Enums.SoundEvent.QuestAccept then return clip end
             end
         end
-        -- The button's state off the player itself: Stop while this quest's line is the one
-        -- speaking, Replay while it is stopped at the head, Play otherwise -- not yet queued, or
-        -- waiting behind another line.
+        -- Stop while this quest's line speaks, Replay while it is stopped at the head, Play otherwise.
         local function StateOf(questID)
             local clip = QueuedLine(questID)
             if not clip or Spoken:GetCurrent() ~= clip then return "play", clip end

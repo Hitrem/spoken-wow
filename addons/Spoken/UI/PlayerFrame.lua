@@ -182,7 +182,6 @@ function PlayerFrame:InitPortrait()
     self.frame.portrait.background:SetAllPoints()
     self.frame.portrait.background:SetTexture(TEXTURES .. "PortraitFrameBackground")
 
-    -- Stop and Replay cover the whole portrait, with a wash that appears while stopped.
     self.frame.portrait.pause = CreateFrame("Button", nil, self.frame.portrait)
     self.frame.portrait.pause:SetFrameLevel(self.frame.portrait:GetFrameLevel() + 2)
     self.frame.portrait.pause:SetAllPoints()

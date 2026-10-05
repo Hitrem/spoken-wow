@@ -241,8 +241,8 @@ function Player:Enqueue(soundData)
     return self:EnqueuePrepared(soundData)
 end
 
---- A line asked for by hand (a Play button): played at once where nothing is playing or the
---- queue is stopped, queued behind the line speaking otherwise (Spoken's SoundQueue:PlayNow).
+--- A line asked for by hand: played at once when idle or stopped, else queued behind the line
+--- speaking.
 ---@param soundData SoundData
 ---@return boolean queued
 function Player:PlayNow(soundData)

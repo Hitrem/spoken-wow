@@ -103,7 +103,6 @@ local GLYPH_STOP = [[Interface\AddOns\Spoken\Textures\GlyphStop]]
 local GLYPH_REPLAY = [[Interface\AddOns\Spoken\Textures\GlyphReplay]]
 local CELL = 93 / 128
 
---- Paint `texture` with the glyph for `state`: "play", "stop" or "replay".
 function Actions.Glyph(texture, state)
     if state == "stop" or state == "replay" then
         texture:SetTexture(state == "stop" and GLYPH_STOP or GLYPH_REPLAY)
@@ -114,8 +113,7 @@ function Actions.Glyph(texture, state)
     texture:SetTexCoord(0, 93 / PORTRAIT_ATLAS_SIZE, 419 / PORTRAIT_ATLAS_SIZE, 512 / PORTRAIT_ATLAS_SIZE)
 end
 
---- What the players' own button shows for the line at the head: Stop while it plays, Replay once
---- it is stopped.
+--- Stop while the head plays, Replay once it is stopped.
 function Actions.HeadState()
     return SoundQueue:IsPaused() and "replay" or "stop"
 end
@@ -163,7 +161,7 @@ function Actions.NewRound(parent, kind, name, icon)
     if kind == "play" then
         local button = Actions.RoundButton(parent, 12, name)
         Actions.SetPlayGlyph(button, "play")
-        --- "play", "stop" or "replay" (Actions.SetPlayGlyph).
+        --- "play", "stop" or "replay".
         function button:SetState(state) Actions.SetPlayGlyph(self, state) end
         function button:SetPlaying(playing) Actions.SetPlayGlyph(self, playing and "stop" or "play") end
         -- Greyed, as a button with nothing to play.

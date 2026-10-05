@@ -278,9 +278,8 @@ function Addon:Enable()
     end
 end
 
--- A stopped queue holds new lines until Replay, Skip or a Play: said the first time a line waits
--- behind the stop while nothing is on screen to say so. With subtitles only or voice only, a
--- stopped queue and a broken addon look the same.
+-- Said the first time a line waits behind a stop with nothing on screen to show it: with subtitles
+-- or voice only, a stopped queue looks like a broken addon.
 local pauseReminded = false
 local function RemindPaused()
     print("|cff66bbffSpoken:|r " .. L.STOPPED_REMINDER)
@@ -366,8 +365,7 @@ loader:SetScript("OnEvent", function(_, ev, name)
         Addon:Enable()
         Addon:RetireOldFolders()
         WatchPausedQueue()
-        -- A stop belongs to the line it stopped. That line is gone after a reload, so a character
-        -- never starts a session stopped -- which used to leave one silent with nothing to say why.
+        -- A stop belongs to the line it stopped, which a reload drops, so a session never starts stopped.
         SoundQueue:SetPaused(false)
     end
 end)

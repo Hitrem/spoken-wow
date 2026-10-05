@@ -383,8 +383,7 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
     end, MUTE_AHEAD_SECONDS)
 end
 
---- How long after `clip` has spoken the next line starts: its source's own gap, and the pause the
---- player set between lines (Audio.LineGap) -- not between a book's pages, which read on.
+--- The quiet after `clip`: its source's gap plus the player's LineGap, except between a book's pages.
 function SoundQueue:GapAfter(clip)
     local gap = clip.source.interClipGap or 0
     if not clip.source.continuous then
@@ -615,9 +614,8 @@ function SoundQueue:PlayNow(clip, source)
         return false, inaudible
     end
 
-    -- Another line speaking, or waiting on a gate: this one takes its turn behind it, as anything
-    -- queued does, rather than cutting it off. Only an idle queue, or a stopped one, plays it at
-    -- once: pressing Play on something new is what takes a stopped queue out of its stop.
+    -- A line speaking or held by a gate goes on, and this one queues behind it. Only an idle or
+    -- stopped queue plays it at once, which also ends the stop.
     local current = self:GetCurrentSound()
     if current and not self:IsPaused() then
         for _, queued in ipairs(self.sounds) do
@@ -653,11 +651,9 @@ end
 -- Pause
 --------------------------------------------------------------------------------
 
--- Stop and Replay. The client can start and stop a sound and nothing in between: there is
--- no seek, and no way to ask how far into a clip playback has reached. So there is no pause:
--- Stop ends the voice and keeps the line at the head, and Replay plays it again from the
--- beginning. The functions keep their old names, which the public API carries.
--- How long a paused voice takes to fade out.
+-- There is no pause: the client cannot seek or report how far a sound has played. Stop ends the
+-- voice and keeps the line at the head; Replay plays it from the start. The functions keep their
+-- old names, which the public API carries.
 local PAUSE_FADE_MS = 400
 
 function SoundQueue:PauseQueue()
