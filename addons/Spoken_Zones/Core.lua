@@ -457,6 +457,9 @@ local function SetupHooks()
 	if SpokenZones.SetupHoverPreview then
 		SpokenZones:SetupHoverPreview()
 	end
+	if SpokenZones.SetupMapHighlight then
+		SpokenZones:SetupMapHighlight()
+	end
 	if SpokenZones.SetupLoreWindow then
 		SpokenZones:SetupLoreWindow()
 	end
