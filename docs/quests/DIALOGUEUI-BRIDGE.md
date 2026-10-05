@@ -15,8 +15,21 @@ brings back what was hidden, inside DialogueUI's window:
 - **Show Spoken over DialogueUI.** The window or the subtitles stay on screen in the place they
   were left, with their controls. They can't be dragged until DialogueUI closes.
 - **Use DialogueUI's Play button.** Spoken Quests registers as DialogueUI's voiceover provider,
-  so DialogueUI's text-to-speech button plays the recording. The button appears only when
-  text-to-speech is turned on in DialogueUI's settings.
+  so DialogueUI's text-to-speech button plays the recording. The button appears only with
+  DialogueUI's Text To Speech on, which DialogueUI has off by default, so **Turn On Text To
+  Speech** (on by default, under this option) turns it on at login, and when either option is
+  turned on. DialogueUI reads its saved settings only as it loads and has no public way to
+  change them, so the first time Spoken Quests says in chat to `/reload`; until then
+  DialogueUI's Auto Play has no say. Turned off in DialogueUI, it is on again at the next
+  login; unticking Turn On Text To Speech leaves DialogueUI's setting as the player sets it.
+- **Read automatically as DialogueUI says.** While that button plays Spoken Quests' lines,
+  DialogueUI's own **Auto Play** (right-click on the button) and Spoken Quests' **Read
+  Automatically** would both decide whether a line reads by itself. The DialogueUI page's
+  **Read Automatically** chooses how they go together: **Follow DialogueUI's Auto Play**, the
+  default, lets DialogueUI's decide, and the Quests page's Read Automatically is greyed,
+  ticked as DialogueUI's is and saying where to change it; **Keep in Sync** keeps the two the
+  same whichever is changed. With DialogueUI's text-to-speech off, without DialogueUI, or
+  with Use DialogueUI's Play Button off, Read Automatically decides alone, as before.
 - **Report a problem, or contribute a missing line.** Just under DialogueUI's Decline (or
   Goodbye) button, right-aligned with it and clear of the parchment's curled foot, sits the
   player's round Report icon (16 px), faint (40 %)
@@ -76,7 +89,7 @@ by character. The caption's words are then matched in order against DialogueUI's
   after it blank. DialogueUI draws a page the moment the dialog opens, while Spoken Quests
   reads it a moment later (0.1 s for gossip, once a quest has held still for 0.4 s). So when
   a page is about to be read, `Addon:ExpectedLine(event)` gives its line's text as the page
-  is built, and its words are blank from the first frame, for up to 1.5 s, until the voice
+  is built, and its words are blank from the first frame, for up to 2.5 s, until the voice
   reaches them. Shown whole until then, they flashed up and vanished. A page nothing will
   read on its own shows whole at once, as does one opened while another part's line plays. Paragraphs outside the line, such as earlier gossip or the objectives' list
   when the recording does not read it, stay whole. Nothing shows before the voice starts and
@@ -87,6 +100,14 @@ did. DialogueUI placed every paragraph once, when it built the page, so nothing 
 inside a link are never marked, so a link is never split. The original text is put back when
 the line ends, when the window closes or when the setting is turned off, because DialogueUI
 reads that text back for its own text-to-speech.
+
+**Waiting for the window.** DialogueUI shows its window on the client's event and then plays
+an intro (a 0.2 s fade, or 0.75 s for its unfold and fly-in styles) and fades the text in over
+0.35 s. A line Spoken Quests reads on its own could start in the middle of that, the voice
+ahead of the words it marks. So an automatic read of the page DialogueUI is showing waits,
+in `Bridge:Defer` (asked by `Addon:InvokeQuestHandler`), until the window and its text are at
+full opacity, for at most 1.5 s, and is dropped if the window closes first. A read the player
+asks for, and a dialog DialogueUI is not showing, read at once.
 
 **Hosting the player.** This uses `Spoken:SetPlayerHost(DUIQuestFrame)`:
 
@@ -123,6 +144,17 @@ stop as its window closes, and accepting a quest closes it. That comes from Dial
 "TTS Auto Stop" setting, which is on by default even with its text-to-speech off. Obeying it
 would cut every line short at the accept, so whether closing the dialog stops the line is
 left to Spoken Quests' own **Stop When Window Closes**.
+
+**Auto Play.** DialogueUI keeps its Auto Play in its saved settings (`DialogueUI_DB.TTSAutoPlay`,
+beside `TTSEnabled`) and in a copy of its own that only its setter updates. `Bridge:AutoplayFor`
+answers for `Addon:IsAutoplayOn`: DialogueUI's saved value while followed, and nothing in Keep
+in Sync, after `Bridge:SyncAutoplay` has made the two agree. Sync tells which side changed by
+remembering DialogueUI's value; this addon's side wins the first time. It changes DialogueUI's
+through a right-click on DialogueUI's own button, which runs DialogueUI's setter, and writes the
+saved value only when there is no button. DialogueUI's autoplay also calls Play, after asking
+the provider for its delay, which a click on the button never does: while the two are linked,
+that call is ignored, and Spoken Quests' own autoplay reads the line or not. So DialogueUI's
+copy of the setting, which can lag behind its saved value, never decides.
 
 ## Limits
 

@@ -197,6 +197,15 @@ function Addon:InvokeQuestHandler(event, source, manual)
         Debug:Record("autoplay-off", format("Not reading %s: autoplay is off", event))
         return false
     end
+    -- Read on its own while DialogueUI's window is still appearing, the voice would run ahead
+    -- of the words it marks: it waits for the window (UI/DialogueUIBridge.lua).
+    local bridge = not manual and rawget(VoiceOver, "DialogueUIBridge")
+    if bridge and bridge.Defer and bridge:Defer(event, function()
+        self:InvokeQuestHandler(event, source, manual)
+    end) then
+        Debug:Record("dialogueui-wait", format("Waiting for DialogueUI's window to read %s", event))
+        return true
+    end
 
     Debug:Record("quest-dispatch", format("Dispatching %s through %s", event, source or "manual reader"))
     local succeeded, errorMessage = pcall(handler, self, event, manual)
@@ -218,11 +227,30 @@ function Addon:IsPartOn()
 end
 
 function Addon:IsAutoplayOn()
+    -- DialogueUI's Auto Play, where its Text To Speech button plays this addon's lines and the
+    -- player chose to follow it; nil everywhere else, without DialogueUI first of all.
+    local bridge = rawget(VoiceOver, "DialogueUIBridge")
+    local theirs = bridge and bridge.AutoplayFor and bridge:AutoplayFor()
+    if theirs ~= nil then
+        return theirs
+    end
     return self.db.profile.Audio.Autoplay ~= false
+end
+
+--- Whether Read Automatically is DialogueUI's Auto Play's to decide just now: greyed in the
+--- settings, saying so.
+function Addon:IsAutoplayFollowingDialogueUI()
+    local bridge = rawget(VoiceOver, "DialogueUIBridge")
+    return bridge ~= nil and bridge.FollowsAutoplay ~= nil and bridge:FollowsAutoplay()
 end
 
 function Addon:SetAutoplay(on)
     self.db.profile.Audio.Autoplay = on and true or false
+    -- Kept in sync with DialogueUI's Auto Play, which then follows.
+    local bridge = rawget(VoiceOver, "DialogueUIBridge")
+    if bridge and bridge.SyncAutoplay then
+        bridge:SyncAutoplay()
+    end
     -- The Play button stands in for autoplay, so it appears or goes with the setting even
     -- while a dialog is already open.
     if DialogPlayButton and DialogPlayButton.Refresh then
@@ -341,6 +369,13 @@ local defaults = {
             ShowPlayer = false,
             -- DialogueUI's own Play button plays this addon's line.
             PlayButton = true,
+            -- And DialogueUI's Text To Speech, which shows that button and is off by default,
+            -- turned on at login (DialogueUIBridge:EnsureTextToSpeech).
+            EnableTTS = true,
+            -- While it does, with DialogueUI's Text To Speech on: "follow" lets DialogueUI's
+            -- Auto Play decide whether lines read on their own, in place of Read
+            -- Automatically; "sync" keeps the two the same (DialogueUIBridge:AutoplayFor).
+            Autoplay = "follow",
         },
         DebugEnabled = false,
     },

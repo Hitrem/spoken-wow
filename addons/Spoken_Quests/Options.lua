@@ -49,6 +49,8 @@ local GeneralTab =
                     desc = L.OPT_AUTOPLAY_TIP,
                     get = function(info) return Addon:IsAutoplayOn() end,
                     set = function(info, value) Addon:SetAutoplay(value) end,
+                    -- DialogueUI's Auto Play decides it while followed (Spoken > DialogueUI).
+                    disabled = function(info) return Addon:IsAutoplayFollowingDialogueUI() end,
                 },
                 LineBreak1 = { type = "description", name = "", order = 2 },
                 GossipFrequency = {
