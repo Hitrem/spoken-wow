@@ -526,7 +526,7 @@ function Subtitle:Layout(text)
     end
     local wordsBottom = TOP_PAD + titleHeight + TITLE_GAP + #self.rows * (lineHeight + LINE_GAP) - LINE_GAP
     -- The progress line under the words, where the setting has it.
-    self.progressShown = Config().SubtitleProgress ~= false and not self.progressBroken
+    self.progressShown = self:ProgressWanted()
     for _, part in ipairs({ self.track, self.fill, self.spark }) do part:SetShown(self.progressShown) end
     -- As far under the words as the words are under the name: the name sits in the middle of the
     -- picture's height, so its gap is the row's spare half and TITLE_GAP.
@@ -610,8 +610,7 @@ function Subtitle:Prepare(clip, text)
     -- The waiting count as it is now, so a line that follows a skip lays its row out once, with
     -- the count already in, rather than sliding as if lines had just been added.
     self.rowLeft, self.share = nil, 0
-    self.waiting = self:Waiting()
-    self.more:SetText(self.waiting > 0 and ("+" .. self.waiting) or "")
+    self:SetWaiting(self:Waiting())
     self.title:SetText(title)
     self.label:SetText(label or "")
     self.dot:SetShown(label ~= nil)
@@ -733,7 +732,7 @@ function Subtitle:Update()
     local clip = speaking and Transcript.clip or self.sample
     -- The progress line turned on or off in the settings: the page laid out again with or without it.
     if self.page and self.pages and self.pages[self.page]
-        and (Config().SubtitleProgress ~= false and not self.progressBroken) ~= self.progressShown then
+        and self:ProgressWanted() ~= self.progressShown then
         self:Layout(self.pages[self.page].text)
         self.revealed = nil
     end
@@ -944,13 +943,22 @@ function Subtitle:Waiting()
     return math.max(0, SoundQueue:GetQueueSize() - 1)
 end
 
+function Subtitle:SetWaiting(waiting)
+    self.waiting = waiting
+    self.more:SetText(waiting > 0 and ("+" .. waiting) or "")
+end
+
 function Subtitle:CountWaiting()
     local waiting = self:Waiting()
     if waiting ~= self.waiting then
-        self.waiting = waiting
-        self.more:SetText(waiting > 0 and ("+" .. waiting) or "")
+        self:SetWaiting(waiting)
         self:Fit()
     end
+end
+
+--- Whether the progress line is wanted: the setting on, and the bar built.
+function Subtitle:ProgressWanted()
+    return Config().SubtitleProgress ~= false and not self.progressBroken
 end
 
 --- The page's fade between pages, and the shadow easing to a new page's size.
