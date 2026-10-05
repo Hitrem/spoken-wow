@@ -122,7 +122,9 @@ local function BuildScrollBar(view, parent)
 	local width = minimal and 8 or BAR_WIDTH
 	view.barWidth = width
 
-	local bar = CreateFrame("Frame", nil, parent)
+	-- Parent to the scroll frame, not the outer panel: hiding the text view must
+	-- hide the bar with it (the lore window collapses the text pane alone).
+	local bar = CreateFrame("Frame", nil, view.frame)
 	bar:SetWidth(width)
 	bar:SetPoint("TOPRIGHT", view.frame, "TOPRIGHT", 0, 0)
 	bar:SetPoint("BOTTOMRIGHT", view.frame, "BOTTOMRIGHT", 0, 0)
