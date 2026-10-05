@@ -11,7 +11,7 @@ categories:
 license: MIT
 ---
 
-**Expressive, character-driven AI voiceover for WoW Forever and Classic.** NPCs speak their quest text and gossip, zones tell their stories, and books read themselves aloud. One download carries everything; add the voice packs you want.
+**Expressive, character-driven AI voiceover for WoW Forever and Classic.** NPCs speak their quest text and gossip, zones tell their stories, and books read themselves aloud.
 
 **Voiced with care:**
 
