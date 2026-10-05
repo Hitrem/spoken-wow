@@ -142,9 +142,8 @@ env, quests, zones = H.Fresh(stub, SPOKEN)
 env.Addon.db.profile.Audio.AutoToggleDialog = true
 env.Addon.db.profile.Audio.SoundChannel = "Master"
 _G.Spoken:MuteGameDialogueAhead(quests)
-stub.Advance(0.6)
-Expect("muting ahead fades the dialog out and mutes it", GetCVar("Sound_EnableDialog"), "0")
-stub.Advance(1.0)
+Expect("muting ahead cuts the dialog at once, as the window opens", GetCVar("Sound_EnableDialog"), "0")
+stub.Advance(1.6)
 Expect("...and lifts itself when nothing is queued", GetCVar("Sound_EnableDialog"), "1")
 
 _G.Spoken:MuteGameDialogueAhead(quests)

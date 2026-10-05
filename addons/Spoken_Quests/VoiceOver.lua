@@ -1130,6 +1130,8 @@ function Addon:MuteGreetingAhead(event)
         return
     end
     if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
+        -- Silenced only where a pack reads its greeting, so the pack's replaces the game's. Any
+        -- other NPC, quest-givers included, keeps its own.
         -- The page text is not to be trusted yet (see the deferred read), so this asks only
         -- whether any pack voices this speaker at all.
         local guid = Utils:GetNPCGUID()

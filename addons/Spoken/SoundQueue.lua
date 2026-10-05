@@ -332,7 +332,8 @@ end
 --- no Dialog channel to mute, and what the client can do is cut a bark already playing, so
 --- the effects channel is toggled off and straight back on as the line starts.
 ---@param speakingOn string|nil
-function SoundQueue:MuteGameDialogue(speakingOn)
+---@param cut boolean? switch it off at once rather than fade it out
+function SoundQueue:MuteGameDialogue(speakingOn, cut)
     if not Addon.db.profile.Audio.AutoToggleDialog then
         return
     end
@@ -343,8 +344,8 @@ function SoundQueue:MuteGameDialogue(speakingOn)
         end
         return
     end
-    -- Faded, so the NPC is not cut off mid-word.
-    SoundUtils:MuteChannel("Dialog", speakingOn ~= nil and speakingOn ~= "Dialog", true)
+    -- Faded, so the NPC is not cut off mid-word; cut where it should not be heard at all.
+    SoundUtils:MuteChannel("Dialog", speakingOn ~= nil and speakingOn ~= "Dialog", not cut)
 end
 
 -- How long a mute taken ahead of a line holds with nothing queued. Quest lines are read
@@ -367,7 +368,9 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
     if Version.IsLegacyVanilla and not self:IsEmpty() then
         return
     end
-    self:MuteGameDialogue(speakingOn)
+    -- Cut, not faded: in the frame the window opens the greeting has barely started, and a fade
+    -- let its first half-second through.
+    self:MuteGameDialogue(speakingOn, true)
     if muteAheadTimer then
         Addon:CancelTimer(muteAheadTimer)
     end
