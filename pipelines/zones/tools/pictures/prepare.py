@@ -450,6 +450,26 @@ def reviewed(choices):
     return out, unknown
 
 
+def twins(placed):
+    """Places the lore lists twice, given the picture of the one reviewed: a city as an area of the
+    zone around it (Elwynn Forest/Stormwind City), Hillsbrad's Alterac Mountains, Ruins of Alterac
+    and Uplands, a Forever zone as one of its own areas. They have no folder of their own, so
+    without this their rows show no picture."""
+    _, areas = lore_names()
+    have = {(p["parent"], p.get("key")) for p in placed}
+    # By name, a zone's picture before an area's.
+    by_name = {}
+    for p in sorted(placed, key=lambda p: p.get("key") is not None):
+        by_name.setdefault(safe(p["title"]).lower(), p)
+    out = []
+    for parent, names in areas.items():
+        for name, (key, title) in names.items():
+            twin = by_name.get(name.lower())
+            if twin and (parent, key) not in have:
+                out.append({**twin, "id": "%d-%s" % (parent, key), "parent": parent, "key": key, "title": title})
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--choices", default=CHOICES)
@@ -483,6 +503,8 @@ def main():
         placed.append({**p, **chosen, "source": by_hand.get(p["id"]) or sources.get(md5)})
         sys.stdout.write("\r  %d placed" % len(placed))
     sys.stdout.write("\n")
+    shown_twice = twins(placed)
+    placed += shown_twice
 
     write_lua(placed)
     write_credits(placed)
@@ -492,8 +514,10 @@ def main():
         if f not in keep:
             os.remove(os.path.join(OUT, f))
     total = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT))
-    missing = [pl["id"] for pl in placed if not pl["source"]]
-    print("written %d, placed %d, textures %d, folder %.1f MB" % (written, len(placed), len(shared), total / 1e6))
+    # A place listed twice is credited under its twin.
+    missing = [pl["id"] for pl in placed if not pl["source"] and pl not in shown_twice]
+    print("written %d, placed %d (%d listed twice), textures %d, folder %.1f MB"
+          % (written, len(placed), len(shown_twice), len(shared), total / 1e6))
     if unknown:
         print("folders not in the lore, skipped:", unknown)
     if missing:
