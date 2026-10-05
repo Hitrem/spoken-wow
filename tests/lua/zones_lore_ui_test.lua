@@ -313,8 +313,8 @@ Expect("every place is listed, discovered or not", Shown(), "Azeroth|Eastern Kin
 Expect("...those not yet discovered locked: a continent with none found, an area not found", Locked(), "Eastern Kingdoms|Sen'jin Village")
 RowFor("Sen'jin Village").scripts.OnEnter(RowFor("Sen'jin Village"))
 Expect("...not lit under the pointer", RowFor("Sen'jin Village").over, false)
-Expect("...a zone's count its areas found out of all", RowFor("Durotar").count.text, "1/2")
-Expect("...and a plain count where all are found", RowFor("Kalimdor").count.text, 1)
+Expect("...a zone's count its areas found out of all, and the share of them", RowFor("Durotar").count.text, "1/2 • 50%")
+Expect("...a continent's its zones found", RowFor("Kalimdor").count.text, "1/1 • 100%")
 RowFor("Eastern Kingdoms").scripts.OnClick(RowFor("Eastern Kingdoms"))
 Expect("a locked continent does not open", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
 RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
@@ -323,7 +323,20 @@ showAll = true
 Z:RefreshLoreWindow()
 Expect("Unlock Undiscovered Places opens them all", Locked(), "")
 Expect("...the continent opened before shows its zones again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
-Expect("...with plain counts", RowFor("Durotar").count.text, 2)
+Expect("...the counts still what this character has found", RowFor("Durotar").count.text, "1/2 • 50%")
+showAll = false
+
+-- Discovered Only, under the list, leaves the places not found out of it.
+local only = window.discoveredOnly
+Expect("Discovered Only starts off", only:GetChecked() and true or false, false)
+only:SetChecked(true)
+only:GetScript("OnClick")(only)
+Expect("...on, it leaves out what is not found: a continent, an area", Shown(), "Azeroth|Kalimdor|Durotar|Valley of Trials")
+Expect("...and is remembered", Z:Get("loreDiscoveredOnly"), true)
+only:SetChecked(false)
+only:GetScript("OnClick")(only)
+Expect("...off, they are listed again", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+Expect("...greyed out", Locked(), "Eastern Kingdoms|Sen'jin Village")
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones lore window tests passed")

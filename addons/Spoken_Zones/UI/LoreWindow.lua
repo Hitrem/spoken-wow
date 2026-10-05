@@ -19,9 +19,11 @@ local ADDON_NAME, SpokenZones = ...
 local L = SpokenZones.L
 local Art = SpokenZones.Art
 
-local WINDOW_WIDTH = 880
+local WINDOW_WIDTH = 920
 local WINDOW_HEIGHT = 600
-local LIST_WIDTH = 270
+-- Room for the longest zone name in any language (Portuguese's Cordilheira das Torres de
+-- Pedra) beside its count, found out of all and the share: 27/27 • 100%.
+local LIST_WIDTH = 345
 local ZONE_ROW = 24
 local AREA_ROW = 20
 local DEPTH_STEP = 14         -- each level in, under the one it belongs to
@@ -165,13 +167,22 @@ local function Matches(text)
 	return filter == "" or (text and string.find(string.lower(text), filter, 1, true) ~= nil)
 end
 
--- Whether a place can be opened: every place with Unlock Undiscovered Places on, otherwise only
--- those this character has found (Discovery.lua), and always the one chosen. The rest are listed
--- greyed out.
-local function Discovered(mapID, key)
-	if SpokenZones:ShowsUndiscovered() then return true end
+-- Whether this character has found a place (Discovery.lua), whatever Unlock Undiscovered Places
+-- says: the counts and Discovered Only go by it. The one chosen counts as found.
+local function Found(mapID, key)
 	if selection and selection.mapID == mapID and (key == nil or selection.key == key) then return true end
 	return SpokenZones:IsFound(mapID, key)
+end
+
+-- Whether a place can be opened: every place with Unlock Undiscovered Places on, otherwise only
+-- those found. The rest are listed greyed out.
+local function Discovered(mapID, key)
+	return SpokenZones:ShowsUndiscovered() or Found(mapID, key)
+end
+
+-- Discovered Only, the checkbox under the list: the places not found are left out of it.
+local function OnlyFound()
+	return SpokenZones:Get("loreDiscoveredOnly") == true
 end
 
 local function Missing(mapID)
@@ -183,6 +194,7 @@ end
 -- areas that match). Nothing when neither it nor any area matches the search. A zone not yet
 -- discovered is listed locked: greyed out, and it does not open.
 local function ZoneRows(mapID, depth)
+	if OnlyFound() and not Found(mapID) then return {} end
 	local locked = not Discovered(mapID)
 	local subKeys = SubzoneKeys(mapID)
 	local zoneName = ZoneName(mapID)
@@ -190,13 +202,14 @@ local function ZoneRows(mapID, depth)
 	local found = 0
 	if subKeys then
 		for _, key in ipairs(subKeys) do
-			local discovered = Discovered(mapID, key)
-			if discovered then found = found + 1 end
+			local isFound = Found(mapID, key)
+			if isFound then found = found + 1 end
 			local entry = SpokenZones.Subzones[mapID][key]
 			local name = entry.name or key
-			if filter == "" and expandedZone == mapID and not locked or filter ~= "" and Matches(name) then
+			local shown = filter == "" and expandedZone == mapID and not locked or filter ~= "" and Matches(name)
+			if shown and (isFound or not OnlyFound()) then
 				table.insert(areas, { kind = "subzone", mapID = mapID, key = key, label = name, depth = depth + 1,
-					missing = SpokenZones:IsPending(entry), locked = not discovered })
+					missing = SpokenZones:IsPending(entry), locked = not Discovered(mapID, key) })
 			end
 		end
 	end
@@ -231,11 +244,13 @@ local function BuildRowList()
 		local name = ZoneName(continent)
 		local found = 0
 		for _, mapID in ipairs(ZonesOf(continent)) do
-			if Discovered(mapID) then found = found + 1 end
+			if Found(mapID) then found = found + 1 end
 		end
-		-- A continent with none of its zones found yet is listed locked, and does not open.
-		local locked = found == 0 and not Discovered(continent)
-		if not searching or Matches(name) or #zones > 0 then
+		-- A continent with none of its zones found yet is listed locked, and does not open; with
+		-- Discovered Only it is left out.
+		local unfound = found == 0 and not Found(continent)
+		local locked = unfound and not SpokenZones:ShowsUndiscovered()
+		if (not searching or Matches(name) or #zones > 0) and not (unfound and OnlyFound()) then
 			table.insert(continents, { kind = "continent", mapID = continent, label = name, depth = 1,
 				count = found, total = #ZonesOf(continent),
 				open = searching and #zones > 0 or (not searching and continentOpen[continent] and not locked),
@@ -458,15 +473,19 @@ local function RenderList()
 			row.toggle:ClearAllPoints()
 			row.toggle:SetPoint("LEFT", row, "LEFT", 8 + indent, 0)
 			-- The game's own plus and minus, for anything with something inside to open.
-			if item.count > 0 then
+			if (item.total or item.count) > 0 and not item.locked then
 				row.toggle:SetTexture(item.open and [[Interface\Buttons\UI-MinusButton-Up]] or [[Interface\Buttons\UI-PlusButton-Up]])
 				row.toggle:Show()
 			else
 				row.toggle:Hide()
 			end
-			-- Found out of all where some are not listed yet: 5/27.
-			local of = item.total and item.total > item.count and (item.count .. "/" .. item.total) or item.count
-			row.count:SetText(item.count > 0 and of or "")
+			-- Found out of all, and how much of it that is: 5/27 • 18%.
+			if item.total and item.total > 0 then
+				row.count:SetText(string.format("%d/%d • %d%%", item.count, item.total,
+					math.floor(100 * item.count / item.total)))
+			else
+				row.count:SetText(item.count > 0 and item.count or "")
+			end
 			if item.locked then
 				row.label:SetTextColor(0.42, 0.42, 0.42)
 			elseif item.missing then
@@ -610,7 +629,7 @@ local function BuildWindow()
 	local ok, inset = pcall(CreateFrame, "Frame", nil, window, "InsetFrameTemplate")
 	if not ok or not inset then inset = CreateFrame("Frame", nil, window) end
 	inset:SetPoint("TOPLEFT", window, "TOPLEFT", left, top - 38)
-	inset:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", left, 6)
+	inset:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", left, 30)
 	inset:SetWidth(LIST_WIDTH)
 	window.inset = inset
 
@@ -632,6 +651,27 @@ local function BuildWindow()
 	listScroll:SetScrollChild(listChild)
 	-- The page's scroll bar, the game's minimal one, down the list's right side.
 	window.listBar = SpokenZones:AddScrollBar(listScroll, listChild, inset)
+
+	-- Discovered Only, under the list: leaves out the places this character has not found.
+	local okOnly, only = pcall(CreateFrame, "CheckButton", nil, window, "UICheckButtonTemplate")
+	if okOnly and only then
+		only:SetSize(24, 24)
+		only:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", left, 4)
+		local text = only.text or only.Text
+		if not (text and text.SetFontObject) then text = only:CreateFontString(nil, "ARTWORK") end
+		text:SetFontObject("GameFontHighlightSmall")
+		text:ClearAllPoints()
+		text:SetPoint("LEFT", only, "RIGHT", 2, 0)
+		text:SetText(L.LORE_DISCOVERED_ONLY)
+		only.label = text
+		only:SetChecked(OnlyFound())
+		only:SetScript("OnClick", function(self)
+			SpokenZones:Set("loreDiscoveredOnly", self:GetChecked() and true or false)
+			listScroll:SetVerticalScroll(0)
+			SpokenZones:RefreshLoreWindow()
+		end)
+		window.discoveredOnly = only
+	end
 
 	window.noMatch = inset:CreateFontString(nil, "ARTWORK", "GameFontDisable")
 	window.noMatch:SetPoint("TOP", inset, "TOP", 0, -24)

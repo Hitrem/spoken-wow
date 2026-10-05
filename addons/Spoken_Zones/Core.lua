@@ -35,6 +35,8 @@ local defaults = {
 	showPictures = true,
 	-- Off, so Lore of Azeroth opens only the places this character has found (Discovery.lua).
 	showUndiscovered = false,
+	-- Lore of Azeroth's Discovered Only, under its list: off, so every place is listed.
+	loreDiscoveredOnly = false,
 	showMinimapButton = true,
 	voiceEnabled = true,
 	-- Dialog so narration rides the player's dialog volume slider rather than
