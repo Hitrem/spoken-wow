@@ -193,7 +193,7 @@ changelog_for() {
     // Restated from isLanguageHeading in scripts/lib/packs.mjs, because this is a node -e
     // string and cannot import it -- keep the two in step.
     const language = /^## \S+ — [a-z]+(?:-[a-z]+)+-[a-z]{2}[A-Z]{2}(?:\s|$)/;
-    const start = lines.findIndex((l) => l.startsWith(`## ${version}`) && !language.test(l));
+    const start = lines.findIndex((l) => `${l} `.startsWith(`## ${version} `) && !language.test(l));
     if (start === -1) {
       console.error(`no "## ${version}" section in ${path}`);
       process.exit(1);

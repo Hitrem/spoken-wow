@@ -339,7 +339,7 @@ changelog_for() {
     // Restated from isLanguageHeading in scripts/lib/packs.mjs, because this is a node -e
     // string and cannot import it -- keep the two in step.
     const language = /^## \S+ — [a-z]+(?:-[a-z]+)+-[a-z]{2}[A-Z]{2}(?:\s|$)/;
-    const matches = (l) => l.startsWith(`## ${version}`) && !language.test(l) &&
+    const matches = (l) => `${l} `.startsWith(`## ${version} `) && !language.test(l) &&
       (kind === "spoken" || kind === "spoken-all" ? true : kind === "player" ? /player/i.test(l) : /pack|audio/i.test(l));
     const start = lines.findIndex(matches);
     if (start === -1) {
