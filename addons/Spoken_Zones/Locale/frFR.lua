@@ -134,8 +134,8 @@ L.OPT_LATER = "Plus tard"
 
 -- Lore of Azeroth and Zone Lore
 L.OPT_SECTION_LORE = "Récits d'Azeroth"
-L.OPT_LORE_WINDOW_TIP = "Les récits des zones et sous-zones que vous avez découvertes, à parcourir et à écouter où que vous soyez."
-L.OPT_SHOW_UNDISCOVERED = "Lieux non découverts"
+L.OPT_LORE_WINDOW_TIP = "Le récit de chaque zone et sous-zone, à parcourir et à écouter où que vous soyez. Les lieux que vous n'avez pas encore découverts sont grisés."
+L.OPT_SHOW_UNDISCOVERED = "Ouvrir les non découverts"
 L.OPT_SHOW_UNDISCOVERED_TIP = "Permet d'ouvrir toutes les zones et sous-zones, y compris celles que vous n'avez pas encore découvertes. Sinon, elles sont grisées."
 L.OPEN_IN_LORE_TIP = "Le récit de ce lieu dans les Récits d'Azeroth, avec ceux de toutes les autres zones et sous-zones."
 L.LORE_WINDOW_TITLE = "Récits d'Azeroth"
