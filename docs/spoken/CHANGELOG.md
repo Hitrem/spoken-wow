@@ -77,7 +77,7 @@ is new since Spoken Player 2.3.2, Spoken Quests 2.2.2, Spoken Zones 2.2.1 and Sp
   *([Nucabe](https://github.com/Nucabe))*
 - New and changed text is translated into German, Spanish, French, Korean, Brazilian
   Portuguese, Russian and both Chinese scripts. *([Nucabe](https://github.com/Nucabe),
-  anon12018248)*
+  [anon1231823](https://github.com/anon1231823))*
 
 ### Zones
 
@@ -121,7 +121,7 @@ is new since Spoken Player 2.3.2, Spoken Quests 2.2.2, Spoken Zones 2.2.1 and Sp
 - [Nucabe](https://github.com/Nucabe), who designed and wrote most of this release: the
   narrator styles, the subtitles, the settings, Zone Lore, Lore of Azeroth and the pictures.
 - [Jared-Mac](https://github.com/Jared-Mac), for keeping zone narration quiet in flight.
-- **anon12018248**, for testing every beta and for the translations.
+- [anon1231823](https://github.com/anon1231823), for testing every beta and for the translations.
 - shorley, whose Spoken Subtitles the subtitle's look comes from.
 
 ## 3.0.0-beta.4 — 2026-10-05
