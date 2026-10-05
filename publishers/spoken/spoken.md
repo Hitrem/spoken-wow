@@ -75,8 +75,6 @@ Game Menu → Options → AddOns → **Spoken**, or `/sp options`.
 
 **Voices and translations.** Want to help a voice sound right, or the addon read well in your language? Come to the [Discord](https://discord.gg/HEGUgn6Yf).
 
-## Compatibility
-
-Classic Era 1.15.9, the Anniversary client (2.5.6) and Forever.
+---
 
 [Join the Discord](https://discord.gg/HEGUgn6Yf) · [Buy Me a Coffee](https://buymeacoffee.com/rustykey)
