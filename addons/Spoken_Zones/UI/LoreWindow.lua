@@ -247,8 +247,9 @@ local function BuildRowList()
 			if Found(mapID) then found = found + 1 end
 		end
 		-- A continent with none of its zones found yet is listed locked, and does not open; with
-		-- Discovered Only it is left out.
-		local unfound = found == 0 and not Found(continent)
+		-- Discovered Only it is left out. Found through its zones alone: finding Brill finds the
+		-- Eastern Kingdoms.
+		local unfound = found == 0 and not (selection and selection.mapID == continent)
 		local locked = unfound and not SpokenZones:ShowsUndiscovered()
 		if (not searching or Matches(name) or #zones > 0) and not (unfound and OnlyFound()) then
 			table.insert(continents, { kind = "continent", mapID = continent, label = name, depth = 1,

@@ -74,6 +74,15 @@ onZone()
 Expect("standing in an unexplored zone finds it", Z:IsFound(1426), true)
 Expect("...and the area stood in", Z:IsFound(1426, "coldridge valley"), true)
 
+-- At sea or on a zeppelin the map is the continent's: that finds no place.
+C_Map.GetMapInfo = function(id) return { mapID = id, mapType = (id == 1415 and 2 or 3) } end
+where.map, where.subzone = 1415, ""
+onZone()
+Expect("being on a continent's map, between zones, records no visit", SpokenZonesCharacter.visited["1415"], nil)
+where.map = 1426
+onZone()
+Expect("...a zone's still does", SpokenZonesCharacter.visited["1426"], true)
+
 Expect("undiscovered places hidden unless the setting says", Z:ShowsUndiscovered(), false)
 settings.showUndiscovered = true
 Expect("...shown when it does", Z:ShowsUndiscovered(), true)

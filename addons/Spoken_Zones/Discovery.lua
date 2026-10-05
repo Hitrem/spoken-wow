@@ -12,7 +12,8 @@
 --     (SpokenZonesCharacter.visited).
 --
 -- A zone is found when it, or any of its areas, is; a city also when its name is explored on
--- the zone around it (Orgrimmar on Durotar's map). The map scan is done once per zone a session,
+-- the zone around it (Orgrimmar on Durotar's map). A continent is found only through its zones
+-- (Lore of Azeroth counts them): being on its map, at sea or on a zeppelin, finds nothing. The map scan is done once per zone a session,
 -- and the zone the character is in is scanned again whenever the list is drawn, so a discovery
 -- shows the next time Lore of Azeroth is opened.
 
@@ -132,6 +133,11 @@ end
 local function RecordVisit()
 	local _, mapID = SpokenZones:GetLoreWithFallback(SpokenZones:GetPlayerMapID())
 	if not mapID then
+		return
+	end
+	-- Between zones (at sea, on a zeppelin) the map is the continent's or the world's: no place.
+	local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
+	if info and info.mapType and info.mapType < 3 then
 		return
 	end
 	local visited = CharDB().visited

@@ -311,6 +311,10 @@ showAll, found = false, { ["1411"] = true, ["1411/valley of trials"] = true }
 Z:ShowLoreFor(1411, nil)
 Expect("every place is listed, discovered or not", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
 Expect("...those not yet discovered locked: a continent with none found, an area not found", Locked(), "Eastern Kingdoms|Sen'jin Village")
+found["1415"] = true
+Z:RefreshLoreWindow(); Shown()
+Expect("...a continent found only through its zones, not by being on its map", Locked(), "Eastern Kingdoms|Sen'jin Village")
+found["1415"] = nil
 RowFor("Sen'jin Village").scripts.OnEnter(RowFor("Sen'jin Village"))
 Expect("...not lit under the pointer", RowFor("Sen'jin Village").over, false)
 Expect("...a zone's count its areas found out of all, and the share of them", RowFor("Durotar").count.text, "1/2 • 50%")
