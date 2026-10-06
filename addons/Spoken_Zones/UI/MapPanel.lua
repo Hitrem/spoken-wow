@@ -35,14 +35,26 @@ local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map_01]]
 -- button of DefaultPanelFlatTemplate, the family the Map & Quest Log frame belongs to. Inside it
 -- the quest log's frame and the filigree on its top edge, round the quest details' parchment
 -- (UI/LorePage.lua). The old dark dialog box where the client has not got the template.
+--
+-- Beside the map, not in it: the panel and its button are UIParent's, anchored to the map and
+-- shown, hidden, layered and scaled with it here. The Forever client's gamepad UI takes every
+-- button inside the open map into the map's own navigation, and an addon's buttons there taint
+-- it: closing the map with the gamepad is then blocked, and the "blocked from an action" dialog
+-- that raises hangs the client.
+--
+-- A workaround for the gamepad UI alone, paid for by every player: the panel no longer fades with
+-- the map as the player moves, and follows a scale or level the map takes while open only at its
+-- next refresh. Once the client stops tainting a map with an addon's buttons in it (check on a
+-- newer build), the panel belongs back in WorldMapFrame, and FollowMap and the map's OnHide hook
+-- go with it.
 local function NewPanel()
-	local ok, frame = pcall(CreateFrame, "Frame", "SpokenZonesPanel", WorldMapFrame, "DefaultPanelFlatTemplate")
+	local ok, frame = pcall(CreateFrame, "Frame", "SpokenZonesPanel", UIParent, "DefaultPanelFlatTemplate")
 	if ok and frame and frame.SetTitle then
 		frame:SetTitle(L.LORE_PANEL_TITLE)
 		frame.templated = true
 		return frame
 	end
-	frame = CreateFrame("Frame", "SpokenZonesPanel", WorldMapFrame, "BackdropTemplate")
+	frame = CreateFrame("Frame", "SpokenZonesPanel", UIParent, "BackdropTemplate")
 	if frame.SetBackdrop then
 		frame:SetBackdrop({
 			bgFile = [[Interface\DialogFrame\UI-DialogBox-Background-Dark]],
@@ -59,8 +71,6 @@ local function BuildPanel()
 
 	panel = NewPanel()
 	panel:SetWidth(width)
-	panel:SetFrameStrata(WorldMapFrame:GetFrameStrata())
-	panel:SetFrameLevel(WorldMapFrame:GetFrameLevel() + 10)
 	panel:EnableMouse(true)
 
 	-- Closed, it stays closed until the button on the map's edge reopens it; the setting turns it
@@ -106,10 +116,8 @@ end
 -- The way back to a folded panel has to live on the map, not on the panel it reopens. Folding it
 -- needs nothing more than the panel's own close button.
 local function BuildToggle()
-	toggle = CreateFrame("Button", "SpokenZonesPanelToggle", WorldMapFrame)
+	toggle = CreateFrame("Button", "SpokenZonesPanelToggle", UIParent)
 	toggle:SetSize(ICON_SIZE, ICON_SIZE)
-	toggle:SetFrameStrata(panel:GetFrameStrata())
-	toggle:SetFrameLevel(panel:GetFrameLevel())
 	local icon = toggle:CreateTexture(nil, "ARTWORK")
 	icon:SetAllPoints()
 	icon:SetTexture(TOGGLE_ICON)
@@ -141,6 +149,18 @@ end
 -- Layout
 --------------------------------------------------------------------------------
 
+-- In front of the map and as large, as a child of it would be. Copied on every show, since the
+-- map's level and scale are its own to change.
+local function FollowMap()
+	local strata, level = WorldMapFrame:GetFrameStrata(), WorldMapFrame:GetFrameLevel()
+	local mapScale, uiScale = WorldMapFrame:GetEffectiveScale(), UIParent:GetEffectiveScale()
+	for _, frame in ipairs({ panel, toggle }) do
+		if strata then frame:SetFrameStrata(strata) end
+		if level then frame:SetFrameLevel(level + 10) end
+		if mapScale and uiScale and uiScale > 0 then frame:SetScale(mapScale / uiScale) end
+	end
+end
+
 -- Always on the map's right, beside the quest log as the game lays its own panels out.
 local function ApplyAnchors()
 	local gap = GAP
@@ -152,6 +172,10 @@ end
 -- Maximised, the map fills the screen and a side panel would sit off-screen, so
 -- the panel only shows in windowed mode. Whether it is folded away is a separate question.
 local function Available()
+	-- Not the map's child, so nothing hides it with the map but this.
+	if not WorldMapFrame:IsShown() then
+		return false
+	end
 	-- Switched off in Spoken's settings, the part puts nothing on the map.
 	if not SpokenZones:IsPartOn() then
 		return false
@@ -181,6 +205,7 @@ local function Refresh(mapID)
 		return
 	end
 
+	FollowMap()
 	local collapsed = SpokenZones:Get("mapPanelCollapsed")
 	toggle:SetShown(collapsed)
 	panel:SetShown(not collapsed)
@@ -286,22 +311,17 @@ function SpokenZones:SetupMapPanel()
 	BuildToggle()
 	ApplyAnchors()
 
-	-- Re-evaluate visibility whenever the map changes shape. Leatrix_Maps hooks
-	-- this same set; these are the paths that resize or re-dock the map frame.
-	local function Relayout()
-		if not panel then
-			return
-		end
+	-- Re-evaluate visibility whenever the map changes shape: maximising and minimising both
+	-- resize it. Its script, not its Maximize and Minimize: hooked, those raise an error inside
+	-- the Forever client's own Minimize as the map opens under the gamepad UI.
+	WorldMapFrame:HookScript("OnSizeChanged", function()
 		ApplyAnchors()
 		Refresh(SpokenZones:GetDisplayedMapID())
-	end
-
-	hooksecurefunc(WorldMapFrame, "Maximize", Relayout)
-	hooksecurefunc(WorldMapFrame, "Minimize", Relayout)
-	hooksecurefunc(WorldMapFrame, "SynchronizeDisplayState", Relayout)
-	if WorldMapFrame.OnFrameSizeChanged then
-		hooksecurefunc(WorldMapFrame, "OnFrameSizeChanged", Relayout)
-	end
+	end)
+	WorldMapFrame:HookScript("OnHide", function()
+		panel:Hide()
+		toggle:Hide()
+	end)
 
 	SpokenZones:OnMapChanged(function(mapID)
 		Refresh(mapID)
