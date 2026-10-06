@@ -33,6 +33,9 @@ local function Mode()
     if mode == "page" or mode == "off" then return mode end
     return "line"
 end
+local function PageOf(line)
+    return math.floor((line - 1) / LineCount()) + 1
+end
 -- The glide's time constant, in seconds: it is 95% of the way there in three of these.
 local GLIDE = 0.09
 local function CharacterCount(text)
@@ -142,7 +145,7 @@ end
 
 function Transcript:SetClip(clip)
     self.clip, self.text = clip, self:TextFor(clip)
-    self.manualScroll, self.page, self.hasStarted = false, 1, false
+    self.manualScroll, self.hasStarted = false, false
     self.top, self.topTarget = 1, 1
     self:Tokenize()
     if not self.frame then return end
@@ -224,10 +227,9 @@ function Transcript:Reflow()
         end
     end
     for _, label in ipairs(self.labels) do label:SetWidth(available) end
-    self.page = Clamp(self.page or 1, 1, self:PageCount())
-    self.topTarget = Clamp(self.topTarget or 1, 1, self:MaxTop())
+    self.topTarget = self:Snap(self.topTarget or 1)
     self.top = Clamp(self.top or self.topTarget, 1, self:MaxTop())
-    self.renderedKey = nil
+    self.renderedKey, self.placedKey = nil, nil
     self:Render()
 end
 
@@ -235,18 +237,38 @@ function Transcript:PageCount()
     return math.max(1, math.ceil(#(self.lines or {}) / LineCount()))
 end
 
---- The highest first visible line: the one that shows the last line at the bottom.
+--- How the captions follow the voice: "line", "page" or "off", whatever is saved.
+function Transcript:ScrollMode()
+    return Mode()
+end
+
+--- The page the captions show, counted from the first visible line.
+function Transcript:Page()
+    return PageOf(self.topTarget or 1)
+end
+
+--- The highest first visible line: the one that shows the last line at the bottom, or in
+--- page mode the last page's first line.
 function Transcript:MaxTop()
+    if Mode() == "page" then return (self:PageCount() - 1) * LineCount() + 1 end
     return math.max(1, #(self.lines or {}) - LineCount() + 1)
 end
 
---- Where the first visible line goes for the voice on `line`, in line-by-line mode.
+--- `line` as a first visible line: within the text, and in page mode its page's first line.
+function Transcript:Snap(line)
+    local top = Clamp(math.floor(line + 0.5), 1, self:MaxTop())
+    if Mode() == "page" then top = (PageOf(top) - 1) * LineCount() + 1 end
+    return top
+end
+
+--- Where the first visible line goes for the voice on `line`, before Snap.
 function Transcript:TargetFor(line)
+    if Mode() == "page" then return line end
     local n = LineCount()
     -- Typed out, every line below the voice is still blank: keep it on the last row, with
     -- what has been read above it.
     local above = Config().Typewriter and n - 1 or math.floor((n - 1) / 2)
-    return Clamp(line - above, 1, self:MaxTop())
+    return line - above
 end
 
 --- Whether the text can be drawn part-way between two lines: the frame must clip what
@@ -264,9 +286,8 @@ end
 --- Show the captions from `line` on, holding there as a wheel scroll does.
 function Transcript:ScrollTo(line)
     self.manualScroll = true
-    self.topTarget = Clamp(math.floor(line + 0.5), 1, self:MaxTop())
+    self.topTarget = self:Snap(line)
     self.top = self.topTarget
-    if Mode() == "page" then self.page = math.floor((self.topTarget - 1) / LineCount()) + 1 end
     self:Update()
 end
 
@@ -288,21 +309,11 @@ function Transcript:Render()
     local segment = self:ActiveSegment(progress)
     local n, mode = LineCount(), Mode()
     local following = mode ~= "off" and not self.manualScroll
-    if mode == "page" then
-        if following then
-            self.page = segment and math.floor((segment.line - 1) / n) + 1 or 1
-        end
-        self.page = Clamp(self.page or 1, 1, self:PageCount())
-        self.topTarget = (self.page - 1) * n + 1
+    if following then self.topTarget = segment and self:TargetFor(segment.line) or 1 end
+    self.topTarget = self:Snap(self.topTarget or 1)
+    -- Pages turn at once, and so does a far move: the glide is for following a voice.
+    if mode == "page" or not self:CanGlide() or math.abs(self.topTarget - (self.top or 1)) > n then
         self.top = self.topTarget
-    else
-        if following then self.topTarget = segment and self:TargetFor(segment.line) or 1 end
-        self.topTarget = Clamp(self.topTarget or 1, 1, self:MaxTop())
-        -- A far move lands at once: the glide is for following a voice, not for a new line.
-        if not self:CanGlide() or math.abs(self.topTarget - (self.top or 1)) > n then
-            self.top = self.topTarget
-        end
-        self.page = math.floor((self.topTarget - 1) / n) + 1
     end
     local inSpeech = self.hasStarted and self:AudioElapsed() >= 0 and progress and progress < 1
     local active = inSpeech and segment and segment.index or nil
@@ -359,6 +370,9 @@ function Transcript:Place()
     local fraction = top - first
     local step = (Config().FontSize or 16) + GAP
     local n = LineCount()
+    local placed = format("%.4f:%d:%d:%d", top, step, n, #(self.lines or {}))
+    if self.placedKey == placed then return end
+    self.placedKey = placed
     for row, label in ipairs(self.labels) do
         label:ClearAllPoints()
         label:SetPoint("TOPLEFT", 0, -((row - 1) - fraction) * step)
@@ -375,7 +389,6 @@ function Transcript:Glide(elapsed)
     if math.abs(target - moved) < 0.01 then moved = target end
     self.top = moved
     if math.floor(moved) ~= math.floor(top) then
-        self.renderedKey = nil
         self:Render()
     else
         self:Place()
@@ -394,20 +407,16 @@ end
 function Transcript:TurnPage(delta)
     if delta == 0 then return end
     self.manualScroll = true
-    if Mode() == "page" then
-        self.page = Clamp((self.page or 1) + (delta > 0 and -1 or 1), 1, self:PageCount())
-    else
-        local step = math.max(1, LineCount() - 1)
-        self.topTarget = Clamp((self.topTarget or 1) + (delta > 0 and -step or step), 1, self:MaxTop())
-    end
+    local n = LineCount()
+    local step = Mode() == "page" and n or math.max(1, n - 1)
+    self.topTarget = self:Snap((self.topTarget or 1) + (delta > 0 and -step or step))
     self:Update()
 end
 
 function Transcript:ToggleExpanded()
     -- Keep a manually chosen passage in view when the page size changes.
-    local firstLine = self.topTarget or ((self.page or 1) - 1) * LineCount() + 1
+    local firstLine = self.topTarget or 1
     Addon:Layout().CaptionsExpanded = not Expanded()
-    self.page = math.floor((firstLine - 1) / LineCount()) + 1
     self.topTarget, self.top = firstLine, firstLine
     self:RefreshConfig()
 end
@@ -576,6 +585,6 @@ end
 function Transcript:Describe()
     return format("transcript=%s visible=%s lines=%d scroll=%s top=%.2f/%d page=%d/%d word=%s estimated=true; %s",
         tostring(Config().Enabled), tostring(self.frame and self.frame:IsVisible()),
-        LineCount(), Mode(), self.top or 1, self:MaxTop(), self.page or 1, self:PageCount(),
+        LineCount(), Mode(), self.top or 1, self:MaxTop(), self:Page(), self:PageCount(),
         tostring(self.activeWord), Subtitle:Describe())
 end

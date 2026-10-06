@@ -142,7 +142,7 @@ Check(T.activeWord==1 and HighlightCount()==2,'first two words are highlighted a
 CheckLayout()
 Advance(30)
 Check(T:GetProgress()==.5,'progress follows real queue timing')
-Check(T.page>1 and T.activeWord>1 and HighlightCount()>=1,'captions follow the highlighted word through the recording')
+Check(T:Page()>1 and T.activeWord>1 and HighlightCount()>=1,'captions follow the highlighted word through the recording')
 do
     -- Typed out, as the subtitle is: the page's words up to the one being read, the rest to come.
     local function Shown()
@@ -162,18 +162,18 @@ do
 end
 CheckLayout()
 T.frame:Fire('OnMouseWheel',1)
-local manualPage=T.page
+local manualPage=T:Page()
 Advance(5)
-Check(T.manualScroll and T.page==manualPage,'manual scrolling holds the chosen caption page')
+Check(T.manualScroll and T:Page()==manualPage,'manual scrolling holds the chosen caption page')
 T:Follow()
-Check(not T.manualScroll and T.page>manualPage and HighlightCount()>=1,'Follow brings the active word back into view')
+Check(not T.manualScroll and T:Page()>manualPage and HighlightCount()>=1,'Follow brings the active word back into view')
 Q:PauseQueue()
 local elapsed,pausedCaptions=T:GetElapsed(),Captions()
 Advance(8)
 Check(T:GetElapsed()==elapsed and Q:IsPaused(),'pause freezes time')
 Check(Captions()==pausedCaptions,'pause freezes the word highlight and caption page')
 Q:ResumeQueue()
-Check(T:GetElapsed()==0 and T.page==1 and T.activeWord==1,'resume restarts captions with the actual restarted audio')
+Check(T:GetElapsed()==0 and T:Page()==1 and T.activeWord==1,'resume restarts captions with the actual restarted audio')
 T:SetEnabled(false); Advance(10)
 Check(not T.frame:IsShown() and Q:IsPlaying(a),'hiding captions leaves audio playing')
 T:SetEnabled(true)
@@ -236,19 +236,19 @@ Check(T.activeWord==compactWord and T:GetElapsed()==compactElapsed,'expanding do
 Check(T.expand:GetLeft()>T.labels[1]:GetRight(),'the caption button has space beside the text')
 CheckLayout()
 T:TurnPage(1)
-local firstVisible=(T.page-1)*8+1
+local firstVisible=(T:Page()-1)*8+1
 T.expand:Fire('OnClick')
 Check(not E.Addon:Layout().CaptionsExpanded and cfg.Lines==2 and T.frame:GetHeight()==twoLineHeight,'minus restores the compact preference')
-Check(T.manualScroll and T.page==math.floor((firstVisible-1)/2)+1,'collapsing keeps the manually selected passage visible')
+Check(T.manualScroll and T:Page()==math.floor((firstVisible-1)/2)+1,'collapsing keeps the manually selected passage visible')
 T:Follow()
 cfg.HighlightWord=false; T:RefreshConfig()
 Check(HighlightCount()==0 and T.activeWord==word,'highlight can be disabled while captions keep following')
 cfg.HighlightWord=true; cfg.ScrollMode='off'; T:RefreshConfig()
-local heldPage=T.page
+local heldPage=T:Page()
 Advance(3)
-Check(T.page==heldPage,'disabling Follow keeps the chosen caption page')
+Check(T:Page()==heldPage,'disabling Follow keeps the chosen caption page')
 T:Follow()
-Check(T.page>heldPage and HighlightCount()>=1,'Follow re-enables automatic page changes')
+Check(T:Page()>heldPage and HighlightCount()>=1,'Follow re-enables automatic page changes')
 Check(cfg.ScrollMode=='line','...in the default mode')
 cfg.ScrollMode='page'
 Q:RemoveAllSoundsFromQueue()
@@ -382,10 +382,9 @@ for _,size in ipairs({12,26}) do
         for _,count in ipairs({1,2,8}) do
             cfg.FontSize,cfg.Lines,E.Addon:Layout().CaptionsExpanded=size,count==1 and 1 or 2,count==8
             M.frame:SetWidth(width); T:RefreshConfig()
-            T.manualScroll,T.page=true,1
-            local displayed={}
+                        local displayed={}
             for page=1,T:PageCount() do
-                T.page=page; T:Update()
+                T:ScrollTo((page-1)*count+1)
                 CheckLayout()
                 displayed[#displayed+1]=Plain(Captions())
             end
