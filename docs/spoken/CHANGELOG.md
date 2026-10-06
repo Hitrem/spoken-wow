@@ -2,6 +2,36 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## 3.1.0 — 2026-10-06
+
+- **Auto-Scroll for the window's captions.** It replaces Turn Pages Automatically and has three
+  choices. Line by Line, the default, moves the text up a line at a time as the voice reaches
+  each line, so the captions no longer jump a whole page. Page by Page is the old behaviour.
+  Off keeps the text still. If you had switched page turning off, Auto-Scroll starts at Off.
+  The mouse wheel scrolls by lines and keeps the text where you leave it. Subtitles Only is
+  unchanged. *([earlsinclairdino](https://github.com/earlsinclairdino))*
+- **Zone pictures are chosen by hand.** The pictures picked automatically from the wiki showed
+  the wrong place in some areas, Felwood among them. They are replaced by 827 hand-picked,
+  checked and cleaned-up pictures covering Azeroth, the Eastern Kingdoms, Kalimdor and Zephras
+  Isle. About 110 areas without a checked picture show none, rather than a wrong one.
+  *([Nucabe](https://github.com/Nucabe))*
+- **Closing Zone Lore beside the map keeps it closed.** It used to come back each time the map
+  opened. While it is closed, a button on the map's top-right edge reopens it, and so does
+  turning it back on with `/spz panel`. *([Hitrem](https://github.com/Hitrem))*
+- **The Lore of Azeroth window can be resized and collapsed.** Drag its corner to resize it.
+  The size is kept across reloads. The button in the title bar folds the window down to the
+  list of places, and choosing a place opens the text again.
+  *([Hitrem](https://github.com/Hitrem))*
+- Clicking a zone on a continent's map, such as Mulgore on Kalimdor, opens that zone's lore, not
+  the lore of one of its areas. *([Nucabe](https://github.com/Nucabe))*
+- **Fewer hangs with the gamepad UI on the Forever client.** While the gamepad UI is on, the
+  notices Spoken used to show as popups at login ("No usable sound packs", "Spoken is required",
+  old folders found) are printed in chat instead, because those popups could make the next
+  window close fail and hang the client. Zone Lore and its reopen button are now placed beside
+  the map rather than inside it, so closing the map with the gamepad is no longer blocked.
+  As a side effect, the panel no longer fades with the map while you move.
+  *([rusty-key](https://github.com/rusty-key))*
+
 ## 3.0.1 — 2026-10-05
 
 - **NPC voices are muted again under gossip and greetings.** In 3.0.0 an NPC's own greeting
