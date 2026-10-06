@@ -33,7 +33,12 @@ A tall parchment, or dark, panel in DialogueUI's proportions:
 A scrollbar appears beside the words when the line runs past the page. It follows the
 caption **Auto-Scroll** mode, by line. Hover the face to stop or replay, as in the Small
 Window. The cross in the corner skips to the next line. Right-click opens the settings.
-Drag anywhere to move it; it keeps its own saved place, apart from the other windows'.
+It opens where DialogueUI puts its own window: the same top, centred on the same spot, on
+the side DialogueUI's Frame Orientation chooses, so a line that plays on after the dialog
+closes stays where the dialog was. It follows DialogueUI there until it is dragged, or sized
+from its corner. Drag anywhere to move it; it then keeps its own saved place, apart from the
+other windows'. Reset puts it back where DialogueUI's window is. Sizing it with Ctrl and the
+wheel is not a move: it keeps following DialogueUI, or keeps its top-left corner once dragged.
 
 Nothing is source-specific. A zone's lore or a book page plays in it as a quest line does:
 the book for a face, the book's or the zone's name as the speaker, the page or the subzone as

@@ -162,13 +162,32 @@ function Theme:ParchmentSize()
     return PARCHMENT_WIDTH * Multiplier(), PARCHMENT_CAP * Multiplier()
 end
 
---- Run fn whenever DialogueUI changes theme or window size. Hooked once, through the
---- methods DialogueUI calls on its window for each: it has no public event for either.
+--- Where DialogueUI puts its window, in UIParent's units from its bottom-left: the window's
+--- horizontal centre and its top. Read from the place DialogueUI aims the window at
+--- (frameOffsetX, frameHeight), not from where it is drawn, which slides and grows while the
+--- window opens. nil while DialogueUI has not placed it yet.
+function Theme:WindowPlace()
+    if not self:Available() then return nil end
+    local frame = _G.DUIQuestFrame
+    local k = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    local offset, height = frame.frameOffsetX, frame.frameHeight
+    -- DialogueUI centres the window on the screen's centre, frameOffsetX to one side.
+    if type(offset) == "number" and type(height) == "number" and height > 0 then
+        return UIParent:GetWidth() / 2 + offset * k, UIParent:GetHeight() / 2 + height / 2 * k
+    end
+    local x, top = frame:GetCenter(), frame:GetTop()
+    if type(x) == "number" and type(top) == "number" then return x * k, top * k end
+    return nil
+end
+
+--- Run fn whenever DialogueUI changes theme, window size or the side its window is on.
+--- Hooked once, through the methods DialogueUI calls on its window for each: it has no public
+--- event for them.
 function Theme:Watch(fn)
     if self.watching or not self:Available() then return end
     local frame = _G.DUIQuestFrame
     local hooked = false
-    for _, name in ipairs({ "LoadTheme", "UpdateFrameSize" }) do
+    for _, name in ipairs({ "LoadTheme", "UpdateFrameSize", "UpdateFrameBaseOffset" }) do
         if type(frame[name]) == "function" and hooksecurefunc then
             hooksecurefunc(frame, name, fn)
             hooked = true

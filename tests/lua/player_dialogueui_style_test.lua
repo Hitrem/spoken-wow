@@ -182,6 +182,41 @@ Expect("...and so does the socket it sits in", Skin.headerSocket.width, socketAt
 saved.DialogueUIWidth = nil
 env.PlayerFrame:RefreshConfig()
 
+---------------------------------------------------------------- where it opens
+-- Until the player drags it, where DialogueUI puts its own window: the same top, centred on
+-- the same spot, and on whichever side DialogueUI's Frame Orientation puts it.
+local function Near(a, b) return a ~= nil and b ~= nil and math.abs(a - b) < 1 end
+local function At(x)
+    local anchor, base = Skin.frame.anchor, Skin.frame.spokenBaseScale
+    -- DialogueUI's window, 734 tall at 0.8 scale, centred on the screen's centre.
+    return anchor ~= nil and anchor.point == "TOP" and anchor.relativePoint == "BOTTOMLEFT"
+        and Near(anchor.x, x / base) and Near(anchor.y, (540 + 734 / 2 * 0.8) / base)
+end
+saved.DialogueUI = nil
+DUI.frameOffsetX = 480
+env.PlayerFrame:RefreshConfig()
+Expect("never dragged, it opens where DialogueUI puts its window", At(960 + 480 * 0.8), true)
+DUI.frameOffsetX = -480
+env.PlayerFrame:RefreshConfig()
+Expect("...and follows it to the other side", At(960 - 480 * 0.8), true)
+local hadCtrl = _G.IsControlKeyDown
+_G.IsControlKeyDown = function() return true end
+Skin:Wheel(1)
+_G.IsControlKeyDown = hadCtrl
+Expect("...still there at another size", env.Addon.db.profile.Frame.DialogueUI.Scale > 0.65
+    and At(960 - 480 * 0.8), true)
+Expect("...the size not taken for a move", saved.DialogueUI, nil)
+env.Addon.db.profile.Frame.DialogueUI.Scale = 0.65
+env.PlayerFrame:RefreshConfig()
+Skin:StopDrag()
+Expect("dragged, its place is kept", saved.DialogueUI ~= nil, true)
+local dragged = Skin.frame.anchor
+DUI.frameOffsetX = 480
+env.PlayerFrame:RefreshConfig()
+Expect("...and no longer follows DialogueUI's", Skin.frame.anchor, dragged)
+env.PlayerFrame:Reset()
+Expect("reset, it goes back to where DialogueUI puts its window", saved.DialogueUI == nil and At(960 + 480 * 0.8), true)
+
 ---------------------------------------------------------------- what it shows
 env.Options:Preview("dialogueui")
 Expect("previewing the tile shows the window with a sample line", Skin.wanted, true)
@@ -262,6 +297,9 @@ T.top = 1
 T.frame:GetScript("OnMouseWheel")(T.frame, -1)
 Expect("the wheel alone still scrolls the words", T.manualScroll, true)
 Expect("...the size untouched", dui.Scale, 0.65)
+-- Dragged before, so the corner stays where the player left it (never dragged, it stays where
+-- DialogueUI puts its window: see "where it opens").
+Skin:StopDrag()
 ctrl = true
 T.frame:GetScript("OnMouseWheel")(T.frame, 1)
 Expect("Ctrl and the wheel over the words grow the window", math.abs(dui.Scale - 0.7) < 1e-9, true)

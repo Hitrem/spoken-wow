@@ -114,11 +114,9 @@ function Skin:Initialize(original)
     self.frame = frame
     frame.spokenBaseScale = 1
     frame:SetSize(300, 400)
-    if not Addon:RestoreLayout("DialogueUI", frame) then
-        -- Left of centre, the mirror of where DialogueUI puts its window, so the two sit
-        -- side by side rather than one over the other.
-        frame:SetPoint("CENTER", UIParent, "CENTER", -Round(UIParent:GetWidth() / 4), 0)
-    end
+    -- Where the player dragged it, else where DialogueUI puts its own window (PlaceDefault,
+    -- run again by RefreshConfig while it has not been dragged).
+    if not Addon:RestoreLayout("DialogueUI", frame) then self:PlaceDefault() end
     frame:SetMovable(true)
     frame:SetResizable(true)
     frame:SetClampedToScreen(true)
@@ -337,6 +335,8 @@ function Skin:Initialize(original)
         if self.sizing then
             Addon:Layout().DialogueUIHeight = Round(frame:GetHeight())
             if self.sizingWidth then Addon:Layout().DialogueUIWidth = Round(frame:GetWidth()) end
+            -- Sized by hand from its corner, which pins the top-left: placed by the player now.
+            Addon:SaveLayout("DialogueUI", frame)
         end
         self.sizing, self.sizingWidth = false, false
         self:Layout(); self:Update()
@@ -590,7 +590,9 @@ function Skin:Wheel(delta)
     local frame = self.frame
     local left, top, before = frame:GetLeft(), frame:GetTop(), frame:GetEffectiveScale()
     PlayerFrame:RefreshConfig()
-    if left and top and not Addon:IsFrameLocked() then
+    -- Dragged before: its top-left corner stays put. Never dragged: it stays where DialogueUI
+    -- puts its window, and RefreshConfig has placed it there at its new size.
+    if left and top and Addon:Layout().DialogueUI and not Addon:IsFrameLocked() then
         local after = frame:GetEffectiveScale()
         frame:ClearAllPoints()
         frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * before / after, top * before / after)
@@ -743,12 +745,31 @@ function Skin:Tick(elapsed)
     end
 end
 
+--- Where DialogueUI puts its own window: the same top, centred on the same spot, so a line
+--- that plays on after the dialog closes stays where the dialog was. It follows DialogueUI's
+--- Frame Orientation and Frame Size until the player drags it. Without DialogueUI's place,
+--- left of centre.
+function Skin:PlaceDefault()
+    local frame = self.frame
+    local x, top = Theme:WindowPlace()
+    frame:ClearAllPoints()
+    if x then
+        -- In the frame's own units: its effective scale is UIParent's times its base scale,
+        -- also while a host holds it (Addon:ApplyHost keeps the effective scale).
+        local k = 1 / (frame.spokenBaseScale or 1)
+        frame:SetPoint("TOP", UIParent, "BOTTOMLEFT", Round(x * k), Round(top * k))
+    else
+        frame:SetPoint("CENTER", UIParent, "CENTER", -Round(UIParent:GetWidth() / 4), 0)
+    end
+end
+
 function Skin:RefreshConfig(original)
     self:Initialize(original.frame)
     local frame = self.frame
     frame:SetFrameStrata(Config().FrameStrata)
     self:Layout()
     frame:SetScale(frame.spokenBaseScale)
+    if not Addon:Layout().DialogueUI and not self.sizing then self:PlaceDefault() end
     if Addon:IsFrameLocked() then frame:StopMovingOrSizing() end
     Addon:ApplyHost(frame)
     self:Update()
@@ -802,8 +823,7 @@ function Skin:Reset()
     Addon:Layout().DialogueUIWidth = nil
     -- Folded or open as the Opening setting says, again.
     self.expanded = Panel().Expanded ~= false
-    self.frame:ClearAllPoints()
-    self.frame:SetPoint("CENTER", UIParent, "CENTER", -Round(UIParent:GetWidth() / 4), 0)
+    -- Back where DialogueUI puts its window (RefreshConfig, with no saved place).
     self:RefreshConfig(PlayerFrame)
 end
 
