@@ -10,8 +10,9 @@ setfenv(1, VoiceOver)
 --     of Spoken's Type Words Out and Highlight Words is on (Spoken:GetCaption) -- and long
 --     text scrolls to keep the voice in view;
 --   * the Spoken player, or its subtitles, can stay on screen over DialogueUI;
---   * DialogueUI's Play button (its text-to-speech button) plays this addon's recording, and
---     its Auto Play decides this addon's autoplay or is kept in sync with it;
+--   * a Play button of this addon's own, in DialogueUI's art and in the corner where DialogueUI
+--     puts its text-to-speech button, plays the recording, whether or not DialogueUI's Text To
+--     Speech is on; where it is, DialogueUI's button plays the recording too;
 --   * the Contribute button, for a line no pack has, sits on DialogueUI's window, and the
 --     copy box it opens shows over it (Bridge:Page, UI/ContributeButton.lua).
 --
@@ -109,9 +110,6 @@ function Bridge:Problem(feature)
         return L.OPT_DUI_OLD_PLAYER
     elseif feature == "ShowPlayer" and not Spoken.SetPlayerHost then
         return L.OPT_DUI_OLD_PLAYER
-    elseif (feature == "PlayButton" or feature == "EnableTTS")
-        and not (_G.DialogueUIAPI and DialogueUIAPI.SetVOProvider) then
-        return L.OPT_DUI_UNKNOWN
     end
 end
 
@@ -534,160 +532,274 @@ local function HostContributeBox(host)
 end
 
 --------------------------------------------------------------------------------
--- DialogueUI's Play button
+-- The Play button
 --------------------------------------------------------------------------------
+--
+-- DialogueUI draws a Play button only while its Text To Speech is on, which it has off by
+-- default and reads only as it loads. So Spoken Quests draws a Play button of its own in the
+-- same corner, in DialogueUI's art, on every page it has a recording for: left-click plays
+-- the line or stops it, right-click turns Read Automatically on or off. DialogueUI's settings
+-- are left as the player set them. Where its own button shows, this one stands in for it on
+-- a page Spoken Quests reads, and leaves it be on a page it does not. Whether a line reads on
+-- its own is Read Automatically's to decide, never DialogueUI's Auto Play.
 
--- The line DialogueUI last asked about, and the event it stands for. DialogueUI asks as the
--- page opens; Play and Stop then act on that line.
+-- DialogueUI's art for its Play button: a 64-wide cell per theme (1 parchment, 2 dark), the
+-- speaker on top and its three sound waves below. Sized and placed as DialogueUI places its own.
+local PLAY_ART = "Interface/AddOns/DialogueUI/Art/Theme_Shared/TTSButton.png"
+local PLAY_SIZE, PLAY_ICON, PLAY_ALPHA, PLAY_INSET = 24, 16, 0.6, 8
+-- How often the button looks again for the page's line while the window is open: a quest's ID
+-- can arrive a moment after its page is drawn, and the packs load after login.
+local LOOK_EVERY = 0.5
+
+-- The line the page on DialogueUI's window would read, and the event it stands for. Found by
+-- the button (LookForLine) and by DialogueUI asking its voiceover provider (below); Play and
+-- Stop act on it.
 local line, lineEvent
--- How long DialogueUI's autoplay waits before it plays: DialogueUI's floor, so it comes
--- after this addon's.
+-- How long DialogueUI's autoplay waits before it plays: DialogueUI's floor.
 local AUTOPLAY_DELAY = 0.5
 -- When DialogueUI's autoplay will call playFile. It asks the delay (getAutoPlayDelay) just
 -- before it waits, and a click on its button never does, which is how the two are told apart.
 local autoplayAt
+local playButton
 
---------------------------------------------------------------------------------
--- Autoplay, with DialogueUI's Auto Play
---------------------------------------------------------------------------------
-
--- DialogueUI's Auto Play, from its saved settings: what its settings and a right-click on its
--- Text To Speech button change.
-local function TheirAutoplay()
-    local db = _G.DialogueUI_DB
-    return type(db) == "table" and db.TTSAutoPlay == true
-end
-
---- Whether DialogueUI's Text To Speech button plays this addon's lines just now: DialogueUI's
---- Text To Speech on (its saved setting) and running -- not just turned on by this file and
---- waiting for a reload -- and Use DialogueUI's Play Button on here. Its Auto Play then has a
---- say in this addon's, as the DialogueUI page's Read Automatically chooses.
-function Bridge:AutoplayLinked()
-    local db = _G.DialogueUI_DB
-    return self.provider == true and Config().PlayButton == true and type(db) == "table"
-        and db.TTSEnabled == true and not self.ttsPending
-end
-
---- DialogueUI's Text To Speech, on wherever Use DialogueUI's Play Button and Turn On
---- DialogueUI's Text To Speech are: its button is the one that plays this addon's lines, and
---- DialogueUI has it off by default. Turned on in DialogueUI's saved settings, which DialogueUI
---- reads at its next load: it loads them before this addon runs and has no public way to
---- change them, so the player is asked once to reload. Turned off in DialogueUI, it is on again
---- at the next login, unless Turn On DialogueUI's Text To Speech is off here.
-function Bridge:EnsureTextToSpeech()
-    local db = _G.DialogueUI_DB
-    if not (self.provider == true and Config().PlayButton and Config().EnableTTS and type(db) == "table")
-        or db.TTSEnabled == true then
-        return false
-    end
-    db.TTSEnabled = true
-    self.ttsPending = true
-    print("|cFF00CCFFSpoken Quests:|r " .. L.OPT_DUI_TTS_TURNED_ON)
-    return true
-end
-
---- Whether DialogueUI's Auto Play decides this addon's autoplay, Read Automatically waiting.
-function Bridge:FollowsAutoplay()
-    return self:AutoplayLinked() and Config().Autoplay ~= "sync"
-end
-
--- DialogueUI's Auto Play as Keep in Sync last saw it, to tell which of the two changed.
-local seenAutoplay
-
---- Set DialogueUI's Auto Play: by a right-click on its Text To Speech button, which is how
---- DialogueUI changes it while it runs (it keeps a copy that only its own setter updates);
---- written into its saved settings where there is no button to click.
-local function SetTheirAutoplay(on)
-    if TheirAutoplay() == on then
-        return
-    end
-    local button = _G.DUIQuestFrame and DUIQuestFrame.TTSButton
-    if type(button) == "table" and button.Click then
-        pcall(button.Click, button, "RightButton")
-    end
-    if TheirAutoplay() ~= on then
-        DialogueUI_DB.TTSAutoPlay = on
-    end
-end
-
---- Keep in Sync: whichever of Read Automatically and DialogueUI's Auto Play changed since
---- last seen, the other follows. Seen for the first time, DialogueUI's follows this addon's.
-function Bridge:SyncAutoplay()
-    if not (self:AutoplayLinked() and Config().Autoplay == "sync") then
-        seenAutoplay = nil
-        return
-    end
-    local audio = Addon.db.profile.Audio
-    local theirs, ours = TheirAutoplay(), audio.Autoplay ~= false
-    if seenAutoplay ~= nil and theirs ~= seenAutoplay then
-        audio.Autoplay = theirs
-    elseif theirs ~= ours then
-        SetTheirAutoplay(ours)
-        theirs = TheirAutoplay()
-    end
-    seenAutoplay = theirs
-end
-
---- This addon's autoplay as DialogueUI has it, for Addon:IsAutoplayOn: DialogueUI's Auto Play
---- while followed; nil where Read Automatically decides -- kept the same as DialogueUI's
---- first in Keep in Sync -- and always without DialogueUI's Text To Speech button.
-function Bridge:AutoplayFor()
-    if not self:AutoplayLinked() then
-        seenAutoplay = nil
-        return nil
-    end
-    if Config().Autoplay == "sync" then
-        self:SyncAutoplay()
-        return nil
-    end
-    return TheirAutoplay()
-end
-
---- Whether `line` is the clip at the head of the player's queue: speaking, or paused on it.
+--- Whether `soundData` is the line at the head of the player's queue, and not stopped there:
+--- the line Stop acts on. A line stopped at the head is one to play again.
 local function IsSpeaking(soundData)
     local head = Spoken.GetCurrent and Spoken:GetCurrent()
     return head ~= nil and head.fileName == soundData.fileName
+        and not (Spoken.IsPaused and Spoken:IsPaused())
 end
+
+--- Read the page's line now, in front of whatever speaks (Player:PlayPreparedNow).
+local function PlayLine(source)
+    if not (line and lineEvent) then
+        return
+    end
+    Player.playNow = true
+    local ok, err = pcall(Addon.InvokeQuestHandler, Addon, lineEvent, source, true)
+    Player.playNow = nil
+    if not ok then
+        Debug:Record("dialogueui-play-error", tostring(err))
+    end
+end
+
+--- Take the page's line out of the queue, speaking or waiting.
+local function StopLine()
+    local clip = line and Player:QueuedClipFor(line)
+    if clip then
+        Player:Remove(clip)
+    end
+end
+
+--- The line for `event`'s page, or none, with the setting off or no pack voicing it.
+local function LookForLine(event)
+    line, lineEvent = nil, nil
+    if event and Config().PlayButton then
+        local ok, found = pcall(Addon.GetVisibleLine, Addon, event)
+        if ok and found then
+            line, lineEvent = found, event
+        end
+    end
+end
+
+--- 1 on DialogueUI's parchment, 2 on its dark theme: told by the colour DialogueUI gives its
+--- text, dark on parchment, as the Contribute corner tells it (UI/ContributeButton.lua).
+local function ThemeID()
+    local font = _G.DUIFont_QuestType_Left
+    if type(font) == "table" and font.GetTextColor then
+        local r, g, b = font:GetTextColor()
+        if (r or 1) * 0.299 + (g or 1) * 0.587 + (b or 1) * 0.114 >= 0.5 then
+            return 2
+        end
+    end
+    return 1
+end
+
+local function SetPlayTheme(button)
+    local x = (ThemeID() - 1) * 0.125
+    button.Icon:SetTexCoord(x, 64 / 512 + x, 0, 0.5)
+    button.Wave1:SetTexCoord(x, 16 / 512 + x, 0.5, 1)
+    button.Wave2:SetTexCoord(16 / 512 + x, 40 / 512 + x, 0.5, 1)
+    button.Wave3:SetTexCoord(40 / 512 + x, 64 / 512 + x, 0.5, 1)
+end
+
+local function Wave(button, key, width, anchor, x)
+    local wave = button:CreateTexture(nil, "OVERLAY")
+    wave:SetSize(width, PLAY_ICON)
+    wave:SetPoint("LEFT", anchor, "RIGHT", x, 0)
+    wave:SetTexture(PLAY_ART)
+    wave:Hide()
+    button[key] = wave
+    return wave
+end
+
+--- What a click does now, and Read Automatically, which a right-click switches. On a tooltip of
+--- the window's own (the game's is a child of UIParent, which DialogueUI hides).
+local function ShowPlayTooltip(button)
+    local contribute = rawget(VoiceOver, "ContributeButton")
+    local tooltip = contribute and contribute.DialogueUITooltip and contribute:DialogueUITooltip(DUIQuestFrame)
+        or GameTooltip
+    local speaking = line ~= nil and IsSpeaking(line)
+    tooltip:SetOwner(button, "ANCHOR_RIGHT")
+    tooltip:SetText(speaking and L.OPT_STOP or L.OPT_LISTEN)
+    tooltip:AddLine(speaking and L.OPT_DIALOG_STOP_TIP or L.OPT_READ_TIP, 1, 1, 1, true)
+    local on = Addon:IsAutoplayOn()
+    tooltip:AddDoubleLine(L.OPT_PANEL_AUTOPLAY, on and L.OPT_DUI_ON or L.OPT_DUI_OFF, 1, 1, 1,
+        on and 0.1 or 1, on and 1 or 0.125, on and 0.1 or 0.125)
+    tooltip:AddLine(L.OPT_DUI_PLAY_RIGHT_CLICK, 1, 0.82, 0, true)
+    tooltip:Show()
+    button.tooltip = tooltip
+end
+
+--- The button, built the first time a page has a line: a child of the window, so it shows
+--- while DialogueUI hides UIParent and closes with the window, and drawn above it, over
+--- DialogueUI's own button where that one is shown.
+local function PlayButton()
+    if playButton then
+        return playButton
+    end
+    local frame = DUIQuestFrame
+    local button = CreateFrame("Button", nil, frame)
+    button:SetSize(PLAY_SIZE, PLAY_SIZE)
+    button:SetPoint("TOPLEFT", frame, "TOPLEFT", PLAY_INSET, -PLAY_INSET)
+    button:SetFrameStrata("FULLSCREEN")
+    button:SetAlpha(PLAY_ALPHA)
+    button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    button.Icon = button:CreateTexture(nil, "OVERLAY")
+    button.Icon:SetSize(PLAY_ICON, PLAY_ICON)
+    button.Icon:SetPoint("CENTER", button, "CENTER", 0, 0)
+    button.Icon:SetTexture(PLAY_ART)
+    local wave1 = Wave(button, "Wave1", PLAY_ICON * 0.25, button, -8)
+    local wave2 = Wave(button, "Wave2", PLAY_ICON * 0.375, wave1, -3)
+    Wave(button, "Wave3", PLAY_ICON * 0.375, wave2, -4)
+    -- DialogueUI's own animation of the waves where it has it; still waves where it does not.
+    local ok, anim = pcall(button.CreateAnimationGroup, button, nil, "DUISpeakerAnimationTemplate")
+    button.anim = ok and anim or nil
+    button:SetScript("OnClick", function(_, mouse)
+        if mouse == "RightButton" then
+            Addon:SetAutoplay(not Addon:IsAutoplayOn())
+        elseif line and IsSpeaking(line) then
+            StopLine()
+        else
+            PlayLine("Spoken's Play button on DialogueUI")
+        end
+        Bridge:DrawPlayButton()
+        if button.tooltip and button.tooltip:IsShown() then
+            ShowPlayTooltip(button)
+        end
+    end)
+    button:SetScript("OnEnter", function()
+        button:SetAlpha(1)
+        ShowPlayTooltip(button)
+    end)
+    button:SetScript("OnLeave", function()
+        button:SetAlpha(PLAY_ALPHA)
+        if button.tooltip then
+            button.tooltip:Hide()
+        end
+    end)
+    button:Hide()
+    playButton = button
+    return button
+end
+
+--- DialogueUI's own button, kept out of sight while this one stands in its place, and given
+--- back as DialogueUI leaves it when this one goes.
+local covering = false
+local function CoverTheirs(cover)
+    local theirs = _G.DUIQuestFrame and DUIQuestFrame.TTSButton
+    if type(theirs) ~= "table" or not theirs.SetAlpha or theirs == playButton then
+        covering = false
+        return
+    end
+    if cover then
+        if (theirs:GetAlpha() or 0) > 0 then
+            theirs:SetAlpha(0)
+        end
+        covering = true
+    elseif covering then
+        theirs:SetAlpha(PLAY_ALPHA)
+        covering = false
+    end
+end
+
+--- Show the button while the page has a line, and draw it sounding while that line does.
+--- Run as a page is built, as the window opens, and on the driver's tick.
+function Bridge:DrawPlayButton()
+    local show = line ~= nil and self:Page() ~= nil
+    if not show then
+        CoverTheirs(false)
+        if playButton and playButton:IsShown() then
+            playButton:Hide()
+            if playButton.tooltip and playButton.tooltip:IsShown() then
+                playButton.tooltip:Hide()
+            end
+        end
+        return
+    end
+    local button = PlayButton()
+    if not button:IsShown() then
+        SetPlayTheme(button)
+        button:Show()
+    end
+    CoverTheirs(true)
+    local now = Spoken.GetNowPlaying and Spoken:GetNowPlaying()
+    local sounding = now ~= nil and now.fileName == line.fileName and true or false
+    if sounding ~= button.sounding then
+        button.sounding = sounding
+        for _, key in ipairs({ "Wave1", "Wave2", "Wave3" }) do
+            button[key]:SetShown(sounding)
+        end
+        if button.anim then
+            if sounding then button.anim:Play() else button.anim:Stop() end
+        end
+    end
+end
+
+--- Look again for the page's line and redraw the button: `event` is the page just built, or
+--- the page the window shows.
+function Bridge:RefreshPlayButton(event)
+    LookForLine(event or self:Page())
+    self:DrawPlayButton()
+end
+
+--- The button as a test or /spq diagnostics sees it.
+function Bridge:PlayButtonState()
+    return playButton, line
+end
+
+--------------------------------------------------------------------------------
+-- DialogueUI's own Play button
+--------------------------------------------------------------------------------
+--
+-- Where the player has DialogueUI's Text To Speech on, its button and hotkey play the
+-- recording too, through the voiceover provider DialogueUI lets one addon register.
 
 local provider = {
     name = "Spoken Quests",
     -- DialogueUI hears the client's event before this addon's recorder does, so the event is
     -- taken from what DialogueUI says it is showing, never from GetVisibleDialogueEvent.
     doesFileExist = function(interactionType, _, page)
-        line, lineEvent = nil, nil
-        if not Config().PlayButton then
-            return false
-        end
         local event = interactionType == "gossip" and "GOSSIP_SHOW" or QUEST_EVENTS[page]
         if not event then
+            line, lineEvent = nil, nil
             return false
         end
-        local ok, found = pcall(Addon.GetVisibleLine, Addon, event)
-        if ok and found then
-            line, lineEvent = found, event
-            return true
-        end
-        return false
+        LookForLine(event)
+        return line ~= nil
     end,
-    -- Not again when it is already queued: with autoplay on, DialogueUI's own autoplay would
-    -- read every line twice.
     playFile = function()
-        -- DialogueUI's autoplay rather than its button: this addon's own autoplay reads the
-        -- line or not (Addon:IsAutoplayOn, which follows or syncs DialogueUI's Auto Play), so
-        -- DialogueUI's copy of that setting, which can lag, never reads it too.
+        -- DialogueUI's autoplay rather than its button: whether a line reads on its own is Read
+        -- Automatically's to decide (Addon:IsAutoplayOn), not DialogueUI's Auto Play.
         local now = GetTime()
         if autoplayAt and now >= autoplayAt - 0.1 and now <= autoplayAt + 0.5 then
             autoplayAt = nil
-            if Bridge:AutoplayLinked() then
-                return
-            end
+            return
         end
         -- Now, whatever else is speaking: it is skipped (Player:PlayPreparedNow). Already
         -- speaking, nothing to do; queued behind something else, brought to the front.
         if line and not IsSpeaking(line) then
-            Player.playNow = true
-            Addon:InvokeQuestHandler(lineEvent, "DialogueUI Play button", true)
-            Player.playNow = nil
+            PlayLine("DialogueUI Play button")
         end
     end,
     -- Only while the window is up, i.e. its Stop button. DialogueUI also calls this as the
@@ -696,12 +808,8 @@ local provider = {
     -- line is this addon's "Stop When Window Closes" to decide, and it defaults to
     -- letting the line finish.
     stopPlaying = function()
-        if not DUIQuestFrame:IsShown() then
-            return
-        end
-        local clip = line and Player:QueuedClipFor(line)
-        if clip then
-            Player:Remove(clip)
+        if DUIQuestFrame:IsShown() then
+            StopLine()
         end
     end,
     -- Speaking, not just queued: DialogueUI's button stops a line that plays and plays one that
@@ -709,7 +817,7 @@ local provider = {
     isPlaying = function()
         return line ~= nil and IsSpeaking(line)
     end,
-    -- DialogueUI's floor, so its autoplay comes after this addon's.
+    -- Asked just before DialogueUI's autoplay waits, which is how playFile tells it apart.
     getAutoPlayDelay = function()
         autoplayAt = GetTime() + AUTOPLAY_DELAY
         return AUTOPLAY_DELAY
@@ -793,6 +901,7 @@ function Bridge:Hook()
                 Bridge.Expect(handler)
                 Tick()
             end
+            Bridge:RefreshPlayButton(EVENTS[handler])
             RefreshContribute()
         end)
     end
@@ -800,18 +909,29 @@ function Bridge:Hook()
     -- A child of the window, so it runs only while the window is up. DUIQuestFrame's own
     -- OnHide is no use: DialogueUI sets it with SetScript, replacing any hook.
     local driver = CreateFrame("Frame", nil, frame)
-    local elapsedSince = 0
+    local elapsedSince, lookedSince = 0, 0
     driver:SetScript("OnUpdate", function(_, elapsed)
         Release()
         elapsedSince = elapsedSince + elapsed
-        if elapsedSince >= TICK and canMark then
+        lookedSince = lookedSince + elapsed
+        if elapsedSince >= TICK then
             elapsedSince = 0
-            Tick()
+            if canMark then
+                Tick()
+            end
+            -- The page's line looked for again now and then; whether it sounds, every tick.
+            if lookedSince >= LOOK_EVERY then
+                lookedSince = 0
+                self:RefreshPlayButton()
+            else
+                self:DrawPlayButton()
+            end
         end
     end)
     driver:SetScript("OnShow", function()
         self:UpdatePlayerHost()
         HostContributeBox(frame)
+        self:RefreshPlayButton()
         RefreshContribute()
     end)
     driver:SetScript("OnHide", function()
@@ -821,18 +941,18 @@ function Bridge:Hook()
         waiting = nil
         self:UpdatePlayerHost()
         HostContributeBox(nil)
+        self:DrawPlayButton()
         RefreshContribute()
     end)
     self.driver = driver
 
-    -- One provider per session, and DialogueUI warns if another voiceover addon has it.
-    -- Registered even with the setting off, so turning it on needs no reload.
-    if not self:Problem("PlayButton") then
+    -- DialogueUI's own Play button, where its Text To Speech is on. One provider per session,
+    -- and DialogueUI warns if another voiceover addon has it. Registered even with the setting
+    -- off, so turning it on needs no reload.
+    if _G.DialogueUIAPI and DialogueUIAPI.SetVOProvider then
         DialogueUIAPI.SetVOProvider(provider)
         self.provider = true
-        self:EnsureTextToSpeech()
     end
-    self.ensureWas = (Config().PlayButton and Config().EnableTTS) and true or false
     self.status = "hooked"
 end
 
@@ -863,21 +983,14 @@ function Bridge:Refresh()
     if not Config().Captions then
         Restore()
     end
-    -- Use DialogueUI's Play Button or Turn On DialogueUI's Text To Speech just turned on: the
-    -- button has to be there. Only then, so changing another setting never turns back on what
-    -- the player turned off in DialogueUI.
-    local ensure = (Config().PlayButton and Config().EnableTTS) and true or false
-    if ensure and not self.ensureWas then
-        self:EnsureTextToSpeech()
-    end
-    self.ensureWas = ensure
+    self:RefreshPlayButton()
     self:UpdatePlayerHost()
 end
 
 --- One line for /spq diagnostics.
 function Bridge:Describe()
-    return format("DialogueUI: %s; words=%s scroll=%s player=%s play=%s autoplay=%s%s", tostring(self.status),
+    return format("DialogueUI: %s; words=%s scroll=%s player=%s play=%s button=%s provider=%s", tostring(self.status),
         tostring(Config().Captions), tostring(Config().AutoScroll), tostring(Config().ShowPlayer),
-        tostring(Config().PlayButton), tostring(Config().Autoplay),
-        self:AutoplayLinked() and " (linked)" or "")
+        tostring(Config().PlayButton), playButton and playButton:IsShown() and "shown" or "hidden",
+        tostring(self.provider == true))
 end

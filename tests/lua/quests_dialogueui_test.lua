@@ -1,8 +1,8 @@
 -- The quests addon inside DialogueUI's window (UI/DialogueUIBridge.lua): matching the caption to
 -- DialogueUI's paragraphs, typing them out and lighting the words being read as Spoken's
--- settings say, putting the text back, rebuilt pages, the Play button DialogueUI draws for a
--- voiceover provider, the player and the subtitles hosted over the window, the Report and
--- Contribute corner and its copy box on it, and the settings
+-- settings say, putting the text back, rebuilt pages, Spoken's Play button on the window and
+-- the one DialogueUI draws for a voiceover provider, the player and the subtitles hosted over
+-- the window, the Report and Contribute corner and its copy box on it, and the settings
 -- DialogueUI's absence greys out. DialogueUI itself is a fake here, built from the parts of
 -- DUIQuestFrame the module reaches for. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
@@ -309,99 +309,115 @@ dui.PlayButton = false
 Expect("with the setting off DialogueUI is told there is nothing", provider.doesFileExist("quest", 101, "detail"), false)
 dui.PlayButton = true
 
----------------------------------------------------------------- DialogueUI's Text To Speech, turned on
--- Its button is the one that plays this addon's lines, and DialogueUI has it off by default.
--- DialogueUI reads its saved settings only as it loads, so the player is asked to reload.
+---------------------------------------------------------------- DialogueUI's Text To Speech, left alone
+-- DialogueUI's own settings are the player's: nothing here turns its Text To Speech on.
 local said = {}
 local realPrint = _G.print
 _G.print = function(text) table.insert(said, text) end
+_G.DialogueUI_DB = { TTSEnabled = false, TTSAutoPlay = false }
 dui.PlayButton = false
 Bridge:Refresh()
-_G.DialogueUI_DB = { TTSEnabled = false, TTSAutoPlay = false }
 dui.PlayButton = true
 Bridge:Refresh()
-Expect("Use DialogueUI's Play Button turns DialogueUI's Text To Speech on", DialogueUI_DB.TTSEnabled, true)
-Expect("...and says to reload, which is when DialogueUI reads it", said[1] ~= nil
-    and string.find(said[1], VO.L.OPT_DUI_TTS_TURNED_ON, 1, true) ~= nil, true)
-Expect("...its Auto Play having no say until then", Bridge:AutoplayLinked(), false)
-Bridge.ttsPending = nil
-DialogueUI_DB.TTSEnabled = false
-Bridge:Refresh()
-Expect("turned off in DialogueUI, another setting changed here leaves it off", DialogueUI_DB.TTSEnabled, false)
-Expect("...saying nothing more", table.getn(said), 1)
--- Turn On DialogueUI's Text To Speech, on by default: off, DialogueUI's setting is left alone.
-Expect("turning DialogueUI's Text To Speech on is on by default", dui.EnableTTS, true)
-dui.EnableTTS = false
-Bridge:Refresh()
-Bridge:EnsureTextToSpeech()
-Expect("...and off, DialogueUI's is left as the player set it", DialogueUI_DB.TTSEnabled, false)
-dui.EnableTTS = true
-Bridge:Refresh()
-Expect("...turned back on, it turns DialogueUI's on again", DialogueUI_DB.TTSEnabled, true)
-Bridge.ttsPending = nil
+Expect("DialogueUI's Text To Speech is left off", DialogueUI_DB.TTSEnabled, false)
+Expect("...and nothing asks for a reload", table.getn(said), 0)
 _G.print = realPrint
-_G.DialogueUI_DB = nil
 
----------------------------------------------------------------- autoplay and DialogueUI's Auto Play
--- Only while DialogueUI's Text To Speech button plays this addon's lines: its Text To Speech
--- on (DialogueUI_DB, its saved settings) and Use DialogueUI's Play Button on here.
+---------------------------------------------------------------- autoplay is Read Automatically's
+-- DialogueUI's Auto Play has no say: its autoplay asks the delay, then calls Play, and that
+-- call is ignored, while a click on its button plays.
 local audio = VO.Addon.db.profile.Audio
+audio.Autoplay = false
+DialogueUI_DB.TTSEnabled, DialogueUI_DB.TTSAutoPlay = true, true
+Expect("with DialogueUI's Auto Play on, Read Automatically still decides", VO.Addon:IsAutoplayOn(), false)
 audio.Autoplay = true
-Expect("without DialogueUI's Text To Speech, Read Automatically decides", VO.Addon:IsAutoplayOn(), true)
-Expect("...and is not greyed", VO.Addon:IsAutoplayFollowingDialogueUI(), false)
-_G.DialogueUI_DB = { TTSEnabled = false, TTSAutoPlay = false }
-Expect("...nor with it turned off", VO.Addon:IsAutoplayOn(), true)
-DialogueUI_DB.TTSEnabled = true
-Expect("Follow is the default", dui.Autoplay, "follow")
-Expect("with it on, DialogueUI's Auto Play decides", VO.Addon:IsAutoplayOn(), false)
-Expect("...and Read Automatically says so", VO.Addon:IsAutoplayFollowingDialogueUI(), true)
-DialogueUI_DB.TTSAutoPlay = true
-Expect("...whichever way it is set", VO.Addon:IsAutoplayOn(), true)
-dui.PlayButton = false
 DialogueUI_DB.TTSAutoPlay = false
-Expect("with DialogueUI's button not playing this addon's lines, Read Automatically decides again",
-    VO.Addon:IsAutoplayOn(), true)
-dui.PlayButton = true
--- DialogueUI's own autoplay asks the delay, then calls Play: this addon's autoplay decides
--- instead, so DialogueUI's copy of its setting, which can lag, never reads the line too.
+Expect("...either way", VO.Addon:IsAutoplayOn(), true)
 Spoken:StopAll()
 provider.doesFileExist("quest", 101, "detail")
 provider.getAutoPlayDelay()
 stub.Advance(0.5)
 provider.playFile()
-Expect("DialogueUI's autoplay call is left to this addon's autoplay", Spoken:GetQueueSize(), 0)
+Expect("DialogueUI's autoplay call is left to Read Automatically", Spoken:GetQueueSize(), 0)
 provider.playFile()
 Expect("...while a click on its button plays", Spoken:GetQueueSize(), 1)
 Spoken:StopAll()
--- Keep in Sync: whichever changed, the other follows. DialogueUI's setting changes through a
--- right-click on its button, as DialogueUI changes it itself.
-local clicks = 0
-DUI.TTSButton = stub.Widget("Button")
-DUI.TTSButton.Click = function(_, button)
-    if button == "RightButton" then
-        clicks = clicks + 1
-        DialogueUI_DB.TTSAutoPlay = not DialogueUI_DB.TTSAutoPlay
-    end
-end
-dui.Autoplay = "sync"
-audio.Autoplay = true
-DialogueUI_DB.TTSAutoPlay = false
-Expect("kept in sync, Read Automatically decides", VO.Addon:IsAutoplayOn(), true)
-Expect("...and is not greyed", VO.Addon:IsAutoplayFollowingDialogueUI(), false)
-Expect("...DialogueUI's Auto Play set to match it, through its own button", DialogueUI_DB.TTSAutoPlay
-    and clicks, 1)
-DialogueUI_DB.TTSAutoPlay = false
-Expect("turned off in DialogueUI, Read Automatically follows", VO.Addon:IsAutoplayOn(), false)
-Expect("...and keeps it", audio.Autoplay, false)
-VO.Addon:SetAutoplay(true)
-Expect("turned on here, DialogueUI's follows", DialogueUI_DB.TTSAutoPlay, true)
-DUI.TTSButton = nil
-VO.Addon:SetAutoplay(false)
-Expect("...written into its settings when it shows no button", DialogueUI_DB.TTSAutoPlay, false)
-Expect("diagnostics name the choice", string.find(Bridge:Describe(), "autoplay=sync (linked)", 1, true) ~= nil, true)
-dui.Autoplay = "follow"
-audio.Autoplay = true
 _G.DialogueUI_DB = nil
+
+---------------------------------------------------------------- Spoken's Play button on DialogueUI's window
+-- DialogueUI draws its own only with its Text To Speech on; this one is there either way, on
+-- every page Spoken Quests has a recording for.
+world.questID = 101
+DUI.handler = "HandleQuestDetail"
+DUI:Show()
+driver:Show()
+driver.scripts.OnShow(driver)
+local play = Bridge:PlayButtonState()
+Expect("a page with a recording shows Spoken's Play button", play ~= nil and play:IsShown(), true)
+Expect("...on DialogueUI's window, where DialogueUI puts its own", play and play:GetParent(), DUI)
+Expect("...in DialogueUI's parchment art", play and play.Icon.texCoord and play.Icon.texCoord[2], 64 / 512)
+Expect("...its waves still", play and play.Wave1:IsShown(), false)
+play.scripts.OnClick(play, "LeftButton")
+Expect("left-click plays the page's line", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
+Expect("...and the waves move while it sounds", play.Wave1:IsShown(), true)
+play.scripts.OnEnter(play)
+local tip = play.tooltip
+Expect("its tooltip says a click stops it", tip and tip.text, VO.L.OPT_STOP)
+local saysRightClick = false
+for _, text in ipairs(tip and tip.lines or {}) do
+    if text == VO.L.OPT_DUI_PLAY_RIGHT_CLICK then saysRightClick = true end
+end
+Expect("...and that a right-click switches Read Automatically", saysRightClick, true)
+play.scripts.OnLeave(play)
+play.scripts.OnClick(play, "LeftButton")
+Expect("left-click again stops it", Spoken:GetQueueSize(), 0)
+Tick()
+Expect("...and the waves stop", play.Wave1:IsShown(), false)
+play.scripts.OnClick(play, "RightButton")
+Expect("right-click turns Read Automatically off", audio.Autoplay, false)
+play.scripts.OnClick(play, "RightButton")
+Expect("...and on again", audio.Autoplay, true)
+-- Pressed while another part's line speaks, it reads the page at once, as DialogueUI's does.
+zones:Enqueue({ key = "z:16", path = "z16.ogg", length = 12,
+    present = { header = "Duskwood", transcript = "Lore.", bullet = "zone",
+        portrait = { kind = "texture", texture = "Book" } } })
+play.scripts.OnClick(play, "LeftButton")
+Expect("...in front of a zone's lore, which is skipped", Spoken:GetCurrent() and Spoken:GetCurrent().fileName,
+    "101-accept")
+Expect("...the lore not kept to replay", Spoken:GetQueueSize(), 1)
+Spoken:StopAll()
+zones:StopAll()
+-- DialogueUI's own button, where its Text To Speech is on, sits under it out of sight.
+DUI.TTSButton = stub.Widget("Button")
+DUI.TTSButton:SetAlpha(0.6)
+Bridge:RefreshPlayButton()
+Expect("DialogueUI's own button is kept out of sight under it", DUI.TTSButton:GetAlpha(), 0)
+world.questID = 102
+-- Looked for again now and then while the window is open.
+driver.scripts.OnUpdate(driver, 0.6)
+Expect("a page with no recording hides it", play:IsShown(), false)
+Expect("...and gives DialogueUI's own button back", DUI.TTSButton:GetAlpha(), 0.6)
+DUI.TTSButton = nil
+world.questID = 101
+Bridge:RefreshPlayButton()
+Expect("...back on a page with one", play:IsShown(), true)
+dui.PlayButton = false
+Bridge:Refresh()
+Expect("with the setting off it is not there", play:IsShown(), false)
+dui.PlayButton = true
+Bridge:Refresh()
+-- DialogueUI's dark theme: the art's second cell.
+_G.DUIFont_QuestType_Left = { GetTextColor = function() return 1, 0.82, 0 end }
+DUI:Hide()
+driver.scripts.OnHide(driver)
+Expect("the window closing hides it", play:IsShown(), false)
+DUI:Show()
+driver.scripts.OnShow(driver)
+Expect("...and opening on the dark theme draws it in the dark art", play.Icon.texCoord and play.Icon.texCoord[1], 0.125)
+_G.DUIFont_QuestType_Left = nil
+Expect("diagnostics say whether it shows", string.find(Bridge:Describe(), "button=shown", 1, true) ~= nil, true)
+DUI.handler = nil
+Bridge:RefreshPlayButton()
 
 ---------------------------------------------------------------- waiting for the window
 -- Read on its own while DialogueUI's window is still fading in, the voice would run ahead
@@ -470,10 +486,19 @@ driver:Hide()
 driver.scripts.OnHide(driver)
 
 -- Subtitles Only is the default style, and DialogueUI hides them with UIParent too.
+local Subtitle = env.Subtitle
+-- The stub client measures no text; the subtitle needs a height to lay its lines out.
+do
+    local build = Subtitle.Build
+    Subtitle.Build = function(self)
+        build(self)
+        self.title.GetStringHeight = function() return 18 end
+        self.measure.GetStringHeight = function() return 16 end
+    end
+end
 env.Addon:SetPlayerStyle("subtitle")
 env.PlayerFrame:RefreshConfig()
 VO.Addon:QUEST_DETAIL()
-local Subtitle = env.Subtitle
 Subtitle:Update()
 local subtitle = Subtitle.frame
 Expect("the subtitles are up", subtitle ~= nil and subtitle:GetParent() == _G.UIParent, true)
@@ -622,7 +647,8 @@ local function Row(label)
     end
 end
 local captions, scroll = Row(VO.L.OPT_DUI_CAPTIONS), Row(VO.L.OPT_DUI_AUTOSCROLL)
-Expect("the panel offers to turn on DialogueUI's Text To Speech", Row(VO.L.OPT_DUI_ENABLE_TTS) ~= nil, true)
+Expect("the panel has nothing that changes DialogueUI's own settings", table.getn(layout.entries) > 0
+    and Row("Turn On Text To Speech") == nil, true)
 Expect("the panel has the DialogueUI options", captions ~= nil and Row(VO.L.OPT_DUI_SHOW_PLAYER) ~= nil
     and Row(VO.L.OPT_DUI_PLAY_BUTTON) ~= nil and scroll ~= nil, true)
 layout:Refresh()
@@ -650,25 +676,16 @@ dui.Captions, dui.PlayButton = false, false
 Page:Reset()
 Expect("the DialogueUI page's Defaults puts them back", dui.Captions and dui.PlayButton, true)
 Expect("diagnostics describe it", string.find(Bridge:Describe(), "words=true", 1, true) ~= nil, true)
--- Read Automatically with DialogueUI's Auto Play: greyed, saying why, while it has no say.
-local autoplayRow = Row(VO.L.OPT_DUI_AUTOPLAY)
-Expect("the page offers Read Automatically with DialogueUI's Auto Play", autoplayRow ~= nil, true)
-layout:Refresh()
-Expect("...greyed while DialogueUI's Text To Speech is off", autoplayRow and autoplayRow.layoutReason,
-    VO.L.REASON_DUI_TTS_OFF)
-_G.DialogueUI_DB = { TTSEnabled = true, TTSAutoPlay = false }
-layout:Refresh()
-Expect("...live with it on", autoplayRow and autoplayRow.layoutReason, nil)
+-- Read Automatically is the Quests page's alone, with DialogueUI's Auto Play on or off.
 local readRow
 for _, entry in ipairs(panel.panel.layout.entries) do
     if entry.label == VO.L.OPT_PANEL_AUTOPLAY then readRow = entry.frame end
 end
+_G.DialogueUI_DB = { TTSEnabled = true, TTSAutoPlay = true }
 panel.panel.layout:Refresh()
-Expect("the Quests page's Read Automatically says DialogueUI's Auto Play decides it",
-    readRow and readRow.layoutReason, VO.L.REASON_AUTOPLAY_DUI)
+Expect("the Quests page's Read Automatically stays live with DialogueUI's Auto Play on",
+    readRow ~= nil and readRow.layoutReason, nil)
 _G.DialogueUI_DB = nil
-panel.panel.layout:Refresh()
-Expect("...and nothing without it", readRow and readRow.layoutReason, nil)
 
 if Failures() > 0 then
     print(string.format("\n%d DialogueUI test(s) failed", Failures()))

@@ -14,22 +14,19 @@ brings back what was hidden, inside DialogueUI's window:
   moves to another paragraph.
 - **Show Spoken over DialogueUI.** The window or the subtitles stay on screen in the place they
   were left, with their controls. They can't be dragged until DialogueUI closes.
-- **Use DialogueUI's Play button.** Spoken Quests registers as DialogueUI's voiceover provider,
-  so DialogueUI's text-to-speech button plays the recording. The button appears only with
-  DialogueUI's Text To Speech on, which DialogueUI has off by default, so **Turn On Text To
-  Speech** (on by default, under this option) turns it on at login, and when either option is
-  turned on. DialogueUI reads its saved settings only as it loads and has no public way to
-  change them, so the first time Spoken Quests says in chat to `/reload`; until then
-  DialogueUI's Auto Play has no say. Turned off in DialogueUI, it is on again at the next
-  login; unticking Turn On Text To Speech leaves DialogueUI's setting as the player sets it.
-- **Read automatically as DialogueUI says.** While that button plays Spoken Quests' lines,
-  DialogueUI's own **Auto Play** (right-click on the button) and Spoken Quests' **Read
-  Automatically** would both decide whether a line reads by itself. The DialogueUI page's
-  **Read Automatically** chooses how they go together: **Follow DialogueUI's Auto Play**, the
-  default, lets DialogueUI's decide, and the Quests page's Read Automatically is greyed,
-  ticked as DialogueUI's is and saying where to change it; **Keep in Sync** keeps the two the
-  same whichever is changed. With DialogueUI's text-to-speech off, without DialogueUI, or
-  with Use DialogueUI's Play Button off, Read Automatically decides alone, as before.
+- **Play button on DialogueUI.** Spoken Quests draws a Play button of its own in the top-left
+  corner of DialogueUI's window, in DialogueUI's art and where DialogueUI puts its
+  text-to-speech button, on every quest and gossip page it has a recording for. It is there
+  whether or not DialogueUI's Text To Speech is on (DialogueUI has it off by default, and
+  draws its own button only with it on). Left-click plays the line, or stops it while it
+  speaks; right-click turns Spoken Quests' **Read Automatically** on or off, as a right-click
+  on DialogueUI's button turns its Auto Play. The sound waves move while the line sounds. On a
+  page with no recording it is not there, and DialogueUI's own button, if shown, is in view.
+- **DialogueUI's settings are left alone.** Nothing here changes DialogueUI's Text To Speech or
+  its Auto Play. Spoken Quests still registers as DialogueUI's voiceover provider, so where the
+  player has DialogueUI's Text To Speech on, its button and hotkey play the recording too.
+  Whether a line reads by itself is decided by **Read Automatically** alone; DialogueUI's Auto
+  Play has no say over Spoken Quests' lines.
 - **Report a problem, or contribute a missing line.** Just under DialogueUI's Decline (or
   Goodbye) button, right-aligned with it and clear of the parchment's curled foot, sits the
   player's round Report icon (16 px), faint (40 %)
@@ -135,29 +132,35 @@ than the game's popup, which is a child of UIParent. While the window is open, t
 to `Spoken:SetContributeHost`, which puts Spoken's copy box over it. A box still open when the
 window closes goes back to UIParent and stays up.
 
-**Play button.** DialogueUI hears the client's quest event before Spoken Quests' recorder
-does. So the provider resolves the line from the page DialogueUI says it is showing, through
-`Addon:GetVisibleLine(event)`, rather than from the last recorded event. Play reads the line
-at once (`Player:PlayPreparedNow`, through the player's `PlayNow`): whatever else was speaking,
-a zone's lore or a book page, is skipped rather than kept to resume, and the rest of the queue
-plays after. A line waiting behind another is brought forward. `isPlaying` answers for the line
-speaking, not merely queued, since DialogueUI's button stops a playing line and plays one that
-is not. Play does nothing while the line already speaks. Stop works only while the window is open. DialogueUI also asks the provider to
-stop as its window closes, and accepting a quest closes it. That comes from DialogueUI's
-"TTS Auto Stop" setting, which is on by default even with its text-to-speech off. Obeying it
-would cut every line short at the accept, so whether closing the dialog stops the line is
-left to Spoken Quests' own **Stop When Window Closes**.
+**Play button.** DialogueUI creates its own button only when its Text To Speech setting turns
+on, and has no public way to show it, so the bridge builds one: a child of `DUIQuestFrame`,
+24 px at its top-left inset of 8, drawn from DialogueUI's `Art/Theme_Shared/TTSButton.png` in
+the cell of DialogueUI's theme (told from the colour of `DUIFont_QuestType_Left`, as the
+Contribute corner tells it), with DialogueUI's `DUISpeakerAnimationTemplate` for the waves where
+it exists. It is shown from the page hooks, the window opening, and every half second while the
+window is open, since a quest's ID can arrive after its page is drawn and the packs load after
+login. Where DialogueUI's own button is shown under it, it is set transparent while Spoken's
+stands there and given back its alpha when Spoken's goes. The tooltip is the window's own
+GameTooltip (`ContributeButton:DialogueUITooltip`), since the game's is hidden with UIParent.
 
-**Auto Play.** DialogueUI keeps its Auto Play in its saved settings (`DialogueUI_DB.TTSAutoPlay`,
-beside `TTSEnabled`) and in a copy of its own that only its setter updates. `Bridge:AutoplayFor`
-answers for `Addon:IsAutoplayOn`: DialogueUI's saved value while followed, and nothing in Keep
-in Sync, after `Bridge:SyncAutoplay` has made the two agree. Sync tells which side changed by
-remembering DialogueUI's value; this addon's side wins the first time. It changes DialogueUI's
-through a right-click on DialogueUI's own button, which runs DialogueUI's setter, and writes the
-saved value only when there is no button. DialogueUI's autoplay also calls Play, after asking
-the provider for its delay, which a click on the button never does: while the two are linked,
-that call is ignored, and Spoken Quests' own autoplay reads the line or not. So DialogueUI's
-copy of the setting, which can lag behind its saved value, never decides.
+DialogueUI hears the client's quest event before Spoken Quests' recorder does. So the line is
+resolved from the page DialogueUI shows, through `Addon:GetVisibleLine(event)`, rather than from
+the last recorded event; the provider DialogueUI asks does the same. Play reads the line at once
+(`Player:PlayPreparedNow`): the player's `PlayNow` lets a speaking line finish first, so
+whatever speaks, a zone's lore or a book page, is stopped, the line played, and what was stopped
+skipped rather than kept to replay; the rest of the queue plays after. A line waiting behind
+another is brought forward. Stop takes the line out of the queue. Both buttons and `isPlaying`
+answer for the line at the head of the queue and not stopped there, since DialogueUI's button
+stops a playing line and plays one that is not. The provider's Stop works only while the
+window is open. DialogueUI also asks the provider to stop as its window closes, and accepting a
+quest closes it. That comes from DialogueUI's "TTS Auto Stop" setting, which is on by default
+even with its text-to-speech off. Obeying it would cut every line short at the accept, so
+whether closing the dialog stops the line is left to Spoken Quests' own **Stop When Window
+Closes**.
+
+**Auto Play.** DialogueUI's autoplay calls the provider's Play after asking it for its delay,
+which a click on its button never does. That call is always ignored: Spoken Quests' own
+**Read Automatically** reads the line or not, so the two never both start it.
 
 ## Limits
 
@@ -167,8 +170,8 @@ copy of the setting, which can lag behind its saved value, never decides.
 - Matching relies on DialogueUI showing the client's text. A translator addon's translated
   paragraphs are skipped, and only the original paragraphs, when shown, are marked.
 - DialogueUI's text-to-speech reads the paragraphs back from the window. While a paragraph is
-  typed part way it would read only that part. With **Use DialogueUI's Play Button** on, the
-  button plays the recording instead.
+  typed part way it would read only that part. With **Play Button on DialogueUI** on, a page
+  with a recording plays the recording instead.
 - DialogueUI's internals can change in any release. When they do, the settings say so and
   nothing breaks, but the feature is off until this file catches up.
 

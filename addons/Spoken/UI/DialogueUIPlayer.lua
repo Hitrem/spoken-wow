@@ -178,8 +178,8 @@ function Skin:Initialize(original)
     self.viewport = CreateFrame("Frame", nil, host)
     self.viewport:SetAllPoints()
     self.viewport:SetClipsChildren(true)
-    -- Pause and play on the face itself, as the Minimal Classic skin has it: the glyph
-    -- shows under the mouse or while paused, and a wash dims a paused face.
+    -- Stop and Replay on the face itself, as the Small Window has them: the glyph shows
+    -- under the mouse or while stopped, and a wash dims a stopped face.
     local pause = CreateFrame("Button", nil, host)
     self.pause = pause
     pause:SetAllPoints()
@@ -201,8 +201,9 @@ function Skin:Initialize(original)
         self:UpdateControls()
         if not self:HasClip() then return end
         GameTooltip:SetOwner(pause, "ANCHOR_RIGHT")
-        GameTooltip:SetText(SoundQueue:IsPaused() and L.PLAY or L.PAUSE)
-        GameTooltip:AddLine(L.PAUSE_TOOLTIP, 1, 1, 1, true)
+        local stopped = SoundQueue:IsPaused()
+        GameTooltip:SetText(stopped and L.REPLAY or L.STOP)
+        GameTooltip:AddLine(stopped and L.REPLAY_TOOLTIP or L.STOP_TOOLTIP, 1, 1, 1, true)
         GameTooltip:Show()
     end)
     pause:SetScript("OnLeave", function() self:UpdateControls(); self:HideTooltip() end)
@@ -282,7 +283,7 @@ function Skin:Initialize(original)
     self.footerDivider:SetTexCoord(FOOTER_DIVIDER[1], FOOTER_DIVIDER[2], FOOTER_DIVIDER[3], FOOTER_DIVIDER[4])
     self.controls = CreateFrame("Frame", nil, content)
     self.controls:SetHeight(CONTROL_HEIGHT)
-    self.play = TextButton(self.controls, L.PAUSE, function()
+    self.play = TextButton(self.controls, L.STOP, function()
         if SoundQueue:CanBePaused() then SoundQueue:TogglePauseQueue() end
     end)
     self.stop = TextButton(self.controls, L.MIN_STOP_ALL, function() SoundQueue:RemoveAllSoundsFromQueue() end)
@@ -623,10 +624,9 @@ end
 function Skin:UpdateControls()
     if not self.clip then return end
     local paused, playing = SoundQueue:IsPaused(), SoundQueue:IsPlaying()
-    self.play.text:SetText(paused and L.PLAY or L.PAUSE)
-    -- The glyph on the face: pause's left half of the atlas row, play's right.
-    local left = paused and 0 or 93
-    self.pause:GetNormalTexture():SetTexCoord(left / 512, (left + 93) / 512, 419 / 512, 1)
+    self.play.text:SetText(paused and L.REPLAY or L.STOP)
+    -- The glyph on the face: Stop while the line speaks, Replay once it is stopped.
+    Actions.Glyph(self.pause:GetNormalTexture(), Actions.HeadState())
     self.pause:GetNormalTexture():SetAlpha((paused or MouseIsOver(self.pause)) and .9 or 0)
     self.pause.wash:SetShown(paused and not playing)
     local colors = self.colors
@@ -652,7 +652,7 @@ function Skin:UpdateProgress()
         -- The queue's timer includes the source's trailing gap and any initial silence,
         -- so TimeLeft is right through hidden UI and replays alike.
         local remaining = Addon:TimeLeft(clip.nextSoundTimer)
-        self.seconds = Clamp(duration + (clip.source.interClipGap or 0) - remaining, 0, duration)
+        self.seconds = Clamp(duration + SoundQueue:GapAfter(clip) - remaining, 0, duration)
     elseif not SoundQueue:IsPaused() then self.seconds = 0 end
     self.bar:SetValue(duration > 0 and (self.seconds or 0) / duration or 0)
 end

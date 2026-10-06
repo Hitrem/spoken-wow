@@ -77,16 +77,11 @@ function SettingsPanel:Setup()
     end
 
     layout:Section(L.OPT_SECTION_DIALOGUE)
-    local autoplay = layout:Checkbox(L.OPT_PANEL_AUTOPLAY,
+    layout:Checkbox(L.OPT_PANEL_AUTOPLAY,
         L.OPT_PANEL_AUTOPLAY_TIP,
         function() return Addon:IsAutoplayOn() end,
         function(value) Addon:SetAutoplay(value) end,
         refresh)
-    -- With DialogueUI's Text To Speech button playing this addon's lines, its Auto Play can
-    -- decide (Spoken > DialogueUI): greyed then, ticked as it decides, and saying where to
-    -- change it, so nobody wonders why ticking it does nothing. Never without DialogueUI.
-    layout:Requires(autoplay, function() return not Addon:IsAutoplayFollowingDialogueUI() end,
-        L.REASON_AUTOPLAY_DUI)
     -- Indented under autoplay and greyed out with it off: the frequency only decides which
     -- greetings autoplay reads, and a live control that does nothing reads as broken.
     layout:Indent()
@@ -294,33 +289,6 @@ function SettingsPanel:DialogueUIRows(layout, title, note)
     layout:Outdent()
     Box("ShowPlayer", L.OPT_DUI_SHOW_PLAYER, L.OPT_DUI_SHOW_PLAYER_TIP)
     Box("PlayButton", L.OPT_DUI_PLAY_BUTTON, L.OPT_DUI_PLAY_BUTTON_TIP)
-    -- DialogueUI's Text To Speech, which shows that button, turned on at login.
-    layout:Indent()
-    layout:Requires(Box("EnableTTS", L.OPT_DUI_ENABLE_TTS, L.OPT_DUI_ENABLE_TTS_TIP),
-        function() return dui().PlayButton end, L.REASON_DUI_PLAY_BUTTON)
-    layout:Outdent()
-    -- Read Automatically and DialogueUI's Auto Play, while its Text To Speech button plays this
-    -- addon's lines (DialogueUIBridge:AutoplayFor): followed, or kept the same.
-    layout:Indent()
-    local autoplay = layout:Dropdown(L.OPT_DUI_AUTOPLAY, L.OPT_DUI_AUTOPLAY_TIP, { "follow", "sync" },
-        function() return dui().Autoplay end,
-        function(value)
-            dui().Autoplay = value
-            DialogueUIBridge:SyncAutoplay()
-        end,
-        function() DialogueUIBridge:Refresh(); layout:Refresh() end,
-        function(value) return value == "sync" and L.OPT_DUI_AUTOPLAY_SYNC or L.OPT_DUI_AUTOPLAY_FOLLOW end)
-    for _, reason in ipairs({ L.OPT_DUI_MISSING, L.OPT_DUI_NO_PLAYER, L.OPT_DUI_UNKNOWN, L.OPT_DUI_OLD_PLAYER }) do
-        layout:Requires(autoplay, function() return DialogueUIBridge:Problem("PlayButton") ~= reason end, reason)
-    end
-    layout:Requires(autoplay, function() return dui().PlayButton end, L.REASON_DUI_PLAY_BUTTON)
-    layout:Requires(autoplay, function()
-        local db = _G.DialogueUI_DB
-        return type(db) == "table" and db.TTSEnabled == true
-    end, L.REASON_DUI_TTS_OFF)
-    -- Turned on by Use DialogueUI's Play Button, and waiting for DialogueUI's next load.
-    layout:Requires(autoplay, function() return not DialogueUIBridge.ttsPending end, L.REASON_DUI_TTS_RELOAD)
-    layout:Outdent()
     return function()
         for key, value in pairs(Addon.DialogueUIDefaults) do dui()[key] = value end
         DialogueUIBridge:Refresh()

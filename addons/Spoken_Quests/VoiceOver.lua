@@ -227,30 +227,11 @@ function Addon:IsPartOn()
 end
 
 function Addon:IsAutoplayOn()
-    -- DialogueUI's Auto Play, where its Text To Speech button plays this addon's lines and the
-    -- player chose to follow it; nil everywhere else, without DialogueUI first of all.
-    local bridge = rawget(VoiceOver, "DialogueUIBridge")
-    local theirs = bridge and bridge.AutoplayFor and bridge:AutoplayFor()
-    if theirs ~= nil then
-        return theirs
-    end
     return self.db.profile.Audio.Autoplay ~= false
-end
-
---- Whether Read Automatically is DialogueUI's Auto Play's to decide just now: greyed in the
---- settings, saying so.
-function Addon:IsAutoplayFollowingDialogueUI()
-    local bridge = rawget(VoiceOver, "DialogueUIBridge")
-    return bridge ~= nil and bridge.FollowsAutoplay ~= nil and bridge:FollowsAutoplay()
 end
 
 function Addon:SetAutoplay(on)
     self.db.profile.Audio.Autoplay = on and true or false
-    -- Kept in sync with DialogueUI's Auto Play, which then follows.
-    local bridge = rawget(VoiceOver, "DialogueUIBridge")
-    if bridge and bridge.SyncAutoplay then
-        bridge:SyncAutoplay()
-    end
     -- The Play button stands in for autoplay, so it appears or goes with the setting even
     -- while a dialog is already open.
     if DialogPlayButton and DialogPlayButton.Refresh then
@@ -367,15 +348,9 @@ local defaults = {
             -- hides the rest of the interface on purpose, and its window, marked as the line
             -- plays, already shows the words. A player who wants Spoken's too turns it on.
             ShowPlayer = false,
-            -- DialogueUI's own Play button plays this addon's line.
+            -- A Play button on DialogueUI's window plays this addon's line, whether or not
+            -- DialogueUI's Text To Speech is on; where it is, DialogueUI's own button does too.
             PlayButton = true,
-            -- And DialogueUI's Text To Speech, which shows that button and is off by default,
-            -- turned on at login (DialogueUIBridge:EnsureTextToSpeech).
-            EnableTTS = true,
-            -- While it does, with DialogueUI's Text To Speech on: "follow" lets DialogueUI's
-            -- Auto Play decide whether lines read on their own, in place of Read
-            -- Automatically; "sync" keeps the two the same (DialogueUIBridge:AutoplayFor).
-            Autoplay = "follow",
         },
         DebugEnabled = false,
     },

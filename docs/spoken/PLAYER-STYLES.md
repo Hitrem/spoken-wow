@@ -27,11 +27,11 @@ A tall parchment, or dark, panel in DialogueUI's proportions:
 - the words filling the body, in DialogueUI's paragraph font, with an empty line between
   paragraphs;
 - the waiting lines under them;
-- Pause and Stop along the foot with the line's own actions, the Report icon faint
+- Stop (Replay once stopped) and Stop All along the foot with the line's own actions, the Report icon faint
   at the row's end.
 
 A scrollbar appears beside the words when the line runs past the page. It follows the
-caption **Auto-Scroll** mode, by line. Hover the face to pause or play, as in the Small
+caption **Auto-Scroll** mode, by line. Hover the face to stop or replay, as in the Small
 Window. The cross in the corner skips to the next line. Right-click opens the settings.
 Drag anywhere to move it; it keeps its own saved place, apart from the other windows'.
 
