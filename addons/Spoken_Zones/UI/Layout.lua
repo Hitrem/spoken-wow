@@ -65,9 +65,10 @@ local MAX_WIDTH = 2000
 local RIGHT_MARGIN = 10       -- room for the scroll bar
 local LABEL_PADDING = 24      -- room a button's end caps take either side of its label
 local BOX_MARGIN = 0          -- the rows' own edges: frames a page draws itself line up with them
-local GROUP_PAD = 10          -- inside a group's box, above its first section and under its last
-local GROUP_OUT = 12          -- how far the box's left edge sits outside the rows
-local GROUP_LINE = { 1, 1, 1, 0.22 }  -- the box's line, as faint as a card's rule
+-- Inside a group's box, the same on every side: from its edges to the rows' sides, to the first
+-- section's title and under the last section. No more than the room the page keeps on its right.
+local GROUP_PAD = RIGHT_MARGIN
+local GROUP_LINE = { 1, 1, 1, 0.22 }  -- the box's line where the client has no backdrops
 local GOLD = { 1, 0.82, 0 }      -- NORMAL_FONT_COLOR: a setting's name
 local WHITE = { 1, 1, 1 }        -- HIGHLIGHT_FONT_COLOR: a page's and a section's title
 local GREY = { 0.5, 0.5, 0.5 }   -- GameFontDisable: a setting greyed out
@@ -439,7 +440,15 @@ function Layout:Reflow()
                 item.heading.layoutY = y
                 y = y - SECTION_HEIGHT
                 item.top = y
-                y = y - GROUP_PAD
+                -- The padding reaches the first section's title, not the top of its band: the title
+                -- sits SECTION_TITLE_Y down the band.
+                local first
+                for _, section in ipairs(item.sections) do
+                    for _, row in ipairs(section.rows) do
+                        if not first and Visible(row) then first = section end
+                    end
+                end
+                y = y - GROUP_PAD + ((first and first.text) and SECTION_TITLE_Y or 0)
                 -- Its first section starts at the padding, with no gap of its own.
                 started = false
             end
@@ -448,7 +457,7 @@ function Layout:Reflow()
             if group.shown then
                 y = y - GROUP_PAD
                 group.bottom = y
-                group.left, group.right = self.left - GROUP_OUT, self.left + self:Width()
+                group.left, group.right = self.left - GROUP_PAD, self.left + self:Width() + GROUP_PAD
                 local box = group.box
                 Put(box, self.parent, group.left, group.top)
                 box:SetWidth(group.right - group.left)
@@ -630,8 +639,8 @@ end
 
 --- A titled box around the sections that follow, up to EndGroup: settings that belong together,
 --- a narrator style's, set apart from the rest of the page. The title sits above the box as a
---- section's does; the box is a thin line around those sections, a little outside their rows'
---- hover, and goes with them when none of them is showing.
+--- section's does; the box is the game's tooltip border and background, as the module cards are
+--- drawn, GROUP_PAD outside those sections on every side, and goes with them when none is showing.
 function Layout:Group(title)
     self:Columns(nil)
     local parent = self.parent
@@ -641,9 +650,18 @@ function Layout:Group(title)
     fs:SetTextColor(WHITE[1], WHITE[2], WHITE[3])
     fs:SetText(title)
     fs.layoutHeading, fs.layoutHeight = true, SECTION_HEIGHT
-    local box = CreateFrame("Frame", nil, parent)
+    local template = BackdropTemplateMixin and "BackdropTemplate" or nil
+    local box = CreateFrame("Frame", nil, parent, template)
     local edges = {}
-    for _, side in ipairs({ "top", "bottom", "left", "right" }) do
+    if box.SetBackdrop then
+        -- The cards' border and background (Card, below), in the grey of a card not chosen.
+        box:SetBackdrop({ bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
+            edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], tile = true, tileSize = 16, edgeSize = 14,
+            insets = { left = 4, right = 4, top = 4, bottom = 4 } })
+        box:SetBackdropColor(0.06, 0.06, 0.06, 0.6)
+        box:SetBackdropBorderColor(0.45, 0.45, 0.45, 1)
+    end
+    for _, side in ipairs(box.SetBackdrop and {} or { "top", "bottom", "left", "right" }) do
         local line = Flat(box, "BORDER", GROUP_LINE[1], GROUP_LINE[2], GROUP_LINE[3], GROUP_LINE[4])
         if side == "top" or side == "bottom" then
             line:SetHeight(1)

@@ -368,6 +368,24 @@ for _, item in ipairs(_G.SpokenOptionsPanel.layout.items) do
 end
 Expect("every heading the same distance below the section or box above", Distinct(headingGaps), 1)
 Expect("the narrator style's settings are a group of their own, in a box", groups, 1)
+-- The box's padding the same on every side: to the rows' sides, to the first section's title
+-- (16 down its heading's band) and under the last section.
+do
+    local layout = _G.SpokenOptionsPanel.layout
+    local group
+    for _, item in ipairs(layout.items) do
+        if item.kind == "group" and item.shown then group = item end
+    end
+    local shown = {}
+    for _, section in ipairs(group and group.sections or {}) do
+        if section.shown then table.insert(shown, section) end
+    end
+    local first, last = shown[1], shown[#shown]
+    local pads = { group.top - (first.heading.layoutY - 16), last.bottom - group.bottom,
+        layout.left - group.left, group.right - (layout.left + layout:Width()) }
+    Expect("the box's padding is the same on every side", Distinct(pads), 1)
+    Expect("...as much as the page keeps on its right", pads[1], 10)
+end
 
 -- A heading introduces the section under it. Sit it midway and it reads as belonging to
 -- neither: the space above its words has to be the larger of the two. As the game's section
