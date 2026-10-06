@@ -409,9 +409,14 @@ function Skin:Layout()
     local ratio = baseInner / HEADER_DIVIDER[5]
     local stripHeight = Round(HEADER_DIVIDER[6] * ratio)
     local face = Round(34 * ratio)
-    local headerHeight = stripHeight + Round(4 * 0.35 * fontSize)
+    -- DialogueUI's gap under its header line, before the text.
+    local textGap = Round(4 * 0.35 * fontSize)
+    local headerHeight = stripHeight + textGap
     local footerStrip = Round(FOOTER_DIVIDER[6] * baseInner / FOOTER_DIVIDER[5])
-    local footerHeight = CONTROL_HEIGHT + footerStrip + BAR_HEIGHT + 6
+    -- The same gap again between the last line and the progress line, so the words sit as far
+    -- from the foot as from the head (seen most with Fit to the Words, which ends the panel at
+    -- the words). The last line's own line spacing counts towards it.
+    local footerHeight = CONTROL_HEIGHT + footerStrip + BAR_HEIGHT + 6 + math.max(0, textGap - lineGap)
     local waiting = Waiting()
     local shownRows = math.min(MAX_ROWS, waiting)
     local queueHeight = shownRows * ROW_HEIGHT + (waiting > MAX_ROWS and 14 or 0)
