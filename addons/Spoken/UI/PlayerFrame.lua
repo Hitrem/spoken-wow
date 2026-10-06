@@ -274,6 +274,8 @@ function PlayerFrame:InitMover()
 end
 
 function PlayerFrame:RefreshConfig()
+    -- Bronze Border tints every round button, whichever way lines are shown.
+    Actions.RefreshRings()
     if MinimalPlayer:IsEnabled() then
         self.frame:Hide()
         MinimalPlayer:RefreshConfig(self)
