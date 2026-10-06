@@ -40,11 +40,11 @@ How the captions in the window follow the voice:
 
 | Mode | Behaviour |
 |---|---|
-| **Smooth Scroll** (default) | The text glides up a line at a time as the voice reaches each line, about a quarter of a second per line, so there is no jump. The line being read is on the last row with **Type Words Out** on (below), and in the middle with it off, as synced-lyrics players (Apple Music, Spotify) keep the sung line. |
+| **Line by Line** (default) | The text glides up a line at a time as the voice reaches each line, about a quarter of a second per line, so there is no jump. The line being read is on the last row with **Type Words Out** on (below), and in the middle with it off, as synced-lyrics players (Apple Music, Spotify) keep the sung line. |
 | **Page by Page** | A whole page turns when the voice reaches its end, as the captions always did. Closest to broadcast pop-on captions, which read best when the text should not move while it is read. |
-| **Off** | The text holds still; the wheel moves it. Clicking the captions turns following back on, with Smooth Scroll. |
+| **Off** | The text holds still; the wheel moves it. Clicking the captions turns following back on, line by line. |
 
-With **Type Words Out** on, the lines below the voice are still blank, so Smooth Scroll keeps the
+With **Type Words Out** on, the lines below the voice are still blank, so Line by Line keeps the
 line being read on the last row instead, with what has been read above it, as roll-up
 broadcast captions do. The glide needs the client to clip the captions' frame (`SetClipsChildren`); where it cannot, the text steps a
 line at a time. `Transcript:GetScroll` and `Transcript:ScrollTo` let a player draw its own

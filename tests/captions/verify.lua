@@ -249,7 +249,7 @@ Advance(3)
 Check(T.page==heldPage,'disabling Follow keeps the chosen caption page')
 T:Follow()
 Check(T.page>heldPage and HighlightCount()>=1,'Follow re-enables automatic page changes')
-Check(cfg.ScrollMode=='smooth','...in the default mode')
+Check(cfg.ScrollMode=='line','...in the default mode')
 cfg.ScrollMode='page'
 Q:RemoveAllSoundsFromQueue()
 
@@ -412,14 +412,14 @@ source:Enqueue(override)
 Check(T.text=='Display this instead','explicit source transcript takes precedence')
 Q:RemoveAllSoundsFromQueue()
 
--- Scroll modes. Smooth scrolling keeps the line being read in the middle and glides there, a
+-- Scroll modes. Line by line keeps the line being read in the middle and glides there, a
 -- fraction of a line at a time.
-E.Addon:Layout().CaptionsExpanded=true; cfg.ScrollMode='smooth'; T:RefreshConfig()
+E.Addon:Layout().CaptionsExpanded=true; cfg.ScrollMode='line'; T:RefreshConfig()
 source:Enqueue(Clip('scroll',long,60))
 local function Settle() T.frame:Fire('OnUpdate',1) end
 local function ActiveLine() return T:ActiveSegment(T:GetProgress()).line end
 Advance(20); Settle()
-Check(T.topTarget==ActiveLine()-3,'smooth scrolling keeps the line being read fourth of eight')
+Check(T.topTarget==ActiveLine()-3,'line by line keeps the line being read fourth of eight')
 local settled=T.top
 Advance(1.5)
 local target=T.topTarget
@@ -437,7 +437,7 @@ Check(T.topTarget==ActiveLine()-7,'typed out, the line being read is the last of
 local typed=Captions()
 Check(not typed:find('\n\n') and typed:sub(-1)~='\n','with no blank row under it')
 cfg.Typewriter=false
-cfg.ScrollMode='smooth'; T:Update()
+cfg.ScrollMode='line'; T:Update()
 T.frame:Fire('OnMouseWheel',1)
 Check(T.manualScroll and T.topTarget<target,'the wheel scrolls back by lines, holding there')
 T:ScrollTo(1)

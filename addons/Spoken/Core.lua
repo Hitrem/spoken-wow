@@ -84,9 +84,9 @@ Defaults = {
         },
         Transcript = {
             Enabled = true,
-            -- How the captions follow the voice: "smooth", "page" or "off".
+            -- How the captions follow the voice: "line", "page" or "off".
             -- See UI/Transcript.lua.
-            ScrollMode = "smooth",
+            ScrollMode = "line",
             Lines = 2,
             HighlightWord = false,
             FontSize = 16,
