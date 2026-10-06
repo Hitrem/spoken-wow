@@ -16,7 +16,7 @@
 -- they are built and placed by Reflow, top to bottom. Placing them all in one pass is what lets
 -- a row be hidden (ShowWhen) and everything under it close up, rather than leaving a hole.
 
-local VERSION = 56
+local VERSION = 57
 
 -- LibStub's contract, for LibStub's reason: several addons load this file and the newest
 -- copy must win, whichever of them the client happens to load last.
@@ -65,6 +65,9 @@ local MAX_WIDTH = 2000
 local RIGHT_MARGIN = 10       -- room for the scroll bar
 local LABEL_PADDING = 24      -- room a button's end caps take either side of its label
 local BOX_MARGIN = 0          -- the rows' own edges: frames a page draws itself line up with them
+local GROUP_PAD = 10          -- inside a group's box, above its first section and under its last
+local GROUP_OUT = 12          -- how far the box's left edge sits outside the rows
+local GROUP_LINE = { 1, 1, 1, 0.22 }  -- the box's line, as faint as a card's rule
 local GOLD = { 1, 0.82, 0 }      -- NORMAL_FONT_COLOR: a setting's name
 local WHITE = { 1, 1, 1 }        -- HIGHLIGHT_FONT_COLOR: a page's and a section's title
 local GREY = { 0.5, 0.5, 0.5 }   -- GameFontDisable: a setting greyed out
@@ -414,6 +417,45 @@ function Layout:Reflow()
             -- placed as one run, so they space like the rows in a box.
             loose = loose or {}
             table.insert(loose, item)
+        elseif item.kind == "group" then
+            if loose then
+                y = EndLoose(loose, y)
+                loose = nil
+            end
+            local any = false
+            for _, section in ipairs(item.sections) do
+                for _, row in ipairs(section.rows) do
+                    if Visible(row) then any = true end
+                end
+            end
+            item.shown = any
+            if not any then
+                item.heading:Hide()
+                item.box:Hide()
+            else
+                if started then y = y - ROW_GAP end
+                item.heading:Show()
+                Put(item.heading, self.parent, self.left + SECTION_TITLE_X, y - SECTION_TITLE_Y)
+                item.heading.layoutY = y
+                y = y - SECTION_HEIGHT
+                item.top = y
+                y = y - GROUP_PAD
+                -- Its first section starts at the padding, with no gap of its own.
+                started = false
+            end
+        elseif item.kind == "groupEnd" then
+            local group = item.group
+            if group.shown then
+                y = y - GROUP_PAD
+                group.bottom = y
+                group.left, group.right = self.left - GROUP_OUT, self.left + self:Width()
+                local box = group.box
+                Put(box, self.parent, group.left, group.top)
+                box:SetWidth(group.right - group.left)
+                box:SetHeight(group.top - group.bottom)
+                box:Show()
+                started = true
+            end
         else
             if loose then
                 y = EndLoose(loose, y)
@@ -566,6 +608,7 @@ function Layout:Section(text, plain)
         if fs then fs:Hide() end
     end
     table.insert(self.items, section)
+    if self.group then table.insert(self.group.sections, section) end
     self.current = section
     self.empty = false
     self.dirty = true
@@ -583,6 +626,52 @@ function Layout:Section(text, plain)
         table.insert(self.boxes, record)
     end
     return fs
+end
+
+--- A titled box around the sections that follow, up to EndGroup: settings that belong together,
+--- a narrator style's, set apart from the rest of the page. The title sits above the box as a
+--- section's does; the box is a thin line around those sections, a little outside their rows'
+--- hover, and goes with them when none of them is showing.
+function Layout:Group(title)
+    self:Columns(nil)
+    local parent = self.parent
+    local fs = parent:CreateFontString(nil, "ARTWORK", Font("GameFontHighlightLarge", "GameFontNormalLarge"))
+    fs:SetJustifyH("LEFT")
+    fs:SetJustifyV("TOP")
+    fs:SetTextColor(WHITE[1], WHITE[2], WHITE[3])
+    fs:SetText(title)
+    fs.layoutHeading, fs.layoutHeight = true, SECTION_HEIGHT
+    local box = CreateFrame("Frame", nil, parent)
+    local edges = {}
+    for _, side in ipairs({ "top", "bottom", "left", "right" }) do
+        local line = Flat(box, "BORDER", GROUP_LINE[1], GROUP_LINE[2], GROUP_LINE[3], GROUP_LINE[4])
+        if side == "top" or side == "bottom" then
+            line:SetHeight(1)
+            line:SetPoint(side == "top" and "TOPLEFT" or "BOTTOMLEFT", box, side == "top" and "TOPLEFT" or "BOTTOMLEFT", 0, 0)
+            line:SetPoint(side == "top" and "TOPRIGHT" or "BOTTOMRIGHT", box, side == "top" and "TOPRIGHT" or "BOTTOMRIGHT", 0, 0)
+        else
+            line:SetWidth(1)
+            line:SetPoint(side == "left" and "TOPLEFT" or "TOPRIGHT", box, side == "left" and "TOPLEFT" or "TOPRIGHT", 0, 0)
+            line:SetPoint(side == "left" and "BOTTOMLEFT" or "BOTTOMRIGHT", box, side == "left" and "BOTTOMLEFT" or "BOTTOMRIGHT", 0, 0)
+        end
+        edges[side] = line
+    end
+    box:Hide()
+    local group = { kind = "group", text = title, heading = fs, box = box, edges = edges, sections = {} }
+    table.insert(self.items, group)
+    self.group, self.current = group, nil
+    self.dirty = true
+    return fs
+end
+
+--- The end of the box Group opened.
+function Layout:EndGroup()
+    self:Columns(nil)
+    if self.group then
+        table.insert(self.items, { kind = "groupEnd", group = self.group })
+    end
+    self.group, self.current = nil, nil
+    self.dirty = true
 end
 
 -- A row's hover: the game's HoverBackground, white at a tenth, from 10 left of the row to 5 short

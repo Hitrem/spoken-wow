@@ -128,6 +128,7 @@ L = {
     UNCACHED_NPC_TIP = "Encounter this NPC in the world again to be able to see their model.",
     OPT_SHOW_TITLE = "Display",
     OPT_PLAYER_STYLE = "Narrator Style",
+    OPT_NARRATOR_SETTINGS = "Narrator Style Settings",
     OPT_PLAYER_STYLE_TIP = "Large Window: the speaker's portrait and the lines waiting to play next.\n\nSubtitles Only, on clients that have it: no window, just the words typed out low in the middle of the screen. Hover it for Stop or Replay, Skip and Report, and drag it up or down to move it.\n\nVoice Only: nothing on screen; lines are only heard. The keys below still stop, replay and skip.",
     OPT_STYLE_MINIMAL = "Small Window",
     OPT_STYLE_CLASSIC = "Large Window",

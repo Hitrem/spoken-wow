@@ -324,8 +324,10 @@ local function Build(canvas)
                 Options:StyleChosen()
             end,
             { choose = L.STYLE_CHOOSE })
+        layout:Group(L.OPT_NARRATOR_SETTINGS)
         layout:Section(L.OPT_SHOW_TITLE)
     else
+        layout:Group(L.OPT_NARRATOR_SETTINGS)
         layout:Section(L.OPT_SHOW_TITLE)
         layout:Dropdown(L.OPT_PLAYER_STYLE, L.OPT_PLAYER_STYLE_TIP, styles, Style,
             function(v) Addon:SetPlayerStyle(v) end,
@@ -434,6 +436,9 @@ local function Build(canvas)
             Options:UpdateRows()
         end, L.SUBTITLE_SAMPLE_TIP), Subtitles)
     end
+
+    -- The narrator style's settings end here; what follows is Spoken's whatever the style.
+    layout:EndGroup()
 
     -- Everything about how a line is played, whichever addon queued it: the two feature
     -- addons each used to carry their own channel control, and a player with both

@@ -346,17 +346,28 @@ for _ in pairs(columns) do distinctColumns = distinctColumns + 1 end
 Expect("...and every one of them ends at the same edge", distinctColumns, 1)
 
 -- From where each section ends -- the bottom of its box, or of its cards where it has no box --
--- to the next one's title.
+-- to the next one's title. A group's title (the narrator style's settings) is a heading too, and
+-- after the group comes the bottom of its box; its first section follows its title, not a section.
 local headingGaps, last = {}, nil
+local groups = 0
 for _, item in ipairs(_G.SpokenOptionsPanel.layout.items) do
     if item.kind == "section" and item.shown then
         if last and last.bottom and item.heading then
             table.insert(headingGaps, last.bottom - item.heading.layoutY)
         end
         last = item
+    elseif item.kind == "group" and item.shown then
+        groups = groups + 1
+        if last and last.bottom then
+            table.insert(headingGaps, last.bottom - item.heading.layoutY)
+        end
+        last = nil
+    elseif item.kind == "groupEnd" and item.group.shown then
+        last = item.group
     end
 end
-Expect("every section heading the same distance below the section above", Distinct(headingGaps), 1)
+Expect("every heading the same distance below the section or box above", Distinct(headingGaps), 1)
+Expect("the narrator style's settings are a group of their own, in a box", groups, 1)
 
 -- A heading introduces the section under it. Sit it midway and it reads as belonging to
 -- neither: the space above its words has to be the larger of the two. As the game's section
