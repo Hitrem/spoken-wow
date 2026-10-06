@@ -16,7 +16,7 @@
 -- they are built and placed by Reflow, top to bottom. Placing them all in one pass is what lets
 -- a row be hidden (ShowWhen) and everything under it close up, rather than leaving a hole.
 
-local VERSION = 56
+local VERSION = 57
 
 -- LibStub's contract, for LibStub's reason: several addons load this file and the newest
 -- copy must win, whichever of them the client happens to load last.
@@ -1327,112 +1327,30 @@ local function NewBadge(parent, clickable)
 end
 Layout.NewBadge = NewBadge
 
---- A count shown as a progress bar: its words on the left and the count on the right, on a line
---- over a thin bar filled as far as `value` ("1/4") goes, always in the game's gold. A status,
---- not a control: nothing about it says click. Drawn with the game's modern widget bar
---- (widgetstatusbar: its border, its background, its fill), else the Skills tab's bar
---- (common-stat-bar), else flat. `Set(kind, message, value)` as NewBadge's; `SetGreyed(on)`
---- turns it grey with its card's icon, as a module that is off.
-local METER_BAR = 16          -- the bar, under its line of words
-local METER_HEIGHT = 14 + 5 + METER_BAR
-local METER_GOLD = { 1, 0.82, 0 }
-local function NewMeter(parent)
-    local meter = CreateFrame("Frame", nil, parent)
-    meter:SetHeight(METER_HEIGHT)
-    local text = meter:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    text:SetPoint("TOPLEFT", meter, "TOPLEFT", 0, 0)
+--- A count on a card: its words on the left and the number on the right, as "Voice Packs  3". A
+--- status, not a control: nothing about it says click. `Set(kind, message, value)` as NewBadge's;
+--- `SetGreyed(on)` turns it grey with its card's icon, as a module that is off.
+local COUNT_HEIGHT = 14
+local function NewCount(parent)
+    local line = CreateFrame("Frame", nil, parent)
+    line:SetHeight(COUNT_HEIGHT)
+    local text = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    text:SetPoint("TOPLEFT", line, "TOPLEFT", 0, 0)
     text:SetJustifyH("LEFT")
     if text.SetWordWrap then text:SetWordWrap(false) end
-    local count = meter:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    count:SetPoint("TOPRIGHT", meter, "TOPRIGHT", 0, 0)
+    local count = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    count:SetPoint("TOPRIGHT", line, "TOPRIGHT", 0, 0)
     count:SetJustifyH("RIGHT")
     text:SetPoint("RIGHT", count, "LEFT", -6, 0)
-
-    -- The bar along the meter's foot.
-    local bar = CreateFrame("Frame", nil, meter)
-    bar:SetPoint("BOTTOMLEFT", meter, "BOTTOMLEFT", 0, 0)
-    bar:SetPoint("BOTTOMRIGHT", meter, "BOTTOMRIGHT", 0, 0)
-    local pieces, fill, inset = {}, nil, 0
-    local function Keep(texture)
-        if texture then table.insert(pieces, texture) end
-        return texture
-    end
-    local yellow = HasAtlas("widgetstatusbar-fill-yellow")
-    if HasAtlas("widgetstatusbar-bordercenter") and HasAtlas("widgetstatusbar-borderleft")
-        and HasAtlas("widgetstatusbar-borderright") and (yellow or HasAtlas("widgetstatusbar-fill-white")) then
-        -- As UIWidgetTemplateStatusBar lays it out -- the fill 8 inside the border's ends, the
-        -- background 2 past the fill's -- scaled as a whole to METER_BAR tall: the art is drawn
-        -- taller than a line under a card's words wants.
-        local info = C_Texture.GetAtlasInfo("widgetstatusbar-bordercenter")
-        local height = (info and info.height and info.height > 0) and info.height or METER_BAR
-        local k = METER_BAR / height
-        bar:SetHeight(METER_BAR)
-        local left = Keep(AtlasTexture(bar, "OVERLAY", "widgetstatusbar-borderleft", false))
-        local right = Keep(AtlasTexture(bar, "OVERLAY", "widgetstatusbar-borderright", false))
-        local middle = Keep(AtlasTexture(bar, "OVERLAY", "widgetstatusbar-bordercenter", false))
-        local function Width(atlas)
-            local piece = C_Texture.GetAtlasInfo(atlas)
-            return ((piece and piece.width) or 8) * k
-        end
-        left:SetSize(Width("widgetstatusbar-borderleft"), METER_BAR)
-        right:SetSize(Width("widgetstatusbar-borderright"), METER_BAR)
-        middle:SetHeight(METER_BAR)
-        left:SetPoint("LEFT", bar, "LEFT", 0, 0)
-        right:SetPoint("RIGHT", bar, "RIGHT", 0, 0)
-        middle:SetPoint("LEFT", left, "RIGHT", 0, 0)
-        middle:SetPoint("RIGHT", right, "LEFT", 0, 0)
-        inset = 8 * k
-        local back = Keep(AtlasTexture(bar, "BACKGROUND", "widgetstatusbar-bgcenter", false)
-            or Flat(bar, "BACKGROUND", 0, 0, 0, 0.6))
-        back:SetPoint("TOPLEFT", bar, "TOPLEFT", inset - 2 * k, -2 * k)
-        back:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -(inset - 2 * k), 2 * k)
-        local fillAtlas = yellow and "widgetstatusbar-fill-yellow" or "widgetstatusbar-fill-white"
-        fill = Keep(AtlasTexture(bar, "ARTWORK", fillAtlas, false))
-        if not yellow then fill:SetVertexColor(METER_GOLD[1], METER_GOLD[2], METER_GOLD[3]) end
-        local fillInfo = C_Texture.GetAtlasInfo(fillAtlas)
-        fill:SetHeight(math.min((fillInfo and fillInfo.height) or 10, height - 4) * k)
-        meter.look = "widget"
-    elseif HasAtlas("common-stat-bar-BG") then
-        bar:SetHeight(15)
-        local back = Keep(AtlasTexture(bar, "BACKGROUND", "common-stat-bar-BG", false))
-        back:SetAllPoints()
-        fill = Keep(AtlasTexture(bar, "ARTWORK", "common-stat-bar-white", false) or Flat(bar, "ARTWORK", 1, 1, 1, 1))
-        fill:SetVertexColor(METER_GOLD[1], METER_GOLD[2], METER_GOLD[3])
-        fill:SetHeight(9)
-        inset = 3
-        meter.look = "stat"
-    else
-        bar:SetHeight(8)
-        local back = Keep(Flat(bar, "BACKGROUND", 0, 0, 0, 0.6))
-        back:SetAllPoints()
-        fill = Keep(Flat(bar, "ARTWORK", 1, 1, 1, 1))
-        fill:SetVertexColor(METER_GOLD[1], METER_GOLD[2], METER_GOLD[3])
-        fill:SetHeight(6)
-        inset = 1
-        meter.look = "flat"
-    end
-    fill:SetPoint("LEFT", bar, "LEFT", inset, 0)
-
-    local fraction = 0
-    local function Fill()
-        local room = (bar:GetWidth() or 0) - inset * 2
-        fill:SetWidth(math.max(0.01, fraction * room))
-        if meter.look ~= "flat" and fill.SetTexCoord then fill:SetTexCoord(0, math.max(0.01, fraction), 0, 1) end
-        if fraction <= 0 then fill:Hide() else fill:Show() end
-    end
-    Script(bar, "OnSizeChanged", Fill)
 
     local greyed, muted = false, false
     local function Paint()
         local grey = (greyed or muted) and 0.5 or 1
         text:SetTextColor(grey, grey, grey)
         count:SetTextColor(grey, grey, grey)
-        for _, texture in ipairs(pieces) do
-            if texture.SetDesaturated then texture:SetDesaturated(greyed) end
-        end
     end
 
-    function meter:Set(kind, message, value)
+    function line:Set(kind, message, value)
         kind = TAG_ALIASES[kind] or kind
         self.state, self.message, self.value = kind, message, value
         if not kind then
@@ -1443,24 +1361,18 @@ local function NewMeter(parent)
         muted = kind == "muted"
         text:SetText(message or "")
         count:SetText(value or "")
-        local _, _, have, total = string.find(value or "", "(%d+)%s*/%s*(%d+)")
-        have, total = tonumber(have), tonumber(total)
-        fraction = (have and total and total > 0) and math.min(1, have / total) or 0
-        self.fraction = fraction
         Paint()
-        Fill()
     end
-    function meter:SetGreyed(on)
+    function line:SetGreyed(on)
         greyed = on and true or false
         self.layoutGreyed = greyed
         Paint()
     end
-    meter.text, meter.count, meter.bar, meter.fill = text, count, bar, fill
-    meter.layoutStatusLine = meter
-    meter.layoutMeter = true
-    return meter
+    line.text, line.count = text, count
+    line.layoutStatusLine = line
+    return line
 end
-Layout.NewMeter = NewMeter
+Layout.NewCount = NewCount
 
 local function Updater(self, fn)
     self.updaters = self.updaters or {}
@@ -1660,7 +1572,7 @@ function Layout:Cards(items)
             rule:SetPoint("TOPLEFT", text, "BOTTOMLEFT", 0, -CARD_RULE_GAP)
             rule:SetPoint("RIGHT", card, "RIGHT", -CARD_PAD, 0)
             card.rule = rule
-            status = NewMeter(card)
+            status = NewCount(card)
             status:SetPoint("TOPLEFT", rule, "BOTTOMLEFT", 0, -CARD_RULE_GAP)
             status:SetPoint("RIGHT", card, "RIGHT", -CARD_PAD, 0)
             card.status = status
@@ -1718,7 +1630,7 @@ function Layout:Cards(items)
     end
     Updater(self, function() for _, card in ipairs(cards) do card:Update() end end)
     -- Under the words: the line, the voice packs' value, then the button.
-    local foot = (hasStatus and (CARD_RULE_GAP * 2 + 1 + METER_HEIGHT) or 0) + (hasButton and (10 + BUTTON_HEIGHT) or 0)
+    local foot = (hasStatus and (CARD_RULE_GAP * 2 + 1 + COUNT_HEIGHT) or 0) + (hasButton and (10 + BUTTON_HEIGHT) or 0)
     local row = self:AddRow(PlaceCards(self, cards, nil, MODULE_HEAD, foot, 42), cards[1], cards, function(top)
         PlaceCards(self, cards, top, MODULE_HEAD, foot, 42)
     end)
