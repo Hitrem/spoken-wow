@@ -48,11 +48,11 @@ Expect("...and marks it on", mm.showInCompartment, true)
 local ldb = stub.ldbObjects["Spoken"]
 local button = stub.dbIcons["Spoken"].button
 local compartmentMenu = stub.Frame("SpokenCompartmentMenu")
-ldb.OnClick(button, "LeftButton")
+ldb.OnClick(button, "RightButton")
 Expect("a minimap click opens the menu at once", stub.openDropDown, _G.SpokenMinimapDropDown)
 Expect("...anchored to the button", _G.SpokenMinimapDropDown.dropdownAnchor, button)
 _G.CloseDropDownMenus()
-ldb.OnClick(compartmentMenu, "LeftButton")
+ldb.OnClick(compartmentMenu, "RightButton")
 Expect("a compartment click waits for the menu to close", stub.openDropDown, nil)
 stub.Advance(0.06)
 Expect("...then opens on our button", stub.openDropDown, _G.SpokenMinimapDropDown)
