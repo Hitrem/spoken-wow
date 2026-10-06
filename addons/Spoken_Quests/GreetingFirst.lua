@@ -9,7 +9,8 @@ setfenv(1, VoiceOver)
 -- (SpokenGreetingDelay, shared on Spoken's Discord): a sound played at no volume hands back a
 -- handle number next to the greeting's, the handles around it are asked whether they are
 -- playing, and one playing at exactly Master x Dialog volume is the voice. That needs the Dialog
--- slider at a level none of SFX, Music or Ambience is at, so where it shares one Spoken moves it 1%
+-- slider at a level none of SFX, Music or Ambience is at, and below 100%: a sound on the Master
+-- channel plays at Master x 1, as a voice does with Dialog at 100%. Where it is not, Spoken moves it 1%
 -- (SetDialogApart), which cannot be heard. On a client without these calls, or for the one greeting
 -- already playing as Dialog is moved, the line waits a fixed 1.5 seconds.
 GreetingFirst = {}
@@ -58,6 +59,9 @@ local function VoiceVolume()
     if master == 0 or dialog == 0 or GetCVar("Sound_EnableAllSound") == "0" or GetCVar("Sound_EnableDialog") == "0" then
         return 0
     end
+    if math.abs(dialog - 1) < 0.00001 then
+        return nil
+    end
     for _, channel in ipairs({ "SFX", "Music", "Ambience" }) do
         local volume = Number("Sound_" .. channel .. "Volume")
         if not volume or math.abs(volume - dialog) < 0.00001 then
@@ -67,7 +71,7 @@ local function VoiceVolume()
     return master * dialog
 end
 
---- Moves the Dialog slider 1% away from SFX, Music and Ambience where it shares a level with one,
+--- Moves the Dialog slider 1% where it is at 100% or shares a level with SFX, Music or Ambience,
 --- and says so in chat. Kept rather than put back: a greeting starts before Spoken hears of the
 --- window, so the level has to be apart already. Returns whether it moved.
 function GreetingFirst:SetDialogApart()
@@ -79,7 +83,11 @@ function GreetingFirst:SetDialogApart()
     for _, channel in ipairs({ "SFX", "Music", "Ambience" }) do
         table.insert(others, Number("Sound_" .. channel .. "Volume"))
     end
+    -- 100% is shared with every sound on the Master channel.
     local function Shared(volume)
+        if math.abs(volume - 1) < 0.00001 then
+            return true
+        end
         for _, other in ipairs(others) do
             if math.abs(other - volume) < 0.00001 then
                 return true

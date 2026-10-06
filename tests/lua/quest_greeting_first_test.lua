@@ -131,6 +131,14 @@ Close()
 world.cvars.Sound_DialogVolume = "1"
 VO.GreetingFirst:SetDialogApart()
 Expect("...and does so as the setting is turned on too", world.cvars.Sound_DialogVolume, "0.99")
+-- 100% is Master's own level: a sound on the Master channel plays at Master x 1, as the voice would.
+world.cvars.Sound_DialogVolume, world.cvars.Sound_SFXVolume = "1", "0.7"
+VO.GreetingFirst:SetDialogApart()
+Expect("Dialog at 100% is moved to 99% though no other slider is there", world.cvars.Sound_DialogVolume, "0.99")
+world.cvars.Sound_DialogVolume = "0.8"
+VO.GreetingFirst:SetDialogApart()
+Expect("...and at 80%, apart from them all, it is left alone", world.cvars.Sound_DialogVolume, "0.8")
+world.cvars.Sound_SFXVolume = "1"
 world.cvars.Sound_DialogVolume = "0.8"
 
 -- The game's dialogue switched off: there is nothing to wait for.
