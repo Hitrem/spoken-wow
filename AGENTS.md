@@ -62,3 +62,7 @@ Comment the *why*, not the *what*. Both imported projects are consistent
 about this and it is the main reason their history is readable — a comment
 naming the failure a line prevents is worth more than a comment restating
 the line. Keep it.
+
+`.claude/skills/comment-cleanup/SKILL.md` spells out which comments to cut,
+shorten or keep. Run it as `/comment-cleanup` in Claude Code, or follow it by
+hand, before asking for review.
