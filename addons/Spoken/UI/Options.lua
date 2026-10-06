@@ -405,10 +405,10 @@ local function Build(canvas)
         InWindowText(layout:Slider(L.TRANSCRIPT_LINES, 1, 2, 1,
             function() return transcript().Lines end,
             function(v) transcript().Lines = v end, refreshTranscript, Layout.Number, L.TRANSCRIPT_LINES_TIP))
-        local SCROLL_LABELS = { centered = L.TRANSCRIPT_SCROLL_CENTERED, page = L.TRANSCRIPT_SCROLL_PAGE,
+        local SCROLL_LABELS = { smooth = L.TRANSCRIPT_SCROLL_SMOOTH, page = L.TRANSCRIPT_SCROLL_PAGE,
             off = L.TRANSCRIPT_SCROLL_OFF }
-        InWindowText(layout:Dropdown(L.TRANSCRIPT_SCROLL, L.TRANSCRIPT_SCROLL_TIP, { "centered", "page", "off" },
-            function() return transcript().ScrollMode or "centered" end,
+        InWindowText(layout:Dropdown(L.TRANSCRIPT_SCROLL, L.TRANSCRIPT_SCROLL_TIP, { "smooth", "page", "off" },
+            function() return transcript().ScrollMode or "smooth" end,
             function(v) transcript().ScrollMode = v; Transcript.manualScroll = false end, refreshTranscript,
             function(v) return SCROLL_LABELS[v] or v end))
 

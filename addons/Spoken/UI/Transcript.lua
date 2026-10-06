@@ -24,14 +24,14 @@ local function LineCount()
     return Config().Lines == 1 and 1 or 2
 end
 -- How the captions follow the voice, by Config().ScrollMode:
---   centered  the line being read stays in the middle of the captions and the text glides
---             up under it, as lyrics apps keep the sung line; the default
+--   smooth    the text glides up a line at a time as the voice reaches each line, the
+--             line being read on the last row when typed out, else in the middle; the default
 --   page      a page at a time, turned when the voice leaves it, as the captions always did
 --   off       the captions hold still; the wheel moves them
 local function Mode()
     local mode = Config().ScrollMode
     if mode == "page" or mode == "off" then return mode end
-    return "centered"
+    return "smooth"
 end
 -- The glide's time constant, in seconds: it is 95% of the way there in three of these.
 local GLIDE = 0.09
@@ -240,7 +240,7 @@ function Transcript:MaxTop()
     return math.max(1, #(self.lines or {}) - LineCount() + 1)
 end
 
---- Where the first visible line goes for the voice on `line`, in centered mode.
+--- Where the first visible line goes for the voice on `line`, in smooth mode.
 function Transcript:TargetFor(line)
     local n = LineCount()
     -- Typed out, every line below the voice is still blank: keep it on the last row, with
@@ -385,7 +385,7 @@ end
 --- Follow the voice again. With following turned off, clicking the captions turns it
 --- back on, in the default mode.
 function Transcript:Follow()
-    if Mode() == "off" then Config().ScrollMode = "centered" end
+    if Mode() == "off" then Config().ScrollMode = "smooth" end
     self.manualScroll = false
     self:Update()
 end
