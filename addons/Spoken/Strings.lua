@@ -133,6 +133,7 @@ L = {
     DUI_CLOSE = "Skip",
     DUI_CLOSE_TIP = "Skip this line and play the next.",
     DUI_RESIZE_TIP = "Drag to set how tall the window opens. Hold Shift as you start the drag to set its width too.",
+    DUI_WHEEL_HINT = "Over the window: Ctrl and the mouse wheel change Window Size; Ctrl, Shift and the mouse wheel change Text Size.",
     OPT_DUI_OPEN_PAGE = "DialogueUI Settings",
     REASON_DUI_STYLE = "Choose DialogueUI as the Narrator Style on Spoken's page to use this.",
     OPT_KEYS_TITLE = "Keys",

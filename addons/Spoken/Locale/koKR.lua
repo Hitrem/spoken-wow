@@ -213,6 +213,7 @@ L.REASON_DUI_LINKED = "이 기능을 쓰려면 '창과 함께 글자 크기 조�
 L.DUI_CLOSE = "건너뛰기"
 L.DUI_CLOSE_TIP = "이 대사를 건너뛰고 다음 대사를 재생합니다."
 L.DUI_RESIZE_TIP = "끌어서 창이 열릴 때의 높이를 정합니다. 끌기 시작할 때 Shift를 누르고 있으면 너비도 정합니다."
+L.DUI_WHEEL_HINT = "창 위에서: Ctrl과 마우스 휠로 창 크기를, Ctrl, Shift와 마우스 휠로 글자 크기를 바꿉니다."
 L.OPT_DUI_OPEN_PAGE = "DialogueUI 설정"
 L.REASON_DUI_STYLE = "이 기능을 쓰려면 Spoken 페이지에서 내레이터 스타일로 DialogueUI를 고르세요."
 L.OPT_KEYS_TITLE = "단축키"

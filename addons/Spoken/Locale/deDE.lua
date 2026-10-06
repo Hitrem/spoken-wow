@@ -213,6 +213,7 @@ L.REASON_DUI_LINKED = "Schalte „Text mit Fenster skalieren“ aus, um dies zu 
 L.DUI_CLOSE = "Überspringen"
 L.DUI_CLOSE_TIP = "Diese Zeile überspringen und die nächste abspielen."
 L.DUI_RESIZE_TIP = "Ziehen, um festzulegen, wie hoch sich das Fenster öffnet. Halte zu Beginn Umschalt gedrückt, um auch die Breite festzulegen."
+L.DUI_WHEEL_HINT = "Über dem Fenster: Strg und das Mausrad ändern die Fenstergröße; Strg, Umschalt und das Mausrad ändern die Textgröße."
 L.OPT_DUI_OPEN_PAGE = "DialogueUI-Einstellungen"
 L.REASON_DUI_STYLE = "Wähle DialogueUI als Erzählerstil auf der Seite von Spoken, um dies zu nutzen."
 L.OPT_KEYS_TITLE = "Tasten"

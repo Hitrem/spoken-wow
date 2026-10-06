@@ -111,6 +111,12 @@ local function TextButton(parent, text, fn)
     return button
 end
 
+-- The window's sizes are also on the wheel (Skin:Wheel), which nothing on it shows: said on
+-- the tooltips of its face, its fold button and its resize handle.
+local function WheelHint()
+    GameTooltip:AddLine(L.DUI_WHEEL_HINT, 1, .82, 0, true)
+end
+
 function Skin:Initialize(original)
     if self.frame then return end
     local frame = CreateFrame("Frame", "SpokenDialogueUIPlayerFrame", UIParent)
@@ -205,6 +211,7 @@ function Skin:Initialize(original)
         local stopped = SoundQueue:IsPaused()
         GameTooltip:SetText(stopped and L.REPLAY or L.STOP)
         GameTooltip:AddLine(stopped and L.REPLAY_TOOLTIP or L.STOP_TOOLTIP, 1, 1, 1, true)
+        WheelHint()
         GameTooltip:Show()
     end)
     pause:SetScript("OnLeave", function() self:UpdateControls(); self:HideTooltip() end)
@@ -255,6 +262,7 @@ function Skin:Initialize(original)
     self.fold:SetScript("OnEnter", function()
         GameTooltip:SetOwner(self.fold, "ANCHOR_LEFT")
         GameTooltip:SetText(self.expanded and L.TRANSCRIPT_COLLAPSE or L.TRANSCRIPT_EXPAND)
+        WheelHint()
         GameTooltip:Show()
     end)
     self.fold:SetScript("OnLeave", function() self:HideTooltip() end)
@@ -322,7 +330,8 @@ function Skin:Initialize(original)
     self.resizer:SetScript("OnEnter", function()
         self.resizer:SetAlpha(1)
         GameTooltip:SetOwner(self.resizer, "ANCHOR_LEFT")
-        GameTooltip:SetText(L.DUI_RESIZE_TIP)
+        GameTooltip:SetText(L.DUI_RESIZE_TIP, 1, 1, 1, 1, true)
+        WheelHint()
         GameTooltip:Show()
     end)
     self.resizer:SetScript("OnLeave", function() self.resizer:SetAlpha(.5); self:HideTooltip() end)

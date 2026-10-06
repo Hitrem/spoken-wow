@@ -300,6 +300,7 @@ L.REASON_DUI_LINKED = "Désactivez l'option Texte lié à la fenêtre pour utili
 L.DUI_CLOSE = "Passer"
 L.DUI_CLOSE_TIP = "Passer cette réplique et jouer la suivante."
 L.DUI_RESIZE_TIP = "Faites glisser pour régler la hauteur de la fenêtre à l'ouverture. Maintenez Maj au début pour régler aussi sa largeur."
+L.DUI_WHEEL_HINT = "Sur la fenêtre : Ctrl et la molette de la souris changent la taille de la fenêtre ; Ctrl, Maj et la molette changent la taille du texte."
 L.OPT_DUI_OPEN_PAGE = "Options de DialogueUI"
 L.REASON_DUI_STYLE = "Choisissez DialogueUI comme style du narrateur sur la page de Spoken pour utiliser ceci."
 L.WELCOME_PARTS = "Que doit lire Spoken à voix haute ?"

@@ -256,6 +256,28 @@ Expect("...and no more than the words need", Skin.lines, 1)
 Skin:SetExpanded(true)
 Page:Reset()
 Expect("the page's Defaults puts both back", panel.MinimizedLines == 2 and panel.FitText == true, true)
+-- The wheel's shortcuts, which nothing on the window shows, on its tooltips and on the page.
+local function Says(text)
+    for _, line in ipairs(_G.GameTooltip.lines or {}) do
+        if line == text then return true end
+    end
+    return false
+end
+Skin.fold.scripts.OnEnter(Skin.fold)
+Expect("the fold button's tooltip names the wheel's shortcuts", Says(env.L.DUI_WHEEL_HINT), true)
+Skin.resizer.scripts.OnEnter(Skin.resizer)
+Expect("...and so does the resize handle's", Says(env.L.DUI_WHEEL_HINT), true)
+local noted = false
+local function Look(row)
+    for _, region in ipairs(row.regions or {}) do
+        if region.text == env.L.DUI_WHEEL_HINT then noted = true end
+    end
+end
+for _, item in ipairs(page.items or {}) do
+    Look(item)
+    for _, row in ipairs(item.rows or {}) do Look(row) end
+end
+Expect("...and the DialogueUI page says them too", noted, true)
 Spoken:StopAll()
 env.PlayerFrame:RefreshConfig()
 

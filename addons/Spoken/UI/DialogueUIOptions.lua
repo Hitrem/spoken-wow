@@ -125,6 +125,8 @@ function Page:Setup()
     layout:Outdent()
     Window(layout:Checkbox(L.OPT_DUI_FIT_TEXT, L.OPT_DUI_FIT_TEXT_TIP,
         function() return Panel().FitText ~= false end, function(v) Panel().FitText = v end, refresh))
+    -- The wheel shortcuts for Window Size and Text Size, which nothing on the window shows.
+    layout:Note(L.DUI_WHEEL_HINT, nil, 40)
 
     layout:Section(L.OPT_TEXT_TITLE)
     Words(layout:Checkbox(L.OPT_DUI_LINK_FONT, L.OPT_DUI_LINK_FONT_TIP,
