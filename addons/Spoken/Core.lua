@@ -85,7 +85,6 @@ Defaults = {
         Transcript = {
             Enabled = true,
             -- How the captions follow the voice: "line", "page" or "off".
-            -- See UI/Transcript.lua.
             ScrollMode = "line",
             Lines = 2,
             HighlightWord = false,
@@ -125,8 +124,7 @@ function Addon:InitDB()
         return
     end
     self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults)
-    -- Captions once only followed the voice or not, by AutoScroll; ScrollMode replaced it. A
-    -- player who had turned following off keeps it off. Every profile, not just this one.
+    -- A saved AutoScroll = false predates ScrollMode: carry it over as "off", in every profile.
     for _, profile in pairs(self.db.sv and self.db.sv.profiles or {}) do
         local transcript = type(profile) == "table" and profile.Transcript
         if type(transcript) == "table" and transcript.AutoScroll ~= nil then

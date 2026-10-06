@@ -26,7 +26,7 @@ end
 -- How the captions follow the voice, by Config().ScrollMode:
 --   line      the text glides up a line at a time as the voice reaches each line, the
 --             line being read on the last row when typed out, else in the middle; the default
---   page      a page at a time, turned when the voice leaves it, as the captions always did
+--   page      a page at a time, turned when the voice leaves it
 --   off       the captions hold still; the wheel moves them
 local function Mode()
     local mode = Config().ScrollMode
@@ -237,18 +237,16 @@ function Transcript:PageCount()
     return math.max(1, math.ceil(#(self.lines or {}) / LineCount()))
 end
 
---- How the captions follow the voice: "line", "page" or "off", whatever is saved.
+--- The scroll mode, with anything unknown saved read as "line".
 function Transcript:ScrollMode()
     return Mode()
 end
 
---- The page the captions show, counted from the first visible line.
 function Transcript:Page()
     return PageOf(self.topTarget or 1)
 end
 
---- The highest first visible line: the one that shows the last line at the bottom, or in
---- page mode the last page's first line.
+--- The highest first visible line; in page mode, the last page's first line.
 function Transcript:MaxTop()
     if Mode() == "page" then return (self:PageCount() - 1) * LineCount() + 1 end
     return math.max(1, #(self.lines or {}) - LineCount() + 1)
@@ -362,7 +360,6 @@ function Transcript:Render()
     self:Place()
 end
 
---- Put the rows where the scroll position says, a fraction of a line up mid-glide.
 function Transcript:Place()
     if not self.labels then return end
     local top = self.top or 1
@@ -381,7 +378,6 @@ function Transcript:Place()
     end
 end
 
---- Ease the scroll toward its target, every frame while they differ.
 function Transcript:Glide(elapsed)
     local top, target = self.top, self.topTarget
     if not top or not target or top == target then return end
@@ -395,8 +391,7 @@ function Transcript:Glide(elapsed)
     end
 end
 
---- Follow the voice again. With following turned off, clicking the captions turns it
---- back on, in the default mode.
+--- With following turned off, clicking the captions turns it back on, line by line.
 function Transcript:Follow()
     if Mode() == "off" then Config().ScrollMode = "line" end
     self.manualScroll = false

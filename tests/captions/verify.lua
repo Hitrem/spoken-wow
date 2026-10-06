@@ -76,7 +76,7 @@ E.Addon:Enable()
 local T,Q,M=E.Transcript,E.SoundQueue,E.MinimalPlayer
 local source=E.Sources:Register('quests',{interClipGap=.55})
 local cfg=E.Addon.db.profile.Transcript
--- The checks up to the scroll-mode section were written for page-by-page following.
+-- The checks up to the scroll-mode section expect page-by-page following.
 cfg.ScrollMode='page'
 
 local assertions=0
@@ -411,8 +411,7 @@ source:Enqueue(override)
 Check(T.text=='Display this instead','explicit source transcript takes precedence')
 Q:RemoveAllSoundsFromQueue()
 
--- Scroll modes. Line by line keeps the line being read in the middle and glides there, a
--- fraction of a line at a time.
+-- Scroll modes: line by line glides to keep the line being read in the middle.
 E.Addon:Layout().CaptionsExpanded=true; cfg.ScrollMode='line'; T:RefreshConfig()
 source:Enqueue(Clip('scroll',long,60))
 local function Settle() T.frame:Fire('OnUpdate',1) end
