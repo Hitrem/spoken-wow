@@ -738,7 +738,33 @@ function Contribute:ShowTooltip(owner, gossip)
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     GameTooltip:SetText(gossip and L.OPT_CONTRIBUTE_TIP_LINE or L.OPT_CONTRIBUTE_TIP_QUEST)
     GameTooltip:AddLine(L.OPT_CONTRIBUTE_TIP_SHARE, 1, 0.8, 0.2, true)
+    -- Its right-click opens the debug log's menu, where Spoken Developer is installed.
+    local hint = Spoken and Spoken.LogMenuHint and Spoken:LogMenuHint()
+    if hint then
+        GameTooltip:AddLine(hint, 0.6, 0.6, 0.6, true)
+    end
     GameTooltip:Show()
+end
+
+--- Right-click opens Spoken's debug log menu, as Report's does, where the Spoken Developer module
+--- is installed: a Contribute button is up exactly when a line did not play, which is when the log
+--- says why. Hooked on mouse-up rather than set as the click, so the button's own OnClick, set
+--- again each time it stands for another quest, keeps the left button. No HookScript on 1.12,
+--- where the module does not run anyway.
+function Contribute:OfferLogMenu(button)
+    if not button or button.offersLogMenu or not button.HookScript then
+        return
+    end
+    button.offersLogMenu = true
+    button:HookScript("OnMouseUp", function(self, mouse)
+        if mouse ~= "RightButton" or not (Spoken and Spoken.ShowLogMenu) then
+            return
+        end
+        if GameTooltip and GameTooltip:GetOwner() == self then
+            GameTooltip:Hide()
+        end
+        Spoken:ShowLogMenu(self)
+    end)
 end
 
 --- Hand the player an envelope: as one link where the bundled player can build one, and as the

@@ -2,6 +2,18 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## Unreleased
+
+- **Spoken Developer, a module of its own, with a debug log to send with a report.** Installed and
+  turned on (in Spoken > Developer, the welcome window or `/spoken log on`), it notes every line
+  queued, started, stopped, dropped or refused, with the time and the reason, and the
+  diagnostics. Right-click any Report or Contribute button to copy it with the diagnostics, or to
+  write it for an AI agent on your computer (a snapshot of the moment, then a reload so the game
+  saves the file). On once installed, and can be turned off; Spoken without it is unchanged. See
+  [DEBUG-LOG.md](DEBUG-LOG.md).
+- For feature addons: `Spoken:Log`, `AddDiagnostics`, `AddDeveloperSettings`, `AddLogSource`
+  and the rest, all doing nothing without the module.
+
 ## 3.0.1 — 2026-10-05
 
 - **NPC voices are muted again under gossip and greetings.** In 3.0.0 an NPC's own greeting

@@ -115,6 +115,9 @@ local function Widget(kind, name)
     function w:UnregisterAllEvents() self.events = {} end
     function w:SetScript(script, fn) self.scripts[script] = fn end
     function w:GetScript(script) return self.scripts[script] end
+    -- A secure button's attributes (Spoken Developer's /reload macro), kept to be read back.
+    function w:SetAttribute(key, value) self.attributes = self.attributes or {}; self.attributes[key] = value end
+    function w:GetAttribute(key) return self.attributes and self.attributes[key] end
     function w:HookScript(script, fn)
         self.hooks[script] = self.hooks[script] or {}
         table.insert(self.hooks[script], fn)
@@ -1049,7 +1052,7 @@ end
 --- Loads exactly what its addon.xml and then Contribute.xml list, in order (a Blizzard-client
 --- .toc's order), then initialises the saved variables the way ADDON_LOADED would.
 function M.LoadSpoken(addonDirectory)
-    for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources", "OtherSounds",
+    for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources", "Developer", "OtherSounds",
         "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN",
         "Locale/zhTW", "UI/Layout", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
         "UI/MinimalPlayer", "UI/MinimapButton",
@@ -1069,6 +1072,23 @@ function M.LoadSpoken(addonDirectory)
     env.Addon.db.profile.Frame.MinimalPlayer = false
     env.Addon.db.profile.Frame.SubtitlePlayer = false
     return env
+end
+
+--- The Spoken_Developer module, loaded as the client loads it: its .toc's Lua files in order, each
+--- handed the folder's name and one table, then its ADDON_LOADED. Its saved variables start empty.
+--- Load Spoken first: the module registers with it as its files load.
+function M.LoadDeveloper(addonDirectory)
+    _G.SpokenDeveloperDB = nil
+    local ns = {}
+    local toc = assert(io.open(addonDirectory .. "Spoken_Developer.toc")):read("*a")
+    for line in toc:gmatch("[^\r\n]+") do
+        if line:match("%.lua$") and not line:match("^#") then
+            local path = line:gsub("\\", "/")
+            assert(loadfile(addonDirectory .. path))("Spoken_Developer", ns)
+        end
+    end
+    M.FireEvent("ADDON_LOADED", "Spoken_Developer")
+    return ns
 end
 
 --- Forget every scheduled timer. A test that loads a fresh player must call this, or the

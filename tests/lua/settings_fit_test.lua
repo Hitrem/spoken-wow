@@ -78,13 +78,17 @@ for _, file in ipairs({ "UI/Layout", "UI/Options" }) do
     assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 Z:SetupOptions()
+-- The Spoken_Developer module, its page last.
+local Dev = stub.LoadDeveloper(here .. "/../../addons/Spoken_Developer/")
+Dev:SetupOptions()
 
 local Layout = _G.SpokenLayout
 local pages = { { name = "General", layout = _G.SpokenOptionsPanel.layout } }
 for _, page in ipairs(env.Options.pages or {}) do
     table.insert(pages, { name = page.name, layout = page.layout })
 end
-Expect("General and the three parts' pages are all here", #pages, 4)
+-- And the Developer page, which the Spoken_Developer module adds.
+Expect("General, the three parts' pages and the Developer page are all here", #pages, 5)
 
 local BOX = Layout.BOX_MARGIN
 local function Label(row)

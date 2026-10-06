@@ -115,12 +115,22 @@ function SourceMethods:GetChannel()
     return Addon.db.profile.Audio.SoundChannel
 end
 
+-- A line the queue would not take, in the debug log: the refusals that fire no CLIP_DROPPED
+-- (a duplicate, a file the probe did not find, a muted channel, a part turned off) are otherwise
+-- seen nowhere.
+local function Noted(clip, how, result, why)
+    if not result and why and Developer then
+        Developer:Log("player", "%s refused %s: %s", how, Developer.Describe(clip), tostring(why))
+    end
+    return result, why
+end
+
 function SourceMethods:Enqueue(clip)
-    return SoundQueue:Add(clip, self, false)
+    return Noted(clip, "queue", SoundQueue:Add(clip, self, false))
 end
 
 function SourceMethods:PlayNow(clip)
-    return SoundQueue:PlayNow(clip, self)
+    return Noted(clip, "play now", SoundQueue:PlayNow(clip, self))
 end
 
 function SourceMethods:Remove(clip)

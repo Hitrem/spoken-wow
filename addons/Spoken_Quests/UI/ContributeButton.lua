@@ -190,6 +190,7 @@ function ContributeButton:Setup()
             GameTooltip:Hide()
         end
     end)
+    Contribute:OfferLogMenu(button)
 
     self.button = button
 

@@ -43,6 +43,9 @@ for _, file in ipairs({ "UI/Layout", "UI/Options" }) do
     assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 Z:SetupOptions()
+-- The Spoken_Developer module, its page last.
+local Dev = stub.LoadDeveloper(here .. "/../../addons/Spoken_Developer/")
+Dev:SetupOptions()
 
 
 -- What the test's stand-ins lack and the real addons have: the zones addon here is a stand-in
@@ -74,7 +77,8 @@ local pages = { { name = "Spoken", layout = _G.SpokenOptionsPanel.layout } }
 for _, page in ipairs(env.Options.pages or {}) do
     table.insert(pages, { name = page.name, layout = page.layout })
 end
-Expect("Spoken and the three modules' pages are all here", #pages, 4)
+-- And the Developer page, which the Spoken_Developer module adds.
+Expect("Spoken, the three modules' pages and the Developer page are all here", #pages, 5)
 
 local function Controls(layout)
     local list = {}

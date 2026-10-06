@@ -199,7 +199,10 @@ function Addon:InvokeQuestHandler(event, source, manual)
     end
 
     Debug:Record("quest-dispatch", format("Dispatching %s through %s", event, source or "manual reader"))
+    -- Where the lines this queues come from, for the debug log (Player:Enqueue keeps it on each).
+    Player.origin = Player:Origin(event, source, manual)
     local succeeded, errorMessage = pcall(handler, self, event, manual)
+    Player.origin = nil
     if not succeeded then
         Debug:Record("handler-error", format("%s failed: %s", event, tostring(errorMessage)))
         local errorHandler = geterrorhandler and geterrorhandler()
@@ -559,6 +562,7 @@ function Addon:OnInitialize()
     local function PollAutomaticQuest()
         local state = self.autoQuestState
         if self.dataModulesPending then
+            Debug:Note("watcher", "pending", "quest watcher waits: the voice packs are still loading")
             return
         end
         if not self:IsAutoplayOn() then
@@ -566,6 +570,12 @@ function Addon:OnInitialize()
             -- dropped too, so turning autoplay back on does not replay a dialog long closed.
             questSnapshot = nil
             ResetCandidate(state)
+            -- Said once for each quest opened meanwhile, which is the question a player asks.
+            local open = GetQuestID and GetQuestID() or 0
+            if open and open ~= 0 then
+                Debug:Note("watcher", "off:" .. tostring(open),
+                    "quest %s open, not read: Read Automatically is off", tostring(open))
+            end
             return
         end
         local questCallSucceeded, questID = pcall(function()
@@ -1099,18 +1109,22 @@ function Addon:ShouldPlayGossip(guid, text, manual)
 
     local gossipSeenForNPC = self.db.char.hasSeenGossipForNPC[npcKey]
 
+    -- Asked again for the same NPC while its window stays open; the log says it once.
     if self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.OncePerQuestNPC then
         local numActiveQuests = GetNumGossipActiveQuests()
         local numAvailableQuests = GetNumGossipAvailableQuests()
         local npcHasQuests = (numActiveQuests > 0 or numAvailableQuests > 0)
         if npcHasQuests and gossipSeenForNPC then
+            Debug:Note("gossip", npcKey .. ":quest-npc", "greeting of %s not read: an NPC with quests, heard before (NPC Greetings: once per quest NPC)", npcKey)
             return
         end
     elseif self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.OncePerNPC then
         if gossipSeenForNPC then
+            Debug:Note("gossip", npcKey .. ":once", "greeting of %s not read: heard before (NPC Greetings: once per NPC)", npcKey)
             return
         end
     elseif self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.Never then
+        Debug:Note("gossip", "never", "greetings not read: NPC Greetings is set to never")
         return
     end
 

@@ -43,6 +43,10 @@ local METHODS = {
     "EnumerateAddonsWithKey",
     -- frame, settings
     "GetPlayerFrame", "GetSettingsCategory", "OpenSettings", "AddSettingsLink", "RefreshPlayer",
+    -- developer tools: the Spoken_Developer module's
+    "RegisterDeveloper", "HasLog", "Log", "IsLogOn", "SetLogOn", "LogLines", "ClearLog", "ShowLog",
+    "AddLogSource", "ShowLogMenu", "LogMenuHint", "AddDeveloperSettings", "GetDeveloperSettings",
+    "AddDiagnostics", "Diagnostics",
     -- contributions
     "ShowContribution", "AreContributeButtonsHidden",
 }
