@@ -28,6 +28,7 @@ How it works, what a line says and the API for feature addons:
 | `Log.lua` | the log: lines, sessions, Spoken's queue through its callbacks, logs handed in, the merge |
 | `Copy.lua` | the diagnostics written into the log, and the copy |
 | `Write.lua` | Write for an AI Agent: the snapshot, then the reload that writes the file |
+| `Screen.lua` | the reading window and the mailbox in the log and the snapshots, and which Spoken modules are installed |
 | `UI/Box.lua` | the box a log or a copy is shown in, selected |
 | `UI/Menu.lua` | the Report and Contribute buttons' right-click menu |
 | `UI/Options.lua` | the Developer page |

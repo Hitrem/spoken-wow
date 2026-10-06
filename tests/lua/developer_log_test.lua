@@ -166,6 +166,29 @@ Expect("in combat it does not write", Dev.Write:Now(), false)
 Expect("...nor offer /reload", opened, nil)
 _G.InCombatLockdown = nil
 
+---------------------------------------------------------------- a book open
+-- Spoken Books is not loaded here: a book opened says what it is, and that nothing reads it.
+stub.ShowPage({ title = "The Fall of Ameth'Aran", text = "Long ago, the night elves of Ameth'Aran\nkept vigil.", number = 2 })
+stub.FireEvent("ITEM_TEXT_READY")
+Expect("a book opened is in the log, with its title and page",
+    Has([[screen reading window: a book "The Fall of Ameth'Aran", page 2, starting "Long ago, the night elves]]), true)
+Expect("...and that nothing of Spoken reads it", Has("nothing of Spoken reads it: Spoken_Books is not installed"), true)
+local count = #Spoken:LogLines()
+stub.FireEvent("ITEM_TEXT_READY")
+Expect("...once per page", #Spoken:LogLines(), count)
+local diagnostics = Spoken:Diagnostics(true)
+Expect("the snapshot has the reading window open", Has([[reading window: open, a book "The Fall of Ameth'Aran", page 2]], diagnostics), true)
+Expect("...and which Spoken modules are installed", Has("Spoken_Books (books, plaques, signs and letters): not installed", diagnostics), true)
+stub.ClosePage()
+stub.FireEvent("ITEM_TEXT_CLOSED")
+Expect("its closing is in the log", Last():find("screen reading window closed", 1, true) ~= nil, true)
+Expect("...and the snapshot says it is closed", Has("reading window: closed", Spoken:Diagnostics(true)), true)
+stub.ShowPage({ title = "A letter for you", text = "Dear Tata,", creator = "Williams" })
+stub.FireEvent("ITEM_TEXT_READY")
+Expect("a letter a player wrote is told from a book", Has('screen reading window: a letter "A letter for you", page 1, from Williams'), true)
+stub.ClosePage()
+stub.FireEvent("ITEM_TEXT_CLOSED")
+
 ---------------------------------------------------------------- the Report buttons' menu
 local report = Spoken:CreateRoundButton(UIParent, "report")
 for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end

@@ -78,6 +78,10 @@ The snapshot says what the screen shows as well as what the game answers (`on sc
 frame shown, detail panel, quest "...", NPC "..."; quest log hidden; gossip frame hidden`, the
 quest title placed in whichever window shows it, and the last window Spoken Quests read): on
 Forever the game's quest functions can answer that no quest is open while its window shows one.
+It also says which of Spoken's modules are loaded, turned off in the AddOns list or not installed,
+and what the reading window holds (`reading window: open, a book "...", page 2, starting "...";
+nothing of Spoken reads it: Spoken_Books is not installed`) and the mailbox's open letter: a book
+read without Spoken Books is silent and shows nothing, and this is where the log says why.
 
 ## Diagnostics in the log
 
@@ -152,6 +156,9 @@ on this client's clock, and head each line with whose it is.
   `CLIP_STOPPED`, `CLIP_DROPPED`, the queue stopped or playing again), the lines a source's
   `Enqueue` or `PlayNow` refused without a callback (a duplicate, a file the probe did not find, a
   muted channel, a module turned off), and the Dialog channel muted or restored.
+- `screen`: the reading window (books, plaques, signs, letters) as each page shows, with its
+  title, page, author for a letter and first words, and whether Spoken Books is there to read it;
+  then its closing.
 - Other categories come from the modules that write them: `quests` from Spoken Quests, `sync`,
   `msg`, `party`, `room` and `logs` from Spoken Party Sync.
 

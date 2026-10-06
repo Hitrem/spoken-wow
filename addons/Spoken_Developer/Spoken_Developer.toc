@@ -37,6 +37,7 @@ Core.lua
 Log.lua
 Copy.lua
 Write.lua
+Screen.lua
 UI/Layout.lua
 UI/Box.lua
 UI/Menu.lua
