@@ -67,10 +67,14 @@ another narrator style is chosen.
   line spacing (0.35 of the text size) and paragraph gap. Window Size then scales the whole
   frame, text included. At 100% the two windows are the same size on screen.
 - **Opens As**: Expanded opens the panel at its share of DialogueUI's window; Minimized folds
-  it to two lines. The plus or minus button beside the close cross switches between the two
+  it to the lines **Lines Shown** sets (2, from 1 to 10; the Small Window's Lines Shown stops
+  at 2). The plus or minus button beside the close cross switches between the two
   for the session. Expanded, the handle in the bottom-right corner drags the panel taller or
   shorter. Hold **Shift** as you start the drag to change its width too, from 60% to twice
   DialogueUI's. The size is kept until **Reset Position**.
+- **Fit to the Words** (on): the panel is only as tall as the line's words need, its size
+  (expanded) or Lines Shown (minimized) being the most it grows to; a long line still fills it
+  and scrolls. Off, the panel always opens at its full size.
 - **Scale Text With Window** (on) and **Text Size**, standing in for the other windows' Text
   Size and Lines, likewise hidden. Turned off, the words' size is set on its own, as a share of DialogueUI's
   text on screen: 100% reads the same size as DialogueUI. It is applied against Window

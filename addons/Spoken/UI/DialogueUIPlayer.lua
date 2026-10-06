@@ -37,6 +37,8 @@ local CORNER_ICON = 20
 local CONTROL_HEIGHT = 22
 local BAR_HEIGHT = 3
 local MIN_LINES = 2
+-- The most caption lines Lines Shown gives the folded panel.
+local MAX_MINIMIZED_LINES = 10
 local SCROLLBAR = 10
 -- The quest title a little under DialogueUI's: its title shares the strip with nothing,
 -- and here the speaker's name sits above it.
@@ -58,6 +60,7 @@ local FOOTER_DIVIDER = { 0, 0.71875, 0.6875, 0.71875, 392, 34 }
 -- What Panel size and Font size scale may be set to, by the settings' sliders or by the
 -- wheel with Ctrl held, and the step of each.
 Skin.PANEL_SIZES = { 0.3, 1.2 }
+Skin.MAX_MINIMIZED_LINES = MAX_MINIMIZED_LINES
 Skin.FONT_SIZES = { 0.3, 1.5 }
 Skin.SIZE_STEP = 0.05
 
@@ -409,8 +412,19 @@ function Skin:Layout()
     local height = self.sizing and Round(frame:GetHeight()) or Addon:Layout().DialogueUIHeight or Round(duiHeight)
     local body = height - padTop - headerHeight - queueHeight - padBottom - footerHeight
     local lines = math.max(MIN_LINES, math.floor(body / lineHeight))
-    -- Folded, the panel is only as tall as the smallest page needs.
-    if not self.expanded then lines, height = MIN_LINES, 0 end
+    -- Folded, the panel is only as tall as Lines Shown asks.
+    if not self.expanded then
+        lines = Clamp(math.floor(tonumber(cfg.MinimizedLines) or MIN_LINES), 1, MAX_MINIMIZED_LINES)
+        height = 0
+    end
+    -- Fit to the Words: no taller than the line's words need, the size above being the most.
+    -- Not while the handle is dragged, where the panel follows the pointer.
+    if cfg.FitText ~= false and not self.sizing then
+        local needed = self:TextLines(inner)
+        if needed and needed < lines then
+            lines, height = math.max(needed, self.expanded and MIN_LINES or 1), 0
+        end
+    end
     local captionHeight = lines * lineHeight
     height = math.max(height, padTop + headerHeight + captionHeight + queueHeight + padBottom + footerHeight)
     frame:SetSize(width, height)
@@ -763,6 +777,19 @@ function Skin:PlaceDefault()
     end
 end
 
+--- How many lines the words of the line shown take at `width`, the captions' width: the
+--- captions wrapped there, with DialogueUI's empty line between paragraphs. nil while the
+--- captions hold another clip's words, or none.
+function Skin:TextLines(width)
+    if not (self.clip and Transcript.clip == self.clip and Transcript.frame) then return nil end
+    -- Wrapped at this width first: the captions reflow only when their width changes.
+    if Transcript.frame:GetWidth() ~= width then
+        Transcript:Dock(self.frame, self.content, "TOPLEFT", 0, 0, width, math.max(1, Transcript.frame:GetHeight()))
+    end
+    local count = Transcript.lines and #Transcript.lines or 0
+    return count > 0 and count or nil
+end
+
 function Skin:RefreshConfig(original)
     self:Initialize(original.frame)
     local frame = self.frame
@@ -785,10 +812,12 @@ function Skin:Update()
         self:HideTooltip()
         self.clip, self.seconds, self.offset = clip, 0, 0
     end
-    -- The queue's length decides how much of the body the captions get.
-    local waiting = Waiting()
-    if waiting ~= self.laidOutFor then
-        self.laidOutFor = waiting
+    -- The queue's length decides how much of the body the captions get, and the line's words
+    -- how tall the panel is (Fit to the Words): a new line, or its words arriving late.
+    local textLines = Transcript.clip == clip and Transcript.lines and #Transcript.lines or 0
+    local key = Waiting() .. ":" .. textLines
+    if key ~= self.laidOutFor then
+        self.laidOutFor = key
         self:Layout()
     end
     self:SetVisible(true)

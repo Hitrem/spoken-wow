@@ -145,6 +145,8 @@ env.Addon:SetPlayerStyle("dialogueui")
 env.Addon.db.profile.Frame.DialogueUI.Scale = 0.9
 Page:Reset()
 Expect("the page's Defaults puts the window's settings back", env.Addon.db.profile.Frame.DialogueUI.Scale, 0.65)
+Expect("the page has Fit to the Words", Live(env.L.OPT_DUI_FIT_TEXT), true)
+Expect("...and the folded window's Lines Shown", Live(env.L.TRANSCRIPT_LINES, env.L.OPT_DUI_LINES_TIP), true)
 
 ---------------------------------------------------------------- folded or open
 Skin:SetExpanded(false)
@@ -216,6 +218,46 @@ env.PlayerFrame:RefreshConfig()
 Expect("...and no longer follows DialogueUI's", Skin.frame.anchor, dragged)
 env.PlayerFrame:Reset()
 Expect("reset, it goes back to where DialogueUI puts its window", saved.DialogueUI == nil and At(960 + 480 * 0.8), true)
+
+---------------------------------------------------------------- as tall as the words need
+local panel = env.Addon.db.profile.Frame.DialogueUI
+Expect("Fit to the Words is on by default", panel.FitText, true)
+Expect("...and the folded window shows two lines", panel.MinimizedLines, 2)
+local function Play(text)
+    Spoken:StopAll()
+    quests:Enqueue(H.Clip({ length = 30, present = { header = "Marshal McBride", label = "Kobold Camp Cleanup",
+        transcript = text, portrait = { kind = "none" } } }))
+    env.PlayerFrame:RefreshConfig()
+end
+local long = string.rep("The kobolds dig deeper into the mine every night. ", 60)
+Play(long)
+Expect("the window shows the line the captions hold", T.clip ~= nil and T.clip == Skin.clip, true)
+local ceiling = Skin.lines
+Expect("a long line fills the window to its size", ceiling > 8, true)
+Play("Go north.")
+Expect("a short one takes only the lines it needs", Skin.lines, 2)
+Expect("...the window shorter for it", Skin.frame:GetHeight() < 734, true)
+panel.FitText = false
+env.PlayerFrame:RefreshConfig()
+Expect("with Fit to the Words off, it keeps its full size", Skin.lines, ceiling)
+panel.FitText = true
+saved.DialogueUIHeight = 900
+env.PlayerFrame:RefreshConfig()
+Expect("a dragged height is the most it grows to, not its size", Skin.lines, 2)
+saved.DialogueUIHeight = nil
+Play(long)
+Skin:SetExpanded(false)
+Expect("folded, it shows two lines", Skin.lines, 2)
+panel.MinimizedLines = 5
+env.PlayerFrame:RefreshConfig()
+Expect("...or as many as its Lines Shown says", Skin.lines, 5)
+Play("Go north.")
+Expect("...and no more than the words need", Skin.lines, 1)
+Skin:SetExpanded(true)
+Page:Reset()
+Expect("the page's Defaults puts both back", panel.MinimizedLines == 2 and panel.FitText == true, true)
+Spoken:StopAll()
+env.PlayerFrame:RefreshConfig()
 
 ---------------------------------------------------------------- what it shows
 env.Options:Preview("dialogueui")

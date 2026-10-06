@@ -116,6 +116,15 @@ function Page:Setup()
         -- Shown at once as it will open, folded or not.
         function() DialogueUIPlayer:SetExpanded(Panel().Expanded ~= false); refresh() end,
         function(v) return v == false and L.OPT_DUI_MODE_MINIMIZED or L.OPT_DUI_MODE_EXPANDED end))
+    -- The folded panel's lines, the Small Window's Lines Shown for this window. Live whatever
+    -- Opens As says: the corner button folds the panel either way.
+    layout:Indent()
+    Window(layout:Slider(L.TRANSCRIPT_LINES, 1, DialogueUIPlayer.MAX_MINIMIZED_LINES, 1,
+        function() return Panel().MinimizedLines or 2 end, function(v) Panel().MinimizedLines = v end, refresh,
+        Layout.Number, L.OPT_DUI_LINES_TIP))
+    layout:Outdent()
+    Window(layout:Checkbox(L.OPT_DUI_FIT_TEXT, L.OPT_DUI_FIT_TEXT_TIP,
+        function() return Panel().FitText ~= false end, function(v) Panel().FitText = v end, refresh))
 
     layout:Section(L.OPT_TEXT_TITLE)
     Words(layout:Checkbox(L.OPT_DUI_LINK_FONT, L.OPT_DUI_LINK_FONT_TIP,
