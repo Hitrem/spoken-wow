@@ -46,7 +46,9 @@ How the captions in the window follow the voice:
 | **Off** | The text holds still; the wheel moves it. Clicking the captions turns following back on, Centered. |
 
 With two caption lines, Centered and Reading Line both keep the line being read on top
-with the next one under it; the difference shows on taller pages. The glide needs the
+with the next one under it; the difference shows on taller pages. With **Type Words Out** on,
+the lines below the voice are still blank, so both keep the line being read on the last row
+instead, with what has been read above it, as roll-up broadcast captions do. The glide needs the
 client to clip the captions' frame (`SetClipsChildren`); where it cannot, the text steps a
 line at a time. `Transcript:GetScroll` and `Transcript:ScrollTo` let a player draw its own
 scrollbar. Subtitles Only pages on its own and is not affected.

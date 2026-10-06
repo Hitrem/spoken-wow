@@ -245,7 +245,12 @@ end
 --- Where the first visible line goes for the voice on `line`, in the gliding modes.
 function Transcript:TargetFor(line)
     local n = LineCount()
-    local above = Mode() == "reading" and math.floor(n / 3) or math.floor((n - 1) / 2)
+    local above
+    -- Typed out, every line below the voice is still blank: keep it on the last row, with
+    -- what has been read above it.
+    if Config().Typewriter then above = n - 1
+    elseif Mode() == "reading" then above = math.floor(n / 3)
+    else above = math.floor((n - 1) / 2) end
     return Clamp(line - above, 1, self:MaxTop())
 end
 
