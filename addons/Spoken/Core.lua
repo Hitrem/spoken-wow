@@ -299,6 +299,15 @@ local function WatchPausedQueue()
     end)
 end
 
+-- The Forever client's gamepad UI takes over every popup as it opens, inside the code that
+-- opened it. Opened by an addon, that taints the gamepad's bindings: the next close is blocked,
+-- and the "blocked from an action" dialog it raises hangs the client (#165). There the chat line
+-- says it alone. pcall, because 1.12 raises on a CVar it has never heard of.
+function Addon:IsGamepadUI()
+    local ok, style = pcall(GetCVar, "InputDeviceInterfaceStyle")
+    return ok and style == "1"
+end
+
 -- Folders an older release installed, which nothing ships any more: Spoken's own before it was
 -- renamed, and the old names of Quests and Zones, whether the addons themselves or the empty
 -- folders that stood in for them. Loaded beside this release, the old code narrates over it and
@@ -331,7 +340,7 @@ function Addon:RetireOldFolders()
     end
     local text = format(L.OLD_FOLDERS_FMT, "• " .. table.concat(found, "\n• "))
     print("|cff66bbffSpoken:|r " .. text)
-    if StaticPopupDialogs and StaticPopup_Show then
+    if StaticPopupDialogs and StaticPopup_Show and not self:IsGamepadUI() then
         -- Left-aligned while shown, for the list: the popup frames are shared by every addon and
         -- centred by default, so the alignment goes back as it closes.
         local function Body(dialog)
