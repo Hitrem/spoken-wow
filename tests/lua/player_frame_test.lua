@@ -383,10 +383,13 @@ do
         if section.shown then table.insert(shown, section) end
     end
     local first, last = shown[1], shown[#shown]
+    -- The first title's words start 16 down its band and 7 in from the rows' edge.
     local pads = { group.top - (first.heading.layoutY - 16), last.bottom - group.bottom,
-        first.left - group.left, group.right - (first.left + first.width) }
-    Expect("the box's padding is the same on every side", Distinct(pads), 1)
-    Expect("...16, more than the rows' own spacing", pads[1], 16)
+        first.left + 7 - group.left }
+    Expect("the titles as far from the box's top and bottom as from its left", Distinct(pads), 1)
+    Expect("...23, more than the rows' own spacing", pads[1], 23)
+    Expect("...and the rows in by as much on the right as on the left", group.right - (first.left + first.width),
+        first.left - group.left)
     Expect("...and the box is as wide as the module cards", group.left == layout.left
         and group.right == layout.left + layout:Width(), true)
 end

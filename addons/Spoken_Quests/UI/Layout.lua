@@ -65,9 +65,12 @@ local MAX_WIDTH = 2000
 local RIGHT_MARGIN = 10       -- room for the scroll bar
 local LABEL_PADDING = 24      -- room a button's end caps take either side of its label
 local BOX_MARGIN = 0          -- the rows' own edges: frames a page draws itself line up with them
--- Inside a group's box, the same on every side: the box spans the cards' width, and what is in it
--- moves in from its edges by this much, down to the first section's title and up from the last.
+-- Inside a group's box: the box spans the cards' width, and what is in it moves in from its sides
+-- by GROUP_PAD. A section's title sits SECTION_TITLE_X further in, so the box keeps that much
+-- above its first title and under its last row too: the titles are as far from its top and
+-- bottom as from its left.
 local GROUP_PAD = 16
+local GROUP_PAD_Y = GROUP_PAD + SECTION_TITLE_X
 local GROUP_LINE = { 1, 1, 1, 0.22 }  -- the box's line where the client has no backdrops
 local GOLD = { 1, 0.82, 0 }      -- NORMAL_FONT_COLOR: a setting's name
 local WHITE = { 1, 1, 1 }        -- HIGHLIGHT_FONT_COLOR: a page's and a section's title
@@ -453,7 +456,7 @@ function Layout:Reflow()
                         if not first and Visible(row) then first = section end
                     end
                 end
-                y = y - GROUP_PAD + ((first and first.text) and SECTION_TITLE_Y or 0)
+                y = y - GROUP_PAD_Y + ((first and first.text) and SECTION_TITLE_Y or 0)
                 -- Everything inside, in from the box's sides by its padding, until the group ends.
                 item.baseLeft = self.left
                 self.left, self.inset = self.left + GROUP_PAD, GROUP_PAD
@@ -464,7 +467,7 @@ function Layout:Reflow()
             local group = item.group
             if group.shown then
                 self.left, self.inset = group.baseLeft or self.left, nil
-                y = y - GROUP_PAD
+                y = y - GROUP_PAD_Y
                 group.bottom = y
                 -- The cards' width: from the rows' left edge across the page's width.
                 group.left, group.right = self.left - BOX_MARGIN, self.left + self:Width() + BOX_MARGIN
