@@ -41,6 +41,12 @@ local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map_01]]
 -- button inside the open map into the map's own navigation, and an addon's buttons there taint
 -- it: closing the map with the gamepad is then blocked, and the "blocked from an action" dialog
 -- that raises hangs the client.
+--
+-- A workaround for the gamepad UI alone, paid for by every player: the panel no longer fades with
+-- the map as the player moves, and follows a scale or level the map takes while open only at its
+-- next refresh. Once the client stops tainting a map with an addon's buttons in it (check on a
+-- newer build), the panel belongs back in WorldMapFrame, and FollowMap and the map's OnHide hook
+-- go with it.
 local function NewPanel()
 	local ok, frame = pcall(CreateFrame, "Frame", "SpokenZonesPanel", UIParent, "DefaultPanelFlatTemplate")
 	if ok and frame and frame.SetTitle then
