@@ -412,8 +412,8 @@ source:Enqueue(override)
 Check(T.text=='Display this instead','explicit source transcript takes precedence')
 Q:RemoveAllSoundsFromQueue()
 
--- Scroll modes. Centered keeps the line being read in the middle; reading keeps it a third
--- of the way down; both glide there, a fraction of a line at a time.
+-- Scroll modes. Centered keeps the line being read in the middle and glides there, a
+-- fraction of a line at a time.
 E.Addon:Layout().CaptionsExpanded=true; cfg.ScrollMode='centered'; T:RefreshConfig()
 source:Enqueue(Clip('scroll',long,60))
 local function Settle() T.frame:Fire('OnUpdate',1) end
@@ -432,8 +432,6 @@ Settle()
 Check(T.top==target,'and settles on the line')
 local _,settledShown=Captions()
 Check(settledShown==8,'with the page back to its eight lines')
-cfg.ScrollMode='reading'; T:Update(); Settle()
-Check(T.topTarget==ActiveLine()-2,'reading keeps the line a third of the way down')
 cfg.Typewriter=true; T:Update(); Settle()
 Check(T.topTarget==ActiveLine()-7,'typed out, the line being read is the last of eight')
 local typed=Captions()

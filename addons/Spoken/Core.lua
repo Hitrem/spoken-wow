@@ -84,7 +84,7 @@ Defaults = {
         },
         Transcript = {
             Enabled = true,
-            -- How the captions follow the voice: "centered", "reading", "page" or "off".
+            -- How the captions follow the voice: "centered", "page" or "off".
             -- See UI/Transcript.lua.
             ScrollMode = "centered",
             Lines = 2,
