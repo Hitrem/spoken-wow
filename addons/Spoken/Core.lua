@@ -40,9 +40,6 @@ Defaults = {
         -- Unset, each module keeps the choice it had before there was one setting for all.
         Language = {},
         Audio = {
-            -- A string, because that is what PlaySoundFile takes. The quests addon keeps
-            -- its enum internally and converts at the boundary.
-            SoundChannel = "Master",
             -- Seconds of quiet between one line and the next, on top of each module's own short
             -- gap: back to back, a new line started before the last had settled.
             LineGap = 1,

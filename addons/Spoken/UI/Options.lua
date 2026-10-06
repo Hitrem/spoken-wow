@@ -20,8 +20,6 @@ local pendingLinks = {}
 -- Spoken addon carries a copy of, so the three panels read alike.
 local Layout = SpokenLayout
 
-local CHANNELS = { "Master", "SFX", "Music", "Ambience", "Dialog" }
-
 -- The three ways of showing a line, by the name Addon:PlayerStyle gives each.
 local STYLE_LABELS = {
     minimal = L.OPT_STYLE_MINIMAL,
@@ -201,16 +199,6 @@ function Options:Styles()
     table.insert(styles, "none")
     return styles
 end
-
--- Display labels for the values above, which stay English internally: the stored
--- channel name is what playback passes to the sound API.
-local CHANNEL_LABELS = {
-    Master = L.OPT_CHANNEL_MASTER,
-    SFX = L.OPT_CHANNEL_SFX,
-    Music = L.OPT_CHANNEL_MUSIC,
-    Ambience = L.OPT_CHANNEL_AMBIENCE,
-    Dialog = L.OPT_CHANNEL_DIALOG,
-}
 
 local function Build(canvas)
     panel = CreateFrame("Frame", "SpokenOptionsPanel", UIParent)
@@ -473,13 +461,8 @@ local function Build(canvas)
         function(code) language().Fallback = code end, nil,
         function(code) return code == "none" and L.OPT_FALLBACK_NONE or Native(code) end)
 
+    -- No choice of channel: the voices play on Master (Sources.lua, GetChannel).
     layout:Section(L.OPT_AUDIO_TITLE)
-    layout:Dropdown(L.OPT_CHANNEL, L.OPT_CHANNEL_TIP, CHANNELS,
-        function() return audio().SoundChannel end,
-        function(v) audio().SoundChannel = v end,
-        -- The handle belongs to the old channel, so a line already speaking cannot move.
-        function() SoundQueue:RemoveAllSoundsFromQueue(); Options:UpdateRows() end,
-        function(channel) return CHANNEL_LABELS[channel] or channel end)
     if audio().AutoToggleDialog ~= nil then
         layout:Checkbox(L.OPT_MUTE_DIALOGUE,
             Version.IsLegacyVanilla and L.OPT_MUTE_DIALOGUE_TIP_VANILLA or L.OPT_MUTE_DIALOGUE_TIP,
@@ -512,8 +495,6 @@ local function Build(canvas)
                 function() return lower()[channel] end, function(v) lower()[channel] = v end, apply,
                 nil, row[3])
             Requires(slider, function() return lower().Enabled end, L.REASON_LOWER)
-            -- Never lowered while it carries the voices.
-            Requires(slider, function() return audio().SoundChannel ~= channel end, L.REASON_VOICE_CHANNEL)
             if channel == "Dialog" then
                 -- With the game's dialogue silenced outright, there is no level to set.
                 Requires(slider, function() return not audio().AutoToggleDialog end, L.REASON_DIALOG_MUTED)

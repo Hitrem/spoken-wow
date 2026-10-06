@@ -52,7 +52,7 @@ local subtitlesTop = typing.layoutY
 env.Addon:SetPlayerStyle("minimal"); Options:UpdateRows()
 Expect("choosing the window brings its settings back", Shown(size), true)
 Expect("...and hides the subtitles'", Shown(typing), false)
-Expect("the rows below move up into the space", Row(home, "Volume Follows").layoutY > -100000, true)
+Expect("the rows below move up into the space", Row(home, "Silence NPC Voices").layoutY > -100000, true)
 env.Addon:SetPlayerStyle("subtitle"); Options:UpdateRows()
 Expect("...and back down when subtitles return", typing.layoutY, subtitlesTop)
 
@@ -72,10 +72,8 @@ local music = Row(home, "Music")
 env.Addon.db.profile.Audio.LowerOthers.Enabled = false; Options:UpdateRows()
 Expect("the music level waits for its switch", music.layoutReason, L.REASON_LOWER)
 env.Addon.db.profile.Audio.LowerOthers.Enabled = true
-env.Addon.db.profile.Audio.SoundChannel = "Music"; Options:UpdateRows()
-Expect("...and is never offered while the voices play through music", music.layoutReason, L.REASON_VOICE_CHANNEL)
-env.Addon.db.profile.Audio.SoundChannel = "Master"; Options:UpdateRows()
-Expect("...but is with them on Master", music.layoutReason, nil)
+Options:UpdateRows()
+Expect("...and is offered with it on", music.layoutReason, nil)
 
 ---------------------------------------------------------------- voice only
 -- Nothing on screen is a way of showing lines like the other three, not a switch apart.
