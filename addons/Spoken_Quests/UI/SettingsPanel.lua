@@ -103,7 +103,10 @@ function SettingsPanel:Setup()
     local greetingFirst = layout:Checkbox(L.OPT_PANEL_GAME_GREETING_FIRST,
         L.OPT_PANEL_GAME_GREETING_FIRST_TIP,
         function() return audio().GreetingFirst end,
-        function(value) audio().GreetingFirst = value end)
+        function(value)
+            audio().GreetingFirst = value
+            if value then GreetingFirst:SetDialogApart() end
+        end)
     layout:Requires(greetingFirst, function() return Addon:IsAutoplayOn() end, L.REASON_AUTOPLAY)
     -- The two rarely wanted, apart from the everyday choices above.
     layout:Section(L.OPT_SECTION_EXTRAS)

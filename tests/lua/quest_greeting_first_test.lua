@@ -11,17 +11,27 @@ local QUESTS = here .. "/../../addons/Spoken_Quests/"
 local SPOKEN = here .. "/../../addons/Spoken/"
 local world = stub.world
 
--- The game's sounds: each handle plays at a volume until a time.
+-- The game's sounds: each handle plays until a time, at a volume of its own or, an NPC's voice,
+-- at Master x Dialog as the sliders are now.
 local sounds, nextHandle = {}, 1000
 local function Sound(volume, seconds)
     nextHandle = nextHandle + 1
     sounds[nextHandle] = { volume = volume, ends = world.time + seconds }
     return nextHandle
 end
+local function Voice(seconds)
+    return Sound("dialog", seconds)
+end
 _G.C_Sound = {
     PlaySoundWithOptions = function(options) return true, Sound(options.volumeOverride or 1, 0.5) end,
     IsPlaying = function(handle) return sounds[handle] ~= nil and world.time < sounds[handle].ends end,
-    GetSoundScaledVolume = function(handle) return sounds[handle] and sounds[handle].volume end,
+    GetSoundScaledVolume = function(handle)
+        local sound = sounds[handle]
+        if sound and sound.volume == "dialog" then
+            return tonumber(world.cvars.Sound_MasterVolume) * tonumber(world.cvars.Sound_DialogVolume)
+        end
+        return sound and sound.volume
+    end,
 }
 local stopSound = _G.StopSound
 _G.StopSound = function(handle, ...)
@@ -42,6 +52,9 @@ stub.Advance(2)
 local Spoken = _G.Spoken
 _G.SpokenEnv.Addon.db.profile.Audio.AutoToggleDialog = true
 _G.SpokenEnv.Addon.db.profile.Audio.SoundChannel = "Master"
+-- The other sliders stay where they are set: lowered under a line, they would not be the levels
+-- Dialog is compared with.
+_G.SpokenEnv.Addon.db.profile.Audio.LowerOthers.Enabled = false
 VO.Addon.db.profile.Audio.GreetingFirst = true
 world.npcName, world.npcGUID = "Skorn Whitecloud", "Creature-0-0-0-0-3052-0"
 world.title, world.questText = "Test Quest", "Go."
@@ -49,7 +62,6 @@ for cvar, value in pairs({ Sound_MasterVolume = "1", Sound_DialogVolume = "0.8",
     Sound_MusicVolume = "0.5", Sound_AmbienceVolume = "0.6" }) do
     world.cvars[cvar] = value
 end
-local VOICE = 0.8
 
 -- Each window a quest of its own: a quest already read is not read again.
 local quest = 100
@@ -60,7 +72,7 @@ local function Played()
 end
 -- The NPC greets as its quest window opens.
 local function OpenQuest(greeting)
-    if greeting then Sound(VOICE, greeting) end
+    if greeting then Voice(greeting) end
     quest = quest + 1
     world.questID = quest
     stub.ShowPanel("QuestFrameDetailPanel")
@@ -82,11 +94,13 @@ Expect("...and waits while the NPC speaks", Played(), false)
 Expect("...saying why", clip and Spoken:GetHeldReason(clip), VO.L.QUEUE_HELD_GREETING)
 stub.Advance(0.5)
 Expect("it starts once the greeting is over", Played(), true)
-Expect("...and silences the NPC from then on", GetCVar("Sound_EnableDialog"), "0")
+Expect("...and fades the NPC out rather than cutting it", GetCVar("Sound_EnableDialog"), "1")
+stub.Advance(0.6)
+Expect("...silent once the fade is over", GetCVar("Sound_EnableDialog"), "0")
 Close()
 
 -- Gossip, then a quest picked from it: the NPC greeted once, as the gossip opened.
-Sound(VOICE, 0.3)
+Voice(0.3)
 stub.ShowGossip("Well met.")
 stub.FireEvent("GOSSIP_SHOW")
 stub.Advance(1)
@@ -105,14 +119,18 @@ stub.Advance(0.5)
 Expect("...and then starts", Played(), true)
 Close()
 
--- The Dialog slider at the same level as another: the voice cannot be told apart.
+-- The Dialog slider at the same level as another: Spoken moves it 1% so the voice can be told apart.
 world.cvars.Sound_DialogVolume = "1"
-OpenQuest(0.3)
-stub.Advance(1.2)
-Expect("with Dialog at SFX's level the line waits 1.5 seconds all the same", Played(), false)
+OpenQuest(2.5)
+Expect("with Dialog at SFX's level Spoken moves it 1% apart", world.cvars.Sound_DialogVolume, "0.99")
+stub.Advance(2.3)
+Expect("...and waits for a long greeting to the end", Played(), false)
 stub.Advance(0.5)
-Expect("...and then starts", Played(), true)
+Expect("...then starts", Played(), true)
 Close()
+world.cvars.Sound_DialogVolume = "1"
+VO.GreetingFirst:SetDialogApart()
+Expect("...and does so as the setting is turned on too", world.cvars.Sound_DialogVolume, "0.99")
 world.cvars.Sound_DialogVolume = "0.8"
 
 -- The game's dialogue switched off: there is nothing to wait for.
@@ -123,7 +141,7 @@ Expect("with the game's dialogue off the line does not wait", Played(), true)
 Close()
 world.cvars.Sound_EnableDialog = "1"
 
--- Off, the quest window silences the NPC as it opens, as before.
+-- Off, the quest window silences the NPC as it opens, as before, and the line cuts the NPC.
 VO.Addon.db.profile.Audio.GreetingFirst = false
 OpenQuest(1.2)
 Expect("turned off, the quest window silences the NPC as it opens", GetCVar("Sound_EnableDialog"), "0")

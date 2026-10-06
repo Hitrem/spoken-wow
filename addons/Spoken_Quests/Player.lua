@@ -204,7 +204,9 @@ function Player:Prepare(soundData)
     soundData.priority = gossip and "low" or "normal"
     -- Read while the NPC's window is open: its voice is cut as the line starts, not faded, so
     -- none of its greeting is heard under the line.
-    soundData.cutsGameDialogue = true
+    -- With Game Greeting First the NPC has had its say, so it is faded rather than cut, should the
+    -- wait for its greeting have been too short.
+    soundData.cutsGameDialogue = not (GreetingFirst and GreetingFirst:IsOn())
     soundData.present = {
         header = soundData.name or "",
         label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),

@@ -9,8 +9,9 @@ setfenv(1, VoiceOver)
 -- (SpokenGreetingDelay, shared on Spoken's Discord): a sound played at no volume hands back a
 -- handle number next to the greeting's, the handles around it are asked whether they are
 -- playing, and one playing at exactly Master x Dialog volume is the voice. That needs the Dialog
--- slider at a level none of SFX, Music or Ambience is at. Without that, or on a client without
--- these calls, the line waits a fixed 1.5 seconds.
+-- slider at a level none of SFX, Music or Ambience is at, so where it shares one Spoken moves it 1%
+-- (SetDialogApart), which cannot be heard. On a client without these calls, or for the one greeting
+-- already playing as Dialog is moved, the line waits a fixed 1.5 seconds.
 GreetingFirst = {}
 
 local FALLBACK, END_GAP, POLL = 1.5, 0.05, 0.025
@@ -64,6 +65,40 @@ local function VoiceVolume()
         end
     end
     return master * dialog
+end
+
+--- Moves the Dialog slider 1% away from SFX, Music and Ambience where it shares a level with one,
+--- and says so in chat. Kept rather than put back: a greeting starts before Spoken hears of the
+--- window, so the level has to be apart already. Returns whether it moved.
+function GreetingFirst:SetDialogApart()
+    local dialog = Number("Sound_DialogVolume")
+    if not dialog or dialog <= 0 then
+        return false
+    end
+    local others = {}
+    for _, channel in ipairs({ "SFX", "Music", "Ambience" }) do
+        table.insert(others, Number("Sound_" .. channel .. "Volume"))
+    end
+    local function Shared(volume)
+        for _, other in ipairs(others) do
+            if math.abs(other - volume) < 0.00001 then
+                return true
+            end
+        end
+        return false
+    end
+    if not Shared(dialog) then
+        return false
+    end
+    for _, step in ipairs({ -0.01, 0.01, -0.02, 0.02, -0.03, 0.03 }) do
+        local volume = math.floor((dialog + step) * 100 + 0.5) / 100
+        if volume > 0 and volume <= 1 and not Shared(volume) then
+            SetCVar("Sound_DialogVolume", tostring(volume))
+            print(format(L.GREETING_DIALOG_APART, math.floor(volume * 100 + 0.5)))
+            return true
+        end
+    end
+    return false
 end
 
 local function CanListen()
@@ -166,6 +201,7 @@ function GreetingFirst:Open()
     if Utils:IsNPCObjectOrItem() or Spoken:IsPlaying() then
         return
     end
+    self:SetDialogApart()
     local expected = VoiceVolume()
     if expected == 0 then
         return
@@ -216,4 +252,7 @@ function GreetingFirst:Setup()
         pcall(frame.RegisterEvent, frame, event)
     end
     frame:SetScript("OnEvent", function() GreetingFirst:Closed() end)
+    if self:IsOn() then
+        self:SetDialogApart()
+    end
 end
