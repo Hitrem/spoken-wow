@@ -125,6 +125,17 @@ function Addon:InitDB()
         return
     end
     self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults)
+    -- Captions once only followed the voice or not, by AutoScroll; ScrollMode replaced it. A
+    -- player who had turned following off keeps it off. Every profile, not just this one.
+    for _, profile in pairs(self.db.sv and self.db.sv.profiles or {}) do
+        local transcript = type(profile) == "table" and profile.Transcript
+        if type(transcript) == "table" and transcript.AutoScroll ~= nil then
+            if transcript.AutoScroll == false and (transcript.ScrollMode or "line") == "line" then
+                transcript.ScrollMode = "off"
+            end
+            transcript.AutoScroll = nil
+        end
+    end
     -- Another profile chosen, copied over this one or reset, from Spoken's page or anywhere
     -- else: its settings apply now rather than at the next reload.
     if self.db.RegisterCallback then
