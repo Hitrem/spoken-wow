@@ -1194,7 +1194,7 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
     end
     for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "Locale/deDE", "Locale/esES",
         "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "FuzzySearch",
-        "EasterEggs", "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
+        "EasterEggs", "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
@@ -1219,7 +1219,7 @@ function M.LoadQuestsAlone(addonDirectory)
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
     for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "FuzzySearch", "EasterEggs",
-        "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
+        "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO

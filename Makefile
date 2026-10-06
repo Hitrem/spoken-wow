@@ -75,6 +75,8 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/zones_flight_test.lua
 	@$(LUA) tests/lua/zones_pending_test.lua
 	@$(LUA) tests/lua/quests_source_test.lua
+	@$(LUA) tests/lua/quest_npc_silence_test.lua
+	@$(LUA) tests/lua/quest_greeting_first_test.lua
 	@$(LUA) tests/lua/data_modules_test.lua
 	@$(LUA) tests/lua/quests_language_test.lua
 	@$(LUA) tests/lua/player_required_test.lua

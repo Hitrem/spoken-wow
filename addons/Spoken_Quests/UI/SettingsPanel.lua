@@ -99,6 +99,12 @@ function SettingsPanel:Setup()
         L.OPT_PANEL_STOP_ON_CLOSE_TIP,
         function() return audio().StopAudioOnDisengage end,
         function(value) audio().StopAudioOnDisengage = value end)
+    -- Only what autoplay reads waits for the greeting, so with it off this does nothing.
+    local greetingFirst = layout:Checkbox(L.OPT_PANEL_GAME_GREETING_FIRST,
+        L.OPT_PANEL_GAME_GREETING_FIRST_TIP,
+        function() return audio().GreetingFirst end,
+        function(value) audio().GreetingFirst = value end)
+    layout:Requires(greetingFirst, function() return Addon:IsAutoplayOn() end, L.REASON_AUTOPLAY)
     -- The two rarely wanted, apart from the everyday choices above.
     layout:Section(L.OPT_SECTION_EXTRAS)
     local followup = layout:Checkbox(L.OPT_PANEL_FOLLOWUP,

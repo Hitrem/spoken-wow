@@ -143,6 +143,12 @@ function SourceMethods:RecheckGates()
     return SoundQueue:RecheckGates(self)
 end
 
+--- One of this source's gates has opened: start what it held now, rather than at the next
+--- retry, up to a second later.
+function SourceMethods:Retry()
+    SoundQueue:Advance()
+end
+
 ---@return boolean audible
 ---@return string|nil reason
 function SourceMethods:CanPlay()
