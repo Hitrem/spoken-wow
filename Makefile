@@ -84,6 +84,7 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/zones_lore_ui_test.lua
 	@$(LUA) tests/lua/zones_map_click_test.lua
 	@$(LUA) tests/lua/zones_map_highlight_test.lua
+	@$(LUA) tests/lua/zones_discovery_test.lua
 	@$(LUA) tests/lua/subtitle_pages_test.lua
 	@$(LUA) tests/lua/defaults_test.lua
 	@$(LUA) tests/lua/scroll_mode_upgrade_test.lua
