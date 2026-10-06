@@ -332,7 +332,9 @@ end
 Expect("no control escapes the row it was given", escaped, 0)
 
 -- Label on the left, control on the right, ending at the same edge for every row: a panel
--- whose controls end at different places reads as several panels.
+-- whose controls end at different places reads as several panels. The narrator style's box
+-- narrows its rows by its padding on both sides, so their middle, where the controls start,
+-- stays where every other row's is.
 local columns, captioned = {}, 0
 for _, child in ipairs(host.children) do
     if child.layoutColumn then
@@ -343,7 +345,7 @@ end
 Expect("there are labelled controls to line up", captioned > 1, true)
 local distinctColumns = 0
 for _ in pairs(columns) do distinctColumns = distinctColumns + 1 end
-Expect("...and every one of them ends at the same edge", distinctColumns, 1)
+Expect("...and every one of them ends at the same edge, inside the box too", distinctColumns, 1)
 
 -- From where each section ends -- the bottom of its box, or of its cards where it has no box --
 -- to the next one's title. A group's title (the narrator style's settings) is a heading too, and
@@ -368,8 +370,8 @@ for _, item in ipairs(_G.SpokenOptionsPanel.layout.items) do
 end
 Expect("every heading the same distance below the section or box above", Distinct(headingGaps), 1)
 Expect("the narrator style's settings are a group of their own, in a box", groups, 1)
--- The box's padding the same on every side: to the rows' sides, to the first section's title
--- (16 down its heading's band) and under the last section.
+-- The box as wide as the module cards above it, and what is inside it in by the same padding on
+-- every side: to the rows' sides, to the first section's title (16 down its band), under the last.
 do
     local layout = _G.SpokenOptionsPanel.layout
     local group
@@ -382,9 +384,11 @@ do
     end
     local first, last = shown[1], shown[#shown]
     local pads = { group.top - (first.heading.layoutY - 16), last.bottom - group.bottom,
-        layout.left - group.left, group.right - (layout.left + layout:Width()) }
+        first.left - group.left, group.right - (first.left + first.width) }
     Expect("the box's padding is the same on every side", Distinct(pads), 1)
-    Expect("...as much as the page keeps on its right", pads[1], 10)
+    Expect("...16, more than the rows' own spacing", pads[1], 16)
+    Expect("...and the box is as wide as the module cards", group.left == layout.left
+        and group.right == layout.left + layout:Width(), true)
 end
 
 -- A heading introduces the section under it. Sit it midway and it reads as belonging to

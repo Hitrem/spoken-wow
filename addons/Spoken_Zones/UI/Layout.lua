@@ -65,9 +65,9 @@ local MAX_WIDTH = 2000
 local RIGHT_MARGIN = 10       -- room for the scroll bar
 local LABEL_PADDING = 24      -- room a button's end caps take either side of its label
 local BOX_MARGIN = 0          -- the rows' own edges: frames a page draws itself line up with them
--- Inside a group's box, the same on every side: from its edges to the rows' sides, to the first
--- section's title and under the last section. No more than the room the page keeps on its right.
-local GROUP_PAD = RIGHT_MARGIN
+-- Inside a group's box, the same on every side: the box spans the cards' width, and what is in it
+-- moves in from its edges by this much, down to the first section's title and up from the last.
+local GROUP_PAD = 16
 local GROUP_LINE = { 1, 1, 1, 0.22 }  -- the box's line where the client has no backdrops
 local GOLD = { 1, 0.82, 0 }      -- NORMAL_FONT_COLOR: a setting's name
 local WHITE = { 1, 1, 1 }        -- HIGHLIGHT_FONT_COLOR: a page's and a section's title
@@ -243,10 +243,13 @@ end
 --- the page was designed at, nor so wide that a row is hard to read across.
 function Layout:Width()
     local available = self.parent.GetWidth and self.parent:GetWidth() or 0
-    local width = (available or 0) - self.left - RIGHT_MARGIN
-    if width < PAGE_WIDTH then return PAGE_WIDTH end
-    if width > MAX_WIDTH then return MAX_WIDTH end
-    return math.floor(width)
+    -- The page's width, kept between its narrowest and widest; inside a group's box, less its
+    -- padding on both sides (self.left has moved in by one of them).
+    local inset = self.inset or 0
+    local width = (available or 0) - (self.left - inset) - RIGHT_MARGIN
+    if width < PAGE_WIDTH then width = PAGE_WIDTH end
+    if width > MAX_WIDTH then width = MAX_WIDTH end
+    return math.floor(width) - inset * 2
 end
 
 --- Remember a row for search: what it is called, what its tooltip says, and where it sits.
@@ -368,7 +371,9 @@ local function PlaceRows(layout, rows, y)
                     if other.line == row.line and Visible(other) then table.insert(line, other) end
                 end
             end
-            row.place(lineTop, row.x + (slot - 1) * math.floor(layout:Width() / 2), slot, row.columns and line or nil)
+            -- row.x is where the row was made; inside a group's box, in by its padding too.
+            row.place(lineTop, row.x + (layout.inset or 0) + (slot - 1) * math.floor(layout:Width() / 2), slot,
+                row.columns and line or nil)
             row.control.layoutY, row.control.layoutHeight = lineTop, row.height
             -- A row of cards is one row holding several frames, and search lands on any of them.
             for _, member in ipairs(row.members or {}) do
@@ -449,15 +454,20 @@ function Layout:Reflow()
                     end
                 end
                 y = y - GROUP_PAD + ((first and first.text) and SECTION_TITLE_Y or 0)
+                -- Everything inside, in from the box's sides by its padding, until the group ends.
+                item.baseLeft = self.left
+                self.left, self.inset = self.left + GROUP_PAD, GROUP_PAD
                 -- Its first section starts at the padding, with no gap of its own.
                 started = false
             end
         elseif item.kind == "groupEnd" then
             local group = item.group
             if group.shown then
+                self.left, self.inset = group.baseLeft or self.left, nil
                 y = y - GROUP_PAD
                 group.bottom = y
-                group.left, group.right = self.left - GROUP_PAD, self.left + self:Width() + GROUP_PAD
+                -- The cards' width: from the rows' left edge across the page's width.
+                group.left, group.right = self.left - BOX_MARGIN, self.left + self:Width() + BOX_MARGIN
                 local box = group.box
                 Put(box, self.parent, group.left, group.top)
                 box:SetWidth(group.right - group.left)
@@ -598,20 +608,23 @@ function Layout:Section(text, plain)
     section.place = function(top)
         if fs then
             fs:Show()
+            -- The layout's left edge as it is now: a group's box moves it in.
+            local here = layout.left
             if layout.centred then
                 -- Across the rows' middle, in a window that centres its titles (the welcome).
                 fs:SetJustifyH("CENTER")
                 fs:ClearAllPoints()
-                fs:SetPoint("TOP", parent, "TOPLEFT", math.floor(left + layout:Width() / 2), top - SECTION_TITLE_Y)
+                fs:SetPoint("TOP", parent, "TOPLEFT", math.floor(here + layout:Width() / 2), top - SECTION_TITLE_Y)
             else
-                Put(fs, parent, left + SECTION_TITLE_X, top - SECTION_TITLE_Y)
+                Put(fs, parent, here + SECTION_TITLE_X, top - SECTION_TITLE_Y)
             end
             fs.layoutY = top
         end
     end
     section.frame = function(top, bottom)
-        -- Where its rows start and end, read back as a box's would be.
+        -- Where its rows start and end, read back as a box's would be, and how wide.
         section.top, section.bottom = top, bottom
+        section.left, section.width = layout.left, layout:Width()
     end
     section.hide = function()
         if fs then fs:Hide() end
@@ -626,10 +639,10 @@ function Layout:Section(text, plain)
     if not plain then
         local record = { section = section }
         setmetatable(record, { __index = function(_, key)
-            if key == "left" then return left end
+            if key == "left" then return section.left or left end
             if key == "top" then return section.top end
             if key == "bottom" then return section.bottom end
-            if key == "width" then return layout:Width() end
+            if key == "width" then return section.width or layout:Width() end
             if key == "shown" then return section.shown end
         end })
         table.insert(self.boxes, record)
@@ -640,7 +653,8 @@ end
 --- A titled box around the sections that follow, up to EndGroup: settings that belong together,
 --- a narrator style's, set apart from the rest of the page. The title sits above the box as a
 --- section's does; the box is the game's tooltip border and background, as the module cards are
---- drawn, GROUP_PAD outside those sections on every side, and goes with them when none is showing.
+--- drawn, as wide as they are, with those sections GROUP_PAD inside it on every side; it goes with
+--- them when none is showing.
 function Layout:Group(title)
     self:Columns(nil)
     local parent = self.parent
@@ -661,6 +675,14 @@ function Layout:Group(title)
         box:SetBackdropColor(0.06, 0.06, 0.06, 0.6)
         box:SetBackdropBorderColor(0.45, 0.45, 0.45, 1)
     end
+    -- Under the page, not over it: the rows' labels are the page's own, and a frame of its own
+    -- above the page drew its background over them.
+    local level = parent.GetFrameLevel and parent:GetFrameLevel() or 0
+    if level < 1 and parent.SetFrameLevel then
+        parent:SetFrameLevel(1)
+        level = 1
+    end
+    if box.SetFrameLevel then box:SetFrameLevel(math.max(0, level - 1)) end
     for _, side in ipairs(box.SetBackdrop and {} or { "top", "bottom", "left", "right" }) do
         local line = Flat(box, "BORDER", GROUP_LINE[1], GROUP_LINE[2], GROUP_LINE[3], GROUP_LINE[4])
         if side == "top" or side == "bottom" then
