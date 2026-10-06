@@ -230,6 +230,13 @@ for _, hook in ipairs(WorldMapFrame.hooks.OnHide or {}) do hook(WorldMapFrame) e
 Expect("...and goes with it", panel:IsShown(), false)
 WorldMapFrame:Show()
 Z:RefreshPanel()
+-- Walking with the map open, the game fades the map: the button that reopens the panel fades
+-- with it, the panel does not.
+WorldMapFrame:SetAlpha(0.5)
+Expect("the button that reopens it fades with the map as the player walks", _G.SpokenZonesPanelToggle:GetAlpha(), 0.5)
+Expect("...the panel does not", panel:GetAlpha(), 1)
+WorldMapFrame:SetAlpha(1)
+Expect("...and the button is clear again when the player stops", _G.SpokenZonesPanelToggle:GetAlpha(), 1)
 local mapPage = panel.page
 Expect("...round the quest details' parchment", mapPage.parchment, "QuestDetailsBackgrounds")
 -- The frame is nine-sliced, as the game draws it: stretched whole, its corners grew with the panel.

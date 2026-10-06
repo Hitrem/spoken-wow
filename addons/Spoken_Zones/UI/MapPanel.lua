@@ -149,6 +149,15 @@ end
 -- Layout
 --------------------------------------------------------------------------------
 
+-- The button that reopens the panel fades with the map as the player walks, as it did as the map's
+-- child: the game's movement fader sets the map's alpha every frame, and the button takes it each
+-- time. The panel does not: faded, its layers -- the parchment, the strips softening its words'
+-- edges, the frame -- showed through each other in patches, and the one way to fade a frame as a
+-- whole (SetIsFrameBuffer) crashes the Forever client.
+local function FollowAlpha()
+	toggle:SetAlpha(WorldMapFrame:GetAlpha() or 1)
+end
+
 -- In front of the map and as large, as a child of it would be. Copied on every show, since the
 -- map's level and scale are its own to change.
 local function FollowMap()
@@ -159,6 +168,7 @@ local function FollowMap()
 		if level then frame:SetFrameLevel(level + 10) end
 		if mapScale and uiScale and uiScale > 0 then frame:SetScale(mapScale / uiScale) end
 	end
+	FollowAlpha()
 end
 
 -- Always on the map's right, beside the quest log as the game lays its own panels out.
@@ -310,6 +320,7 @@ function SpokenZones:SetupMapPanel()
 	BuildPanel()
 	BuildToggle()
 	ApplyAnchors()
+	if hooksecurefunc then hooksecurefunc(WorldMapFrame, "SetAlpha", FollowAlpha) end
 
 	-- Re-evaluate visibility whenever the map changes shape: maximising and minimising both
 	-- resize it. Its script, not its Maximize and Minimize: hooked, those raise an error inside
