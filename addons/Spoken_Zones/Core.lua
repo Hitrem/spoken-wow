@@ -364,6 +364,29 @@ function SpokenZones:GetAreaNameAt(mapID, x, y)
 	return nil
 end
 
+--- The city inside the zone `mapID` that the area `areaName` is, if it is one, and its story. Each
+--- city is a map of its own under its continent in the game's map tree (Stormwind City under the
+--- Eastern Kingdoms, not Elwynn Forest), so on its zone's map the game reports it only by its area
+--- name, and the zone no longer lists it as one of its own areas (SpokenZones.CityIn, the lore
+--- window's). Matched by the city map's name in the client's language, or its story's.
+function SpokenZones:CityAt(mapID, areaName)
+	if not (mapID and areaName and self.CityIn) then
+		return nil
+	end
+	local wanted = string.lower(areaName)
+	for city, zone in pairs(self.CityIn) do
+		if zone == mapID then
+			local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(city)
+			local entry = self:GetLore(city)
+			if (info and info.name and string.lower(info.name) == wanted)
+				or (entry and entry.name and string.lower(entry.name) == wanted) then
+				return city, entry
+			end
+		end
+	end
+	return nil
+end
+
 -- What the cursor is over, at a normalised canvas position on the map `mapID`.
 -- Shared by the click handler and the hover preview so both agree.
 --
@@ -390,6 +413,11 @@ function SpokenZones:ResolveAt(mapID, x, y)
 		local entry = self:GetSubzoneLore(mapID, areaName)
 		if entry then
 			return "subzone", areaName, entry, nil
+		end
+		-- A city inside the zone: its own story, as a map of its own.
+		local city, cityEntry = self:CityAt(mapID, areaName)
+		if city and cityEntry then
+			return "zone", areaName, cityEntry, city
 		end
 		-- Name but no lore: still useful to the caller for debug reporting.
 		return "subzone", areaName, nil, nil

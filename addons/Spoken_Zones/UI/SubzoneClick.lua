@@ -49,6 +49,14 @@ local function HandleClick(x, y)
 
 	if entry then
 		SpokenZones:SelectSubzone(mapID, areaName, entry)
+		return
+	end
+
+	-- A city inside the zone (Stormwind City on Elwynn Forest's map) is a map of its own: the click
+	-- opens it, as one on a zone opens the zone from its continent, and the panel tells its story.
+	local city = SpokenZones.CityAt and SpokenZones:CityAt(mapID, areaName)
+	if city and WorldMapFrame.SetMapID then
+		WorldMapFrame:SetMapID(city)
 	end
 end
 
