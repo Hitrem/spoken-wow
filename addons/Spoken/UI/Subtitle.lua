@@ -53,7 +53,7 @@ end
 -- The player's lock covers this frame too: locked, it is click-through. So does being hosted
 -- over a dialog addon's window (Addon:SetPlayerHost): its clicks belong to that window.
 local function Locked()
-    return Addon:IsFrameLocked()
+    return Addon:IsFrameLocked() or Addon.playerHost ~= nil
 end
 -- Whether the pointer is over a shown frame.
 local function Over(frame)

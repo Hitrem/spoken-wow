@@ -389,9 +389,19 @@ env.PlayerFrame:RefreshConfig()
 Spoken:SetPlayerHost(DUI)
 Expect("hosted over DialogueUI the window moves onto it", Skin.frame:GetParent(), DUI)
 Expect("...at its size of the window it sits on", math.abs(Skin.frame.scale - 0.65) < 1e-6, true)
-Expect("...and is locked there", env.Addon:IsFrameLocked(), true)
+local moving = false
+Skin.frame.StartMoving = function() moving = true end
+Skin:StartDrag()
+Expect("...and can still be dragged there", moving, true)
+Skin.frame.StartMoving = nil
+Skin:StopDrag()
+local placed = env.Addon:Layout().DialogueUI
+Expect("...its place saved", placed ~= nil, true)
 Spoken:SetPlayerHost(nil)
 Expect("...and comes back", Skin.frame:GetParent(), _G.UIParent)
+env.PlayerFrame:RefreshConfig()
+Expect("...to the place saved over the window", placed ~= nil and math.abs(Skin.frame:GetLeft() - placed.left) < 1e-6
+    and math.abs(Skin.frame:GetTop() - placed.top) < 1e-6, true)
 Expect("...at its own scale", math.abs(Skin.frame.scale - 0.52) < 1e-6, true)
 
 Expect("diagnostics name the style", string.find(Skin:Describe(), "enabled=true", 1, true) ~= nil, true)

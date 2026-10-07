@@ -471,7 +471,7 @@ dui.ShowPlayer = true
 driver.scripts.OnShow(driver)
 Expect("turned on, while DialogueUI is open the player sits on its window", frame:GetParent(), DUI)
 Expect("...the same size on screen", frame:GetScale(), env.Addon.db.profile.Frame.FrameScale / 0.8)
-Expect("...and cannot be dragged", env.Addon:IsFrameLocked(), true)
+Expect("...and can still be dragged there", env.Addon:IsFrameLocked(), false)
 driver:Hide()
 driver.scripts.OnHide(driver)
 Expect("when it closes the player goes back to UIParent", frame:GetParent(), _G.UIParent)

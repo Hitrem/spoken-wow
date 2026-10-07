@@ -225,11 +225,11 @@ function Addon:RestoreLayout(key, frame)
     return true
 end
 
---- Locked by the setting, or while another frame hosts the players: a drag then would save
---- a place measured against the host's scale, and the next login would replay it against
---- UIParent's.
+--- Locked by the setting. Hosted (SetPlayerHost), the windows still move: ApplyHost keeps
+--- their effective scale and their anchor on UIParent, so a place saved then is the same place
+--- without the host.
 function Addon:IsFrameLocked()
-    return self:Profile("Frame").LockFrame or self.playerHost ~= nil
+    return self:Profile("Frame").LockFrame
 end
 
 --- Put a player frame on the host, or back on UIParent when there is none. A dialog addon

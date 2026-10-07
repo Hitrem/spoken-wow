@@ -111,7 +111,8 @@ asks for, and a dialog DialogueUI is not showing, read at once.
 - The window and the subtitles are reparented with their anchors kept and their scale
   adjusted, so they keep their exact place on screen.
 - Their strata is raised above the window. The subtitles pass clicks through to it.
-- Dragging is locked, so a position measured in DialogueUI's scale is never saved.
+- The windows can still be dragged: their effective scale and UIParent anchor are kept, so a
+  place saved over the window is the same place without it. The subtitles are click-through.
 
 `Spoken:SetPlayerHost(nil)` puts all of it back, the subtitles' own low strata included.
 
