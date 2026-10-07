@@ -472,10 +472,18 @@ function Bridge.Expect(handler)
     if not typewriter then
         return
     end
-    local ok, text = pcall(Addon.ExpectedLine, Addon, event)
+    local ok, text = pcall(Addon.ExpectedLine, Addon, event, true)
     local words = ok and type(text) == "string" and Spoken:SplitCaption(text)
     if words and table.getn(words) > 0 then
-        state.pending = { words = words, untilTime = GetTime() + HOLD }
+        state.pending = { event = event, words = words, untilTime = GetTime() + HOLD }
+    end
+end
+
+--- Spoken Quests read `event`'s page: `queued` when a line came of it. When none did, the
+--- words kept blank for it show at once (next Tick) rather than after HOLD.
+function Bridge:Read(event, queued)
+    if not queued and state.pending and state.pending.event == event then
+        state.pending = nil
     end
 end
 

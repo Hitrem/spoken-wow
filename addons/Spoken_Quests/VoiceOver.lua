@@ -229,6 +229,11 @@ function Addon:InvokeQuestHandler(event, source, manual)
 
     Debug:Record("quest-dispatch", format("Dispatching %s through %s", event, source or "manual reader"))
     local succeeded, errorMessage = pcall(handler, self, event, manual)
+    -- The page DialogueUI keeps blank for this read's line lets go at once when none came of it.
+    if bridge and bridge.Read then
+        local stage = Debug.runtime.stage
+        bridge:Read(event, succeeded and (stage == "queued" or stage == "queue-paused" or stage == "playing"))
+    end
     if not succeeded then
         Debug:Record("handler-error", format("%s failed: %s", event, tostring(errorMessage)))
         local errorHandler = geterrorhandler and geterrorhandler()
@@ -1202,10 +1207,12 @@ end
 --- when nothing will be: autoplay off, the packs still loading, no pack voicing it, a
 --- greeting already heard. Asked as the dialog opens, before its line is queued, by
 --- MuteGreetingAhead and by DialogueUI's bridge (UI/DialogueUIBridge.lua), which keeps the
---- words it will type out from showing until then.
+--- words it will type out from showing until then. `textIsCurrent` when the caller has the
+--- page drawn already (the bridge): the page's own line is looked for, not just the speaker's.
 ---@param event string
+---@param textIsCurrent boolean?
 ---@return string?
-function Addon:ExpectedLine(event)
+function Addon:ExpectedLine(event, textIsCurrent)
     if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source then
         return nil
     end
@@ -1219,6 +1226,9 @@ function Addon:ExpectedLine(event)
             return nil
         end
         if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
+            return nil
+        end
+        if textIsCurrent and not self:GetVisibleLine(event) then
             return nil
         end
         return speech.text() or ""

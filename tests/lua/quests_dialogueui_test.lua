@@ -77,6 +77,8 @@ VO.Addon:OnInitialize()
 VO.DataModules:Register("TestPack", {
     SoundLengthLookupByFileName = { ["101-accept"] = 12, ["101-progress"] = 2 },
     GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
+    -- A speaker the pack knows, whose one line has no recording in it.
+    GossipLookupByNPCID = { [5678] = { ["Hail, friend. The roads are long."] = "gossip-missing" } },
 })
 stub.Advance(2)
 world.title = "Wolves"; world.questText = QUEST_TEXT; world.progressText = "Well?"
@@ -239,6 +241,26 @@ words.Typewriter = false
 DUI:HandleQuestDetail()
 Expect("...and every page with Type Words Out off", Paragraph(1), original1)
 words.Typewriter = true
+
+-- Gossip from a speaker a pack knows, but whose page's line has no recording here: nothing
+-- will read it, so it is not kept blank waiting for a line.
+local questGiver = world.npcGUID
+world.npcGUID = "Creature-0-0-0-0-5678-0"
+world.gossipText = "Hail, friend. The roads are long."
+DUI.handler = "HandleGossip"
+DUI:HandleGossip()
+Expect("gossip whose recording is missing shows whole at once", Paragraph(1) ~= "" and Paragraph(1) ~= nil, true)
+-- A page kept blank for a read that then queues nothing shows as soon as the read is done.
+local gossipHandler = VO.Addon.GOSSIP_SHOW
+VO.Addon.GOSSIP_SHOW = function() end
+VO.Addon.ExpectedLine = function() return world.gossipText end
+DUI:HandleGossip()
+Expect("a page kept blank for its line", Paragraph(1), "")
+VO.Addon:InvokeQuestHandler("GOSSIP_SHOW", "test")
+Tick(0)
+Expect("...shows whole once the read queues nothing, not after the wait", Paragraph(1) ~= "", true)
+VO.Addon.GOSSIP_SHOW, VO.Addon.ExpectedLine = gossipHandler, nil
+world.npcGUID, world.gossipText, DUI.handler = questGiver, nil, nil
 
 -- Another part's line playing while DialogueUI is open -- a zone's lore, a book page -- is
 -- not DialogueUI's text, even word for word.

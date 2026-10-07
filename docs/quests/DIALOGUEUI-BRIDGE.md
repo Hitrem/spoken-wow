@@ -85,10 +85,13 @@ by character. The caption's words are then matched in order against DialogueUI's
 - Typing out shows the paragraphs the line covers up to the word being read, and the ones
   after it blank. DialogueUI draws a page the moment the dialog opens, while Spoken Quests
   reads it a moment later (0.1 s for gossip, once a quest has held still for 0.4 s). So when
-  a page is about to be read, `Addon:ExpectedLine(event)` gives its line's text as the page
-  is built, and its words are blank from the first frame, for up to 2.5 s, until the voice
-  reaches them. Shown whole until then, they flashed up and vanished. A page nothing will
-  read on its own shows whole at once, as does one opened while another part's line plays. Paragraphs outside the line, such as earlier gossip or the objectives' list
+  a page is about to be read, `Addon:ExpectedLine(event, true)` gives its line's text as the
+  page is built, and its words are blank from the first frame, for up to 2.5 s, until the
+  voice reaches them. Shown whole until then, they flashed up and vanished. The page's own
+  line is looked for (`Addon:GetVisibleLine`), not just its speaker's. A page nothing will
+  read on its own shows whole at once, as does one opened while another part's line plays,
+  and one whose read then queues nothing shows as soon as that read is done
+  (`Bridge:Read`, from `Addon:InvokeQuestHandler`), not after the 2.5 s. Paragraphs outside the line, such as earlier gossip or the objectives' list
   when the recording does not read it, stay whole. Nothing shows before the voice starts and
   everything once it has finished, as in the captions. A clip with no length is shown whole.
 
