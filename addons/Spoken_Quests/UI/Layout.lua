@@ -16,7 +16,7 @@
 -- they are built and placed by Reflow, top to bottom. Placing them all in one pass is what lets
 -- a row be hidden (ShowWhen) and everything under it close up, rather than leaving a hole.
 
-local VERSION = 58
+local VERSION = 59
 
 -- LibStub's contract, for LibStub's reason: several addons load this file and the newest
 -- copy must win, whichever of them the client happens to load last.
@@ -973,9 +973,18 @@ end
 
 --- Open the settings window at a page. OpenToCategory takes the category's ID in some builds
 --- and the category object in others, so try the ID first and fall back rather than erroring.
---- True when the window opened, so a caller can tell the player the way there when it did not.
-function Layout.OpenCategory(category)
+--- `combatMessage` is what the player reads when combat keeps it shut; the client's own words
+--- when there is none. True when the window opened or the player was told why not, so a caller
+--- can tell the player the way there when neither happened.
+function Layout.OpenCategory(category, combatMessage)
     if not (category and Settings and Settings.OpenToCategory) then return false end
+    -- The client will not open it for an addon in combat, and a click that does nothing reads as
+    -- a broken button.
+    if InCombatLockdown and InCombatLockdown() then
+        local message = combatMessage or ERR_NOT_IN_COMBAT
+        if UIErrorsFrame and message then UIErrorsFrame:AddMessage(message, 1, 0.1, 0.1) end
+        return true
+    end
     local id = category.GetID and category:GetID() or nil
     if id and pcall(Settings.OpenToCategory, id) then return true end
     return pcall(Settings.OpenToCategory, category) and true or false

@@ -216,6 +216,26 @@ Expect("...and lights up the row it found", quests.glow ~= nil and quests.glow:I
 quests.glow.scripts.OnUpdate(quests.glow, 3)
 Expect("...for a moment", quests.glow:IsShown(), false)
 
+---------------------------------------------------------------- not in combat
+-- The client will not open the settings window for an addon in combat, so the minimap
+-- button's click would seem to do nothing. It says why instead.
+local errors = {}
+_G.UIErrorsFrame = { AddMessage = function(_, text) table.insert(errors, text) end }
+_G.ERR_NOT_IN_COMBAT = "You can't do that while in combat"
+_G.InCombatLockdown = function() return true end
+local openedBefore = #opened
+Options:Open()
+Expect("in combat the settings are not opened", #opened, openedBefore)
+Expect("...and the player is told why", errors[1], L.OPT_OPEN_COMBAT)
+Options:OpenPage(1)
+Expect("a feature's page says the same", errors[2], L.OPT_OPEN_COMBAT)
+Expect("an opener with no words of its own gets the client's",
+    _G.SpokenLayout.OpenCategory({}) and errors[3], _G.ERR_NOT_IN_COMBAT)
+_G.InCombatLockdown = function() return false end
+Options:Open()
+Expect("out of combat they open", #opened, openedBefore + 1)
+_G.InCombatLockdown, _G.UIErrorsFrame, _G.ERR_NOT_IN_COMBAT = nil, nil, nil
+
 ---------------------------------------------------------------- reset asks first
 -- The header's Defaults button, as the game's own pages have it.
 local reset = home.defaults
