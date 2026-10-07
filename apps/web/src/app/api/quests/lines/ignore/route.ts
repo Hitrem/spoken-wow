@@ -6,12 +6,12 @@
  * out of the shipped module. That is the same reach as the generation settings, so it is
  * gated the same way.
  *
- * Keyed on the corpus's own lineId, and lineIndex() is the whitelist: an id either names
- * lines the corpus has or it does not exist. Nothing here touches a path, so there is no
+ * Keyed on the corpus's own lineId, and the language's lineIndex() is the whitelist: an id
+ * either names lines the corpus has or it does not exist. Nothing here touches a path, so there is no
  * traversal to defend against - only a table that should not fill with ids nobody can resolve.
  */
 import { requireConfigure, requireIn } from "@/lib/generation/authz";
-import type { Lang } from "@/lib/lang";
+import { BASE_LANG, type Lang } from "@/lib/lang";
 import { lineIndex } from "@/lib/quests/catalogue";
 import { clearIgnore, writeIgnore } from "@/lib/quests/ignores";
 
@@ -55,7 +55,7 @@ export async function PUT(request: Request) {
   }
 
   const { lineId, reason } = (body ?? {}) as { lineId?: unknown; reason?: unknown };
-  if (typeof lineId !== "string" || !(await lineIndex()).has(lineId)) {
+  if (typeof lineId !== "string" || !(await lineIndex(lang ?? BASE_LANG)).has(lineId)) {
     return Response.json({ error: "unknown line" }, { status: 404 });
   }
   if (typeof reason !== "string" || !reason.trim()) {
@@ -75,7 +75,7 @@ export async function DELETE(request: Request) {
   if (denied) return denied;
 
   const lineId = new URL(request.url).searchParams.get("lineId");
-  if (!lineId || !(await lineIndex()).has(lineId)) {
+  if (!lineId || !(await lineIndex(lang ?? BASE_LANG)).has(lineId)) {
     return Response.json({ error: "unknown line" }, { status: 404 });
   }
 

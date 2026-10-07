@@ -60,6 +60,8 @@ export type CorpusLine = {
   lang?: Lang;
   /** The English names, for a translator to work from. Absent when reading English. */
   english?: { questTitle: string | null; npcName: string };
+  /** A line only this language has: there is no English text for a translator to work from. */
+  native?: true;
 };
 
 /**
