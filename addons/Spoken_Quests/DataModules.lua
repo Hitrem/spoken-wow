@@ -32,7 +32,10 @@ end
 local function ModuleNumber(addon, suffix)
     return tonumber(ModuleMeta(addon, suffix) or "")
 end
-local FORCE_ENABLE_DISABLED_MODULES = true
+-- A pack switched off in the AddOns list stays off, as Books' and Zones' do: upstream loaded it
+-- anyway (enabling it for the load and disabling it again), so a player could not mute one part
+-- of the voices, and Spoken's settings counted packs the list showed as off.
+local FORCE_ENABLE_DISABLED_MODULES = false
 local LOAD_ALL_MODULES = true
 
 ---@class DataModuleMetadata
