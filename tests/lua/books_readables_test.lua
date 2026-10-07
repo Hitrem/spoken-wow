@@ -208,7 +208,7 @@ choices[4].func()
 Expect("...and By Zone again, the zones", Has(Shown(), "Elwynn Forest"), true)
 
 -- The places' tab joins: the tabs show, and each shows its own panel.
-_G.SpokenCompendium:Register("places", { label = "Places", order = 1, title = L.COMPENDIUM_TITLE,
+_G.SpokenCompendium:Register("places", { label = "Zones", order = 1, title = L.COMPENDIUM_TITLE,
     build = function(p) p.places = true end })
 _G.SpokenCompendium:Select("places")
 Expect("with two tabs, the tabs show", _G.SpokenCompendiumWindowTab1:IsShown() and _G.SpokenCompendiumWindowTab2:IsShown(), true)

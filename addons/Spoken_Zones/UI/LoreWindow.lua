@@ -181,20 +181,20 @@ local function Matches(text)
 	return filter == "" or (text and string.find(string.lower(text), filter, 1, true) ~= nil)
 end
 
--- Whether this character has found a place (Discovery.lua), whatever Unlock Undiscovered Places
+-- Whether this character has found a place (Discovery.lua), whatever Unlock Undiscovered Zones
 -- says: the counts and Discovered Only go by it. The one chosen counts as found.
 local function Found(mapID, key)
 	if selection and selection.mapID == mapID and (key == nil or selection.key == key) then return true end
 	return SpokenZones:IsFound(mapID, key)
 end
 
--- Whether a place can be opened: every place with Unlock Undiscovered Places on, otherwise only
+-- Whether a place can be opened: every place with Unlock Undiscovered Zones on, otherwise only
 -- those found. The rest are listed greyed out.
 local function Discovered(mapID, key)
 	return SpokenZones:ShowsUndiscovered() or Found(mapID, key)
 end
 
---- Whether a place is locked for this character: not found yet, with Unlock Undiscovered Places
+--- Whether a place is locked for this character: not found yet, with Unlock Undiscovered Zones
 --- off. A continent is found through its zones; Azeroth always is. The page and the map's panel
 --- say so in its place rather than tell its story.
 function SpokenZones:IsLocked(mapID, key)
@@ -636,7 +636,7 @@ function SpokenZones:SetupLoreWindow()
 		-- Opened from Spoken's menu and page on where the player stands, as from the map.
 		open = function() SpokenZones:ToggleLoreWindow() end,
 		enabled = function() return SpokenZones:IsPartOn() end,
-		-- Unlock Undiscovered Places, on Spoken's page.
+		-- Unlock Undiscovered Zones, on Spoken's page.
 		unlock = {
 			get = function() return SpokenZones:Get("showUndiscovered") == true end,
 			set = function(value)

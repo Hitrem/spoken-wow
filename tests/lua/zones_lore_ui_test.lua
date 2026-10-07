@@ -79,7 +79,7 @@ function Z:ClearSubzone() self.selected = nil; self:RefreshPanel() end
 function Z:Picture(mapID, key)
     if mapID == 1411 and not key then return "Pictures/zone-1411", "Pictures/Mask2" end
 end
--- Every place listed, as with Unlock Undiscovered Places on, until the checks for the found-only
+-- Every place listed, as with Unlock Undiscovered Zones on, until the checks for the found-only
 -- list below turn it off.
 local showAll, found = true, {}
 function Z:ShowsUndiscovered() return showAll end
@@ -379,7 +379,7 @@ Z:ShowLoreFor(1411, nil)
 Shown()
 showAll = true
 Z:RefreshLoreWindow()
-Expect("Unlock Undiscovered Places opens them all", Locked(), "")
+Expect("Unlock Undiscovered Zones opens them all", Locked(), "")
 Expect("...the continent opened before shows its zones again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 Expect("...the counts still what this character has found", RowFor("Durotar").count.text, "1/3 • 33%")
 showAll = false

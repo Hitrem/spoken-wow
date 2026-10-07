@@ -438,7 +438,7 @@ local function Build(canvas)
         end, L.SUBTITLE_SAMPLE_TIP), Subtitles)
     end
 
-    -- Azeroth's Compendium, after the narrator style's settings: the window Places and Writings each
+    -- Azeroth's Compendium, after the narrator style's settings: the window Zones and Books each
     -- add a tab to, opened here and from the minimap menu, with each tab's Unlock switch. The tabs
     -- register once the world is up, after this page is built, so the rows ask for them each time
     -- they are drawn; with neither part installed the section has nothing showing and hides.

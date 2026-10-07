@@ -574,7 +574,7 @@ function SpokenBooks:SetupReadables()
 		},
 		open = function() SpokenBooks:ShowReadables() end,
 		enabled = function() return SpokenBooks:IsPartOn() end,
-		-- Unlock Unfound Writings, on Spoken's page.
+		-- Unlock Unfound Books, on Spoken's page.
 		unlock = {
 			get = function() return SpokenBooksSettings ~= nil and SpokenBooksSettings.unlockUnfound == true end,
 			set = function(value)

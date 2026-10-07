@@ -136,7 +136,7 @@ end
 --- narrated are not settings in that sense, and stay.
 function SpokenZones:ResetOptions()
 	if SpokenZonesSettings == nil then return end
-	-- Unlock Undiscovered Places is on Spoken's page where Spoken is installed, and not this one's.
+	-- Unlock Undiscovered Zones is on Spoken's page where Spoken is installed, and not this one's.
 	local elsewhere = Spoken and Spoken.ShowsCompendium and { showUndiscovered = true } or {}
 	for key, value in pairs(defaults) do
 		if not elsewhere[key] then SpokenZonesSettings[key] = value end

@@ -57,7 +57,7 @@ local defaults = {
 --- stays: Forget is the button for that.
 function SpokenBooks:ResetOptions()
 	if not SpokenBooksSettings then return end
-	-- Unlock Unfound Writings is on Spoken's page where Spoken is installed, and not this one's.
+	-- Unlock Unfound Books is on Spoken's page where Spoken is installed, and not this one's.
 	local elsewhere = Spoken and Spoken.ShowsCompendium and { unlockUnfound = true } or {}
 	for key, value in pairs(defaults) do
 		if not elsewhere[key] then SpokenBooksSettings[key] = value end
