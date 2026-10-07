@@ -78,8 +78,7 @@ for _, file in ipairs({ "UI/Layout", "UI/Options" }) do
     assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 Z:SetupOptions()
--- The DialogueUI page is registered once the world is up, after Books' page, which comes then
--- too (here already, above): last under Spoken's.
+-- The DialogueUI page registers once the world is up, after Books' page (registered above).
 env.DialogueUIOptions:Register()
 local entries = {}
 for _, category in ipairs(stub.settingsCategories) do
@@ -93,7 +92,7 @@ local pages = { { name = "General", layout = _G.SpokenOptionsPanel.layout } }
 for _, page in ipairs(env.Options.pages or {}) do
     table.insert(pages, { name = page.name, layout = page.layout })
 end
--- Every addon answers as loaded here, DialogueUI too, so its page is measured as well.
+-- The stub reports every addon loaded, DialogueUI included.
 Expect("General, the three parts' pages and the DialogueUI page are all here", #pages, 5)
 
 local BOX = Layout.BOX_MARGIN

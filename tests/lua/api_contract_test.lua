@@ -44,7 +44,7 @@ local METHODS = {
     -- frame, settings
     "GetPlayerFrame", "GetSettingsCategory", "OpenSettings", "AddSettingsLink", "RefreshPlayer",
     "GetPlayerStyle", "SetPlayerHost", "AddDialogueUISettings",
-    -- captions, for another view of the line
+    -- captions
     "GetCaption", "GetCaptionOptions", "SplitCaption",
     -- contributions
     "ShowContribution", "SetContributeHost", "AreContributeButtonsHidden",

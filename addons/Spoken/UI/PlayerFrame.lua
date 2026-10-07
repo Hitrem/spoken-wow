@@ -273,8 +273,7 @@ function PlayerFrame:InitMover()
     end)
 end
 
---- The skin drawing the queue in place of this window, or nil when this window does: the
---- Small Window (MinimalPlayer) or the DialogueUI one (DialogueUIPlayer).
+--- The skin drawing the queue in place of this window, or nil when this window does.
 function PlayerFrame:Skin()
     if MinimalPlayer:IsEnabled() then return MinimalPlayer end
     if DialogueUIPlayer and DialogueUIPlayer:IsEnabled() then return DialogueUIPlayer end

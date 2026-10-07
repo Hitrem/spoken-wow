@@ -102,7 +102,6 @@ L = {
     OPT_STYLE_NONE = "Voice Only",
     OPT_STYLE_NONE_TEXT = "Just the voice.",
     WELCOME_STYLE_NONE_TIP = "No window and no words on screen: lines are only heard.",
-    -- The DialogueUI window (UI/DialogueUIPlayer.lua, UI/DialogueUITheme.lua).
     OPT_STYLE_DIALOGUEUI = "DialogueUI",
     OPT_STYLE_DIALOGUEUI_TEXT = "In DialogueUI's own art.",
     WELCOME_STYLE_DIALOGUEUI_TIP = "A window in the DialogueUI addon's parchment or dark art, laid out like its quest window: the speaker's face, the words filling the page, and what plays next.",

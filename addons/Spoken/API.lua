@@ -96,15 +96,13 @@ function Spoken:GetPortraitRenderer(kind)
 end
 
 --- Ask the client about a creature whose portrait may soon be drawn, so the small and the
---- DialogueUI windows have its face by then rather than the book while the client fetches
---- it. A no-op in the large window, which draws a 3D model and needs nothing ahead of time.
+--- DialogueUI windows show its face, not the book. A no-op in the large window (a 3D model).
 function Spoken:PrimePortrait(creatureID)
     local skin = PlayerFrame.Skin and PlayerFrame:Skin()
     if skin and StaticPortrait then StaticPortrait:Prime(creatureID) end
 end
 
---- Which way lines are shown: "subtitle", "none", "minimal", "classic" or "dialogueui"
---- (Addon:PlayerStyle).
+--- How lines are shown: "subtitle", "none", "minimal", "classic" or "dialogueui".
 --- Additive: guard on the field.
 function Spoken:GetPlayerStyle()
     return Addon:PlayerStyle()
@@ -138,23 +136,18 @@ function Spoken:GetPlayerFrame()
     return skin and skin.frame or PlayerFrame.frame
 end
 
---- Show the player over another frame, or back where it was with nil. For a feature addon
---- whose host hides UIParent: Spoken Quests passes DialogueUI's window while it is open,
---- since DialogueUI hides the rest of the interface, and the window and the subtitles would
---- go with it. They keep their place on screen and can still be dragged; the subtitles pass
---- clicks through to the host. nil puts back the parent, scale and strata from the player's
---- settings. Additive: guard on the field.
+--- Show the player over another frame, or back where it was with nil. For a host that hides
+--- UIParent, as DialogueUI does: the windows and subtitles keep their place on screen and stay
+--- draggable, and the subtitles pass clicks through to the host. Additive: guard on the field.
 function Spoken:SetPlayerHost(frame)
     Addon:SetPlayerHost(frame)
 end
 
---- Rows of a feature addon's own on Spoken's DialogueUI page (Spoken > DialogueUI), which
---- holds everything about the DialogueUI addon. build(layout) is called once, when the page is
---- built, with the page's SpokenLayout: it adds a section and its rows, and may return a
---- function that puts them back to their defaults for the page's Defaults button. Nothing is
---- called where there is no page: without DialogueUI, or without nested settings pages.
---- Additive: guard on the field, and with a Spoken too old to have it, keep the rows on the
---- addon's own page, still only with DialogueUI installed.
+--- Add a feature addon's rows to Spoken's DialogueUI page. build(layout) runs once, when the
+--- page is built: it adds a section and rows to the SpokenLayout, and may return a function
+--- that resets them for the page's Defaults button. Never called without DialogueUI or nested
+--- settings pages. Additive: guard on the field; without it, keep the rows on the addon's own
+--- page, still only with DialogueUI installed.
 function Spoken:AddDialogueUISettings(build)
     DialogueUIOptions:Add(build)
 end
@@ -456,24 +449,22 @@ end
 --------------------------------------------------------------------------------
 --
 -- Additive, so guard on the field: `if Spoken.GetCaption then`. Both answer nil on 1.12,
--- which has no captions. The timing is the captions' own estimate -- a recording has a
--- duration, not word timestamps -- so another view marks the same word they would.
+-- which has no captions. The timing is the captions' own estimate (a recording has no word
+-- timestamps), so another view marks the same word they would.
 
 local caption = {}
 
 --- The speaking clip's caption, kept current even while the captions are hidden or off:
 ---   { clip, words, totalWeight, progress, speaking, activeWord, highlight, typewriter }
 --- words[i] = { text, start, finish, first, last, joined }: start/finish are the word's share
---- of the recording, in the units of totalWeight; first/last its bytes in the clip's text.
---- progress is nil for a clip with no length. activeWord is the index of the word being read
---- while speaking. highlight and typewriter are the player's Highlight Words and Type Words
---- Out (both off with Show Words off, as the settings grey them), so another view of the line
---- follows the same choices without reading Spoken's settings. Read-only, and the same table
---- on every call. nil without a clip.
+--- of the recording, in units of totalWeight; first/last its bytes in the clip's text.
+--- progress is nil for a clip with no length; activeWord is set only while speaking.
+--- highlight and typewriter are the player's Highlight Words and Type Words Out (false with
+--- Show Words off). Read-only, and the same table on every call. nil without a clip.
 function Spoken:GetCaption()
     if Transcript.unavailable or not Transcript.clip or not Transcript.words then return nil end
-    -- Worked out here, not read from what the captions last drew: they update only while
-    -- their window is shown, and DialogueUI hides it with UIParent.
+    -- Not read from what the captions last drew: they update only while shown, and
+    -- DialogueUI hides them with UIParent.
     local progress = Transcript:GetProgress()
     caption.clip, caption.words, caption.totalWeight = Transcript.clip, Transcript.words, Transcript.totalWeight
     caption.progress = progress
@@ -483,19 +474,17 @@ function Spoken:GetCaption()
     return caption
 end
 
---- Highlight Words and Type Words Out, as GetCaption gives them, with or without a clip: for
---- a view that prepares a line's words before it plays. Both false on 1.12, which has no
---- captions, and with Show Words off, as the settings grey them.
+--- Highlight Words and Type Words Out as GetCaption gives them, with or without a clip, for a
+--- view that prepares a line before it plays. Both false on 1.12 and with Show Words off.
 function Spoken:GetCaptionOptions()
     local cfg = Addon:Profile("Transcript")
     if Transcript.unavailable or not cfg.Enabled then return false, false end
     return cfg.HighlightWord and true or false, cfg.Typewriter and true or false
 end
 
---- Split text into words exactly as the captions do (a Chinese character is a word), with
---- each word's bytes in text as first/last, so the word GetCaption is on can be found in
---- the caller's own copy of the line. text is split as given; escape sequences are not
---- removed.
+--- Split text into words as the captions do (a Chinese character is a word), each with its
+--- bytes in text as first/last, so the caller can find GetCaption's word in its own copy of
+--- the line. Escape sequences are not removed.
 function Spoken:SplitCaption(text)
     if Transcript.unavailable or type(text) ~= "string" then return nil end
     return Transcript:Split(text)

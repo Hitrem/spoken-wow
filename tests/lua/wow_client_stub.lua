@@ -194,9 +194,8 @@ local function Widget(kind, name)
     function w:GetID() return self.id end
     function w:SetParent(p) self.parent = p end
     function w:GetParent() return self.parent end
-    -- Kept rather than swallowed: a player hosted over another frame (Addon:ApplyHost) is
-    -- scaled to keep its size on screen, and the scale is what a test reads back. The
-    -- effective scale is the frame's own; a test standing in for a host sets its own.
+    -- A hosted player (Addon:ApplyHost) scales to keep its size on screen, and tests read the
+    -- scale back. A test standing in for a host sets its own effective scale.
     function w:SetScale(v) self.scale = v end
     function w:GetScale() return self.scale or 1 end
     function w:GetEffectiveScale() return self.scale or 1 end
@@ -953,7 +952,6 @@ local function EmbedTimers(addon)
     function addon:CancelTimer(timer)
         if timer then timer.at = nil end
     end
-    -- The windows' progress bars read how long the queue's timer has left.
     function addon:TimeLeft(timer)
         return timer and timer.at and math.max(0, timer.at - world.time) or 0
     end
@@ -1246,8 +1244,8 @@ end
 --- files, on top of an addon already loaded by LoadQuests or LoadQuestsAlone.
 function M.LoadQuestsPanel(addonDirectory, VO)
     dofile(addonDirectory .. "UI/Layout.lua")
-    -- Its DialogueUI section is built only with the module there, which a test of the module
-    -- has loaded and hooked already.
+    -- SettingsPanel builds its DialogueUI section only with the bridge loaded; a bridge test
+    -- has loaded and hooked its own already.
     if not VO.DialogueUIBridge then dofile(addonDirectory .. "UI/DialogueUIBridge.lua") end
     dofile(addonDirectory .. "UI/SettingsPanel.lua")
     return VO.SettingsPanel

@@ -1,14 +1,8 @@
 setfenv(1, SpokenEnv)
 
--- What the DialogueUI window (UI/DialogueUIPlayer.lua) reads from the DialogueUI addon:
--- which theme it is set to, the folder its art is in, how big its window is, and the
--- colours its text wears. All of it is read from outside -- DialogueUI's theme code is
--- private to it -- through its saved variables (DialogueUI_DB), its window (DUIQuestFrame)
--- and its font objects, so this is the one file that knows those names. Each is checked
--- before use, and Available answers false rather than any of this raising an error.
---
--- Nothing of DialogueUI's is copied: the skin draws DialogueUI's own texture files, which
--- is why it exists only where DialogueUI is installed.
+-- DialogueUI's theme code is private, so this is the one file that knows its saved variables,
+-- window and font object names. Each is checked before use; Available answers false rather
+-- than raising.
 --
 -- Parsed by the 1.12 client too (addon.xml is shared), so Lua 5.0 syntax throughout; the
 -- stub below is all that client runs.
@@ -29,15 +23,12 @@ local ART = "Interface/AddOns/DialogueUI/Art/"
 -- and 4 for its mobile mode), for when its window has not measured itself yet.
 local SIZE_MULTIPLIER = { [0] = 0.9, [1] = 1.0, [2] = 1.1, [3] = 1.25, [4] = 1.4 }
 local HEIGHT_SHARE, WIDTH_OF_HEIGHT = 0.618, 0.85
--- The window lays itself out from this too (UI/DialogueUIPlayer.lua).
 Theme.HEIGHT_SHARE = HEIGHT_SHARE
 -- Its parchment's end caps at multiplier 1: the strips are this wide whatever the window.
 local PARCHMENT_WIDTH, PARCHMENT_CAP = 546.13, 136.53
 
--- Its text colours, as its ThemeUtil sets them on its font objects: the parchment theme
--- (1) writes in dark brown, the dark theme (2) in greys and a dim gold. The highlight is
--- the pair the quests addon lights DialogueUI's own text with: gold reads on dark, not on
--- parchment, where a deep red does.
+-- DialogueUI's text colours per theme, as its ThemeUtil sets them. The highlight matches the
+-- quests addon's marks in DialogueUI's text: gold reads on dark, deep red on parchment.
 local PALETTE = {
     [1] = {
         title = { 0.19, 0.17, 0.13 }, paragraph = { 0.19, 0.17, 0.13 }, gossip = { 0.19, 0.17, 0.13 },
@@ -49,8 +40,7 @@ local PALETTE = {
     },
 }
 
---- The DialogueUI window's settings, for reading: through Addon:Profile, and the defaults'
---- own table when AceDB has stripped this one.
+--- For reading only: falls back to the defaults' table when AceDB has stripped the profile.
 function Theme:Config()
     return Addon:Profile("Frame").DialogueUI or Defaults.profile.Frame.DialogueUI
 end
@@ -74,8 +64,7 @@ function Theme:Available()
     return ok and found or false
 end
 
---- Why the DialogueUI style cannot be drawn, or nil: what /spoken player dialogueui says
---- instead of switching.
+--- Why the DialogueUI style cannot be drawn, or nil.
 function Theme:Problem()
     if not self:Installed() then return L.OPT_STYLE_DUI_MISSING end
     if not self:Available() then return L.OPT_STYLE_DUI_UNKNOWN end
@@ -91,8 +80,8 @@ function Theme:ThemeID()
     return cfg.Theme == 2 and 2 or 1
 end
 
---- The folder of the theme's art. Built from the id rather than read off DialogueUI's
---- window, so the setting that overrides its theme shows the other folder.
+--- Built from the id, not read off DialogueUI's window, so overriding its theme shows the
+--- other folder.
 function Theme:TexturePath()
     return ART .. (self:ThemeID() == 2 and "Theme_Dark/" or "Theme_Brown/")
 end
@@ -109,7 +98,6 @@ function Theme:FontFace()
     return GameFontNormal:GetFont()
 end
 
---- A font object's face and size, or the fallbacks.
 local function FontOf(name, size)
     local font = _G[name]
     local ok, face, height = pcall(function() return font:GetFont() end)
@@ -117,8 +105,7 @@ local function FontOf(name, size)
     return GameFontNormal:GetFont(), size
 end
 
---- DialogueUI's text as it draws it, face and size: its paragraphs, its quest title, and
---- the small line over the title. The sizes follow its Font Size setting.
+--- DialogueUI's paragraph, quest title and subtitle fonts; the sizes follow its Font Size setting.
 function Theme:Fonts()
     local fonts = {}
     fonts.paragraph, fonts.paragraphSize = FontOf("DUIFont_Quest_Paragraph", 12)
@@ -166,10 +153,8 @@ function Theme:ParchmentSize()
     return PARCHMENT_WIDTH * Multiplier(), PARCHMENT_CAP * Multiplier()
 end
 
---- Where DialogueUI puts its window, in UIParent's units from its bottom-left: the window's
---- horizontal centre and its top. Read from the place DialogueUI aims the window at
---- (frameOffsetX, frameHeight), not from where it is drawn, which slides and grows while the
---- window opens. nil while DialogueUI has not placed it yet.
+--- DialogueUI's window centre x and top, in UIParent's units. Read from where DialogueUI aims
+--- it, since the drawn window slides and grows while opening. nil until DialogueUI places it.
 function Theme:WindowPlace()
     if not self:Available() then return nil end
     local frame = _G.DUIQuestFrame
@@ -184,9 +169,8 @@ function Theme:WindowPlace()
     return nil
 end
 
---- Run fn whenever DialogueUI changes theme, window size or the side its window is on.
---- Hooked once, through the methods DialogueUI calls on its window for each: it has no public
---- event for them.
+--- Hooks the window methods DialogueUI calls on a theme, size or side change, since it has no
+--- public event for them.
 function Theme:Watch(fn)
     if self.watching or not self:Available() then return end
     local frame = _G.DUIQuestFrame

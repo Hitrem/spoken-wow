@@ -1,21 +1,7 @@
 setfenv(1, SpokenEnv)
 
--- The DialogueUI window, the narrator style "dialogueui": the queue drawn as a smaller twin
--- of the DialogueUI addon's quest window, in that addon's own parchment or dark art, so the two read as one piece when
--- DialogueUI is the dialog on screen. Top to bottom: the speaker's face and name, the
--- captions filling the body, the waiting lines, and the playback controls along the foot.
---
--- Everything DialogueUI-shaped comes through UI/DialogueUITheme.lua: the art folder, the
--- window size the panel is a share of, the text colours. The panel itself keeps DialogueUI's
--- proportions -- its paddings and its parchment strips, which overhang the frame as its
--- do -- scaled by Window Size. Playback, actions and portraits are the services
--- the other windows use; the queue rows are built from MinimalPlayer's parts. Nothing here
--- is about quests: a zone's lore or a book page plays in it as any line does, the book for
--- a face and the page's title under the book's.
---
--- The player's own settings size it as they size the other windows: Window Size scales the
--- panel from its default share of DialogueUI's window, Text Size the words from DialogueUI's
--- text size, and Lines Shown with the shared expand button set how much text it shows.
+-- The "dialogueui" narrator style: the queue drawn as a smaller twin of DialogueUI's quest
+-- window in its own art. DialogueUI's art, window size and colours come through DialogueUITheme.lua.
 --
 -- Parsed by the 1.12 client too (addon.xml is shared), so Lua 5.0 syntax throughout; the
 -- stub below is all that client runs.
@@ -38,20 +24,19 @@ local CORNER_ICON = 20
 local CONTROL_HEIGHT = 22
 local BAR_HEIGHT = 3
 local MIN_LINES = 2
--- The panel's size at the default Window Size, as a share of DialogueUI's window: read beside
--- the dialog, not instead of it.
+-- The panel's share of DialogueUI's window at the default Window Size, small enough to read
+-- beside the dialog.
 local BASE_SCALE = 0.65
 local DEFAULT_WINDOW_SIZE = Defaults.profile.Frame.FrameScale
 -- Text Size's default, at which the words are DialogueUI's own size.
 local BASE_FONT_SIZE = 16
 local SCROLLBAR = 10
--- The quest title a little under DialogueUI's: its title shares the strip with nothing,
--- and here the speaker's name sits above it.
+-- Smaller than DialogueUI's quest title, since the speaker's name shares the strip here.
 local TITLE_SHARE = 0.85
--- How far Shift-dragging may take the width, as shares of DialogueUI's own.
+-- Shift-drag width limits as shares of DialogueUI's width; the minimum still fits the face
+-- and a title on the header strip.
 local MIN_WIDTH_SHARE, MAX_WIDTH_SHARE = 0.6, 2
--- DialogueUI's paddings at multiplier 1, and its window height as a share of the screen,
--- from which the multiplier its window was drawn at is recovered.
+-- DialogueUI's paddings at multiplier 1.
 local PAD_H, PAD_TOP, PAD_BOTTOM = 26, 48, 36
 -- Where in Parchment.png each strip is. The caps are 256 of 2048 rows each, the middle
 -- the 640 between them; the dividers sit lower in the same image.
@@ -61,8 +46,7 @@ local HEADER_DIVIDER = { 0, 0.65625, 0.56640625, 0.61328125, 358, 51 }
 -- line. The socket is drawn as is; only the line past it stretches with the panel.
 local SOCKET_WIDTH = 64
 local FOOTER_DIVIDER = { 0, 0.71875, 0.6875, 0.71875, 392, 34 }
--- What the wheel with Ctrl held may set Window Size and Text Size to, as their sliders on
--- Spoken's page, and the step of each.
+-- Ctrl-wheel limits for Window Size and Text Size, matching their sliders' ranges.
 local WINDOW_SIZES, WINDOW_STEP = { 0.5, 2 }, 0.05
 local FONT_SIZES = { 12, 26 }
 
@@ -70,11 +54,10 @@ local parts = MinimalPlayer.parts
 local Font, Removable, ShowRemove, Label = parts.Font, parts.Removable, parts.ShowRemove, parts.Label
 local HeldLabel, Clamp, Waiting, BelongsTo = parts.HeldLabel, parts.Clamp, parts.Waiting, parts.BelongsTo
 local function Round(n) return math.floor(n + 0.5) end
--- Through Addon:Profile: the frame still redraws while the UI is torn down, after AceDB
--- strips the profile. Its DialogueUI table likewise, from the defaults when stripped.
+-- Through Addon:Profile: the frame still redraws during UI teardown, after AceDB strips
+-- the profile.
 local function Config() return Addon:Profile("Frame") end
--- Open to the panel's size or folded to Lines Shown: the expand state the other windows'
--- captions share.
+-- The expand state, shared with the other windows' captions.
 local function Expanded() return Addon.db and Addon:Layout().CaptionsExpanded and true or false end
 
 function Skin:IsEnabled()
@@ -89,8 +72,7 @@ function Skin:HasClip()
     return self:IsEnabled() and self.wanted and SoundQueue:GetCurrentSound() ~= nil
 end
 
---- A flat text button in DialogueUI's manner: a label, and its gossip-option glow under
---- the mouse. `fn` runs while a clip plays.
+--- A flat text button with DialogueUI's gossip-option glow. `fn` runs only while a clip plays.
 local function TextButton(parent, text, fn)
     local button = CreateFrame("Button", nil, parent)
     button:SetHeight(CONTROL_HEIGHT)
@@ -107,8 +89,8 @@ local function TextButton(parent, text, fn)
     return button
 end
 
--- The window's sizes are also on the wheel (Skin:Wheel), which nothing on it shows: said on
--- the tooltips of its face, its fold button and its resize handle.
+-- No control shows the wheel sizing (Skin:Wheel), so the face, fold and resize tooltips
+-- mention it.
 local function WheelHint()
     GameTooltip:AddLine(L.DUI_WHEEL_HINT, 1, .82, 0, true)
 end
@@ -119,8 +101,7 @@ function Skin:Initialize()
     self.frame = frame
     frame.spokenBaseScale = 1
     frame:SetSize(300, 400)
-    -- Where the player dragged it, else where DialogueUI puts its own window (PlaceDefault,
-    -- run again by RefreshConfig while it has not been dragged).
+    -- RefreshConfig re-runs PlaceDefault until the player drags it.
     if not Addon:RestoreLayout("DialogueUI", frame) then self:PlaceDefault() end
     frame:SetMovable(true)
     frame:SetResizable(true)
@@ -130,7 +111,6 @@ function Skin:Initialize()
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", function() self:StartDrag() end)
     frame:SetScript("OnDragStop", function() self:StopDrag() end)
-    -- No menu of its own: right-click opens the settings, as the Large Window's does.
     frame:SetScript("OnMouseUp", function(_, button)
         if button == "RightButton" then Options:Open() end
     end)
@@ -140,15 +120,14 @@ function Skin:Initialize()
         if self.sizing and not self.layingOut then self:Layout() end
     end)
     frame:SetScript("OnHide", function() self:HideTooltip() end)
-    -- Ctrl and the wheel size the panel, Ctrl, Shift and the wheel its text. The captions
-    -- and the queue take the wheel first and hand it here when Ctrl is held.
+    -- The captions and the queue take the wheel first and hand it here when Ctrl is held.
     frame:EnableMouseWheel(true)
     frame:SetScript("OnMouseWheel", function(_, delta) self:Wheel(delta) end)
     frame.spokenWheel = function(delta) return self:Wheel(delta) end
     frame:Hide()
 
-    -- The three parchment strips, as DialogueUI lays them: a cap centred on each end of
-    -- the frame and the middle stretched between, all wider than the frame itself.
+    -- DialogueUI's three parchment strips: caps centred on the frame's ends, the middle
+    -- stretched between, all wider than the frame.
     self.parchments = {}
     for index = 1, 3 do
         local strip = frame:CreateTexture(nil, "BACKGROUND", nil, -1)
@@ -166,10 +145,8 @@ function Skin:Initialize()
     self.content, frame.container = content, content
     content.buttons = {}
 
-    -- Header: DialogueUI's header strip, whose left end is a socket the face sits in, as
-    -- DialogueUI sets its own; the speaker and the line's title to the right of it.
-    -- DialogueUI's header strip in two pieces: the socket the face sits in, never stretched,
-    -- and the line running on from it to the panel's width.
+    -- DialogueUI's header strip in two pieces: the face's socket, never stretched, and the
+    -- line past it, stretched to the panel's width.
     local socketU = HEADER_DIVIDER[1] + (HEADER_DIVIDER[2] - HEADER_DIVIDER[1]) * SOCKET_WIDTH / HEADER_DIVIDER[5]
     self.headerSocket = content:CreateTexture(nil, "ARTWORK")
     self.headerSocket:SetTexCoord(HEADER_DIVIDER[1], socketU, HEADER_DIVIDER[3], HEADER_DIVIDER[4])
@@ -181,8 +158,6 @@ function Skin:Initialize()
     self.viewport = CreateFrame("Frame", nil, host)
     self.viewport:SetAllPoints()
     self.viewport:SetClipsChildren(true)
-    -- Stop and Replay on the face itself, as the Small Window has them: the glyph shows
-    -- under the mouse or while stopped, and a wash dims a stopped face.
     local pause = CreateFrame("Button", nil, host)
     self.pause = pause
     pause:SetAllPoints()
@@ -232,8 +207,6 @@ function Skin:Initialize()
         self:HideTooltip()
     end)
 
-    -- The corner: a cross that closes the line (the next one plays), and the fold that
-    -- takes the panel down to two caption lines or back up.
     self.close = CreateFrame("Button", nil, content)
     self.close:SetSize(CORNER_ICON, CORNER_ICON)
     self.close:SetPoint("TOPRIGHT", content, "TOPRIGHT", 4, 4)
@@ -263,7 +236,6 @@ function Skin:Initialize()
     end)
     self.fold:SetScript("OnLeave", function() self:HideTooltip() end)
 
-    -- The waiting lines, under the captions.
     self.drawer = CreateFrame("Frame", nil, content)
     self.drawer:EnableMouseWheel(true)
     self.drawer:SetScript("OnMouseWheel", function(_, delta)
@@ -274,7 +246,6 @@ function Skin:Initialize()
     self.queueNote = Font(self.drawer, 10, 1, 1, 1)
     self.drawer:Hide()
 
-    -- Footer: the progress line, the divider, then the controls.
     self.bar = CreateFrame("StatusBar", nil, content)
     self.bar:SetHeight(BAR_HEIGHT)
     self.bar:SetStatusBarTexture([[Interface\TargetingFrame\UI-StatusBar]])
@@ -294,13 +265,12 @@ function Skin:Initialize()
     self.buttons = { self.play, self.stop }
     Actions:Build(frame)
 
-    -- A slim scrollbar beside the captions, for a line longer than the page. The captions
-    -- page themselves on the wheel; this shows where the reader is and lets them drag.
+    -- The captions scroll themselves on the wheel; the scrollbar shows the position and
+    -- lets the reader drag.
     self.scrollbar = CreateFrame("Slider", nil, content)
     self.scrollbar:SetOrientation("VERTICAL")
     self.scrollbar:SetWidth(SCROLLBAR)
-    -- Drawn flat in the theme's colours: a faint track the whole page tall, and a thumb as
-    -- long as the page's share of the line, so its length says how much there is to read.
+    -- The thumb's length is the page's share of the line, so it shows how much is left to read.
     self.scrollbar.track = self.scrollbar:CreateTexture(nil, "BACKGROUND")
     self.scrollbar.track:SetPoint("TOPLEFT", 2, 0)
     self.scrollbar.track:SetPoint("BOTTOMRIGHT", -2, 0)
@@ -314,9 +284,8 @@ function Skin:Initialize()
     end)
     self.scrollbar:Hide()
 
-    -- The handle under the foot: drag it to make the open panel taller or shorter. Held with
-    -- Shift as the drag starts, it moves the width as well; without, the width stays put, so
-    -- a drag meant for the height cannot knock the column out of DialogueUI's shape.
+    -- The width changes only with Shift held at drag start, so a height drag cannot knock
+    -- the column out of DialogueUI's shape.
     self.resizer = CreateFrame("Button", nil, frame)
     self.resizer:SetSize(14, 14)
     self.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
@@ -342,7 +311,7 @@ function Skin:Initialize()
         if self.sizing then
             Addon:Layout().DialogueUIHeight = Round(frame:GetHeight())
             if self.sizingWidth then Addon:Layout().DialogueUIWidth = Round(frame:GetWidth()) end
-            -- Sized by hand from its corner, which pins the top-left: placed by the player now.
+            -- Sizing pins the top-left, so the panel now counts as placed by the player.
             Addon:SaveLayout("DialogueUI", frame)
         end
         self.sizing, self.sizingWidth = false, false
@@ -359,46 +328,37 @@ function Skin:StopDrag()
     if not Addon:IsFrameLocked() then Addon:SaveLayout("DialogueUI", self.frame) end
 end
 
---- Size and dress the panel from DialogueUI's window and theme. Called on every refresh,
---- so a theme or size change in DialogueUI lands on the next one.
+--- Runs on every refresh, so a theme or size change in DialogueUI lands on the next one.
 function Skin:Layout()
     local frame, cfg = self.frame, Theme:Config()
     local parchment = Theme:TexturePath() .. "Parchment.png"
     self.layingOut = true
-    -- Laid out exactly as DialogueUI lays out its window: its size, its paddings, its text
-    -- size and spacing. Window Size then scales the whole frame, text and all, from
-    -- BASE_SCALE at its default: the same page as DialogueUI's, smaller.
+    -- Laid out at DialogueUI's own size, paddings and text; Window Size then scales the
+    -- whole frame from BASE_SCALE.
     local scale = BASE_SCALE * (Config().FrameScale or DEFAULT_WINDOW_SIZE) / DEFAULT_WINDOW_SIZE
     frame.spokenBaseScale = scale * Theme:FrameScale() / UIParent:GetEffectiveScale()
     local duiWidth, duiHeight = Theme:FrameSize()
     -- The multiplier DialogueUI drew its window at, so the paddings keep its proportions.
     local multiplier = duiHeight / (Theme.HEIGHT_SHARE * math.max(1, UIParent:GetHeight()))
     local padH, padTop, padBottom = PAD_H * multiplier, PAD_TOP * multiplier, PAD_BOTTOM * multiplier
-    -- DialogueUI's width, or the one dragged with Shift held.
     local width = self.sizingWidth and Round(frame:GetWidth()) or Addon:Layout().DialogueUIWidth or Round(duiWidth)
-    -- Narrow enough to sit beside the dialog, never so narrow the header strip cannot hold
-    -- the face and a title.
     local minWidth, maxWidth = Round(duiWidth * MIN_WIDTH_SHARE), Round(duiWidth * MAX_WIDTH_SHARE)
     width = Clamp(width, minWidth, maxWidth)
     local inner = math.max(1, width - 2 * padH)
-    -- DialogueUI's own column, which the header and footer are sized from: a wider or
-    -- narrower panel stretches its strips sideways and keeps the face, the title and the
-    -- strips' thickness as DialogueUI draws them.
+    -- The header and footer are sized from DialogueUI's own column, so a wider panel stretches
+    -- the strips but keeps the face, the title and the strips' thickness.
     local baseInner = math.max(1, Round(duiWidth) - 2 * padH)
     -- DialogueUI's spacing: 0.35 of the text size under each line, four of those between
-    -- paragraphs (here an empty line, which comes to about the same).
+    -- paragraphs, which an empty line approximates.
     local fonts = Theme:Fonts()
     local fontSize = fonts.paragraphSize
-    -- The captions' size: DialogueUI's at the default Text Size, larger or smaller with it,
-    -- scaled with the rest of the panel.
     local textSize = tonumber(Addon:Profile("Transcript").FontSize) or BASE_FONT_SIZE
     local captionSize = math.max(6, Round(fontSize * textSize / BASE_FONT_SIZE))
     local lineGap = Round(0.35 * captionSize)
     local lineHeight = captionSize + lineGap
     self.fonts, self.captionSize, self.lineGap = fonts, captionSize, lineGap
 
-    -- The header strip across the panel's width, at DialogueUI's thickness, and DialogueUI's
-    -- placements on it: the face centred in the socket at its left end, the title past it.
+    -- DialogueUI's header strip thickness and its face and title placements, scaled to its column.
     local ratio = baseInner / HEADER_DIVIDER[5]
     local stripHeight = Round(HEADER_DIVIDER[6] * ratio)
     local face = Round(34 * ratio)
@@ -406,27 +366,22 @@ function Skin:Layout()
     local textGap = Round(4 * 0.35 * fontSize)
     local headerHeight = stripHeight + textGap
     local footerStrip = Round(FOOTER_DIVIDER[6] * baseInner / FOOTER_DIVIDER[5])
-    -- The same gap again between the last line and the progress line, so the words sit as far
-    -- from the foot as from the head (seen most with Fit to the Words, which ends the panel at
-    -- the words). The last line's own line spacing counts towards it.
+    -- The same gap above the progress line, so the words sit as far from the foot as from the
+    -- head. The last line's own spacing counts towards it.
     local footerHeight = CONTROL_HEIGHT + footerStrip + BAR_HEIGHT + 6 + math.max(0, textGap - lineGap)
     local waiting = Waiting()
     local shownRows = math.min(MAX_ROWS, waiting)
     local queueHeight = shownRows * ROW_HEIGHT + (waiting > MAX_ROWS and 14 or 0)
-    -- The captions take what the panel leaves, within the captions' page sizes. A panel too
-    -- small for the smallest page grows to fit it: the controls are never cut off.
-    -- The share of DialogueUI's window, or the height the handle was dragged to.
+    -- A panel too small for MIN_LINES grows to fit them, so the controls are never cut off.
     local height = self.sizing and Round(frame:GetHeight()) or Addon:Layout().DialogueUIHeight or Round(duiHeight)
     local body = height - padTop - headerHeight - queueHeight - padBottom - footerHeight
     local lines = math.max(MIN_LINES, math.floor(body / lineHeight))
-    -- Folded, the panel is only as tall as Lines Shown asks.
     local expanded = Expanded()
     if not expanded then
         lines = Addon:Profile("Transcript").Lines == 1 and 1 or 2
         height = 0
     end
-    -- Fit to the Words: no taller than the line's words need, the size above being the most.
-    -- Not while the handle is dragged, where the panel follows the pointer.
+    -- Fit to the Words, except while the handle is dragged and the panel follows the pointer.
     if cfg.FitText ~= false and not self.sizing then
         local needed = self:TextLines(inner)
         if needed and needed < lines then
@@ -470,8 +425,8 @@ function Skin:Layout()
     self.portrait:SetSize(face, face)
     self.portrait:ClearAllPoints()
     self.portrait:SetPoint("CENTER", self.headerSocket, "TOPLEFT", Round(23 * ratio), -Round(23 * ratio))
-    -- DialogueUI's header: the quest title on the strip, past the socket, and the small
-    -- line above it -- here the speaker's name.
+    -- The line's title sits where DialogueUI puts its quest title, the speaker's name in its
+    -- small line above.
     self.title:ClearAllPoints()
     self.title:SetPoint("LEFT", self.headerSocket, "LEFT", Round(53 * ratio), Round(2 * ratio))
     self.title:SetPoint("RIGHT", content, "RIGHT", -(2 * CORNER_ICON), 0)
@@ -509,7 +464,6 @@ function Skin:Layout()
     self.layingOut = false
 end
 
---- The theme's colours on everything that has one.
 function Skin:Dress()
     local colors = Theme:Colors()
     local fonts = self.fonts or Theme:Fonts()
@@ -561,10 +515,9 @@ function Skin:ConfigureActions()
         if action.anchor == "header" then
             button:Hide()
         elseif action.anchor == "topright" and button.showsIcon and not corner then
-            -- The Report icon: faint at the right end of the controls row, since a bug is
-            -- the rare case and the corner belongs to Close; as big as Close, as smaller it
-            -- was hard to see on the parchment. It brightens under the mouse; hooked once,
-            -- as its own scripts carry the tooltip.
+            -- Report sits faint in the controls row, as the corner belongs to Close, at Close's
+            -- size since smaller was hard to see on the parchment. Hooked: its scripts carry the
+            -- tooltip.
             corner = button
             button:SetParent(self.controls)
             button:SetFrameLevel(self.controls:GetFrameLevel() + 1)
@@ -579,7 +532,6 @@ function Skin:ConfigureActions()
             end
             x = CORNER_ICON + 6
         else
-            -- The rest line up from the right of the controls row, after Stop.
             button:SetParent(self.controls)
             button:SetFrameLevel(self.controls:GetFrameLevel() + 1)
             button:ClearAllPoints()
@@ -590,10 +542,8 @@ function Skin:ConfigureActions()
     self.actionsWidth = x
 end
 
---- The wheel with Ctrl held: Window Size a step up or down, or with Shift too, Text Size --
---- the player's own settings, which the other windows follow too. The panel keeps its top
---- left corner where it was, rather than sliding as its scale changes. True when the wheel
---- was taken.
+--- Ctrl-wheel steps Window Size, Ctrl-Shift-wheel Text Size, keeping the top-left corner in
+--- place as the scale changes. True when the wheel was taken.
 function Skin:Wheel(delta)
     if delta == 0 or not (IsControlKeyDown and IsControlKeyDown()) then return false end
     local text
@@ -625,8 +575,7 @@ function Skin:Wheel(delta)
     return true
 end
 
---- Fold the panel to Lines Shown, or open it to its size. Kept, and shared with the other
---- windows' expand button.
+--- The state persists and is shared with the other windows' expand button.
 function Skin:SetExpanded(expanded)
     expanded = expanded and true or false
     if Expanded() == expanded then return end
@@ -654,7 +603,6 @@ function Skin:UpdateControls(relayout)
         self.play.text:SetText(label)
         relayout = true
     end
-    -- The glyph on the face: Stop while the line speaks, Replay once it is stopped.
     Actions.Glyph(self.pause:GetNormalTexture(), Actions.HeadState())
     self.pause:GetNormalTexture():SetAlpha((paused or MouseIsOver(self.pause)) and .9 or 0)
     self.pause.wash:SetShown(paused and not playing)
@@ -772,10 +720,8 @@ function Skin:Tick(elapsed)
     end
 end
 
---- Where DialogueUI puts its own window: the same top, centred on the same spot, so a line
---- that plays on after the dialog closes stays where the dialog was. It follows DialogueUI's
---- Frame Orientation and Frame Size until the player drags it. Without DialogueUI's place,
---- left of centre.
+--- Where DialogueUI puts its own window, so a line that plays on after the dialog closes
+--- stays where the dialog was. Without DialogueUI's place, left of centre.
 function Skin:PlaceDefault()
     local frame = self.frame
     local x, top = Theme:WindowPlace()
@@ -790,9 +736,8 @@ function Skin:PlaceDefault()
     end
 end
 
---- How many lines the words of the line shown take at `width`, the captions' width: the
---- captions wrapped there, with DialogueUI's empty line between paragraphs. nil while the
---- captions hold another clip's words, or none.
+--- Caption lines the current clip's words take at `width`; nil while the captions hold
+--- another clip's words, or none.
 function Skin:TextLines(width)
     if not (self.clip and Transcript.clip == self.clip and Transcript.frame) then return nil end
     -- Wrapped at this width first: the captions reflow only when their width changes.

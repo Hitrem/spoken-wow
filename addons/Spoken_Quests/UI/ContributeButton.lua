@@ -21,11 +21,8 @@ setfenv(1, VoiceOver)
 -- unchanged: a greyed-out button on every quest and every NPC this client has no line for is
 -- a permanent invitation to wonder what's broken; an absent one says there is nothing to do.
 --
--- With DialogueUI, the game's two frames never show: DialogueUI draws the dialog in its own
--- window and hides UIParent while it is open. That window gets a corner of its own instead,
--- under its Decline button (DialogueUICorner; UI/DialogueUIBridge.lua says which page it
--- shows): the Report icon, faint, on every page, and for a line no pack has the same icon in
--- full with "No voice-over playing? Contribute!" beside it.
+-- DialogueUI hides UIParent while its window is open, so that window gets a corner of its own
+-- under its Decline button: a faint Report icon, or for a line no pack has, a Contribute link.
 
 local BUTTON_HEIGHT = 20
 local BUTTON_WIDTH = 90
@@ -33,25 +30,21 @@ local GAP = 2
 -- From the close button's bottom edge down into the middle of the strip under the title bar.
 local STRIP_OFFSET = 12
 local CORNER_INSET = 32
--- On DialogueUI's window, the margins under and beside its footer buttons, when they cannot
--- be measured: DialogueUI's bottom (36) and side (26) paddings at its default size (1.1).
+-- Fallback margins under and beside DialogueUI's footer buttons: its bottom (36) and side (26)
+-- paddings at its default size (1.1).
 local DUI_FOOTER_MARGIN = 40
 local DUI_SIDE_MARGIN = 29
 local DUI_LINK_HEIGHT = 16
--- The Report icon as the DialogueUI narrator style draws it (UI/DialogueUIPlayer.lua in the
--- player), faint until the pointer is over it, since a bug is the rare case; in full for a
--- missing line, which is the thing to do on that page. Smaller than the narrator's 20, and
--- the words a little smaller than DialogueUI's, to fit above the curl of the parchment's foot.
+-- The Report icon stays faint until hovered, since a bug is the rare case. Icon and words are
+-- smaller than DialogueUI's to fit above the curl of the parchment's foot.
 local DUI_ICON = 16
 local DUI_TEXT_SCALE = 0.9
 local DUI_REPORT_ALPHA = 0.4
--- Hung this far under the footer buttons rather than centred in the margin below them, whose
--- lower half is the parchment's curled edge.
+-- Hung just under the footer buttons, not centred in the margin: its lower half is the
+-- parchment's curled edge.
 local DUI_ICON_GAP = 4
--- The red of DialogueUI's Accept button, sampled from its art
--- (Art/Theme_*/OptionBackground-Common.png). On parchment, the art's own red (119, 41, 20).
--- On the dark theme the art's red (135, 27, 26) is too dark to read as small text on black,
--- so it is the same red lifted.
+-- The red of DialogueUI's Accept button art (Art/Theme_*/OptionBackground-Common.png), lifted
+-- on the dark theme, where the art's (135, 27, 26) is too dark to read as small text on black.
 local DUI_RED_ON_LIGHT = { 0.467, 0.161, 0.078 }
 local DUI_RED_ON_DARK = { 0.85, 0.22, 0.2 }
 
@@ -158,8 +151,7 @@ local function OnLeave()
     end
 end
 
---- Report what DialogueUI's window shows: the quest page, or the NPC (ReportButton reads the
---- page from the bridge), in the language its line would be heard in.
+--- Report what DialogueUI's window shows, in the language its line would be heard in.
 function ContributeButton:ReportFromDialogueUI()
     local target = ReportButton:CurrentTarget()
     if not target then
@@ -169,8 +161,8 @@ function ContributeButton:ReportFromDialogueUI()
     ReportButton:ShowLink(target, ok and line and line.language or nil)
 end
 
---- A tooltip of the game's own make, on DialogueUI's window: the game's tooltip is a child of
---- UIParent, which DialogueUI hides. Drawn above everything, at the size the game's would be.
+--- The game's tooltip is a child of UIParent, which DialogueUI hides, so its window gets its
+--- own, scaled to the size the game's would be.
 function ContributeButton:DialogueUITooltip(frame)
     local tooltip = self.tooltip
     if not tooltip then
@@ -182,11 +174,8 @@ function ContributeButton:DialogueUITooltip(frame)
     return tooltip
 end
 
---- The corner on DialogueUI's window, built the first time it shows a page: the player's round
---- Report icon (Spoken:CreateRoundButton), and the words left of it for a line no pack has, in
---- DialogueUI's small serif and the red of its Accept button. Children of the window, so they
---- show while DialogueUI hides UIParent and close with it; drawn above it, as Spoken's player
---- is when hosted there (Addon:ApplyHost). Nil with a player too old to draw the icon.
+--- The icon and words are children of the window, so they show while DialogueUI hides UIParent
+--- and close with it. Nil with a player too old to draw the icon.
 function ContributeButton:DialogueUICorner(frame)
     local corner = self.corner
     if corner then
@@ -212,7 +201,6 @@ function ContributeButton:DialogueUICorner(frame)
     link.label = label
     corner = { icon = icon, link = link }
 
-    -- One control in two parts: either part does what the corner offers now.
     local function Click()
         if corner.missing then
             Contribute:Show()
@@ -220,7 +208,6 @@ function ContributeButton:DialogueUICorner(frame)
             ContributeButton:ReportFromDialogueUI()
         end
     end
-    -- The same words as the player's Report and the game frames' Contribute say.
     local function Enter(owner)
         icon:SetAlpha(1)
         local tooltip = ContributeButton:DialogueUITooltip(frame)
@@ -239,7 +226,7 @@ function ContributeButton:DialogueUICorner(frame)
             ContributeButton.tooltip:Hide()
         end
     end
-    -- Hooked on the icon, whose own hover brightens its glyph; set on the words, which have none.
+    -- Hooked on the icon to keep its own hover glow; the words have none to keep.
     icon:SetScript("OnClick", Click)
     icon:HookScript("OnEnter", Enter)
     icon:HookScript("OnLeave", Leave)
@@ -252,9 +239,8 @@ function ContributeButton:DialogueUICorner(frame)
     return corner
 end
 
---- Show the corner on DialogueUI's window, just under its Decline (or Goodbye) button,
---- right-aligned with it: the faint Report icon, or, with `missing`,
---- the icon in full and the words to contribute.
+--- Show the corner under DialogueUI's Decline (or Goodbye) button, right-aligned with it: the
+--- faint Report icon, or with `missing`, the icon in full and the words to contribute.
 function ContributeButton:ShowOnDialogueUI(frame, missing)
     local corner = self:DialogueUICorner(frame)
     if not corner then
@@ -264,10 +250,9 @@ function ContributeButton:ShowOnDialogueUI(frame, missing)
     corner.missing = missing and true or false
     local red = Utils:DialogueUIThemeID() == 2 and DUI_RED_ON_DARK or DUI_RED_ON_LIGHT
     link.label:SetTextColor(red[1], red[2], red[3])
-    -- Sized to the words: their font is DialogueUI's, and the font size its setting.
+    -- Sized to the words, since DialogueUI's font size setting changes them.
     link:SetWidth((link.label:GetStringWidth() or 0) + 2)
-    -- The margins measured from DialogueUI's footer button, since its window size setting
-    -- changes them.
+    -- Measured from the footer button, since DialogueUI's window size setting changes the margins.
     local below, beside = DUI_FOOTER_MARGIN, DUI_SIDE_MARGIN
     local footer = frame.ExitButton
     if type(footer) == "table" and footer.GetBottom and frame.GetBottom then
@@ -305,7 +290,7 @@ end
 --- to QuestFrame or GossipFrame: whichever of those two is relevant is the one hidden while
 --- the other is up, and a child cannot be visible while its ancestor is not. Positioning
 --- still tracks the right one, through SetPoint's relativeTo, which does not require a shared
---- parent. On DialogueUI's window, a corner of its own stands in for it: see DialogueUICorner.
+--- parent.
 function ContributeButton:Refresh()
     local button = self.button
     if not button then

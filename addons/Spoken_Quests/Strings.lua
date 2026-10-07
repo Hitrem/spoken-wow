@@ -170,7 +170,7 @@ L.OPT_READ_TIP = "Read this aloud"
 L.OPT_GREETING = "Greeting"
 L.OPT_AUTOPLAY_OFF_TIP = "Read Automatically is turned off on the Quests page of the Spoken settings."
 L.OPT_CONTRIBUTE = "Contribute"
--- Beside the Report icon on DialogueUI's window, for a line no pack has (UI/ContributeButton.lua).
+-- Beside the Report icon on DialogueUI's window, for a line no pack has.
 L.OPT_CONTRIBUTE_NO_VO = "No voice-over playing? Contribute!"
 L.OPT_REPORT = "Report"
 L.OPT_CONTRIBUTE_TIP_LINE = "Spoken Quests doesn't have this line"
@@ -197,7 +197,6 @@ L.OPT_CANCEL = "Cancel"
 
 
 L.OPT_SECTION_EXTRAS = "Extras"
--- UI/DialogueUIBridge.lua: the DialogueUI addon's quest and gossip window.
 L.OPT_SECTION_DIALOGUEUI = "DialogueUI"
 L.OPT_DUI_NOTE = "For the DialogueUI addon, whose window replaces the quest and gossip frames and hides the rest of the interface while it is open."
 L.OPT_DUI_CAPTIONS = "Mark the Words Being Read"

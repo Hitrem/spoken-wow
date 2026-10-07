@@ -292,10 +292,8 @@ function Player:EnqueuePrepared(soundData)
     return true
 end
 
---- A line the player asked for by a Play button that stands for the dialog on screen
---- (DialogueUI's, UI/DialogueUIBridge.lua): started at once, in front of the queue, and
---- whatever was speaking skipped rather than kept to replay -- the player chose this line
---- over it. The rest of the queue plays after. Set `Player.playNow` around the read.
+--- Plays a line asked for by a dialog's Play button at once, ahead of the queue, and skips what
+--- was speaking rather than replaying it. Callers set `Player.playNow` around the read.
 ---@param soundData SoundData
 ---@return boolean playing
 function Player:PlayPreparedNow(soundData)
@@ -303,13 +301,11 @@ function Player:PlayPreparedNow(soundData)
     if interrupted and interrupted.key == soundData.key then
         interrupted = nil
     end
-    -- The player's PlayNow lets a line already speaking finish first and queues this one
-    -- behind it; only a stopped queue plays it at once. So what speaks is stopped first.
+    -- The player's PlayNow queues behind a line already speaking, so that line stops first.
     local stopped = interrupted ~= nil and Spoken.Pause ~= nil and not Spoken:IsPaused() and Spoken:Pause()
     local playing, reason = self.source:PlayNow(soundData)
     if not playing then
         Debug:Record("sound-disabled", reason or "refused")
-        -- Nothing to play in its place: what was stopped plays again.
         if stopped and Spoken.Resume then
             Spoken:Resume()
         end

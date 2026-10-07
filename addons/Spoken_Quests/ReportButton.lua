@@ -36,7 +36,6 @@ local function IsFrameVisible(frame)
     return frame:IsShown()
 end
 
--- DialogueUI's pages, as the events their lines play for.
 local PAGE_EVENTS =
 {
     QUEST_DETAIL = Enums.SoundEvent.QuestAccept,
@@ -129,9 +128,8 @@ function ReportButton:Link(target, language)
     return format("%s/r/%s", SITE_URL, target)
 end
 
---- The address in the copy popup. Under DialogueUI's window, which hides UIParent and the
---- game's popups with it, in Spoken's copy box instead, which shows over that window
---- (Spoken:SetContributeHost).
+--- DialogueUI hides UIParent and the game's popups with it, so under its window the address
+--- goes to Spoken's copy box, which shows over that window.
 local function ShowCopy(url)
     if Utils:DialogueUIPage() and Spoken and Spoken.ShowContribution then
         Spoken:ShowContribution(url, nil, true)

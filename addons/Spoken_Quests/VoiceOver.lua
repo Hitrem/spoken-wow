@@ -217,8 +217,8 @@ function Addon:InvokeQuestHandler(event, source, manual)
         Debug:Record("autoplay-off", format("Not reading %s: autoplay is off", event))
         return false
     end
-    -- Read on its own while DialogueUI's window is still appearing, the voice would run ahead
-    -- of the words it marks: it waits for the window (UI/DialogueUIBridge.lua).
+    -- Read while DialogueUI's window is still appearing, the voice would run ahead of the words
+    -- it marks, so autoplay waits for the window.
     local bridge = not manual and rawget(VoiceOver, "DialogueUIBridge")
     if bridge and bridge.Defer and bridge:Defer(event, function()
         self:InvokeQuestHandler(event, source, manual)
@@ -229,7 +229,7 @@ function Addon:InvokeQuestHandler(event, source, manual)
 
     Debug:Record("quest-dispatch", format("Dispatching %s through %s", event, source or "manual reader"))
     local succeeded, errorMessage = pcall(handler, self, event, manual)
-    -- The page DialogueUI keeps blank for this read's line lets go at once when none came of it.
+    -- The bridge keeps the page blank for this read's line; it shows the page at once if none came.
     if bridge and bridge.Read then
         local stage = Debug.runtime.stage
         bridge:Read(event, succeeded and (stage == "queued" or stage == "queue-paused" or stage == "playing"))
@@ -283,7 +283,7 @@ local SPEECH_EVENTS = {
 --- is open or no pack has its line. Asked without reading anything. The second value is
 --- the client event it stands for. A caller that already knows the event passes it: under
 --- DialogueUI the event is the only record of which panel is up, and DialogueUI hears it
---- before this addon's recorder does (UI/DialogueUIBridge.lua).
+--- before this addon's recorder does.
 ---@param event string?
 ---@return SoundData?, string?
 function Addon:GetVisibleLine(event)
@@ -360,21 +360,15 @@ local defaults = {
             VoiceLanguage = "auto",
             FallbackLanguage = "enUS",
         },
-        -- Inside DialogueUI's window, which replaces the quest and gossip frames and hides
-        -- the rest of the interface while it is open (UI/DialogueUIBridge.lua). They do nothing
-        -- without DialogueUI.
+        -- These do nothing without the DialogueUI addon.
         DialogueUI = {
-            -- DialogueUI's own text follows the line, as Spoken's captions do: typed out,
-            -- lit, or both, by Spoken's Type Words Out and Highlight Words.
+            -- Typed out, lit, or both, by Spoken's Type Words Out and Highlight Words.
             Captions = true,
-            -- Keep the words being read in view when the text is longer than the window.
             AutoScroll = true,
-            -- Keep the Spoken player, or its subtitles, on screen over DialogueUI. Off: DialogueUI
-            -- hides the rest of the interface on purpose, and its window, marked as the line
-            -- plays, already shows the words. A player who wants Spoken's too turns it on.
+            -- Off by default: DialogueUI hides the rest of the interface on purpose, and its marked text
+            -- already shows the words.
             ShowPlayer = false,
-            -- A Play button on DialogueUI's window plays this addon's line, whether or not
-            -- DialogueUI's Text To Speech is on; where it is, DialogueUI's own button does too.
+            -- Shown whether or not DialogueUI's Text To Speech is on.
             PlayButton = true,
         },
         DebugEnabled = false,
@@ -385,7 +379,6 @@ local defaults = {
     }
 }
 
--- What Spoken's DialogueUI page's Defaults puts back (UI/SettingsPanel.lua).
 Addon.DialogueUIDefaults = defaults.profile.DialogueUI
 
 local lastGossipOptions
@@ -535,8 +528,8 @@ function Addon:OnInitialize()
         Debug:Record("dialog-play-button-error", tostring(dialogPlayButtonError))
     end
 
-    -- Inside DialogueUI's window. Guarded the same way: DialogueUI is someone else's addon,
-    -- and a change there must not take narration down with it.
+    -- Guarded: DialogueUI is someone else's addon, and a change there must not take narration
+    -- down with it.
     local dialogueUIReady, dialogueUIError = pcall(function()
         if DialogueUIBridge and DialogueUIBridge.Setup then
             DialogueUIBridge:Setup()
@@ -1203,12 +1196,8 @@ function Addon:MuteGreetingAhead(event)
     Spoken:MuteGameDialogueAhead(Player.source)
 end
 
---- The text of the line about to be read on its own for the dialog that just opened, or nil
---- when nothing will be: autoplay off, the packs still loading, no pack voicing it, a
---- greeting already heard. Asked as the dialog opens, before its line is queued, by
---- MuteGreetingAhead and by DialogueUI's bridge (UI/DialogueUIBridge.lua), which keeps the
---- words it will type out from showing until then. `textIsCurrent` when the caller has the
---- page drawn already (the bridge): the page's own line is looked for, not just the speaker's.
+--- The text autoplay will read for the dialog that just opened, or nil. Asked before the line is
+--- queued; `textIsCurrent` when the page is drawn, to check its own line, not just the speaker.
 ---@param event string
 ---@param textIsCurrent boolean?
 ---@return string?

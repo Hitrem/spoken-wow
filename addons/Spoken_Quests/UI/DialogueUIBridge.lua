@@ -1,37 +1,17 @@
 setfenv(1, VoiceOver)
 
--- DialogueUI (Peterodox's quest and gossip window, CurseForge "DialogueUI") replaces the
--- Blizzard frames this addon's buttons sit on, and while it is open it hides UIParent -- the
--- Spoken player, and the captions on it, go with it. This puts what they showed into
--- DialogueUI's own window instead:
+-- DialogueUI hides UIParent while its quest and gossip window is open, taking Spoken's player
+-- and captions with it. This file shows them on DialogueUI's window instead: its text marks
+-- the words being read, and the player, a Play button and the Contribute button sit on it.
 --
---   * DialogueUI's quest and gossip text follows the line as Spoken's captions do: the words
---     type out as the voice reaches them, the word being read lights up, or both -- whichever
---     of Spoken's Type Words Out and Highlight Words is on (Spoken:GetCaption) -- and long
---     text scrolls to keep the voice in view;
---   * the Spoken player, or its subtitles, can stay on screen over DialogueUI;
---   * a Play button of this addon's own, in DialogueUI's art and in the corner where DialogueUI
---     puts its text-to-speech button, plays the recording, whether or not DialogueUI's Text To
---     Speech is on; where it is, DialogueUI's button plays the recording too;
---   * the Contribute button, for a line no pack has, sits on DialogueUI's window, and the
---     copy box it opens shows over it (Bridge:Page, UI/ContributeButton.lua).
+-- DUIQuestFrame, its fontStringPool and its Handle* methods are DialogueUI internals, not an
+-- API: Recognised checks them once at setup and the module stands down if any is missing.
 --
--- Nothing here changes DialogueUI. It is reached from outside: its window is the global
--- DUIQuestFrame, each paragraph of text is a FontString in that frame's fontStringPool, and
--- the Handle* methods that build a page are hooked after the fact. Those names are
--- DialogueUI's internals, not an API, so they are checked once at setup and the whole module
--- stands down, with a note on the settings panel, if any is missing.
+-- Marks go into the paragraph's own text: colour codes take no width and a left-aligned
+-- prefix wraps as the whole did, so nothing moves. The original text goes back when the line
+-- ends, because DialogueUI reads it for its own text-to-speech.
 --
--- Both marks are made in the paragraph's own text. The highlight is a colour code wrapped
--- round a word; typing out shows the paragraph up to the word being read, and nothing of the
--- paragraphs after it. Colour codes take no width and a left-aligned prefix wraps as the
--- whole did, and DialogueUI placed every paragraph once, when it built the page: nothing
--- moves. The original text is put back when the line ends or the window closes: DialogueUI
--- reads it back for its own text-to-speech.
---
--- Written for Lua 5.0 as far as parsing goes, because addon.xml is shared with the 1.12
--- client (no #, no %): that client has no DialogueUI, and the file returns before any of it
--- runs there.
+-- Parses as Lua 5.0 (no #, no %) because addon.xml is shared with the 1.12 client.
 
 DialogueUIBridge = { status = "waiting" }
 local Bridge = DialogueUIBridge
@@ -41,34 +21,28 @@ if Version.IsAnyLegacy then
     return
 end
 
--- The page builders, each a method DialogueUI calls by name: self[handler](self). A rebuild
--- (an item reward resolving, a settings change, QUEST_DETAIL firing twice) runs one again.
+-- A page can be built again (an item reward resolving, QUEST_DETAIL firing twice).
 local HANDLERS = { "HandleQuestDetail", "HandleQuestProgress", "HandleQuestComplete",
     "HandleQuestGreeting", "HandleGossip" }
 -- How many words of DialogueUI's text a caption word may skip to find its match: the NPC
 -- name DialogueUI can put in front of the text, a hint, a word that differs.
 local LOOKAHEAD = 6
--- Below this share of the caption's words found in the window, the window shows something
--- else -- an earlier page, another NPC's gossip -- and nothing is marked.
+-- Below this share of the caption's words found, the window shows something else (an earlier
+-- page, another NPC's gossip) and nothing is marked.
 local MIN_SHARE = 0.6
--- The captions' gold reads on DialogueUI's dark theme; on its parchment, whose text is dark,
--- gold on tan does not, and a deep red does.
+-- Gold reads on DialogueUI's dark theme but not on its tan parchment, where a deep red does.
 local ON_DARK = "|cffffd100"
 local ON_LIGHT = "|cff9c1a1a"
 local TICK = 0.05
--- Spoken Quests reads a dialog a moment after it opens -- 0.1s for gossip, once a quest has
--- held still for 0.4s, then once DialogueUI's window has faded in (Bridge:Defer) -- and
--- DialogueUI draws the page at once. Typed out, the words the line is about to read are kept
--- blank from the start (Bridge.Expect), for up to this long: shown whole until the voice
--- began, they flashed up and vanished.
+-- Spoken Quests reads a dialog a moment after DialogueUI draws it, so typed-out words the line
+-- will read stay blank for up to this long; shown whole until the voice began, they flashed.
 local HOLD = 2.5
 -- The longest autoplay waits for DialogueUI's window to fade in: its slowest intro is 0.75s
 -- and its text fades in over 0.35s. Past it the line reads anyway.
 local WAIT_LIMIT = 1.5
--- Each page builder, by the dialog event Spoken Quests reads its page for.
 local EVENTS = { HandleQuestDetail = "QUEST_DETAIL", HandleQuestProgress = "QUEST_PROGRESS",
     HandleQuestComplete = "QUEST_COMPLETE", HandleQuestGreeting = "QUEST_GREETING", HandleGossip = "GOSSIP_SHOW" }
--- DialogueUI's names for the quest pages, as its voiceover provider is told them.
+-- Keyed by the page names DialogueUI passes its voiceover provider.
 local QUEST_EVENTS = { detail = "QUEST_DETAIL", progress = "QUEST_PROGRESS", completion = "QUEST_COMPLETE" }
 
 local function Config()
@@ -116,9 +90,9 @@ end
 -- Matching the caption to the window
 --------------------------------------------------------------------------------
 
---- A word as compared: lower case, without ASCII punctuation. nil for a word that cannot be
---- compared -- all punctuation, or carrying an escape sequence (a link, a colour), which
---- DialogueUI's copy may have and the caption's never does, and which must never be split.
+--- A word as compared: lower case, without ASCII punctuation. nil for all punctuation, or for
+--- an escape sequence (a link, a colour): only DialogueUI's copy has those, and they must
+--- never be split.
 function Bridge.Key(text)
     if string.find(text, "|", 1, true) then
         return nil
@@ -183,10 +157,9 @@ function Bridge.AlignFrom(words, paragraphs, first)
     return map, found, counted
 end
 
---- The best match over every starting paragraph, or nil when none is good enough. Every start
---- is tried because DialogueUI can keep earlier gossip above the current page, and a hint
---- above the text; the later start wins a tie, the current gossip being the last. The second
---- value is the span of paragraphs matched, { first, last }: only those are ever typed out.
+--- The best match over every starting paragraph, or nil when none is good enough. DialogueUI
+--- can keep earlier gossip and a hint above the text, so the later start wins a tie. The
+--- second value is the span of paragraphs matched, { first, last }: only those are typed out.
 function Bridge.Align(words, paragraphs)
     local bestMap, bestFound, bestCounted = nil, 0, 0
     for first = 1, table.getn(paragraphs) do
@@ -210,8 +183,8 @@ function Bridge.Align(words, paragraphs)
 end
 
 --- The pair to light for caption word `index`: that word, or the last one before it the
---- window has, and its neighbour in the same paragraph -- the next word, or at the end of a
---- paragraph the one before, as the captions keep the last pair lit at a page boundary.
+--- window has, and its neighbour in the same paragraph: the next word, or at a paragraph's
+--- end the one before, as the captions keep the last pair lit at a page boundary.
 function Bridge.Pick(map, index)
     if not index then
         return nil
@@ -233,11 +206,9 @@ function Bridge.Pick(map, index)
     return lit
 end
 
---- How far the text is typed out, as the captions type it: the paragraph the voice is in and
---- the last byte of it shown, or nil for all of it. Nothing of the matched span before the
---- voice starts; up to and including the word being read while it speaks; everything once
---- it has finished, and for a clip with no length to time it by. A caption word the window
---- lacks types up to the last one before it that it has.
+--- How far the text is typed out: the paragraph the voice is in and the last byte of it
+--- shown, or nil for all of it (finished, or a clip with no length to time it by). A caption
+--- word the window lacks types up to the last one before it that it has.
 function Bridge.Cut(caption, map, span, paragraphs)
     if not caption.typewriter or not caption.progress or caption.progress >= 1 then
         return nil
@@ -265,8 +236,6 @@ function Bridge.Wrap(text, spans, color)
     return table.concat(parts)
 end
 
---- The highlight for a paragraph's text colour: gold on dark text's light background is
---- unreadable, so dark text gets the red.
 function Bridge.ColorFor(r, g, b)
     return Utils:IsBright(r, g, b) and ON_DARK or ON_LIGHT
 end
@@ -280,7 +249,7 @@ end
 -- lit; cutP/cutByte: how far the text is typed out (Bridge.Cut). pending: the line about to be
 -- read for the page just built, before it is queued: { words, untilTime, map, span }.
 local state = { dirty = true }
--- Whether the player can give the words being read (Spoken:GetCaption): asked once, in Hook.
+-- Whether the player reports the word being read (Spoken:GetCaption).
 local canMark = false
 
 -- A FontString set to "" may read back as nil.
@@ -356,8 +325,7 @@ local function Draw(map, span, lit, neighbor, cutP, cutByte)
     end
     for p, para in ipairs(state.paragraphs) do
         local want = para.text
-        -- Typed out: the paragraphs the line covers, up to the voice. Those around them --
-        -- earlier gossip, the objectives' list -- are not the line's and stay whole.
+        -- Only the line's paragraphs type out; earlier gossip and the objectives stay whole.
         if cutP and p >= span.first and p <= span.last then
             if p > cutP then
                 want = ""
@@ -420,10 +388,7 @@ local function Tick()
     else
         state.clip, state.map = nil, nil
     end
-    -- Neither Highlight Words nor Type Words Out on in Spoken's settings: DialogueUI's text
-    -- as DialogueUI drew it.
     if state.map and (caption.highlight or caption.typewriter) then
-        -- The line the page was waiting for is here.
         state.pending = nil
         local lit, neighbor
         if caption.highlight then
@@ -435,9 +400,8 @@ local function Tick()
         end
         return
     end
-    -- No line of this page's playing yet, but one is about to be queued for it: its words
-    -- wait blank, as typed-out words do before the voice starts. Not behind another part's
-    -- line -- a zone's lore, a book page -- which the quest's waits for in the queue.
+    -- A line is about to be queued for this page: its words wait blank, unless another part's
+    -- line (a zone's lore, a book page) is playing, which the quest's waits behind.
     local pending = state.pending
     local otherPart = clip ~= nil and clip.source ~= Player.source
     if pending and not otherPart and GetTime() < pending.untilTime then
@@ -506,11 +470,8 @@ end
 -- The Contribute button
 --------------------------------------------------------------------------------
 
---- The dialog event of the page DialogueUI's window shows (EVENTS), or nil while it is closed
---- or when this file stood down. What the game's own quest and gossip frames say without
---- DialogueUI, which never shows them: Contribute.lua asks it to know what is on screen, and
---- UI/ContributeButton.lua to put its button on this window. `handler` is DialogueUI's name
---- for the page builder it last ran; nil until the first dialog, so not part of Recognised.
+--- The dialog event of the page DialogueUI's window shows, or nil while it is closed or this
+--- file stood down. `frame.handler` is nil until the first dialog, so Recognised skips it.
 function Bridge:Page()
     local frame = self.driver and _G.DUIQuestFrame
     if frame and frame:IsShown() then
@@ -539,27 +500,20 @@ end
 -- The Play button
 --------------------------------------------------------------------------------
 --
--- DialogueUI draws a Play button only while its Text To Speech is on, which it has off by
--- default and reads only as it loads. So Spoken Quests draws a Play button of its own in the
--- same corner, in DialogueUI's art, on every page it has a recording for: left-click plays
--- the line or stops it, right-click turns Read Automatically on or off. DialogueUI's settings
--- are left as the player set them. Where its own button shows, this one stands in for it on
--- a page Spoken Quests reads, and leaves it be on a page it does not. Whether a line reads on
--- its own is Read Automatically's to decide, never DialogueUI's Auto Play.
+-- DialogueUI draws a Play button only while its Text To Speech is on, which is off by default
+-- and read only at load, so this file draws its own in the same corner. Read Automatically,
+-- never DialogueUI's Auto Play, decides whether a line reads on its own.
 
--- DialogueUI's art for its Play button: a 64-wide cell per theme (1 parchment, 2 dark), the
--- speaker on top and its three sound waves below. Sized and placed as DialogueUI places its own.
+-- A 64-wide cell per theme (1 parchment, 2 dark): the speaker on top, its three waves below.
 local PLAY_ART = "Interface/AddOns/DialogueUI/Art/Theme_Shared/TTSButton.png"
 local PLAY_SIZE, PLAY_ICON, PLAY_ALPHA, PLAY_INSET = 24, 16, 0.6, 8
 -- How often the button looks again for the page's line while the window is open: a quest's ID
 -- can arrive a moment after its page is drawn, and the packs load after login.
 local LOOK_EVERY = 0.5
 
--- The line the page on DialogueUI's window would read, and the event it stands for. Found by
--- the button (LookForLine) and by DialogueUI asking its voiceover provider (below); Play and
--- Stop act on it.
+-- The line the window's page would read, and its event; Play and Stop act on it.
 local line, lineEvent
--- How long DialogueUI's autoplay waits before it plays: DialogueUI's floor.
+-- DialogueUI's minimum autoplay delay.
 local AUTOPLAY_DELAY = 0.5
 -- When DialogueUI's autoplay will call playFile. It asks the delay (getAutoPlayDelay) just
 -- before it waits, and a click on its button never does, which is how the two are told apart.
@@ -780,24 +734,19 @@ local provider = {
         return line ~= nil
     end,
     playFile = function()
-        -- DialogueUI's autoplay rather than its button: whether a line reads on its own is Read
-        -- Automatically's to decide (Addon:IsAutoplayOn), not DialogueUI's Auto Play.
+        -- Ignore DialogueUI's autoplay: Read Automatically decides that.
         local now = GetTime()
         if autoplayAt and now >= autoplayAt - 0.1 and now <= autoplayAt + 0.5 then
             autoplayAt = nil
             return
         end
-        -- Now, whatever else is speaking: it is skipped (Player:PlayPreparedNow). Already
-        -- speaking, nothing to do; queued behind something else, brought to the front.
+        -- A line queued behind another is brought to the front.
         if line and not IsSpeaking(line) then
             PlayLine("DialogueUI Play button")
         end
     end,
-    -- Only while the window is up, i.e. its Stop button. DialogueUI also calls this as the
-    -- window closes -- accepting a quest closes it -- under its own "TTS Auto Stop", which is
-    -- on by default even with its text-to-speech off. Whether closing the dialog stops the
-    -- line is this addon's "Stop When Window Closes" to decide, and it defaults to
-    -- letting the line finish.
+    -- Only while the window is up: DialogueUI also calls this on close (its TTS Auto Stop, on
+    -- by default), and this addon's Stop When Window Closes decides that case.
     stopPlaying = function()
         if DUIQuestFrame:IsShown() then
             StopLine()
@@ -808,7 +757,6 @@ local provider = {
     isPlaying = function()
         return line ~= nil and IsSpeaking(line)
     end,
-    -- Asked just before DialogueUI's autoplay waits, which is how playFile tells it apart.
     getAutoPlayDelay = function()
         autoplayAt = GetTime() + AUTOPLAY_DELAY
         return AUTOPLAY_DELAY
@@ -835,9 +783,8 @@ end
 
 --- An automatic read of `event`, held until DialogueUI's window shows its page in full, so the
 --- voice starts with the words on screen rather than while the window is still appearing.
---- `run` reads it then, or after WAIT_LIMIT. False -- read at once -- where DialogueUI is not
---- showing this page at all: not hooked, closed (it passed this dialog to the game, a muted
---- quest, an instance), or on another page.
+--- `run` reads it then, or after WAIT_LIMIT. False (read at once) where DialogueUI is not
+--- showing this page: not hooked, closed (a muted quest, an instance), or on another page.
 function Bridge:Defer(event, run)
     if not self.driver or self.reading then
         return false
@@ -937,9 +884,8 @@ function Bridge:Hook()
     end)
     self.driver = driver
 
-    -- DialogueUI's own Play button, where its Text To Speech is on. One provider per session,
-    -- and DialogueUI warns if another voiceover addon has it. Registered even with the setting
-    -- off, so turning it on needs no reload.
+    -- Registered even with the setting off, so turning it on needs no reload. DialogueUI takes
+    -- one provider per session and warns if another voiceover addon has it.
     if _G.DialogueUIAPI and DialogueUIAPI.SetVOProvider then
         DialogueUIAPI.SetVOProvider(provider)
         self.provider = true

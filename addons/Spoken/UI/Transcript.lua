@@ -20,7 +20,6 @@ local function Expanded()
     return Addon.db and Addon:Layout().CaptionsExpanded or false
 end
 local Label
--- A player skin that lays the captions out itself fixes the line count: see Transcript:SetStyle.
 local function LineCount()
     if Transcript.style and Transcript.style.lines then return Transcript.style.lines end
     if Expanded() then return EXPANDED_LINES end
@@ -41,8 +40,6 @@ local function PageOf(line)
 end
 -- The glide's time constant, in seconds: it is 95% of the way there in three of these.
 local GLIDE = 0.09
--- The caption text's size and the space under each line: the setting's, or a skin's
--- (Transcript:SetStyle), which draws its text at its own size and spacing.
 local function FontSize()
     return Transcript.style and Transcript.style.size or Config().FontSize or 16
 end
@@ -138,9 +135,8 @@ function Transcript:GetProgress()
     return Clamp(self:GetElapsed() / duration, 0, 1)
 end
 
--- first/last are the word's bytes in text: SplitRun keeps every character, in order, so
--- a caller showing the same text elsewhere (Spoken:SplitCaption) can find the word being
--- read in its own copy.
+-- first/last are the word's bytes in text: SplitRun keeps every character in order, so a
+-- caller can find the word in its own copy of the text.
 local function Split(text)
     local words, total = {}, 0
     for at, space, run in text:gmatch("()(%s*)(%S+)") do
@@ -170,14 +166,12 @@ function Transcript:Tokenize()
     self.words, self.totalWeight = Split(self.text)
 end
 
--- Whether the recording is audibly on a word: started, past its delay, not yet done.
 function Transcript:IsSpeaking(progress)
     return self.hasStarted and self:AudioElapsed() >= 0 and progress ~= nil and progress < 1
 end
 
---- The word being read at progress: the first whose share of the recording ends past it.
---- The same word ActiveSegment finds, without the layout: Spoken:GetCaption answers while
---- the captions are hidden and have not been laid out.
+--- The word being read at progress, as ActiveSegment finds it but without the layout, so it
+--- answers while the captions are hidden and not laid out.
 function Transcript:WordAt(progress)
     local words = self.words
     if not progress or not words or #words == 0 then return nil end
@@ -242,7 +236,6 @@ end
 
 function Transcript:Reflow()
     if not self.measure or not self.labels then return end
-    -- Room for the expand button, unless a skin has taken it away.
     local button = self.expand:IsShown() and BUTTON_SIZE + GAP or 0
     local available = math.max(1, self.frame:GetWidth() - button)
     local paragraphs = self.style and self.style.paragraphs
@@ -260,8 +253,8 @@ function Transcript:Reflow()
             local prefix = line and #line > 0 and not word.joined and " " or ""
             local paragraph = pi == 1 and word.breakBefore and line and #line > 0
             if not line or paragraph or pi > 1 or self:TextWidth(lineText .. prefix .. text) > width then
-                -- A skin that sets its paragraphs apart gets an empty line between them,
-                -- about the gap DialogueUI leaves, and the text still moves a line at a time.
+                -- An empty line, about DialogueUI's paragraph gap, so the text still moves a
+                -- line at a time.
                 if paragraph and paragraphs then NewLine() end
                 NewLine()
                 prefix = ""
@@ -541,13 +534,6 @@ function Transcript:SetEnabled(enabled)
     self:Update()
 end
 
---- How a skin wants the captions drawn, or nil for the player's own look:
----   { font = face?, size = n?, lineGap = n?, paragraphs = true?, color = { r, g, b }?,
----     shadow = false?, highlight = "|cff..."?, lines = n? }
---- `size` and `lineGap` replace the caption text size and the space under each line;
---- `paragraphs` puts an empty line between paragraphs. `lines` fixes the page size, so the
---- expand button goes: the skin sized its panel for that many, and the account-wide
---- expanded flag must not be changed under it.
 local function SameStyle(a, b)
     if a == b then return true end
     if not a or not b then return false end
@@ -557,9 +543,13 @@ local function SameStyle(a, b)
     return ca[1] == cb[1] and ca[2] == cb[2] and ca[3] == cb[3]
 end
 
+--- How a skin wants the captions drawn, or nil for the player's own look:
+---   { font = face?, size = n?, lineGap = n?, paragraphs = true?, color = { r, g, b }?,
+---     shadow = false?, highlight = "|cff..."?, lines = n? }
+--- `paragraphs` puts an empty line between paragraphs. `lines` fixes the page size and hides
+--- the expand button, so the account-wide expanded flag is not changed under the skin's panel.
 function Transcript:SetStyle(style)
-    -- Compared by content: a skin hands over a fresh table on every refresh, and only a
-    -- change is worth a reflow.
+    -- Compared by content: a skin hands over a fresh table on every refresh.
     if SameStyle(self.style, style) then return end
     self.style = style
     self.renderedKey = nil
@@ -576,8 +566,8 @@ function Transcript:RefreshConfig()
     self.expand:SetNormalTexture(glyph .. "Button-Up")
     self.expand:SetPushedTexture(glyph .. "Button-Down")
     self.expand:SetShown(style.lines == nil)
-    -- A skin may ask for a taller page than the expanded captions' eight lines; one more
-    -- than the page, for the line sliding in mid-glide.
+    -- A skin's page may be taller than the expanded eight lines; one label more than the
+    -- page, for the line sliding in mid-glide.
     for row = #self.labels + 1, LineCount() + 1 do self.labels[row] = Label(self.frame) end
     self.measure:SetFont(face, size, "")
     for row, label in ipairs(self.labels) do

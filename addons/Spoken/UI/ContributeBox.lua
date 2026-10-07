@@ -162,13 +162,11 @@ local function GameFolder()
     return "<your game folder>"
 end
 
--- The window a feature addon shows over while one is open (Spoken:SetContributeHost), or nil.
+-- The window the box shows over (Spoken:SetContributeHost), or nil.
 local host
 
--- On the host, keeping its size on screen and drawn above it and above a player hosted there
--- (Addon:ApplyHost puts that at FULLSCREEN); on UIParent otherwise. Its anchor stays on
--- UIParent either way, so it stays where it was: a box still open when the host closes goes
--- back to UIParent and stays up.
+-- Above a player hosted there, which sits at FULLSCREEN. The anchor stays on UIParent, so a
+-- box still open when the host closes stays where it was.
 local function Place()
     if not box then return end
     local frame = box.frame
@@ -191,9 +189,8 @@ local function EnsureBox()
     Spoken.ContributeBox = box
 end
 
---- Show the box over another window while it is open, or back on UIParent with nil. For a
---- feature addon whose dialog window hides UIParent, where the box opens from a button on
---- that window: Spoken Quests passes DialogueUI's window. Additive: guard on the field.
+--- Show the box over another window, or back on UIParent with nil: for a dialog window that
+--- hides UIParent, as DialogueUI's does. Additive: guard on the field.
 function Spoken:SetContributeHost(frame)
     if host == frame then return end
     host = frame

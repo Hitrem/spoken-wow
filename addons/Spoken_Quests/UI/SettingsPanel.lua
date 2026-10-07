@@ -113,9 +113,8 @@ function SettingsPanel:Setup()
         function() return audio().OGThrall end,
         function(value) audio().OGThrall = value end)
 
-    -- Inside DialogueUI's window (UI/DialogueUIBridge.lua), so only with DialogueUI installed:
-    -- on Spoken's DialogueUI page, with the rest of what is about DialogueUI, or here with a
-    -- Spoken too old to have that page.
+    -- Only with DialogueUI installed: on Spoken's DialogueUI page, or here with a Spoken too old
+    -- to have that page.
     if DialogueUIBridge and DialogueUIBridge.Problem and IsAddOnLoaded and IsAddOnLoaded("DialogueUI") then
         if Spoken and Spoken.AddDialogueUISettings then
             Spoken:AddDialogueUISettings(function(page)
@@ -261,9 +260,8 @@ function SettingsPanel:Setup()
     self.panel, self.category = panel, category
 end
 
---- The DialogueUI rows, as a section titled `title` of `layout`: this page's, or Spoken's
---- DialogueUI page's. Hands back what puts them back to their defaults, for that page's
---- Defaults button.
+--- Adds the DialogueUI rows to `layout` under `title`. Returns what resets them, for the
+--- Defaults button of Spoken's DialogueUI page.
 function SettingsPanel:DialogueUIRows(layout, title, note)
     layout:Section(title)
     if note then layout:Note(note, nil, 32) end

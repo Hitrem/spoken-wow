@@ -23,25 +23,20 @@ Defaults = {
             FrameScale = 0.7,
             FrameStrata = "HIGH",
             HidePortrait = false,
-            -- How lines are shown, the narrator style: "subtitle", "minimal" (the Small
-            -- Window), "classic" (the Large Window), "dialogueui" (UI/DialogueUIPlayer.lua)
-            -- or "none" (the voice alone). Addon:PlayerStyle answers what is actually drawn
-            -- where the chosen one is not on offer. Subtitles are the default only on the
-            -- modern clients: the legacy ones start in the window they always had.
+            -- "subtitle", "minimal" (Small Window), "classic" (Large Window), "dialogueui" or
+            -- "none" (the voice alone). Legacy clients start in the window they always had.
             Style = Version.IsAnyLegacy and "classic" or "subtitle",
             -- Forever only: the bronze its own frames wear, on the minimal player's metal.
             BronzeTint = true,
             MinimalWidth = 380,
             -- Per action id, for the ones an addon declared optional. Absent means shown.
             HiddenActions = {},
-            -- The DialogueUI window (UI/DialogueUIPlayer.lua).
             DialogueUI = {
-                -- Parchment or dark, whichever DialogueUI is set to, changing when it does.
+                -- Parchment or dark, as DialogueUI is set, changing when it does.
                 FollowTheme = true,
-                -- The theme when not following: 1 parchment, 2 dark, DialogueUI's own numbers.
+                -- When not following: 1 parchment, 2 dark, DialogueUI's own numbers.
                 Theme = 1,
-                -- Its size, text size, lines and expand state are the player's own settings
-                -- (FrameScale, Transcript.FontSize, Transcript.Lines, CaptionsExpanded).
+                -- Size, text size, lines and expand state are the player's shared settings.
                 -- Only as tall as the line's words need, up to the panel's size.
                 FitText = true,
             },
@@ -145,9 +140,8 @@ function Addon:InitDB()
             end
             transcript.AutoScroll = nil
         end
-        -- The style was three switches before it was one setting: SubtitlePlayer, then
-        -- HideFrame, then MinimalPlayer choosing between the two windows. Read raw, so an
-        -- absent switch is its old default.
+        -- Style replaces three old switches: SubtitlePlayer, then HideFrame, then MinimalPlayer
+        -- choosing the window. Read raw, so an absent switch is its old default.
         local frame = type(profile) == "table" and profile.Frame
         if type(frame) == "table" and frame.Style == nil
             and (frame.SubtitlePlayer ~= nil or frame.HideFrame ~= nil or frame.MinimalPlayer ~= nil) then
@@ -225,18 +219,16 @@ function Addon:RestoreLayout(key, frame)
     return true
 end
 
---- Locked by the setting. Hosted (SetPlayerHost), the windows still move: ApplyHost keeps
---- their effective scale and their anchor on UIParent, so a place saved then is the same place
---- without the host.
+--- Hosted windows still move: ApplyHost keeps their effective scale and their anchor on
+--- UIParent, so a place saved while hosted is the same place without the host.
 function Addon:IsFrameLocked()
     return self:Profile("Frame").LockFrame
 end
 
---- Put a player frame on the host, or back on UIParent when there is none. A dialog addon
---- that hides UIParent (DialogueUI) would otherwise hide the player with it. The anchor stays
---- as it was, still against UIParent, and the scale is chosen so the effective scale does
---- not change either: the frame keeps its exact place on screen. A frame with a scale or
---- strata of its own says so in spokenBaseScale / spokenBaseStrata (the subtitles).
+--- Put a player frame on the host, or back on UIParent, since a host that hides UIParent
+--- (DialogueUI) would hide the player too. The anchor stays on UIParent and the scale keeps
+--- the effective scale, so the frame keeps its exact place on screen. spokenBaseScale /
+--- spokenBaseStrata give a frame's own scale and strata (the subtitles).
 function Addon:ApplyHost(frame)
     if not frame then return end
     local host, cfg = self.playerHost, self:Profile("Frame")
@@ -244,7 +236,7 @@ function Addon:ApplyHost(frame)
     if host then
         frame:SetParent(host)
         frame:SetScale(base * UIParent:GetEffectiveScale() / host:GetEffectiveScale())
-        -- Above the host's own strata, so it never draws under the dialog it sits over.
+        -- Above the host's strata, so it never draws under the dialog it sits over.
         frame:SetFrameStrata("FULLSCREEN")
         frame.spokenHosted = true
     elseif frame.spokenHosted then
@@ -263,26 +255,22 @@ function Addon:SetPlayerHost(host)
     self:ApplyHost(PlayerFrame.frame)
     self:ApplyHost(MinimalPlayer.frame)
     if DialogueUIPlayer then self:ApplyHost(DialogueUIPlayer.frame) end
-    -- Subtitles Only is the default: they go over the host too, and pass its clicks through.
+    -- The subtitles go over the host too, and pass its clicks through.
     if Subtitle and Subtitle.frame then
         self:ApplyHost(Subtitle.frame)
         Subtitle:Mouse()
     end
 end
 
---- Which of the five ways of showing a line is in use: "minimal" (the Small Window),
---- "classic" (the Large Window), "dialogueui" (a window in the DialogueUI addon's art),
---- "subtitle" (no window, subtitles only) or "none" (nothing on screen at all, the voice
---- alone). Not every one exists everywhere: the minimal one is not built on the legacy
---- clients, the DialogueUI one needs DialogueUI, and 1.12 has no captions, so no subtitles
---- either. The setting is kept when its style is not on offer, so installing DialogueUI
---- later brings that window back without choosing it again.
 --- What is on screen: the chosen style, or one previewed from the welcome window or the settings
 --- (Options:Preview). The windows and the subtitles ask this; the settings ask PlayerStyle.
 function Addon:DisplayStyle()
     return self.previewStyle or self:PlayerStyle()
 end
 
+--- The chosen style, or a fallback where it is not on offer: no Small Window on legacy
+--- clients, no DialogueUI window without DialogueUI, no subtitles on 1.12. The setting is
+--- kept, so installing DialogueUI later brings its window back.
 function Addon:PlayerStyle()
     local style = self:Profile("Frame").Style
     if style == "none" or style == "classic" then return style end
@@ -304,7 +292,7 @@ function Addon:Enable()
     self.enabled = true
     PlayerFrame:Initialize()
     Transcript:Initialize()
-    -- DialogueUI's theme or window size changing redraws its window in the new art.
+    -- Redraw in the new art when DialogueUI's theme or window size changes.
     DialogueUITheme:Watch(function()
         if Addon:DisplayStyle() == "dialogueui" then PlayerFrame:RefreshConfig() end
     end)

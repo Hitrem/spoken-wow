@@ -373,8 +373,7 @@ local function EventOnScreen()
     elseif QuestFrameDetailPanel and QuestFrameDetailPanel:IsShown() then
         return Enums.SoundEvent.QuestAccept, GetQuestText and GetQuestText()
     end
-    -- The same three pages in DialogueUI's window: the quest API answers for the dialog
-    -- whichever window draws it.
+    -- The quest API answers for the dialog whichever window draws it.
     local page = Utils:DialogueUIPage()
     if page == "QUEST_COMPLETE" then
         return Enums.SoundEvent.QuestComplete, GetRewardText and GetRewardText()

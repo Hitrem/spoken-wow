@@ -167,8 +167,8 @@ function Utils:Ordered(tbl, sorter)
     return orderedNext, tbl, nil
 end
 
---- The page DialogueUI's window shows, as the dialog event it stands for (UI/DialogueUIBridge.lua),
---- or nil while it is closed or the bridge is not loaded.
+--- The page DialogueUI's window shows, as the dialog event it stands for, or nil while it is
+--- closed or the bridge is not loaded.
 ---@return string?
 function Utils:DialogueUIPage()
     local bridge = rawget(VoiceOver, "DialogueUIBridge")

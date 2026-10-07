@@ -1,5 +1,5 @@
--- Saved settings from before the narrator style was one setting: SubtitlePlayer, HideFrame and
--- MinimalPlayer, three switches, became Frame.Style. Run with `make test-player`.
+-- Saved SubtitlePlayer, HideFrame and MinimalPlayer switches upgrading to Frame.Style.
+-- Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")

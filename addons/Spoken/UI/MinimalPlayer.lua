@@ -66,7 +66,6 @@ local function BelongsTo(frame, root)
     end
     return false
 end
--- A waiting line's label, with why it is held when it is.
 local function HeldLabel(clip)
     local held = SoundQueue:GetHeldReason(clip)
     return held and format("%s (%s)", Label(clip), held) or Label(clip)
@@ -76,8 +75,7 @@ function MinimalPlayer:IsEnabled()
     return Addon.db and Addon:DisplayStyle() == "minimal"
 end
 
--- The pieces the DialogueUI window (UI/DialogueUIPlayer.lua) builds its queue rows and
--- labels from, so the two lists of waiting lines behave alike.
+-- Shared with the DialogueUI window's queue, so both lists of waiting lines behave alike.
 MinimalPlayer.parts = { Font = Font, Removable = Removable, ShowRemove = ShowRemove, Label = Label,
     HeldLabel = HeldLabel, Clamp = Clamp, Waiting = Waiting, BelongsTo = BelongsTo }
 
@@ -443,8 +441,7 @@ function MinimalPlayer:ToggleMenu()
     self:HideTooltip()
     self.menu:ClearAllPoints()
     self.menu:SetPoint("TOPLEFT", self.frame, "BOTTOMLEFT", Config().HidePortrait and 12 or 36, 8)
-    -- The window's parent, not UIParent: hosted over a dialog addon that hid UIParent, a
-    -- menu left there would open invisible. Same parent, so the same scale fits.
+    -- The window's parent, not UIParent, which a hosting dialog addon may have hidden.
     self.menu:SetParent(self.frame:GetParent())
     self.menu:SetFrameStrata("TOOLTIP")
     self.menu:SetScale(self.frame:GetScale())

@@ -1,9 +1,5 @@
--- The DialogueUI narrator style (UI/DialogueUITheme.lua and UI/DialogueUIPlayer.lua): offered
--- only with DialogueUI, its window falling back to the small one without it, and with a fake
--- DialogueUI the window takes its size, its art, its theme and its font, follows a theme or
--- size change, follows the player's Window Size, Text Size, Lines Shown and expand button, shows a zone's or a
--- book's line as well as a quest's, and can be hosted over DialogueUI's window. Run with
--- `make test-player`.
+-- The DialogueUI narrator style (UI/DialogueUITheme.lua, UI/DialogueUIPlayer.lua), with and
+-- without a fake DialogueUI. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
@@ -117,9 +113,6 @@ Expect("...in DialogueUI's font", T.style.font, "Interface/AddOns/DialogueUI/Fon
 Expect("...and the parchment's red highlight", T.style.highlight, RED)
 Expect("the expand button has no place on a fixed page", T.expand:IsShown(), false)
 
--- The settings: the window's size, its words' size and lines are the player's own, on Spoken's
--- page as for the other windows; the DialogueUI page, Spoken > DialogueUI, has only what this
--- window alone has, and a button on Spoken's page leads there.
 env.Options:UpdateRows()
 local main, Page = _G.SpokenOptionsPanel.layout, env.DialogueUIOptions
 main:Refresh()
@@ -185,8 +178,6 @@ saved.DialogueUIWidth = nil
 env.PlayerFrame:RefreshConfig()
 
 ---------------------------------------------------------------- where it opens
--- Until the player drags it, where DialogueUI puts its own window: the same top, centred on
--- the same spot, and on whichever side DialogueUI's Frame Orientation puts it.
 local function Near(a, b) return a ~= nil and b ~= nil and math.abs(a - b) < 1 end
 local function At(x)
     local anchor, base = Skin.frame.anchor, Skin.frame.spokenBaseScale
@@ -257,7 +248,6 @@ Skin:SetExpanded(true)
 panel.FitText = false
 Page:Reset()
 Expect("the page's Defaults puts Fit to the Words back", panel.FitText, true)
--- The wheel's shortcuts, which nothing on the window shows, on its tooltips and on the page.
 local function Says(text)
     for _, line in ipairs(_G.GameTooltip.lines or {}) do
         if line == text then return true end
@@ -300,8 +290,7 @@ Expect("a waiting line gets a row", Skin.rows[1] and Skin.rows[1]:IsShown(), tru
 Expect("...reading its label", Skin.rows[1].text:GetText(), "Second")
 Spoken:StopAll()
 
--- A book page or a zone's lore, as Spoken_Books and Spoken_Zones queue them: the book for a
--- face, a title and no NPC; a single-page book without even a page label.
+-- A book page and a zone's lore, queued as Spoken_Books and Spoken_Zones queue them.
 local books = env.Sources:Register("books", { title = "Books", addon = "Spoken_Books", order = 3 })
 books:Enqueue({ key = "b:1", path = "b1.mp3", length = 6, present = { header = "A Letter Home", transcript = "Dear mother, the war goes well.",
     bullet = "book", portrait = { kind = "texture", texture = [[Interface\AddOns\Spoken\Textures\Book]] } } })
@@ -351,8 +340,6 @@ words.FontSize = 16
 env.PlayerFrame:RefreshConfig()
 Expect("at the default Text Size the words are DialogueUI's size", T.style.size, 14)
 
--- The wheel with Ctrl held over the window. Ctrl alone sizes the window, keeping its top left
--- corner on screen; Shift with it sizes the text. Both the player's own settings.
 local ctrl, shift = false, false
 _G.IsControlKeyDown = function() return ctrl end
 _G.IsShiftKeyDown = function() return shift end
@@ -360,8 +347,7 @@ T.top = 1
 T.frame:GetScript("OnMouseWheel")(T.frame, -1)
 Expect("the wheel alone still scrolls the words", T.manualScroll, true)
 Expect("...the size untouched", frameCfg.FrameScale, 0.7)
--- Dragged before, so the corner stays where the player left it (never dragged, it stays where
--- DialogueUI puts its window: see "where it opens").
+-- Dragged first, so the corner stays where the player left it rather than following DialogueUI.
 Skin:StopDrag()
 ctrl = true
 T.frame:GetScript("OnMouseWheel")(T.frame, 1)

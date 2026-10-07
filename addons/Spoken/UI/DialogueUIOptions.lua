@@ -1,19 +1,10 @@
 setfenv(1, SpokenEnv)
 
--- The DialogueUI page: Spoken > DialogueUI in the game's settings, beside the modules' pages,
--- with everything that is about the DialogueUI addon in one place. Spoken's own rows first --
--- the DialogueUI narrator style's window (UI/DialogueUIPlayer.lua) -- then a section from each
--- feature addon that registered one with Spoken:AddDialogueUISettings: Spoken_Quests' marks in
--- DialogueUI's own text, its player over DialogueUI's window and DialogueUI's Play button.
+-- Spoken > DialogueUI: Spoken's own DialogueUI window rows, then a section from each feature
+-- addon registered through Spoken:AddDialogueUISettings.
 --
--- Only with DialogueUI loaded, and only where pages nest under Spoken's (the Settings API):
--- with neither there is nothing to set. Built at PLAYER_LOGIN with Spoken's own page, after
--- every feature addon has registered its rows; one registered later is added then.
---
--- Always the last entry under Spoken: not a part of Spoken, a companion's settings. The game
--- lists pages in the order they are registered, and Spoken_Books registers its page at
--- PLAYER_ENTERING_WORLD, after this page is built; so this one is registered a frame after
--- that event, once the parts' pages are in.
+-- Registered a frame after PLAYER_ENTERING_WORLD to list last: the game orders pages by
+-- registration, and Spoken_Books registers its page at that event.
 --
 -- Parsed by the 1.12 client too (addon.xml is shared), so Lua 5.0 syntax throughout; that
 -- client has no DialogueUI and returns below.
@@ -59,7 +50,6 @@ function Page:Fit()
     if self.scroller then self.scroller:SetContentHeight(self.layout:Height() + 40) end
 end
 
---- The page's Defaults: Spoken's DialogueUI window settings, then each feature addon's.
 function Page:Reset()
     local cfg = Panel()
     for key, value in pairs(Defaults.profile.Frame.DialogueUI) do cfg[key] = value end
@@ -84,9 +74,8 @@ function Page:Setup()
     layout:Defaults(function() Page:Reset() end)
 
     local refresh = function() PlayerFrame:RefreshConfig(); layout:Refresh() end
-    -- The window's rows wait on its style being the one chosen, and on DialogueUI being a
-    -- version its art can be read from. Its size, text size and lines are not here: they are
-    -- the player's own settings on Spoken's page, which this window follows as the others do.
+    -- Size, text size and lines live on Spoken's page as the player's own settings, which
+    -- this window follows.
     local function Window(row)
         layout:Requires(row, function() return DialogueUITheme:Available() end, L.OPT_STYLE_DUI_UNKNOWN)
         layout:Requires(row, function() return Addon:PlayerStyle() == "dialogueui" end, L.REASON_DUI_STYLE)
@@ -104,7 +93,7 @@ function Page:Setup()
     layout:Outdent()
     Window(layout:Checkbox(L.OPT_DUI_FIT_TEXT, L.OPT_DUI_FIT_TEXT_TIP,
         function() return Panel().FitText ~= false end, function(v) Panel().FitText = v end, refresh))
-    -- The wheel shortcuts for Window Size and Text Size, which nothing on the window shows.
+    -- Nothing on the window shows the wheel shortcuts.
     layout:Note(L.DUI_WHEEL_HINT, nil, 40)
 
     for _, build in ipairs(self.builders) do self:Run(build) end
@@ -125,7 +114,6 @@ function Page:Register()
     self.page = Options:AddPage(self.panel, L.OPT_STYLE_DIALOGUEUI, ORDER, self.layout, self.scroller)
 end
 
---- Open the page, from the button Spoken's own page shows while the DialogueUI style is chosen.
 function Page:Open()
     self:Register()
     return self.page ~= nil and Options:OpenPage(ORDER)

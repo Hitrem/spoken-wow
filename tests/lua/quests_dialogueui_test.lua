@@ -1,10 +1,5 @@
--- The quests addon inside DialogueUI's window (UI/DialogueUIBridge.lua): matching the caption to
--- DialogueUI's paragraphs, typing them out and lighting the words being read as Spoken's
--- settings say, putting the text back, rebuilt pages, Spoken's Play button on the window and
--- the one DialogueUI draws for a voiceover provider, the player and the subtitles hosted over
--- the window, the Report and Contribute corner and its copy box on it, and the settings
--- DialogueUI's absence greys out. DialogueUI itself is a fake here, built from the parts of
--- DUIQuestFrame the module reaches for. Run with `make test-player`.
+-- Spoken Quests inside DialogueUI's window (UI/DialogueUIBridge.lua), against a fake
+-- DUIQuestFrame built from the parts the bridge reaches for. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
@@ -133,7 +128,6 @@ Expect("the last word of a paragraph keeps the one before it lit",
 Expect("a word the window lacks lights the last one it has",
     table.concat({ Bridge.Pick({ [1] = { p = 1 }, [2] = { p = 1 } }, 3) }, ","), "2,1")
 
--- Typing out, as the captions type: nothing before the voice, up to the word being read.
 local paras = Paras("Farmer Test: Hello there, traveller.", "Safe roads.")
 map, span = Bridge.Align(caption, paras)
 local function Cut(fields)
@@ -242,15 +236,13 @@ DUI:HandleQuestDetail()
 Expect("...and every page with Type Words Out off", Paragraph(1), original1)
 words.Typewriter = true
 
--- Gossip from a speaker a pack knows, but whose page's line has no recording here: nothing
--- will read it, so it is not kept blank waiting for a line.
+-- A speaker a pack knows, with no recording for this page's line.
 local questGiver = world.npcGUID
 world.npcGUID = "Creature-0-0-0-0-5678-0"
 world.gossipText = "Hail, friend. The roads are long."
 DUI.handler = "HandleGossip"
 DUI:HandleGossip()
 Expect("gossip whose recording is missing shows whole at once", Paragraph(1) ~= "" and Paragraph(1) ~= nil, true)
--- A page kept blank for a read that then queues nothing shows as soon as the read is done.
 local gossipHandler = VO.Addon.GOSSIP_SHOW
 VO.Addon.GOSSIP_SHOW = function() end
 VO.Addon.ExpectedLine = function() return world.gossipText end
@@ -262,8 +254,7 @@ Expect("...shows whole once the read queues nothing, not after the wait", Paragr
 VO.Addon.GOSSIP_SHOW, VO.Addon.ExpectedLine = gossipHandler, nil
 world.npcGUID, world.gossipText, DUI.handler = questGiver, nil, nil
 
--- Another part's line playing while DialogueUI is open -- a zone's lore, a book page -- is
--- not DialogueUI's text, even word for word.
+-- A zone clip whose transcript is the quest text word for word.
 Spoken:StopAll()
 DUI:HandleQuestDetail()
 local zones = Spoken:RegisterSource("zones", { title = "Zones", addon = "Spoken_Zones" })
@@ -284,16 +275,13 @@ Expect("Play queues it", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "
 Expect("...and DialogueUI sees it playing", provider.isPlaying(), true)
 provider.playFile()
 Expect("Play again, or DialogueUI's own autoplay, does not queue it twice", Spoken:GetQueueSize(), 1)
--- Accepting a quest closes DialogueUI, which then tells its provider to stop (its "TTS Auto
--- Stop", on by default). The line plays on, as it does without DialogueUI.
+-- Accepting a quest closes DialogueUI, whose TTS Auto Stop (on by default) then calls stop.
 DUI:Hide()
 provider.stopPlaying()
 Expect("closing DialogueUI does not cut the line off", Spoken:GetQueueSize(), 1)
 DUI:Show()
 provider.stopPlaying()
 Expect("Stop removes it", Spoken:GetQueueSize(), 0)
--- Pressed while something else speaks -- a zone's lore, a book page -- Play reads the page
--- at once, and what was speaking is skipped, not kept to resume; anything after it still plays.
 zones:Enqueue({ key = "z:13", path = "z13.ogg", length = 12,
     present = { header = "Elwynn Forest", transcript = "Lore.", bullet = "zone",
         portrait = { kind = "texture", texture = "Book" } } })
@@ -311,7 +299,6 @@ for _, clip in ipairs(Spoken:GetQueue()) do table.insert(keys, clip.key) end
 Expect("...the line it cut off skipped, and the next one still waiting", table.concat(keys, " "), "101-accept z:14")
 Spoken:StopAll()
 zones:StopAll()
--- Waiting behind another line, the page's line is brought forward rather than dropped.
 zones:Enqueue({ key = "z:15", path = "z15.ogg", length = 12,
     present = { header = "Darkshore", transcript = "Lore.", bullet = "zone",
         portrait = { kind = "texture", texture = "Book" } } })
@@ -332,7 +319,6 @@ Expect("with the setting off DialogueUI is told there is nothing", provider.does
 dui.PlayButton = true
 
 ---------------------------------------------------------------- DialogueUI's Text To Speech, left alone
--- DialogueUI's own settings are the player's: nothing here turns its Text To Speech on.
 local said = {}
 local realPrint = _G.print
 _G.print = function(text) table.insert(said, text) end
@@ -346,8 +332,7 @@ Expect("...and nothing asks for a reload", table.getn(said), 0)
 _G.print = realPrint
 
 ---------------------------------------------------------------- autoplay is Read Automatically's
--- DialogueUI's Auto Play has no say: its autoplay asks the delay, then calls Play, and that
--- call is ignored, while a click on its button plays.
+-- DialogueUI's autoplay asks the delay, then calls Play; that call is ignored, a click's is not.
 local audio = VO.Addon.db.profile.Audio
 audio.Autoplay = false
 DialogueUI_DB.TTSEnabled, DialogueUI_DB.TTSAutoPlay = true, true
@@ -399,7 +384,6 @@ play.scripts.OnClick(play, "RightButton")
 Expect("right-click turns Read Automatically off", audio.Autoplay, false)
 play.scripts.OnClick(play, "RightButton")
 Expect("...and on again", audio.Autoplay, true)
--- Pressed while another part's line speaks, it reads the page at once, as DialogueUI's does.
 zones:Enqueue({ key = "z:16", path = "z16.ogg", length = 12,
     present = { header = "Duskwood", transcript = "Lore.", bullet = "zone",
         portrait = { kind = "texture", texture = "Book" } } })
@@ -409,13 +393,12 @@ Expect("...in front of a zone's lore, which is skipped", Spoken:GetCurrent() and
 Expect("...the lore not kept to replay", Spoken:GetQueueSize(), 1)
 Spoken:StopAll()
 zones:StopAll()
--- DialogueUI's own button, where its Text To Speech is on, sits under it out of sight.
 DUI.TTSButton = stub.Widget("Button")
 DUI.TTSButton:SetAlpha(0.6)
 Bridge:RefreshPlayButton()
 Expect("DialogueUI's own button is kept out of sight under it", DUI.TTSButton:GetAlpha(), 0)
 world.questID = 102
--- Looked for again now and then while the window is open.
+-- The bridge rechecks the page on a timer while the window is open.
 driver.scripts.OnUpdate(driver, 0.6)
 Expect("a page with no recording hides it", play:IsShown(), false)
 Expect("...and gives DialogueUI's own button back", DUI.TTSButton:GetAlpha(), 0.6)
@@ -428,7 +411,7 @@ Bridge:Refresh()
 Expect("with the setting off it is not there", play:IsShown(), false)
 dui.PlayButton = true
 Bridge:Refresh()
--- DialogueUI's dark theme: the art's second cell.
+-- A light text colour means DialogueUI's dark theme: the art's second cell.
 _G.DUIFont_QuestType_Left = { GetTextColor = function() return 1, 0.82, 0 end }
 DUI:Hide()
 driver.scripts.OnHide(driver)
@@ -442,8 +425,6 @@ DUI.handler = nil
 Bridge:RefreshPlayButton()
 
 ---------------------------------------------------------------- waiting for the window
--- Read on its own while DialogueUI's window is still fading in, the voice would run ahead
--- of the words it marks: autoplay waits until the window and its text are in full view.
 Spoken:StopAll()
 world.questID = 101
 DUI.handler = "HandleQuestDetail"
@@ -545,9 +526,6 @@ env.Addon:SetPlayerStyle("classic")
 driver:Show()
 
 ---------------------------------------------------------------- Report and Contribute
--- rusty-key/spoken-wow#246: DialogueUI never shows the game's quest and gossip frames, and
--- hides UIParent, so its window gets a corner of its own: the Report icon, faint, on every
--- page, and for a line no pack has the icon in full with the words to contribute.
 dofile(QUESTS .. "UI/ContributeButton.lua")
 local Contribute = VO.ContributeButton
 Contribute:Setup()
@@ -592,8 +570,6 @@ DUI.ExitButton = footer
 DUI:HandleQuestDetail()
 Expect("...measured from DialogueUI's footer once it is laid out", icon.anchor and icon.anchor.x .. " " .. icon.anchor.y, "-30 38")
 DUI.ExitButton = nil
--- Report, on DialogueUI's window: its quest page, in Spoken's copy box, which shows over the
--- window where the game's popup would be hidden with UIParent.
 driver.scripts.OnShow(driver)
 Fire(icon, "OnClick")
 local box = Spoken.ContributeBox
@@ -611,7 +587,7 @@ Fire(link, "OnEnter")
 Expect("...its tooltip saying what is missing", tip and tip.lines and tip.lines[1], VO.L.OPT_CONTRIBUTE_TIP_QUEST)
 Fire(link, "OnLeave")
 Expect("...still in full once the pointer leaves", icon:GetAlpha(), 1)
--- The red of DialogueUI's Accept button, for whichever theme DialogueUI's font says is on.
+-- DialogueUI's font colour tells which theme is on.
 local red
 link.label.SetTextColor = function(_, r, g, b) red = string.format("%.2f %.2f %.2f", r, g, b) end
 local fontColor = { 0.19, 0.17, 0.13 }
@@ -637,7 +613,6 @@ Expect("...for the gossip line", Contribute.gossip, true)
 local gossip = VO.Contribute:Capture()
 Expect("...and it sends the words DialogueUI shows", gossip and gossip:match("\nquest=") == nil
     and gossip:match("\nStrange times, friend%.\n") ~= nil, true)
--- The copy box a click opens: over the window while it is open, back on UIParent after.
 Fire(link, "OnClick")
 Expect("the copy box opens over DialogueUI's window", box and box.frame:IsShown() and box.frame:GetParent(), DUI)
 Expect("...the same size on screen", box and box.frame:GetScale(), 1 / 0.8)
@@ -656,8 +631,6 @@ DUI:Show()
 driver:Show()
 
 ---------------------------------------------------------------- the settings
--- On Spoken's DialogueUI page, Spoken > DialogueUI, with the DialogueUI window's own; the
--- Quests page keeps none of them.
 local panel = stub.LoadQuestsPanel(QUESTS, VO)
 panel:Setup()
 local Page = env.DialogueUIOptions
@@ -675,8 +648,6 @@ Expect("the panel has the DialogueUI options", captions ~= nil and Row(VO.L.OPT_
     and Row(VO.L.OPT_DUI_PLAY_BUTTON) ~= nil and scroll ~= nil, true)
 layout:Refresh()
 Expect("...live while DialogueUI is loaded", captions and captions.layoutReason, nil)
--- Without DialogueUI installed there are no DialogueUI rows anywhere: not on Spoken's page,
--- not on the Quests page.
 loaded = false
 local before = table.getn(layout.entries)
 local bare = stub.LoadQuestsPanel(QUESTS, VO)
@@ -706,7 +677,6 @@ dui.Captions, dui.PlayButton = false, false
 Page:Reset()
 Expect("the DialogueUI page's Defaults puts them back", dui.Captions and dui.PlayButton, true)
 Expect("diagnostics describe it", string.find(Bridge:Describe(), "words=true", 1, true) ~= nil, true)
--- Read Automatically is the Quests page's alone, with DialogueUI's Auto Play on or off.
 local readRow
 for _, entry in ipairs(panel.panel.layout.entries) do
     if entry.label == VO.L.OPT_PANEL_AUTOPLAY then readRow = entry.frame end

@@ -50,8 +50,8 @@ local UTF8_CHAR = "[%z\1-\127\194-\244][\128-\191]*"
 local function Config()
     return Addon:Profile("Transcript")
 end
--- The player's lock covers this frame too: locked, it is click-through. So does being hosted
--- over a dialog addon's window (Addon:SetPlayerHost): its clicks belong to that window.
+-- The player's lock covers this frame too: locked, it is click-through. So does hosting:
+-- the clicks belong to the host's window.
 local function Locked()
     return Addon:IsFrameLocked() or Addon.playerHost ~= nil
 end
@@ -248,7 +248,7 @@ function Subtitle:Build()
     -- Low, under every panel: the map, the quest log or Lore of Azeroth opened over a line in
     -- progress covers the words, rather than the words lying across the window.
     frame:SetFrameStrata("LOW")
-    -- What Addon:ApplyHost puts back when a host lets go of it.
+    -- The strata Addon:ApplyHost restores when the host lets go.
     frame.spokenBaseStrata = "LOW"
     frame:SetClampedToScreen(true)
     -- Dragged by hand rather than with StartMoving, which would let it wander sideways: the
@@ -764,7 +764,7 @@ function Subtitle:Update()
     if math.abs((self.frame.spokenBaseScale or 0) - scale) > .001 then
         self.frame.spokenBaseScale = scale
         self.frame:SetScale(scale)
-        -- Built, or resized, while a dialog addon hosts the player: onto the host, scaled to match.
+        -- Built or resized while hosted: onto the host, scaled to match.
         Addon:ApplyHost(self.frame)
         self:Place()
     end
