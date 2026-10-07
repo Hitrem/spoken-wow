@@ -1,7 +1,7 @@
 -- Where a player is sent for a voice pack: Spoken's list of every module's pack in every language
 -- (Spoken:VoicePack) matches the store pages under publishers/, and a module's page offers the
--- packs for the languages the player will hear -- the voice language's first, then the
--- fallback's. Run with `make test-player`.
+-- packs to get: the voice language's, or the fallback's where the voice language has none of its
+-- own. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
@@ -86,5 +86,10 @@ Expect("a Spanish client is offered the Spanish pack first", spanish[1], Name(ES
 -- buried the one that mattered. A pack installed is listed whatever its language.
 Expect("...then only the pack it has installed, not English's to get", table.concat(spanish, "|", 2),
     Name(ES, "TestPack"))
+-- But a language with no pack of its own is heard in English, the fallback: that is the pack to get.
+local chinese, CN = Shown("zhCN")
+Expect("a Chinese client, with no Chinese pack, is offered English's packs, its fallback",
+    table.concat(chinese, "|"), table.concat({ Name(CN, CN.OPT_PACK_ALL), Name(CN, CN.OPT_PACK_ALLIANCE),
+        Name(CN, CN.OPT_PACK_HORDE), Name(CN, CN.OPT_PACK_SHARED), Name(CN, CN.OPT_PACK_GOSSIP), Name(CN, "TestPack") }, "|"))
 
 if Failures() > 0 then stub.print(string.format("\n%d failure(s)", Failures())); os.exit(1) end

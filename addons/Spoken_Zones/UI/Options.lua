@@ -230,7 +230,8 @@ function SpokenZones:SetupOptions()
 	layout:Section(L.OPT_SECTION_PACKS)
 	local GetMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
 	-- The packs to get are those of the language the lore is read in (fixed at load); any pack
-	-- installed is listed too. Not English's to get on another language's client.
+	-- installed is listed too. Not English's to get on another language's client, unless that
+	-- language has no pack of its own (itIT): a missing story falls back to English.
 	local function Installed(addon)
 		for _, pack in ipairs(SpokenZones:GetAudioPacks()) do
 			if pack.addon == addon then return true end
@@ -238,7 +239,10 @@ function SpokenZones:SetupOptions()
 		return false
 	end
 	local function Wanted(code, addon)
-		return code == SpokenZones:GetLanguage() or Installed(addon)
+		local lang = SpokenZones:GetLanguage()
+		if code == lang or Installed(addon) then return true end
+		local own = lang == "enUS" or (Spoken and Spoken.VoicePack and Spoken:VoicePack("zones", lang))
+		return not own and code == "enUS"
 	end
 	-- The packs for what the player will hear, each language's shown while that language is wanted.
 	local listed = {}

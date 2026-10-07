@@ -145,7 +145,8 @@ function SpokenBooks:SetupOptions()
 	layout:Section(L.OPT_SECTION_PACKS)
 	local GetMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
 	-- The packs to get are the voice language's; any pack installed is listed too. Not the
-	-- fallback's to get: it buried the one that mattered.
+	-- fallback's to get: it buried the one that mattered. But a voice language with no pack of its
+	-- own (itIT) is heard in the fallback's, so that is the one to get there.
 	local function Installed(addon)
 		for _, pack in ipairs(SpokenBooks:GetAudioPacks()) do
 			if pack.addon == addon then return true end
@@ -153,7 +154,10 @@ function SpokenBooks:SetupOptions()
 		return false
 	end
 	local function Wanted(code, addon)
-		return code == SpokenBooks:GetVoiceLanguage() or Installed(addon)
+		local voice = SpokenBooks:GetVoiceLanguage()
+		if code == voice or Installed(addon) then return true end
+		local own = voice == "enUS" or (Spoken and Spoken.VoicePack and Spoken:VoicePack("books", voice))
+		return not own and code == SpokenBooks:GetFallbackLanguage()
 	end
 	-- Each language's row shown while it is wanted.
 	local listed = {}

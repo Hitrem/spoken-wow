@@ -166,11 +166,15 @@ function SettingsPanel:Setup()
     end
     local listed = {}
     -- The packs to get are the voice language's; any pack installed is listed too. Not the
-    -- fallback's to get: on an esMX client English's five rows buried the one that mattered. Each
-    -- row is built whatever is chosen and shown while it is wanted, so a change of language on
-    -- Spoken's page shows at once.
+    -- fallback's to get: on an esMX client English's five rows buried the one that mattered. But
+    -- a voice language with no pack of its own (zhCN, zhTW) is heard in the fallback's, so those
+    -- are the ones to get there. Each row is built whatever is chosen and shown while it is
+    -- wanted, so a change of language on Spoken's page shows at once.
     local function Wanted(code, addon)
-        return code == Language:GetVoiceLanguage() or Present(addon) ~= nil
+        local voice = Language:GetVoiceLanguage()
+        if code == voice or Present(addon) ~= nil then return true end
+        local own = voice == Language.BASE or (Spoken and Spoken.VoicePack and Spoken:VoicePack("quests", voice))
+        return not own and code == Language:GetFallbackLanguage()
     end
     local function PackRow(module, label)
         listed[module.AddonName] = true
