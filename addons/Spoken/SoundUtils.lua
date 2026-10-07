@@ -44,6 +44,8 @@ function SoundUtils:MuteChannel(channel, muted, fadeOut)
         return
     end
     mutedByPlayer[channel] = muted or nil
+    -- Why an NPC was or was not heard over a line, in the debug log.
+    if Developer then Developer:Log("player", "%s channel %s", channel, muted and "muted" or "restored") end
     if channel == "Dialog" then EndFade() end
     if muted and fadeOut and channel == "Dialog" and Addon and Addon.ScheduleRepeatingTimer then
         local volume = tonumber(GetCVar("Sound_DialogVolume")) or 1

@@ -65,6 +65,7 @@ end
 Expect("...which says why it cannot be turned on", readablesCard and readablesCard.layoutReason, env.L.REASON_NOT_INSTALLED)
 -- Installed here, with no voice pack found: the card says what is missing.
 Expect("an installed part says how many of its voice packs it has", labels[env.L.PART_VOICE], true)
+Expect("...as a number, not out of how many there are", select(3, env.Options:PartVoice("quests")), "0")
 -- A part switched off is off everywhere: its entries leave the minimap menu, and it is told,
 -- so it can take its buttons off the game's frames.
 env.Minimap:AddEntry("zones", { id = "lore", text = "Lore" })

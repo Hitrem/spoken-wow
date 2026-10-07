@@ -66,7 +66,7 @@ function M.Advance(seconds, step)
                 else
                     timer.at = nil
                 end
-                timer.fn()
+                if timer.args then timer.fn(unpack(timer.args, 1, timer.args.n)) else timer.fn() end
             end
         end
     end
@@ -115,6 +115,9 @@ local function Widget(kind, name)
     function w:UnregisterAllEvents() self.events = {} end
     function w:SetScript(script, fn) self.scripts[script] = fn end
     function w:GetScript(script) return self.scripts[script] end
+    -- A secure button's attributes (Spoken Developer's /reload macro), kept to be read back.
+    function w:SetAttribute(key, value) self.attributes = self.attributes or {}; self.attributes[key] = value end
+    function w:GetAttribute(key) return self.attributes and self.attributes[key] end
     function w:HookScript(script, fn)
         self.hooks[script] = self.hooks[script] or {}
         table.insert(self.hooks[script], fn)
@@ -194,6 +197,11 @@ local function Widget(kind, name)
     function w:GetID() return self.id end
     function w:SetParent(p) self.parent = p end
     function w:GetParent() return self.parent end
+    -- A hosted player (Addon:ApplyHost) scales to keep its size on screen, and tests read the
+    -- scale back. A test standing in for a host sets its own effective scale.
+    function w:SetScale(v) self.scale = v end
+    function w:GetScale() return self.scale or 1 end
+    function w:GetEffectiveScale() return self.scale or 1 end
     -- What a frame was built with, and what hangs off it: the quest log's play buttons find
     -- the client's own objective icon by walking the list's children and asking both.
     function w:GetObjectType() return self.frameType or self.kind end
@@ -378,7 +386,7 @@ function _G.PlaySoundFile(path, channel)
     world.playedChannels[#world.played] = channel
     return true, #world.played
 end
-function _G.StopSound(handle) table.insert(world.stopped, handle) end
+function _G.StopSound(handle, fadeMs) table.insert(world.stopped, handle); world.lastStopFade = fadeMs end
 function _G.PlayMusic(path) table.insert(world.music, path) end
 function _G.StopMusic() table.insert(world.music, false) end
 -- How many frames CreateFrame has built, across every name and kind: a model probe built
@@ -939,8 +947,8 @@ _G.LibStub = setmetatable({
 }, { __call = function(_, name) return libs[name] end })
 
 local function EmbedTimers(addon)
-    function addon:ScheduleTimer(fn, delay)
-        local timer = { at = world.time + delay, fn = fn }
+    function addon:ScheduleTimer(fn, delay, ...)
+        local timer = { at = world.time + delay, fn = fn, args = { n = select("#", ...), ... } }
         table.insert(timers, timer)
         return timer
     end
@@ -951,6 +959,9 @@ local function EmbedTimers(addon)
     end
     function addon:CancelTimer(timer)
         if timer then timer.at = nil end
+    end
+    function addon:TimeLeft(timer)
+        return timer and timer.at and math.max(0, timer.at - world.time) or 0
     end
     return addon
 end
@@ -1062,13 +1073,13 @@ end
 --- Loads exactly what its addon.xml and then Contribute.xml list, in order (a Blizzard-client
 --- .toc's order), then initialises the saved variables the way ADDON_LOADED would.
 function M.LoadSpoken(addonDirectory)
-    for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources", "OtherSounds",
+    for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources", "Developer", "OtherSounds",
         "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN",
-        "Locale/zhTW", "UI/Layout", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
-        "UI/MinimalPlayer", "UI/MinimapButton",
+        "Locale/zhTW", "UI/Layout", "UI/DialogueUITheme", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
+        "UI/MinimalPlayer", "UI/DialogueUIPlayer", "UI/MinimapButton",
         -- Real LibDeflate, not a hand-faked stub library: Contribute:Encode's round trip through
         -- actual compression is the point of testing it at all.
-        "UI/Options", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
+        "UI/Options", "UI/DialogueUIOptions", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     local env = _G.SpokenEnv
@@ -1079,9 +1090,25 @@ function M.LoadSpoken(addonDirectory)
     -- These suites exercise the original layout, not the subtitles a first install shows
     -- (defaults_test pins those). The Minimal Classic layout, including switching back to
     -- this one, has its own UI/timer fixture.
-    env.Addon.db.profile.Frame.MinimalPlayer = false
-    env.Addon.db.profile.Frame.SubtitlePlayer = false
+    env.Addon.db.profile.Frame.Style = "classic"
     return env
+end
+
+--- The Spoken_Developer module, loaded as the client loads it: its .toc's Lua files in order, each
+--- handed the folder's name and one table, then its ADDON_LOADED. Its saved variables start empty.
+--- Load Spoken first: the module registers with it as its files load.
+function M.LoadDeveloper(addonDirectory)
+    _G.SpokenDeveloperDB = nil
+    local ns = {}
+    local toc = assert(io.open(addonDirectory .. "Spoken_Developer.toc")):read("*a")
+    for line in toc:gmatch("[^\r\n]+") do
+        if line:match("%.lua$") and not line:match("^#") then
+            local path = line:gsub("\\", "/")
+            assert(loadfile(addonDirectory .. path))("Spoken_Developer", ns)
+        end
+    end
+    M.FireEvent("ADDON_LOADED", "Spoken_Developer")
+    return ns
 end
 
 --- Forget every scheduled timer. A test that loads a fresh player must call this, or the
@@ -1207,7 +1234,7 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
     end
     for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "Locale/deDE", "Locale/esES",
         "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "FuzzySearch",
-        "EasterEggs", "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
+        "EasterEggs", "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
@@ -1232,7 +1259,7 @@ function M.LoadQuestsAlone(addonDirectory)
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
     for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "FuzzySearch", "EasterEggs",
-        "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
+        "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO
@@ -1242,6 +1269,9 @@ end
 --- files, on top of an addon already loaded by LoadQuests or LoadQuestsAlone.
 function M.LoadQuestsPanel(addonDirectory, VO)
     dofile(addonDirectory .. "UI/Layout.lua")
+    -- SettingsPanel builds its DialogueUI section only with the bridge loaded; a bridge test
+    -- has loaded and hooked its own already.
+    if not VO.DialogueUIBridge then dofile(addonDirectory .. "UI/DialogueUIBridge.lua") end
     dofile(addonDirectory .. "UI/SettingsPanel.lua")
     return VO.SettingsPanel
 end
