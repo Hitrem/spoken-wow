@@ -32,7 +32,12 @@ end
 local function ModuleNumber(addon, suffix)
     return tonumber(ModuleMeta(addon, suffix) or "")
 end
-local FORCE_ENABLE_DISABLED_MODULES = true
+--- Whether the player switched the addon off in the AddOns list for this character. Not
+--- GetAddOnEnableState: given a name rather than a GUID, C_AddOns answers for all characters.
+local function SwitchedOff(addon)
+    local _, _, _, loadable, reason = GetAddOnInfo(addon)
+    return not loadable and reason == "DISABLED"
+end
 local LOAD_ALL_MODULES = true
 
 ---@class DataModuleMetadata
@@ -253,10 +258,9 @@ function DataModules:EnumerateAddons(loadModules)
     assert(GetNumAddOns and GetAddOnMetadata and GetAddOnInfo,
         "No compatible AddOn-management API was found (expected C_AddOns on current clients)")
 
-    local playerName = UnitName("player")
     for i = 1, GetNumAddOns() do
         local moduleVersion = ModuleNumber(i, "Version")
-        if moduleVersion and (FORCE_ENABLE_DISABLED_MODULES or GetAddOnEnableState(playerName, i) ~= 0) then
+        if moduleVersion and not SwitchedOff(i) then
             local name = GetAddOnInfo(i)
             local mapsString = ModuleMeta(i, "Maps")
             local maps = {}
@@ -354,7 +358,6 @@ end
 -- These cvars can be nil, so have to store the fact of them being changed in a separate variable.
 local prev_checkAddonVersion, changed_checkAddonVersion
 local prev_lastAddonVersion, changed_lastAddonVersion -- Added in 5.x
-local addonWasDisabled = {}
 local function EnableOutOfDate(addon)
     if not changed_checkAddonVersion then
         prev_checkAddonVersion = GetCVar("checkAddonVersion")
@@ -366,11 +369,6 @@ local function EnableOutOfDate(addon)
         SetCVar("lastAddonVersion", Version.Interface)
         changed_lastAddonVersion = true
     end
-
-    addonWasDisabled[addon] = GetAddOnEnableState(UnitName("player"), addon) == 0
-    if FORCE_ENABLE_DISABLED_MODULES and addonWasDisabled[addon] then
-        EnableAddOn(addon)
-    end
 end
 local function RestoreOutOfDate(addon)
     if changed_checkAddonVersion then
@@ -381,11 +379,6 @@ local function RestoreOutOfDate(addon)
         SetCVar("lastAddonVersion", prev_lastAddonVersion)
         changed_lastAddonVersion = nil
     end
-
-    if FORCE_ENABLE_DISABLED_MODULES and addonWasDisabled[addon] then
-        DisableAddOn(addon)
-    end
-    addonWasDisabled[addon] = nil
 end
 
 ---@param module DataModuleMetadata

@@ -877,7 +877,12 @@ function _G.GetAddOnMetadata(addon, key)
     return entry and entry.meta and entry.meta[key] or ""
 end
 function _G.IsAddOnLoadOnDemand() return false end
-function _G.GetAddOnEnableState() return 2 end
+-- Character first, the pre-11.0 order. Given a name, the client answers for all characters, so
+-- an entry switched off only for this one (reason "DISABLED") is still on for some (1).
+function _G.GetAddOnEnableState(character, addon)
+    local entry = AddOnAt(addon or character)
+    return (entry and entry.reason == "DISABLED") and 1 or 2
+end
 function _G.DisableAddOn(addon) table.insert(M.disabledAddOns, addon) end
 function _G.LoadAddOn() return true end
 
