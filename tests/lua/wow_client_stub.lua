@@ -197,6 +197,11 @@ local function Widget(kind, name)
     function w:GetID() return self.id end
     function w:SetParent(p) self.parent = p end
     function w:GetParent() return self.parent end
+    -- A hosted player (Addon:ApplyHost) scales to keep its size on screen, and tests read the
+    -- scale back. A test standing in for a host sets its own effective scale.
+    function w:SetScale(v) self.scale = v end
+    function w:GetScale() return self.scale or 1 end
+    function w:GetEffectiveScale() return self.scale or 1 end
     -- What a frame was built with, and what hangs off it: the quest log's play buttons find
     -- the client's own objective icon by walking the list's children and asking both.
     function w:GetObjectType() return self.frameType or self.kind end
@@ -367,7 +372,10 @@ function _G.UnitExists() return true end
 function _G.UnitIsPlayer() return false end
 function _G.UnitSex() return world.unitSex end
 function _G.UnitCreatureType() return world.creatureType end
-function _G.GetCVar(key) return world.cvars[key] or "1" end
+-- The mouse UI unless a test turns the gamepad's on: read as "1", every popup an addon raises
+-- unasked would go to chat instead.
+local CVAR_DEFAULTS = { InputDeviceInterfaceStyle = "0" }
+function _G.GetCVar(key) return world.cvars[key] or CVAR_DEFAULTS[key] or "1" end
 function _G.SetCVar(key, value)
     world.cvars[key] = tostring(value)
     table.insert(world.cvarLog, { key, tostring(value) })
@@ -521,7 +529,8 @@ _G.Settings = M.modernSettings
 M.SetClient("20506")
 
 -- What the zones addon's playback and autoplay files reach for.
-_G.DEFAULT_CHAT_FRAME = { AddMessage = function() end }
+M.chat = {}
+_G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) table.insert(M.chat, text) end }
 world.inCombat = false
 function _G.UnitAffectingCombat() return world.inCombat end
 function _G.GetSubZoneText() return world.subZone or "" end
@@ -826,6 +835,7 @@ end
 
 function M.ResetUIActions()
     for i = #M.popups, 1, -1 do M.popups[i] = nil end
+    for i = #M.chat, 1, -1 do M.chat[i] = nil end
     for i = #M.enabledAddOns, 1, -1 do M.enabledAddOns[i] = nil end
     for i = #M.disabledAddOns, 1, -1 do M.disabledAddOns[i] = nil end
     M.reloads = 0
@@ -896,11 +906,13 @@ libs["LibDBIcon-1.0"] = {
     Show = function() end, Hide = function() end, Lock = function() end, Unlock = function() end, Refresh = function() end,
     -- Enough of the addon compartment for the player's wrapper to be testable: entries
     -- join the frame's list and leave it again, and nothing happens on the clients
-    -- (every one before the modern) without the frame.
+    -- (every one before the modern) without the frame. Like the real lib, adding sets the
+    -- db's flag and removing clears it to nil.
     AddButtonToCompartment = function(self, name)
         if not _G.AddonCompartmentFrame then return end
         local icon = M.dbIcons[name]
         if not icon then return end
+        if icon.db then icon.db.showInCompartment = true end
         icon.compartmentData = { text = name, icon = icon.obj.icon or "" }
         table.insert(_G.AddonCompartmentFrame.registeredAddons, icon.compartmentData)
     end,
@@ -913,6 +925,7 @@ libs["LibDBIcon-1.0"] = {
                 if list[i] == icon.compartmentData then
                     table.remove(list, i)
                     icon.compartmentData = nil
+                    if icon.db then icon.db.showInCompartment = nil end
                     return
                 end
             end
@@ -941,6 +954,9 @@ local function EmbedTimers(addon)
     end
     function addon:CancelTimer(timer)
         if timer then timer.at = nil end
+    end
+    function addon:TimeLeft(timer)
+        return timer and timer.at and math.max(0, timer.at - world.time) or 0
     end
     return addon
 end
@@ -1054,11 +1070,11 @@ end
 function M.LoadSpoken(addonDirectory)
     for _, file in ipairs({ "Environment", "Version", "Core", "SoundUtils", "Callbacks", "SoundQueue", "Sources", "Developer", "OtherSounds",
         "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN",
-        "Locale/zhTW", "UI/Layout", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
-        "UI/MinimalPlayer", "UI/MinimapButton",
+        "Locale/zhTW", "UI/Layout", "UI/DialogueUITheme", "UI/Transcript", "UI/Subtitle", "UI/Search", "UI/Portrait", "UI/StaticPortrait", "UI/Actions", "UI/PlayerFrame",
+        "UI/MinimalPlayer", "UI/DialogueUIPlayer", "UI/MinimapButton",
         -- Real LibDeflate, not a hand-faked stub library: Contribute:Encode's round trip through
         -- actual compression is the point of testing it at all.
-        "UI/Options", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
+        "UI/Options", "UI/DialogueUIOptions", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     local env = _G.SpokenEnv
@@ -1069,8 +1085,7 @@ function M.LoadSpoken(addonDirectory)
     -- These suites exercise the original layout, not the subtitles a first install shows
     -- (defaults_test pins those). The Minimal Classic layout, including switching back to
     -- this one, has its own UI/timer fixture.
-    env.Addon.db.profile.Frame.MinimalPlayer = false
-    env.Addon.db.profile.Frame.SubtitlePlayer = false
+    env.Addon.db.profile.Frame.Style = "classic"
     return env
 end
 
@@ -1249,6 +1264,9 @@ end
 --- files, on top of an addon already loaded by LoadQuests or LoadQuestsAlone.
 function M.LoadQuestsPanel(addonDirectory, VO)
     dofile(addonDirectory .. "UI/Layout.lua")
+    -- SettingsPanel builds its DialogueUI section only with the bridge loaded; a bridge test
+    -- has loaded and hooked its own already.
+    if not VO.DialogueUIBridge then dofile(addonDirectory .. "UI/DialogueUIBridge.lua") end
     dofile(addonDirectory .. "UI/SettingsPanel.lua")
     return VO.SettingsPanel
 end

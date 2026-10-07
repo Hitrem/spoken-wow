@@ -855,6 +855,10 @@ that loads it (the 1.12 client's Lua 5.0 could not parse it anyway). A player wh
 Spoken Player settings, one switch for the quests, books and zones buttons alike; each addon
 asks `Spoken:AreContributeButtonsHidden()` in its gap check and refreshes on the player's
 `CONTRIBUTE_SETTINGS_CHANGED` callback, since toggling it fires no game event.
+With DialogueUI, which never shows the game's quest and gossip frames, its window carries a
+Report icon under its Decline button instead, faint on every page and in full beside
+**No voice-over playing? Contribute!** when a line is missing (see
+[`DIALOGUEUI-BRIDGE.md`](DIALOGUEUI-BRIDGE.md)).
 
 Clicking it opens the same copy box `ReportButton.lua` uses, holding a plain-text envelope
 instead of an address: the addon, the build, the locale, the quest or NPC, and the text

@@ -45,8 +45,6 @@ function Sources:Register(key, info)
         onQueueEnter = info.onQueueEnter,
         onQueueEmpty = info.onQueueEmpty,
         packs = info.packs,
-        -- A part whose voices come in parts counts them itself (Options:PartVoice).
-        packCount = info.packCount,
         -- A part's settings kept in AceDB profiles: a function returning its AceDB object, so
         -- Spoken's own Profiles section switches it with the player's (Options:ProfileDBs).
         profiles = info.profiles,

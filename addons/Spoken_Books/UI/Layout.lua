@@ -16,7 +16,7 @@
 -- they are built and placed by Reflow, top to bottom. Placing them all in one pass is what lets
 -- a row be hidden (ShowWhen) and everything under it close up, rather than leaving a hole.
 
-local VERSION = 56
+local VERSION = 58
 
 -- LibStub's contract, for LibStub's reason: several addons load this file and the newest
 -- copy must win, whichever of them the client happens to load last.
@@ -65,6 +65,13 @@ local MAX_WIDTH = 2000
 local RIGHT_MARGIN = 10       -- room for the scroll bar
 local LABEL_PADDING = 24      -- room a button's end caps take either side of its label
 local BOX_MARGIN = 0          -- the rows' own edges: frames a page draws itself line up with them
+-- Inside a group's box: the box spans the cards' width, and what is in it moves in from its sides
+-- by GROUP_PAD. A section's title sits SECTION_TITLE_X further in, so the box keeps that much
+-- above its first title and under its last row too: the titles are as far from its top and
+-- bottom as from its left.
+local GROUP_PAD = 16
+local GROUP_PAD_Y = GROUP_PAD + SECTION_TITLE_X
+local GROUP_LINE = { 1, 1, 1, 0.22 }  -- the box's line where the client has no backdrops
 local GOLD = { 1, 0.82, 0 }      -- NORMAL_FONT_COLOR: a setting's name
 local WHITE = { 1, 1, 1 }        -- HIGHLIGHT_FONT_COLOR: a page's and a section's title
 local GREY = { 0.5, 0.5, 0.5 }   -- GameFontDisable: a setting greyed out
@@ -239,10 +246,13 @@ end
 --- the page was designed at, nor so wide that a row is hard to read across.
 function Layout:Width()
     local available = self.parent.GetWidth and self.parent:GetWidth() or 0
-    local width = (available or 0) - self.left - RIGHT_MARGIN
-    if width < PAGE_WIDTH then return PAGE_WIDTH end
-    if width > MAX_WIDTH then return MAX_WIDTH end
-    return math.floor(width)
+    -- The page's width, kept between its narrowest and widest; inside a group's box, less its
+    -- padding on both sides (self.left has moved in by one of them).
+    local inset = self.inset or 0
+    local width = (available or 0) - (self.left - inset) - RIGHT_MARGIN
+    if width < PAGE_WIDTH then width = PAGE_WIDTH end
+    if width > MAX_WIDTH then width = MAX_WIDTH end
+    return math.floor(width) - inset * 2
 end
 
 --- Remember a row for search: what it is called, what its tooltip says, and where it sits.
@@ -364,7 +374,9 @@ local function PlaceRows(layout, rows, y)
                     if other.line == row.line and Visible(other) then table.insert(line, other) end
                 end
             end
-            row.place(lineTop, row.x + (slot - 1) * math.floor(layout:Width() / 2), slot, row.columns and line or nil)
+            -- row.x is where the row was made; inside a group's box, in by its padding too.
+            row.place(lineTop, row.x + (layout.inset or 0) + (slot - 1) * math.floor(layout:Width() / 2), slot,
+                row.columns and line or nil)
             row.control.layoutY, row.control.layoutHeight = lineTop, row.height
             -- A row of cards is one row holding several frames, and search lands on any of them.
             for _, member in ipairs(row.members or {}) do
@@ -414,6 +426,58 @@ function Layout:Reflow()
             -- placed as one run, so they space like the rows in a box.
             loose = loose or {}
             table.insert(loose, item)
+        elseif item.kind == "group" then
+            if loose then
+                y = EndLoose(loose, y)
+                loose = nil
+            end
+            local any = false
+            for _, section in ipairs(item.sections) do
+                for _, row in ipairs(section.rows) do
+                    if Visible(row) then any = true end
+                end
+            end
+            item.shown = any
+            if not any then
+                item.heading:Hide()
+                item.box:Hide()
+            else
+                if started then y = y - ROW_GAP end
+                item.heading:Show()
+                Put(item.heading, self.parent, self.left + SECTION_TITLE_X, y - SECTION_TITLE_Y)
+                item.heading.layoutY = y
+                y = y - SECTION_HEIGHT
+                item.top = y
+                -- The padding reaches the first section's title, not the top of its band: the title
+                -- sits SECTION_TITLE_Y down the band.
+                local first
+                for _, section in ipairs(item.sections) do
+                    for _, row in ipairs(section.rows) do
+                        if not first and Visible(row) then first = section end
+                    end
+                end
+                y = y - GROUP_PAD_Y + ((first and first.text) and SECTION_TITLE_Y or 0)
+                -- Everything inside, in from the box's sides by its padding, until the group ends.
+                item.baseLeft = self.left
+                self.left, self.inset = self.left + GROUP_PAD, GROUP_PAD
+                -- Its first section starts at the padding, with no gap of its own.
+                started = false
+            end
+        elseif item.kind == "groupEnd" then
+            local group = item.group
+            if group.shown then
+                self.left, self.inset = group.baseLeft or self.left, nil
+                y = y - GROUP_PAD_Y
+                group.bottom = y
+                -- The cards' width: from the rows' left edge across the page's width.
+                group.left, group.right = self.left - BOX_MARGIN, self.left + self:Width() + BOX_MARGIN
+                local box = group.box
+                Put(box, self.parent, group.left, group.top)
+                box:SetWidth(group.right - group.left)
+                box:SetHeight(group.top - group.bottom)
+                box:Show()
+                started = true
+            end
         else
             if loose then
                 y = EndLoose(loose, y)
@@ -547,25 +611,29 @@ function Layout:Section(text, plain)
     section.place = function(top)
         if fs then
             fs:Show()
+            -- The layout's left edge as it is now: a group's box moves it in.
+            local here = layout.left
             if layout.centred then
                 -- Across the rows' middle, in a window that centres its titles (the welcome).
                 fs:SetJustifyH("CENTER")
                 fs:ClearAllPoints()
-                fs:SetPoint("TOP", parent, "TOPLEFT", math.floor(left + layout:Width() / 2), top - SECTION_TITLE_Y)
+                fs:SetPoint("TOP", parent, "TOPLEFT", math.floor(here + layout:Width() / 2), top - SECTION_TITLE_Y)
             else
-                Put(fs, parent, left + SECTION_TITLE_X, top - SECTION_TITLE_Y)
+                Put(fs, parent, here + SECTION_TITLE_X, top - SECTION_TITLE_Y)
             end
             fs.layoutY = top
         end
     end
     section.frame = function(top, bottom)
-        -- Where its rows start and end, read back as a box's would be.
+        -- Where its rows start and end, read back as a box's would be, and how wide.
         section.top, section.bottom = top, bottom
+        section.left, section.width = layout.left, layout:Width()
     end
     section.hide = function()
         if fs then fs:Hide() end
     end
     table.insert(self.items, section)
+    if self.group then table.insert(self.group.sections, section) end
     self.current = section
     self.empty = false
     self.dirty = true
@@ -574,15 +642,79 @@ function Layout:Section(text, plain)
     if not plain then
         local record = { section = section }
         setmetatable(record, { __index = function(_, key)
-            if key == "left" then return left end
+            if key == "left" then return section.left or left end
             if key == "top" then return section.top end
             if key == "bottom" then return section.bottom end
-            if key == "width" then return layout:Width() end
+            if key == "width" then return section.width or layout:Width() end
             if key == "shown" then return section.shown end
         end })
         table.insert(self.boxes, record)
     end
     return fs
+end
+
+--- A titled box around the sections that follow, up to EndGroup: settings that belong together,
+--- a narrator style's, set apart from the rest of the page. The title sits above the box as a
+--- section's does; the box is the game's tooltip border and background, as the module cards are
+--- drawn, as wide as they are, with those sections GROUP_PAD inside it on every side; it goes with
+--- them when none is showing.
+function Layout:Group(title)
+    self:Columns(nil)
+    local parent = self.parent
+    local fs = parent:CreateFontString(nil, "ARTWORK", Font("GameFontHighlightLarge", "GameFontNormalLarge"))
+    fs:SetJustifyH("LEFT")
+    fs:SetJustifyV("TOP")
+    fs:SetTextColor(WHITE[1], WHITE[2], WHITE[3])
+    fs:SetText(title)
+    fs.layoutHeading, fs.layoutHeight = true, SECTION_HEIGHT
+    local template = BackdropTemplateMixin and "BackdropTemplate" or nil
+    local box = CreateFrame("Frame", nil, parent, template)
+    local edges = {}
+    if box.SetBackdrop then
+        -- The cards' border and background (Card, below), in the grey of a card not chosen.
+        box:SetBackdrop({ bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
+            edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], tile = true, tileSize = 16, edgeSize = 14,
+            insets = { left = 4, right = 4, top = 4, bottom = 4 } })
+        box:SetBackdropColor(0.06, 0.06, 0.06, 0.6)
+        box:SetBackdropBorderColor(0.45, 0.45, 0.45, 1)
+    end
+    -- Under the page, not over it: the rows' labels are the page's own, and a frame of its own
+    -- above the page drew its background over them.
+    local level = parent.GetFrameLevel and parent:GetFrameLevel() or 0
+    if level < 1 and parent.SetFrameLevel then
+        parent:SetFrameLevel(1)
+        level = 1
+    end
+    if box.SetFrameLevel then box:SetFrameLevel(math.max(0, level - 1)) end
+    for _, side in ipairs(box.SetBackdrop and {} or { "top", "bottom", "left", "right" }) do
+        local line = Flat(box, "BORDER", GROUP_LINE[1], GROUP_LINE[2], GROUP_LINE[3], GROUP_LINE[4])
+        if side == "top" or side == "bottom" then
+            line:SetHeight(1)
+            line:SetPoint(side == "top" and "TOPLEFT" or "BOTTOMLEFT", box, side == "top" and "TOPLEFT" or "BOTTOMLEFT", 0, 0)
+            line:SetPoint(side == "top" and "TOPRIGHT" or "BOTTOMRIGHT", box, side == "top" and "TOPRIGHT" or "BOTTOMRIGHT", 0, 0)
+        else
+            line:SetWidth(1)
+            line:SetPoint(side == "left" and "TOPLEFT" or "TOPRIGHT", box, side == "left" and "TOPLEFT" or "TOPRIGHT", 0, 0)
+            line:SetPoint(side == "left" and "BOTTOMLEFT" or "BOTTOMRIGHT", box, side == "left" and "BOTTOMLEFT" or "BOTTOMRIGHT", 0, 0)
+        end
+        edges[side] = line
+    end
+    box:Hide()
+    local group = { kind = "group", text = title, heading = fs, box = box, edges = edges, sections = {} }
+    table.insert(self.items, group)
+    self.group, self.current = group, nil
+    self.dirty = true
+    return fs
+end
+
+--- The end of the box Group opened.
+function Layout:EndGroup()
+    self:Columns(nil)
+    if self.group then
+        table.insert(self.items, { kind = "groupEnd", group = self.group })
+    end
+    self.group, self.current = nil, nil
+    self.dirty = true
 end
 
 -- A row's hover: the game's HoverBackground, white at a tenth, from 10 left of the row to 5 short
@@ -1327,112 +1459,30 @@ local function NewBadge(parent, clickable)
 end
 Layout.NewBadge = NewBadge
 
---- A count shown as a progress bar: its words on the left and the count on the right, on a line
---- over a thin bar filled as far as `value` ("1/4") goes, always in the game's gold. A status,
---- not a control: nothing about it says click. Drawn with the game's modern widget bar
---- (widgetstatusbar: its border, its background, its fill), else the Skills tab's bar
---- (common-stat-bar), else flat. `Set(kind, message, value)` as NewBadge's; `SetGreyed(on)`
---- turns it grey with its card's icon, as a module that is off.
-local METER_BAR = 16          -- the bar, under its line of words
-local METER_HEIGHT = 14 + 5 + METER_BAR
-local METER_GOLD = { 1, 0.82, 0 }
-local function NewMeter(parent)
-    local meter = CreateFrame("Frame", nil, parent)
-    meter:SetHeight(METER_HEIGHT)
-    local text = meter:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    text:SetPoint("TOPLEFT", meter, "TOPLEFT", 0, 0)
+--- A count on a card: its words on the left and the number on the right, as "Voice Packs  3". A
+--- status, not a control: nothing about it says click. `Set(kind, message, value)` as NewBadge's;
+--- `SetGreyed(on)` turns it grey with its card's icon, as a module that is off.
+local COUNT_HEIGHT = 14
+local function NewCount(parent)
+    local line = CreateFrame("Frame", nil, parent)
+    line:SetHeight(COUNT_HEIGHT)
+    local text = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    text:SetPoint("TOPLEFT", line, "TOPLEFT", 0, 0)
     text:SetJustifyH("LEFT")
     if text.SetWordWrap then text:SetWordWrap(false) end
-    local count = meter:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    count:SetPoint("TOPRIGHT", meter, "TOPRIGHT", 0, 0)
+    local count = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    count:SetPoint("TOPRIGHT", line, "TOPRIGHT", 0, 0)
     count:SetJustifyH("RIGHT")
     text:SetPoint("RIGHT", count, "LEFT", -6, 0)
-
-    -- The bar along the meter's foot.
-    local bar = CreateFrame("Frame", nil, meter)
-    bar:SetPoint("BOTTOMLEFT", meter, "BOTTOMLEFT", 0, 0)
-    bar:SetPoint("BOTTOMRIGHT", meter, "BOTTOMRIGHT", 0, 0)
-    local pieces, fill, inset = {}, nil, 0
-    local function Keep(texture)
-        if texture then table.insert(pieces, texture) end
-        return texture
-    end
-    local yellow = HasAtlas("widgetstatusbar-fill-yellow")
-    if HasAtlas("widgetstatusbar-bordercenter") and HasAtlas("widgetstatusbar-borderleft")
-        and HasAtlas("widgetstatusbar-borderright") and (yellow or HasAtlas("widgetstatusbar-fill-white")) then
-        -- As UIWidgetTemplateStatusBar lays it out -- the fill 8 inside the border's ends, the
-        -- background 2 past the fill's -- scaled as a whole to METER_BAR tall: the art is drawn
-        -- taller than a line under a card's words wants.
-        local info = C_Texture.GetAtlasInfo("widgetstatusbar-bordercenter")
-        local height = (info and info.height and info.height > 0) and info.height or METER_BAR
-        local k = METER_BAR / height
-        bar:SetHeight(METER_BAR)
-        local left = Keep(AtlasTexture(bar, "OVERLAY", "widgetstatusbar-borderleft", false))
-        local right = Keep(AtlasTexture(bar, "OVERLAY", "widgetstatusbar-borderright", false))
-        local middle = Keep(AtlasTexture(bar, "OVERLAY", "widgetstatusbar-bordercenter", false))
-        local function Width(atlas)
-            local piece = C_Texture.GetAtlasInfo(atlas)
-            return ((piece and piece.width) or 8) * k
-        end
-        left:SetSize(Width("widgetstatusbar-borderleft"), METER_BAR)
-        right:SetSize(Width("widgetstatusbar-borderright"), METER_BAR)
-        middle:SetHeight(METER_BAR)
-        left:SetPoint("LEFT", bar, "LEFT", 0, 0)
-        right:SetPoint("RIGHT", bar, "RIGHT", 0, 0)
-        middle:SetPoint("LEFT", left, "RIGHT", 0, 0)
-        middle:SetPoint("RIGHT", right, "LEFT", 0, 0)
-        inset = 8 * k
-        local back = Keep(AtlasTexture(bar, "BACKGROUND", "widgetstatusbar-bgcenter", false)
-            or Flat(bar, "BACKGROUND", 0, 0, 0, 0.6))
-        back:SetPoint("TOPLEFT", bar, "TOPLEFT", inset - 2 * k, -2 * k)
-        back:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -(inset - 2 * k), 2 * k)
-        local fillAtlas = yellow and "widgetstatusbar-fill-yellow" or "widgetstatusbar-fill-white"
-        fill = Keep(AtlasTexture(bar, "ARTWORK", fillAtlas, false))
-        if not yellow then fill:SetVertexColor(METER_GOLD[1], METER_GOLD[2], METER_GOLD[3]) end
-        local fillInfo = C_Texture.GetAtlasInfo(fillAtlas)
-        fill:SetHeight(math.min((fillInfo and fillInfo.height) or 10, height - 4) * k)
-        meter.look = "widget"
-    elseif HasAtlas("common-stat-bar-BG") then
-        bar:SetHeight(15)
-        local back = Keep(AtlasTexture(bar, "BACKGROUND", "common-stat-bar-BG", false))
-        back:SetAllPoints()
-        fill = Keep(AtlasTexture(bar, "ARTWORK", "common-stat-bar-white", false) or Flat(bar, "ARTWORK", 1, 1, 1, 1))
-        fill:SetVertexColor(METER_GOLD[1], METER_GOLD[2], METER_GOLD[3])
-        fill:SetHeight(9)
-        inset = 3
-        meter.look = "stat"
-    else
-        bar:SetHeight(8)
-        local back = Keep(Flat(bar, "BACKGROUND", 0, 0, 0, 0.6))
-        back:SetAllPoints()
-        fill = Keep(Flat(bar, "ARTWORK", 1, 1, 1, 1))
-        fill:SetVertexColor(METER_GOLD[1], METER_GOLD[2], METER_GOLD[3])
-        fill:SetHeight(6)
-        inset = 1
-        meter.look = "flat"
-    end
-    fill:SetPoint("LEFT", bar, "LEFT", inset, 0)
-
-    local fraction = 0
-    local function Fill()
-        local room = (bar:GetWidth() or 0) - inset * 2
-        fill:SetWidth(math.max(0.01, fraction * room))
-        if meter.look ~= "flat" and fill.SetTexCoord then fill:SetTexCoord(0, math.max(0.01, fraction), 0, 1) end
-        if fraction <= 0 then fill:Hide() else fill:Show() end
-    end
-    Script(bar, "OnSizeChanged", Fill)
 
     local greyed, muted = false, false
     local function Paint()
         local grey = (greyed or muted) and 0.5 or 1
         text:SetTextColor(grey, grey, grey)
         count:SetTextColor(grey, grey, grey)
-        for _, texture in ipairs(pieces) do
-            if texture.SetDesaturated then texture:SetDesaturated(greyed) end
-        end
     end
 
-    function meter:Set(kind, message, value)
+    function line:Set(kind, message, value)
         kind = TAG_ALIASES[kind] or kind
         self.state, self.message, self.value = kind, message, value
         if not kind then
@@ -1443,24 +1493,18 @@ local function NewMeter(parent)
         muted = kind == "muted"
         text:SetText(message or "")
         count:SetText(value or "")
-        local _, _, have, total = string.find(value or "", "(%d+)%s*/%s*(%d+)")
-        have, total = tonumber(have), tonumber(total)
-        fraction = (have and total and total > 0) and math.min(1, have / total) or 0
-        self.fraction = fraction
         Paint()
-        Fill()
     end
-    function meter:SetGreyed(on)
+    function line:SetGreyed(on)
         greyed = on and true or false
         self.layoutGreyed = greyed
         Paint()
     end
-    meter.text, meter.count, meter.bar, meter.fill = text, count, bar, fill
-    meter.layoutStatusLine = meter
-    meter.layoutMeter = true
-    return meter
+    line.text, line.count = text, count
+    line.layoutStatusLine = line
+    return line
 end
-Layout.NewMeter = NewMeter
+Layout.NewCount = NewCount
 
 local function Updater(self, fn)
     self.updaters = self.updaters or {}
@@ -1660,7 +1704,7 @@ function Layout:Cards(items)
             rule:SetPoint("TOPLEFT", text, "BOTTOMLEFT", 0, -CARD_RULE_GAP)
             rule:SetPoint("RIGHT", card, "RIGHT", -CARD_PAD, 0)
             card.rule = rule
-            status = NewMeter(card)
+            status = NewCount(card)
             status:SetPoint("TOPLEFT", rule, "BOTTOMLEFT", 0, -CARD_RULE_GAP)
             status:SetPoint("RIGHT", card, "RIGHT", -CARD_PAD, 0)
             card.status = status
@@ -1718,7 +1762,7 @@ function Layout:Cards(items)
     end
     Updater(self, function() for _, card in ipairs(cards) do card:Update() end end)
     -- Under the words: the line, the voice packs' value, then the button.
-    local foot = (hasStatus and (CARD_RULE_GAP * 2 + 1 + METER_HEIGHT) or 0) + (hasButton and (10 + BUTTON_HEIGHT) or 0)
+    local foot = (hasStatus and (CARD_RULE_GAP * 2 + 1 + COUNT_HEIGHT) or 0) + (hasButton and (10 + BUTTON_HEIGHT) or 0)
     local row = self:AddRow(PlaceCards(self, cards, nil, MODULE_HEAD, foot, 42), cards[1], cards, function(top)
         PlaceCards(self, cards, top, MODULE_HEAD, foot, 42)
     end)

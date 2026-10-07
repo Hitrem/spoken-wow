@@ -23,18 +23,23 @@ Defaults = {
             FrameScale = 0.7,
             FrameStrata = "HIGH",
             HidePortrait = false,
-            HideFrame = false,
-            MinimalPlayer = true,
-            -- Subtitles in place of either window. A switch of its own rather than a third
-            -- value of MinimalPlayer, so the window a player chose is still remembered when
-            -- they go back to one. Addon:PlayerStyle reads the two together. The default only
-            -- on the modern clients: the legacy ones start in the window they always had.
-            SubtitlePlayer = not Version.IsAnyLegacy or false,
+            -- "subtitle", "minimal" (Small Window), "classic" (Large Window), "dialogueui" or
+            -- "none" (the voice alone). Legacy clients start in the window they always had.
+            Style = Version.IsAnyLegacy and "classic" or "subtitle",
             -- Forever only: the bronze its own frames wear, on the minimal player's metal.
             BronzeTint = true,
             MinimalWidth = 380,
             -- Per action id, for the ones an addon declared optional. Absent means shown.
             HiddenActions = {},
+            DialogueUI = {
+                -- Parchment or dark, as DialogueUI is set, changing when it does.
+                FollowTheme = true,
+                -- When not following: 1 parchment, 2 dark, DialogueUI's own numbers.
+                Theme = 1,
+                -- Size, text size, lines and expand state are the player's shared settings.
+                -- Only as tall as the line's words need, up to the panel's size.
+                FitText = true,
+            },
         },
         -- The voice language and its fallback, for every module at once (Spoken:GetLanguageChoice).
         -- Unset, each module keeps the choice it had before there was one setting for all.
@@ -84,7 +89,8 @@ Defaults = {
         },
         Transcript = {
             Enabled = true,
-            AutoScroll = true,
+            -- How the captions follow the voice: "line", "page" or "off".
+            ScrollMode = "line",
             Lines = 2,
             HighlightWord = false,
             FontSize = 16,
@@ -105,10 +111,12 @@ Defaults = {
             LibDBIcon = { showInCompartment = true },
             -- What each mouse button does. "Menu" opens the list; any other value is a
             -- menu entry id, the player's or a source's.
+            -- A click on the icon opens the settings, the way most addons' do; the menu is a
+            -- right-click away.
             Commands = {
-                LeftButton = "Menu",
+                LeftButton = "Settings",
                 MiddleButton = "PlayPause",
-                RightButton = "Settings",
+                RightButton = "Menu",
             },
         },
     },
@@ -123,6 +131,29 @@ function Addon:InitDB()
         return
     end
     self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults)
+    -- A saved AutoScroll = false predates ScrollMode: carry it over as "off", in every profile.
+    for _, profile in pairs(self.db.sv and self.db.sv.profiles or {}) do
+        local transcript = type(profile) == "table" and profile.Transcript
+        if type(transcript) == "table" and transcript.AutoScroll ~= nil then
+            if transcript.AutoScroll == false and (transcript.ScrollMode or "line") == "line" then
+                transcript.ScrollMode = "off"
+            end
+            transcript.AutoScroll = nil
+        end
+        -- Style replaces three old switches: SubtitlePlayer, then HideFrame, then MinimalPlayer
+        -- choosing the window. Read raw, so an absent switch is its old default.
+        local frame = type(profile) == "table" and profile.Frame
+        if type(frame) == "table" and frame.Style == nil
+            and (frame.SubtitlePlayer ~= nil or frame.HideFrame ~= nil or frame.MinimalPlayer ~= nil) then
+            local subtitles = frame.SubtitlePlayer
+            if subtitles == nil then subtitles = not Version.IsAnyLegacy end
+            if subtitles then frame.Style = "subtitle"
+            elseif frame.HideFrame then frame.Style = "none"
+            elseif frame.MinimalPlayer == false then frame.Style = "classic"
+            else frame.Style = "minimal" end
+            frame.SubtitlePlayer, frame.HideFrame, frame.MinimalPlayer = nil, nil, nil
+        end
+    end
     -- Another profile chosen, copied over this one or reset, from Spoken's page or anywhere
     -- else: its settings apply now rather than at the next reload.
     if self.db.RegisterCallback then
@@ -188,32 +219,69 @@ function Addon:RestoreLayout(key, frame)
     return true
 end
 
---- Which of the four ways of showing a line is in use: "minimal" (the Minimal Classic
---- window), "classic" (the original window), "subtitle" (no window, subtitles only) or "none"
---- (nothing on screen at all, the voice alone -- what HideFrame always meant). Neither
---- alternative to the original window exists everywhere: the minimal one is not built on the
---- legacy clients, and 1.12 has no captions, so no subtitles either.
+--- Hosted windows still move: ApplyHost keeps their effective scale and their anchor on
+--- UIParent, so a place saved while hosted is the same place without the host.
+function Addon:IsFrameLocked()
+    return self:Profile("Frame").LockFrame
+end
+
+--- Put a player frame on the host, or back on UIParent, since a host that hides UIParent
+--- (DialogueUI) would hide the player too. The anchor stays on UIParent and the scale keeps
+--- the effective scale, so the frame keeps its exact place on screen. spokenBaseScale /
+--- spokenBaseStrata give a frame's own scale and strata (the subtitles).
+function Addon:ApplyHost(frame)
+    if not frame then return end
+    local host, cfg = self.playerHost, self:Profile("Frame")
+    local base = frame.spokenBaseScale or cfg.FrameScale
+    if host then
+        frame:SetParent(host)
+        frame:SetScale(base * UIParent:GetEffectiveScale() / host:GetEffectiveScale())
+        -- Above the host's strata, so it never draws under the dialog it sits over.
+        frame:SetFrameStrata("FULLSCREEN")
+        frame.spokenHosted = true
+    elseif frame.spokenHosted then
+        frame:SetParent(UIParent)
+        frame:SetScale(base)
+        frame:SetFrameStrata(frame.spokenBaseStrata or cfg.FrameStrata)
+        frame.spokenHosted = nil
+    end
+end
+
+function Addon:SetPlayerHost(host)
+    if self.playerHost == host then return end
+    self.playerHost = host
+    if PlayerFrame.frame then PlayerFrame:RefreshConfig() end
+    -- RefreshConfig places only the window in use; the others must not stay on the host.
+    self:ApplyHost(PlayerFrame.frame)
+    self:ApplyHost(MinimalPlayer.frame)
+    if DialogueUIPlayer then self:ApplyHost(DialogueUIPlayer.frame) end
+    -- The subtitles go over the host too, and pass its clicks through.
+    if Subtitle and Subtitle.frame then
+        self:ApplyHost(Subtitle.frame)
+        Subtitle:Mouse()
+    end
+end
+
 --- What is on screen: the chosen style, or one previewed from the welcome window or the settings
 --- (Options:Preview). The windows and the subtitles ask this; the settings ask PlayerStyle.
 function Addon:DisplayStyle()
     return self.previewStyle or self:PlayerStyle()
 end
 
+--- The chosen style, or a fallback where it is not on offer: no Small Window on legacy
+--- clients, no DialogueUI window without DialogueUI, no subtitles on 1.12. The setting is
+--- kept, so installing DialogueUI later brings its window back.
 function Addon:PlayerStyle()
-    local frame = self:Profile("Frame")
-    if frame.SubtitlePlayer and not Transcript.unavailable then return "subtitle" end
-    if frame.HideFrame then return "none" end
-    if frame.MinimalPlayer and not Version.IsAnyLegacy then return "minimal" end
-    return "classic"
+    local style = self:Profile("Frame").Style
+    if style == "none" or style == "classic" then return style end
+    if style == "subtitle" and not Transcript.unavailable then return "subtitle" end
+    if style == "dialogueui" and DialogueUITheme and DialogueUITheme:Available() then return "dialogueui" end
+    if Version.IsAnyLegacy then return "classic" end
+    return "minimal"
 end
 
--- The window a player last chose is kept whichever style replaces it, so going back to a
--- window finds the one they had.
 function Addon:SetPlayerStyle(style)
-    local frame = self.db.profile.Frame
-    frame.SubtitlePlayer = style == "subtitle"
-    frame.HideFrame = style == "none"
-    if style == "minimal" or style == "classic" then frame.MinimalPlayer = style == "minimal" end
+    self.db.profile.Frame.Style = style
 end
 
 --- Everything that needs the world: the frame, the button, the settings, the slash
@@ -224,6 +292,10 @@ function Addon:Enable()
     self.enabled = true
     PlayerFrame:Initialize()
     Transcript:Initialize()
+    -- Redraw in the new art when DialogueUI's theme or window size changes.
+    DialogueUITheme:Watch(function()
+        if Addon:DisplayStyle() == "dialogueui" then PlayerFrame:RefreshConfig() end
+    end)
     Minimap:Setup()
     Options:Setup()
 
@@ -254,10 +326,16 @@ function Addon:Enable()
             Addon.db.profile.Transcript.Lines = tonumber(string.sub(command, -1))
             Transcript:RefreshConfig()
         elseif command == "player minimal" or command == "player classic" or command == "player subtitle"
-            or command == "player none" then
-            Addon:SetPlayerStyle(string.sub(command, 8))
-            PlayerFrame:RefreshConfig()
-            Transcript:RefreshConfig()
+            or command == "player none" or command == "player dialogueui" then
+            local style = string.sub(command, 8)
+            local problem = style == "dialogueui" and DialogueUITheme:Problem()
+            if problem then
+                print("Spoken: " .. problem)
+            else
+                Addon:SetPlayerStyle(style)
+                PlayerFrame:RefreshConfig()
+                Transcript:RefreshConfig()
+            end
         elseif command == "options" or command == "settings" then
             Options:Open()
         elseif command == "share" and Gather then
@@ -283,9 +361,10 @@ function Addon:Enable()
             end
             for _, line in ipairs(PlayerFrame:Describe()) do print("  " .. line) end
             print("  " .. Transcript:Describe())
+            print("  " .. DialogueUITheme:Describe())
             for _, err in ipairs(Callbacks.errors) do print("  callback error: " .. err) end
         else
-            print("Spoken: /spoken play | stop | skip | player [minimal|classic|subtitle|none] | transcript [on|off|1|2|reset] | log | options | reset | diagnostics")
+            print("Spoken: /spoken play | stop | skip | player [minimal|classic|dialogueui|subtitle|none] | transcript [on|off|1|2|reset] | log | options | reset | diagnostics")
         end
     end
 end
@@ -306,6 +385,15 @@ local function WatchPausedQueue()
             RemindPaused()
         end
     end)
+end
+
+-- The Forever client's gamepad UI takes over every popup as it opens, inside the code that
+-- opened it. Opened by an addon, that taints the gamepad's bindings: the next close is blocked,
+-- and the "blocked from an action" dialog it raises hangs the client (#165). There the chat line
+-- says it alone. pcall, because 1.12 raises on a CVar it has never heard of.
+function Addon:IsGamepadUI()
+    local ok, style = pcall(GetCVar, "InputDeviceInterfaceStyle")
+    return ok and style == "1"
 end
 
 -- Folders an older release installed, which nothing ships any more: Spoken's own before it was
@@ -340,7 +428,7 @@ function Addon:RetireOldFolders()
     end
     local text = format(L.OLD_FOLDERS_FMT, "• " .. table.concat(found, "\n• "))
     print("|cff66bbffSpoken:|r " .. text)
-    if StaticPopupDialogs and StaticPopup_Show then
+    if StaticPopupDialogs and StaticPopup_Show and not self:IsGamepadUI() then
         -- Left-aligned while shown, for the list: the popup frames are shared by every addon and
         -- centred by default, so the alignment goes back as it closes.
         local function Body(dialog)

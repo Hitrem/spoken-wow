@@ -464,6 +464,9 @@ function Options:PrintDiagnostics()
                     print("Bridge warning: " .. warning)
                 end
             end
+            if DialogueUIBridge and DialogueUIBridge.Describe then
+                print(DialogueUIBridge:Describe())
+            end
             if Addon.optionsInitializationError then
                 print("Options startup warning: " .. Addon.optionsInitializationError)
             end

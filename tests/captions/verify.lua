@@ -44,6 +44,7 @@ dofile(addons .. 'Spoken/Sources.lua')
 dofile(addons .. 'Spoken/Developer.lua')
 dofile(addons .. 'Spoken/Strings.lua')
 dofile(addons .. 'Spoken/UI/Layout.lua')
+dofile(addons .. 'Spoken/UI/DialogueUITheme.lua')
 dofile(addons .. 'Spoken/UI/Transcript.lua')
 -- The status bar art the subtitle's progress bar is framed with, as a modern client describes it.
 C_Texture=C_Texture or {}
@@ -66,17 +67,20 @@ E.Portrait={Configure=function(_,frame) frame.active='mock-model' end}
 dofile(addons .. 'Spoken/UI/Actions.lua')
 dofile(addons .. 'Spoken/UI/PlayerFrame.lua')
 dofile(addons .. 'Spoken/UI/MinimalPlayer.lua')
+dofile(addons .. 'Spoken/UI/DialogueUIPlayer.lua')
 E.Minimap={Setup=function() end}; E.Options={Setup=function() end}
 -- The windows first, with the word lit: the subtitles a first install shows are switched to
 -- below, and the defaults themselves are pinned in defaults_test.
 E.Addon:InitDB()
-E.Addon.db.profile.Frame.SubtitlePlayer=false
+E.Addon.db.profile.Frame.Style='minimal'
 E.Addon.db.profile.Audio.LineGap=0
 E.Addon.db.profile.Transcript.HighlightWord=true
 E.Addon:Enable()
 local T,Q,M=E.Transcript,E.SoundQueue,E.MinimalPlayer
 local source=E.Sources:Register('quests',{interClipGap=.55})
 local cfg=E.Addon.db.profile.Transcript
+-- The checks up to the scroll-mode section expect page-by-page following.
+cfg.ScrollMode='page'
 
 local assertions=0
 local function Check(v,message) assertions=assertions+1; assert(v,message) end
@@ -141,7 +145,7 @@ Check(T.activeWord==1 and HighlightCount()==2,'first two words are highlighted a
 CheckLayout()
 Advance(30)
 Check(T:GetProgress()==.5,'progress follows real queue timing')
-Check(T.page>1 and T.activeWord>1 and HighlightCount()>=1,'captions follow the highlighted word through the recording')
+Check(T:Page()>1 and T.activeWord>1 and HighlightCount()>=1,'captions follow the highlighted word through the recording')
 do
     -- Typed out, as the subtitle is: the page's words up to the one being read, the rest to come.
     local function Shown()
@@ -161,18 +165,18 @@ do
 end
 CheckLayout()
 T.frame:Fire('OnMouseWheel',1)
-local manualPage=T.page
+local manualPage=T:Page()
 Advance(5)
-Check(T.manualScroll and T.page==manualPage,'manual scrolling holds the chosen caption page')
+Check(T.manualScroll and T:Page()==manualPage,'manual scrolling holds the chosen caption page')
 T:Follow()
-Check(not T.manualScroll and T.page>manualPage and HighlightCount()>=1,'Follow brings the active word back into view')
+Check(not T.manualScroll and T:Page()>manualPage and HighlightCount()>=1,'Follow brings the active word back into view')
 Q:PauseQueue()
 local elapsed,pausedCaptions=T:GetElapsed(),Captions()
 Advance(8)
 Check(T:GetElapsed()==elapsed and Q:IsPaused(),'pause freezes time')
 Check(Captions()==pausedCaptions,'pause freezes the word highlight and caption page')
 Q:ResumeQueue()
-Check(T:GetElapsed()==0 and T.page==1 and T.activeWord==1,'resume restarts captions with the actual restarted audio')
+Check(T:GetElapsed()==0 and T:Page()==1 and T.activeWord==1,'resume restarts captions with the actual restarted audio')
 T:SetEnabled(false); Advance(10)
 Check(not T.frame:IsShown() and Q:IsPlaying(a),'hiding captions leaves audio playing')
 T:SetEnabled(true)
@@ -235,19 +239,21 @@ Check(T.activeWord==compactWord and T:GetElapsed()==compactElapsed,'expanding do
 Check(T.expand:GetLeft()>T.labels[1]:GetRight(),'the caption button has space beside the text')
 CheckLayout()
 T:TurnPage(1)
-local firstVisible=(T.page-1)*8+1
+local firstVisible=(T:Page()-1)*8+1
 T.expand:Fire('OnClick')
 Check(not E.Addon:Layout().CaptionsExpanded and cfg.Lines==2 and T.frame:GetHeight()==twoLineHeight,'minus restores the compact preference')
-Check(T.manualScroll and T.page==math.floor((firstVisible-1)/2)+1,'collapsing keeps the manually selected passage visible')
+Check(T.manualScroll and T:Page()==math.floor((firstVisible-1)/2)+1,'collapsing keeps the manually selected passage visible')
 T:Follow()
 cfg.HighlightWord=false; T:RefreshConfig()
 Check(HighlightCount()==0 and T.activeWord==word,'highlight can be disabled while captions keep following')
-cfg.HighlightWord=true; cfg.AutoScroll=false; T:RefreshConfig()
-local heldPage=T.page
+cfg.HighlightWord=true; cfg.ScrollMode='off'; T:RefreshConfig()
+local heldPage=T:Page()
 Advance(3)
-Check(T.page==heldPage,'disabling Follow keeps the chosen caption page')
+Check(T:Page()==heldPage,'disabling Follow keeps the chosen caption page')
 T:Follow()
-Check(T.page>heldPage and HighlightCount()>=1,'Follow re-enables automatic page changes')
+Check(T:Page()>heldPage and HighlightCount()>=1,'Follow re-enables automatic page changes')
+Check(cfg.ScrollMode=='line','...in the default mode')
+cfg.ScrollMode='page'
 Q:RemoveAllSoundsFromQueue()
 
 local held=true
@@ -318,9 +324,9 @@ Check(not M.portrait:IsShown() and math.abs(T.frame:GetLeft()-M.content:GetLeft(
 frameCfg.HidePortrait=false; frameCfg.FrameScale=1.1; E.PlayerFrame:RefreshConfig()
 Check(T.frame:GetEffectiveScale()==M.frame:GetEffectiveScale(),'captions inherit the player scale')
 Check(M.portrait:IsShown() and T.frame:GetLeft()>M.portrait:GetLeft(),'restored portrait remains beside the caption text')
-frameCfg.HideFrame=true; E.PlayerFrame:RefreshConfig()
+frameCfg.Style='none'; E.PlayerFrame:RefreshConfig()
 Check(not T.frame:IsVisible() and Q:IsPlaying(),'hiding the player hides its captions while audio continues')
-frameCfg.HideFrame=false; E.PlayerFrame:RefreshConfig()
+frameCfg.Style='minimal'; E.PlayerFrame:RefreshConfig()
 Check(T.frame:IsVisible(),'showing the player restores its attached captions')
 local movedTop=M.frame:GetTop()
 T:SetEnabled(false)
@@ -338,7 +344,7 @@ Check(not M.frame.moving and not M.resizer:IsShown(),'the player lock controls t
 frameCfg.LockFrame=false; E.PlayerFrame:RefreshConfig(); M.header:Fire('OnDragStart')
 Check(M.frame.moving,'the existing header still moves the whole player')
 M.header:Fire('OnDragStop')
-frameCfg.MinimalPlayer=false; E.PlayerFrame:RefreshConfig()
+frameCfg.Style='classic'; E.PlayerFrame:RefreshConfig()
 local original=E.PlayerFrame.frame
 Check(T.frame:GetParent()==original and original:IsShown() and not M.frame:IsShown(),'switching skins attaches captions to the original player')
 Check(T.frame:GetTop()<original.portrait:GetBottom(),'original-skin captions stay below portrait and action controls')
@@ -352,7 +358,7 @@ local previousWidth=T.frame:GetWidth()
 original:SetWidth(620)
 Check(T.frame:GetWidth()>previousWidth,'resizing the original player reflows the attached text')
 CheckLayout()
-frameCfg.MinimalPlayer=true; frameCfg.FrameScale=.7; E.PlayerFrame:RefreshConfig()
+frameCfg.Style='minimal'; frameCfg.FrameScale=.7; E.PlayerFrame:RefreshConfig()
 Check(T.frame:GetParent()==M.frame and not original:IsShown(),'switching back restores attachment to the portrait player')
 for _,point in ipairs({'TOPLEFT','CENTER','BOTTOM'}) do
     M.frame:ClearAllPoints(); M.frame:SetPoint(point,UIParent,point,0,200)
@@ -372,16 +378,16 @@ Q:RemoveAllSoundsFromQueue()
 local multilingual='Welcome, Windbeard!\nПривет путник. '..string.rep('世界',60)..' '..string.rep('W',90)..' The end.'
 -- Every word on the page, not typed out: this is about wrapping, not timing.
 cfg.Typewriter=false
+cfg.ScrollMode='page' -- the check below turns pages by hand
 source:Enqueue(Clip('unicode',multilingual,120))
 for _,size in ipairs({12,26}) do
     for _,width in ipairs({300,900}) do
         for _,count in ipairs({1,2,8}) do
             cfg.FontSize,cfg.Lines,E.Addon:Layout().CaptionsExpanded=size,count==1 and 1 or 2,count==8
             M.frame:SetWidth(width); T:RefreshConfig()
-            T.manualScroll,T.page=true,1
-            local displayed={}
+                        local displayed={}
             for page=1,T:PageCount() do
-                T.page=page; T:Update()
+                T:ScrollTo((page-1)*count+1)
                 CheckLayout()
                 displayed[#displayed+1]=Plain(Captions())
             end
@@ -407,6 +413,40 @@ local override=Clip('override','Fallback text',10); override.present.transcript=
 source:Enqueue(override)
 Check(T.text=='Display this instead','explicit source transcript takes precedence')
 Q:RemoveAllSoundsFromQueue()
+
+-- Scroll modes: line by line glides to keep the line being read in the middle.
+E.Addon:Layout().CaptionsExpanded=true; cfg.ScrollMode='line'; T:RefreshConfig()
+source:Enqueue(Clip('scroll',long,60))
+local function Settle() T.frame:Fire('OnUpdate',1) end
+local function ActiveLine() return T:ActiveSegment(T:GetProgress()).line end
+Advance(20); Settle()
+Check(T.topTarget==ActiveLine()-3,'line by line keeps the line being read fourth of eight')
+local settled=T.top
+Advance(1.5)
+local target=T.topTarget
+Check(target>settled,'the next line moves the target')
+T.frame:Fire('OnUpdate',.03)
+Check(T.top>settled and T.top<target,'the text glides part of the way, not a whole line at once')
+local _,shown=Captions()
+Check(shown==9,'mid-glide the line sliding in shows under the page')
+Settle()
+Check(T.top==target,'and settles on the line')
+local _,settledShown=Captions()
+Check(settledShown==8,'with the page back to its eight lines')
+cfg.Typewriter=true; T:Update(); Settle()
+Check(T.topTarget==ActiveLine()-7,'typed out, the line being read is the last of eight')
+local typed=Captions()
+Check(not typed:find('\n\n') and typed:sub(-1)~='\n','with no blank row under it')
+cfg.Typewriter=false
+cfg.ScrollMode='line'; T:Update()
+T.frame:Fire('OnMouseWheel',1)
+Check(T.manualScroll and T.topTarget<target,'the wheel scrolls back by lines, holding there')
+T:ScrollTo(1)
+Check(T.top==1 and T.manualScroll,'a scrollbar drag lands at once')
+T:Follow()
+Check(not T.manualScroll,'clicking the captions follows the voice again')
+Q:RemoveAllSoundsFromQueue()
+E.Addon:Layout().CaptionsExpanded=false; T:RefreshConfig()
 
 -- The subtitle player: no window, just the words in a centred frame of their own, typed in
 -- at the voice's pace. The client runs OnUpdate only on shown frames, and so does Play.
@@ -611,7 +651,7 @@ S:ShowSample(true); S:ShowSample(false); Play(.6)
 Check(not S.frame:IsShown(),'hiding the sample hides the subtitle')
 
 SlashCmdList.SPOKEN('player minimal')
-Check(E.Addon:PlayerStyle()=='minimal' and frameCfg.MinimalPlayer,'the slash command picks the small window')
+Check(E.Addon:PlayerStyle()=='minimal' and frameCfg.Style=='minimal','the slash command picks the small window')
 source:Enqueue(Clip('back',line,10))
 Check(T.frame:IsShown() and not S.frame:IsShown() and M.frame:IsShown() and M.frame:GetHeight()>98,
     'the words return to the small window')
@@ -621,7 +661,6 @@ Check(E.PlayerFrame.frame:IsShown() and not M.frame:IsShown() and T.frame:GetPar
 SlashCmdList.SPOKEN('player subtitle')
 Check(S.frame:IsShown() and not T.frame:IsShown() and not E.PlayerFrame.frame:IsShown(),
     'switching to subtitles mid-line hides the window and shows the line')
-Check(not frameCfg.MinimalPlayer,'the large window is still remembered as the window chosen')
 E.Addon:SetPlayerStyle('minimal'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
 Q:RemoveAllSoundsFromQueue()
 Check(#E.Callbacks.errors==0,table.concat(E.Callbacks.errors,'\n'))
