@@ -209,4 +209,12 @@ for _, key in ipairs({ "quests", "books", "zones" }) do
     page.layout:Refresh()
 end
 
+---------------------------------------------------------------- Reset All and the Unlock switches
+-- Kept with each part's settings, so Spoken's profile reset would not reach them.
+unlocked.places, unlocked.readables = true, true
+local reset = _G.SpokenOptionsPanel.layout.defaults
+reset.scripts.OnClick(reset)
+stub.popups[#stub.popups].dialog.OnAccept()
+Expect("Reset All turns both Unlock switches off", (unlocked.places or unlocked.readables) and true or false, false)
+
 os.exit(Failures() == 0 and 0 or 1)

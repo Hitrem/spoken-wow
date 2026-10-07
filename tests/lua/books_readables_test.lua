@@ -116,10 +116,15 @@ Expect("a readable not found does not open", page.title.text, "Kurdran Wildhamme
 SpokenBooksSettings.unlockUnfound = true
 B:RefreshReadables()
 Expect("Unlock Unfound Readables opens it", RowFor("Ranger Captain Alleria Windrunner").row.locked, false)
+-- Opening one is not finding it: the counts stay what the character has found.
+local before = RowFor("Stormwind City").count.text
+Click("Ranger Captain Alleria Windrunner")
+Expect("...and choosing it leaves the counts as they were", RowFor("Stormwind City").count.text, before)
 SpokenBooksSettings.unlockUnfound = false
 
 SpokenBooksCharacter.found[LETTER] = true
-B:ShowReadables(LETTER)
+Click("Westfall")
+Click("A Dusty Unsent Letter")
 Expect("opened on a readable carried from a zone", page.title.text, "A Dusty Unsent Letter")
 Expect("...said to be carried, and from where", page.sub.text, L.KIND_CARRIED .. " · Westfall")
 Expect("...how it is had first, the name and the zone", (page.body.text.text or ""):find(
@@ -194,9 +199,18 @@ choices[2].func()
 Expect("...off, everything again", Has(Shown(), "Westfall"), true)
 B.HasAudio = hasAudio
 
+-- The readables places.mjs leaves out (the Deprecated and TEST items, whose page is "Missing
+-- Text") are neither listed nor counted, so every count can reach all.
+local placed = 0
+for _ in pairs(SpokenBooksPlaces.books) do placed = placed + 1 end
+Expect("Azeroth counts only the readables the places know", RowFor("Azeroth").count.text:match("/(%d+)"), tostring(placed))
+
 _, choices = Menu()
 choices[5].func()
 list = Shown()
+Click(L.TYPE_OTHER)
+Expect("By Type does not list one the places leave out", RowFor("Test Language Item"), nil)
+Click(L.TYPE_OTHER)
 Expect("By Type: the tree is the types alone", Has(list, L.TYPE_PLAQUE) and Has(list, L.TYPE_LETTER) and not Has(list, "Elwynn Forest"), true)
 _, choices = Menu()
 Expect("...and the menu says so", choices[5].checked and not choices[4].checked, true)
@@ -215,6 +229,28 @@ Expect("with two tabs, the tabs show", _G.SpokenCompendiumWindowTab1:IsShown() a
 Expect("...each its own panel", _G.SpokenCompendium:Tab("places").panel:IsShown() and not panel:IsShown(), true)
 _G.SpokenCompendiumWindowTab2.scripts.OnClick(_G.SpokenCompendiumWindowTab2)
 Expect("...and a click on the other goes back to the readables", panel:IsShown(), true)
+
+-- A tab whose part is off is not shown, and does not open.
+local on = { spare = false, readables = true }
+_G.SpokenCompendium:Register("spare", { label = "Spare", order = 3, build = function() end,
+    enabled = function() return on.spare end })
+_G.SpokenCompendium:Tab("readables").enabled = function() return on.readables end
+Expect("a tab whose part is off has no tab", _G.SpokenCompendiumWindowTab3 == nil or not _G.SpokenCompendiumWindowTab3:IsShown(), true)
+Expect("...and is not opened", _G.SpokenCompendium:Select("spare") == nil and _G.SpokenCompendium:Active(), "readables")
+Expect("...the window open on the readables", window:IsShown(), true)
+on.readables = false
+_G.SpokenCompendium:Relayout()
+Expect("the part of the tab shown switched off, the window closes", window:IsShown(), false)
+on.readables = true
+
+-- Listening is not finding: a book heard from the Compendium (Play marks it read, for Read Only
+-- Once) stays unfound until it is opened in the world. One heard before Found was kept still is.
+SpokenBooksCharacter.found[ALLERIA] = nil
+B:MarkBookRead(ALLERIA)
+Expect("a book heard from the Compendium is not found by it", B:IsBookFound(ALLERIA), false)
+_G.SpokenBooksCharacter = { read = { [LETTER] = true } }
+B:InitDB()
+Expect("...one heard before Found was kept is found", B:IsBookFound(LETTER), true)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll readables tests passed")

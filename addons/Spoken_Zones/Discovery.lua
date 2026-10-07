@@ -88,8 +88,7 @@ local function Explored(mapID)
 	return explored[mapID] or Scan(mapID)
 end
 
--- Every zone's map read, so a city is known explored by its name on the zone around it whichever
--- is asked about first (Darnassus sorts before Teldrassil). Once until RefreshFound.
+-- Every zone's map read, for /spz found's list of every place. Once until RefreshFound.
 local everyZone = false
 local function ScanEveryZone()
 	if everyZone then return end
@@ -120,7 +119,10 @@ function SpokenZones:IsFound(mapID, areaKey)
 	end
 	if visited[VisitKey(mapID)] then return true, "stood in" end
 	if Explored(mapID).zone then return true, Explored(mapID).why.zone end
-	ScanEveryZone()
+	-- A city by its name on the zone around it, the one map that can show it explored. Read
+	-- alone: every zone's map on each open costs some 50 zones' overlays, 16 calls each.
+	local around = self.CityIn and self.CityIn[mapID]
+	if around then Explored(around) end
 	local name = self:GetMapName(mapID)
 	if name and exploredNames[name] then
 		return true, "its name explored on map " .. tostring(exploredNames[name])

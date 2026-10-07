@@ -79,8 +79,12 @@ function SpokenBooks:InitDB()
 	SpokenBooksCharacter.read = SpokenBooksCharacter.read or {}
 	-- Opened, heard or not: what Azeroth's Compendium counts as found. Kept apart from `read`,
 	-- which Read Only Once goes by, so opening a book with autoplay off does not stop it being
-	-- read the next time.
-	SpokenBooksCharacter.found = SpokenBooksCharacter.found or {}
+	-- read the next time, and Play in the Compendium does not find one. A character from before
+	-- `found` was kept had only `read` to say what it opened, so that is carried over once.
+	if not SpokenBooksCharacter.found then
+		SpokenBooksCharacter.found = {}
+		for book in pairs(SpokenBooksCharacter.read) do SpokenBooksCharacter.found[book] = true end
+	end
 
 	return SpokenBooksSettings
 end
@@ -125,14 +129,13 @@ function SpokenBooks:MarkBookFound(book)
 	SpokenBooksCharacter.found[book] = true
 end
 
---- Whether this character has found `book`: opened it, or heard it read before opening was
---- recorded.
+--- Whether this character has found `book`: opened it in the world. Hearing it from the
+--- Compendium does not count.
 function SpokenBooks:IsBookFound(book)
 	if not book or not SpokenBooksCharacter then
 		return false
 	end
 	return (SpokenBooksCharacter.found and SpokenBooksCharacter.found[book]) == true
-		or SpokenBooksCharacter.read[book] == true
 end
 
 --- Forget everything this character has heard, and say how much that was. What `/spb forget`
@@ -227,10 +230,13 @@ function SpokenBooks:SetupSource()
 		Spoken:RegisterBullet("book", [[Interface\AddOns\Spoken\Textures\Book]], 14)
 	end
 
-	-- Switched off or on in Spoken's settings: the Play button on the page follows.
+	-- Switched off or on in Spoken's settings: the Play button on the page follows, and so does the
+	-- Compendium's Books tab.
 	if Spoken.RegisterCallback then
 		Spoken:RegisterCallback("PART_SWITCHED", function(key)
-			if key == "books" then SpokenBooks:RefreshPlayButton() end
+			if key ~= "books" then return end
+			SpokenBooks:RefreshPlayButton()
+			if SpokenCompendium and SpokenCompendium.Relayout then SpokenCompendium:Relayout() end
 		end)
 	end
 

@@ -179,8 +179,18 @@ local function Light(info, layer)
 	end
 end
 
--- Every frame, as the continent map's highlight follows the cursor.
+-- Every frame, as the continent map's highlight follows the cursor; nothing done while the cursor
+-- rests, since finding the area under it and its overlay is the costly part.
 local function OnUpdate()
+	local container = WorldMapFrame.ScrollContainer
+	local x, y
+	if container then x, y = container:GetNormalizedCursorPosition() end
+	local focus = WorldMapFrame.IsCanvasMouseFocus and WorldMapFrame:IsCanvasMouseFocus()
+	local mapID = WorldMapFrame.mapID
+	if state.x ~= nil and x == state.x and y == state.y and mapID == state.mapID and focus == state.focus then
+		return
+	end
+	state.x, state.y, state.mapID, state.focus = x, y, mapID, focus
 	local info, layer = Target()
 	if info and info ~= state.lit then
 		Light(info, layer)
@@ -191,6 +201,7 @@ end
 
 local function Reset()
 	state.overlaysFor, state.lit = nil, nil
+	state.x, state.y, state.mapID, state.focus = nil, nil, nil, nil
 	if state.frame then state.frame:Hide() end
 end
 

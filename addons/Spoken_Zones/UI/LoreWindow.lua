@@ -37,46 +37,14 @@ local function ZoneName(mapID)
 	return SpokenZones:GetMapName(mapID) or (SpokenZones.Zones[mapID] and SpokenZones.Zones[mapID].name) or tostring(mapID)
 end
 
--- The world, its two continents, and which continent each zone is on.
-local WORLD = 947
-local CONTINENTS = { 1414, 1415 } -- Kalimdor, the Eastern Kingdoms
--- Where the client cannot say (C_Map's parents), Classic's own map ids: Kalimdor's zones and
--- cities, then the Eastern Kingdoms'.
-local KNOWN_CONTINENT = {}
-for _, id in ipairs({ 1411, 1412, 1413, 1438, 1439, 1440, 1441, 1442, 1443, 1444, 1445, 1446, 1447,
-	1448, 1449, 1450, 1451, 1452, 1454, 1456, 1457 }) do KNOWN_CONTINENT[id] = 1414 end
-for _, id in ipairs({ 1416, 1417, 1418, 1419, 1420, 1421, 1422, 1423, 1424, 1425, 1426, 1427, 1428,
-	1429, 1430, 1431, 1432, 1433, 1434, 1435, 1436, 1437, 1453, 1455, 1458 }) do KNOWN_CONTINENT[id] = 1415 end
-
--- The cities, each listed inside the zone around it rather than beside it. The game has each as a
--- zone of its own (its own map, under the continent), so the zone it stands in is read off the
--- world: Stormwind City, Orgrimmar and Darnassus lie in that zone's map alone, and Ironforge,
--- Undercity and Thunder Bluff are entered from it (the Gates of Ironforge are Dun Morogh's, the
--- Ruins of Lordaeron Tirisfal's, and Thunder Bluff's mesa rises over Mulgore's plain).
-local CITY_IN = { [1453] = 1429, [1454] = 1411, [1455] = 1426, [1456] = 1412, [1457] = 1438, [1458] = 1420 }
+-- The world, its continents, the cities inside the zone around each, and which continent a zone is
+-- on: Compendium.lua's, which every tab lays its tree out by.
+local WORLD, CONTINENTS, CITY_IN = SpokenCompendium.WORLD, SpokenCompendium.CONTINENTS, SpokenCompendium.CITY_IN
+local ContinentOf = SpokenCompendium.ContinentOf
 SpokenZones.CityIn = CITY_IN
 
 local function IsContinent(mapID)
 	return mapID == 1414 or mapID == 1415
-end
-
-local continentCache = {}
---- The continent a zone is on: up the game's map tree until one is reached, else Classic's ids.
-local function ContinentOf(mapID)
-	local cached = continentCache[mapID]
-	if cached ~= nil then return cached or nil end
-	local found
-	local current, steps = mapID, 0
-	while current and steps < 8 and C_Map and C_Map.GetMapInfo do
-		local info = C_Map.GetMapInfo(current)
-		local parent = info and info.parentMapID
-		if not parent or parent == 0 then break end
-		if IsContinent(parent) then found = parent break end
-		current, steps = parent, steps + 1
-	end
-	found = found or KNOWN_CONTINENT[mapID]
-	continentCache[mapID] = found or false
-	return found
 end
 
 
@@ -182,9 +150,8 @@ local function Matches(text)
 end
 
 -- Whether this character has found a place (Discovery.lua), whatever Unlock Undiscovered Zones
--- says: the counts and Discovered Only go by it. The one chosen counts as found.
+-- says: the counts and Discovered Only go by it.
 local function Found(mapID, key)
-	if selection and selection.mapID == mapID and (key == nil or selection.key == key) then return true end
 	return SpokenZones:IsFound(mapID, key)
 end
 
@@ -309,7 +276,7 @@ local function BuildRowList()
 		-- A continent with none of its zones found yet is listed locked, and does not open; with
 		-- Discovered Only it is left out. Found through its zones alone: finding Brill finds the
 		-- Eastern Kingdoms.
-		local unfound = found == 0 and not (selection and selection.mapID == continent)
+		local unfound = found == 0
 		local locked = unfound and not SpokenZones:ShowsUndiscovered()
 		local voiced = not OnlyVoiced()
 		for _, mapID in ipairs(voiced and {} or ZonesOf(continent)) do
@@ -557,13 +524,6 @@ local function CurrentZoneID()
 	end
 	local _, resolved = SpokenZones:GetLoreWithFallback(playerMap)
 	return resolved
-end
-
---- Close the places, as switching the part off does.
-function SpokenZones:HideLoreWindow()
-	if SpokenCompendium:IsOpen("places") then
-		SpokenCompendium:Hide()
-	end
 end
 
 function SpokenZones:ToggleLoreWindow()

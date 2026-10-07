@@ -34,7 +34,9 @@ local function Point(px, py) cursor[1], cursor[2] = px / 1002, py / 668 end
 local Z = {}
 function Z:IsPartOn() return true end
 function Z:IsZoneMap(mapID) return mapID == 1411 end
+local asked = 0
 function Z:AreaAt(_, x, y)
+    asked = asked + 1
     local px, py = x * 1002, y * 668
     if px >= 200 and px <= 265 and py >= 100 and py <= 180 then return "Razor Hill", { name = "Razor Hill" } end
     if px >= 100 and px <= 400 and py >= 50 and py <= 250 then return "Valley of Trials", { name = "Valley" } end
@@ -77,6 +79,12 @@ lit = Shown()
 Expect("over the big area, its two tiles", #lit == 2 and lit[1]:GetTexture() == 11 and lit[2]:GetTexture() == 12, true)
 Expect("...the second as wide as what is left of it", lit[2]:GetWidth(), 44)
 Expect("...side by side", select(4, lit[2]:GetPoint(1)), 100 + 256)
+
+asked = 0
+Run()
+Run()
+Expect("the cursor resting, nothing is asked again", asked, 0)
+Expect("...and what is lit stays lit", state.frame:IsShown() and #Shown(), 2)
 
 Point(800, 500)
 Run()

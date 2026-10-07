@@ -397,6 +397,9 @@ Expect("a locked area cannot be chosen", RowFor("Sen'jin Village").row and RowFo
 Z:ShowLoreFor(1411, "sen'jin village")
 Expect("a place not discovered, opened from elsewhere, says so", page.title.text .. ": " .. page.body.text.text, "Sen'jin Village: " .. Z.L.NOT_DISCOVERED)
 Expect("...with nothing to play", page.play.mapID, nil)
+Shown()
+Expect("...and is not counted found for being chosen", RowFor("Durotar").count.text, "1/3 • 33%")
+Expect("...still locked in the list", RowFor("Sen'jin Village").row.locked, true)
 Z.selected = { mapID = 1411, areaName = "Sen'jin Village", entry = Z.Subzones[1411]["sen'jin village"] }
 Z:RefreshPanel()
 Expect("the map's panel says so too", mapPage.body.text.text, Z.L.NOT_DISCOVERED)
@@ -410,6 +413,11 @@ Z:RefreshLoreWindow()
 Expect("Unlock Undiscovered Zones opens them all", Locked(), "")
 Expect("...the continent opened before shows its zones again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 Expect("...the counts still what this character has found", RowFor("Durotar").count.text, "1/3 • 33%")
+RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
+Expect("...and when a place not found is chosen", RowFor("Durotar").count.text, "1/3 • 33%")
+RowFor("Dun Morogh").scripts.OnClick(RowFor("Dun Morogh"))
+Expect("...or a zone on a continent with none found", RowFor("Eastern Kingdoms").count.text:match("^0/") ~= nil, true)
+Z:ShowLoreFor(1411, nil)
 showAll = false
 
 -- Discovered Only, in the filter menu beside the search box, leaves the places not found out of it.

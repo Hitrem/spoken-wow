@@ -20,7 +20,7 @@
 -- with the tabs too: the zones' tree (C.MapName, C.ContinentOf, C.CITY_IN) and the parchment page
 -- (C.NewPage).
 
-local VERSION = 4
+local VERSION = 5
 
 if SpokenCompendium and (SpokenCompendium.VERSION or 0) >= VERSION then
 	return
@@ -347,8 +347,17 @@ local function NewTab(index, label)
 	return tab
 end
 
+-- Whether a tab's part is on: a tab that does not say always is.
+local function Enabled(tab)
+	return not tab.enabled or (tab.enabled() and true or false)
+end
+
+-- Only the tabs whose part is on: a part switched off in Spoken's settings takes its tab away.
 local function LayOutTabs()
-	local list = Ordered()
+	local list = {}
+	for _, def in ipairs(Ordered()) do
+		if Enabled(def) then table.insert(list, def) end
+	end
 	tabButtons = tabButtons or {}
 	for i, def in ipairs(list) do
 		local button = tabButtons[i] or NewTab(i, def.label)
@@ -455,7 +464,7 @@ end
 
 --- Show `key`'s tab in the window, building either the first time.
 function C:Select(key)
-	if not C.tabs[key] then return end
+	if not C.tabs[key] or not Enabled(C.tabs[key]) then return end
 	self:Window()
 	LayOutTabs()
 	local previous = active
@@ -497,9 +506,13 @@ function C:Active()
 	return active
 end
 
--- Whether a tab's part is on: a tab that does not say always is.
-local function Enabled(tab)
-	return not tab.enabled or (tab.enabled() and true or false)
+--- Lay the tabs out again when a part is switched on or off, and close the window if the tab it
+--- shows is one switched off: left open, it would go on playing and listing a part turned off.
+function C:Relayout()
+	if not window then return end
+	LayOutTabs()
+	PaintTabs()
+	if active and C.tabs[active] and not Enabled(C.tabs[active]) then window:Hide() end
 end
 
 --- Whether there is anything to open: a tab whose part is on.

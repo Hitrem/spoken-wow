@@ -47,12 +47,14 @@ local function Title(id)
 	return book and book.title or tostring(id)
 end
 
--- Every readable by where it is: index.zones[mapID] = { world = { ids }, carried = { ids } }, and
--- the two groups. Built once: the data is fixed for the session.
+-- Every readable by where it is: index.zones[mapID] = { [type] = { ids } }, the two groups, the
+-- types, and `all`, what every count is out of. A readable Data/Places.lua does not carry is left
+-- out everywhere: places.mjs drops the Deprecated and TEST items no one can find, and counting
+-- them would keep every total out of reach. Built once: the data is fixed for the session.
 local index
 local function Index()
 	if index then return index end
-	index = { zones = {}, wide = {}, unknown = {}, types = {} }
+	index = { zones = {}, wide = {}, unknown = {}, types = {}, all = {} }
 	local places = _G.SpokenBooksPlaces and SpokenBooksPlaces.books or {}
 	local function Add(mapID, type, id)
 		local zone = index.zones[mapID] or {}
@@ -62,15 +64,18 @@ local function Index()
 	end
 	for id in pairs(Books()) do
 		local place = places[id]
-		local type = place and TYPE_LABEL[place.type] and place.type or "other"
-		index.types[type] = index.types[type] or {}
-		table.insert(index.types[type], id)
-		if place and place.wide then
-			table.insert(index.wide, id)
-		elseif place and place.zones and #place.zones > 0 then
-			for _, mapID in ipairs(place.zones) do Add(mapID, type, id) end
-		elseif place or not _G.SpokenBooksPlaces then
-			table.insert(index.unknown, id)
+		if place or not _G.SpokenBooksPlaces then
+			index.all[id] = true
+			local type = place and TYPE_LABEL[place.type] and place.type or "other"
+			index.types[type] = index.types[type] or {}
+			table.insert(index.types[type], id)
+			if place and place.wide then
+				table.insert(index.wide, id)
+			elseif place and place.zones and #place.zones > 0 then
+				for _, mapID in ipairs(place.zones) do Add(mapID, type, id) end
+			else
+				table.insert(index.unknown, id)
+			end
 		end
 	end
 	local function ByTitle(a, b)
@@ -88,7 +93,6 @@ local function Index()
 end
 
 local function Found(id)
-	if selection and selection.book == id then return true end
 	return SpokenBooks:IsBookFound(id)
 end
 
@@ -303,9 +307,7 @@ local function BuildRows()
 		end
 	end
 	table.sort(continents, function(a, b) return a.label < b.label end)
-	local all = {}
-	for id in pairs(Books()) do all[id] = true end
-	local found, total = Tally(all)
+	local found, total = Tally(Index().all)
 	table.insert(out, { kind = "world", mapID = WORLD, label = MapName(WORLD), depth = 0, count = found, total = total,
 		open = searching or worldOpen })
 	if not (searching or worldOpen) then return out end
@@ -384,9 +386,7 @@ end
 local function ShowEntry()
 	if not page then return end
 	if not selection then
-		local all = {}
-		for id in pairs(Books()) do all[id] = true end
-		page:Show({ title = L.COMPENDIUM_READABLES, subtitle = Count(Tally(all)), text = L.READABLES_PICK })
+		page:Show({ title = L.COMPENDIUM_READABLES, subtitle = Count(Tally(Index().all)), text = L.READABLES_PICK })
 		return
 	end
 	if selection.book then
@@ -435,7 +435,7 @@ local function ShowEntry()
 		return
 	end
 	if selection.mapID == WORLD then
-		for id in pairs(Books()) do set[id] = true end
+		set = Index().all
 	elseif selection.mapID == 1414 or selection.mapID == 1415 then
 		for _, mapID in ipairs(ZonesOn(selection.mapID)) do ReadablesIn(mapID, set) end
 	else
@@ -534,20 +534,9 @@ local function Build(panel)
 	SpokenBooks.readables = panel
 end
 
---- Open the readables, on `book` when one is given.
-function SpokenBooks:ShowReadables(book)
+--- Open the readables.
+function SpokenBooks:ShowReadables()
 	if not SpokenCompendium then return end
-	if book then
-		selection = { book = book }
-		local place = _G.SpokenBooksPlaces and SpokenBooksPlaces.books[book]
-		local zone = place and place.zones and place.zones[1]
-		if zone then
-			expandedZone = zone
-			worldOpen = true
-			local continent = ContinentOf(CITY_IN[zone] or zone)
-			if continent then continentOpen[continent] = true end
-		end
-	end
 	if list then
 		list:ClearSearch()
 		filter = ""

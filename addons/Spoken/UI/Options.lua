@@ -702,6 +702,12 @@ local function Build(canvas)
     -- Every setting back, from the header's Defaults as the game's pages have it.
     layout:StartOver(L.OPT_START_OVER_TITLE, L.OPT_RESET_ALL, function()
         Layout.Confirm(L.OPT_RESET_ALL_CONFIRM, L.OPT_RESET_AND_RELOAD, L.CANCEL, function()
+            -- The Unlock switches are on this page but kept with each part's settings, which
+            -- ResetProfile does not reach, and each part's own Reset skips them.
+            for _, key in ipairs({ "places", "readables" }) do
+                local tab = Tab(key)
+                if tab and tab.unlock then tab.unlock.set(false) end
+            end
             Addon.db:ResetProfile()
             Addon.db.global.Layout = nil
             ReloadUI()

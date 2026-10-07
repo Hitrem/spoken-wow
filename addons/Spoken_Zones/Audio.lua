@@ -250,12 +250,13 @@ function SpokenZones:SetupAudio()
 		SpokenZones:NotifyAudioChanged()
 	end)
 
-	-- Switched off or on in Spoken's settings: the map panel follows, and the lore window goes.
+	-- Switched off or on in Spoken's settings: the map panel follows, and so does the Compendium's
+	-- Zones tab.
 	if Spoken.RegisterCallback then
-		Spoken:RegisterCallback("PART_SWITCHED", function(key, on)
+		Spoken:RegisterCallback("PART_SWITCHED", function(key)
 			if key ~= "zones" then return end
 			if SpokenZones.RefreshPanel then SpokenZones:RefreshPanel() end
-			if not on and SpokenZones.HideLoreWindow then SpokenZones:HideLoreWindow() end
+			if SpokenCompendium and SpokenCompendium.Relayout then SpokenCompendium:Relayout() end
 		end)
 	end
 

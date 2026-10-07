@@ -28,8 +28,9 @@ _G.CreateVector2D = function(x, y) return { x = x, y = y } end
 _G.C_Map = _G.C_Map or {}
 C_Map.GetMapArtLayers = function() return { { layerWidth = 1000, layerHeight = 500 } } end
 C_Map.GetAreaInfo = function(id) return AREAS[id] end
+local read = {}
 _G.C_MapExplorationInfo = {
-    GetExploredMapTextures = function(mapID) return OVERLAYS[mapID] or {} end,
+    GetExploredMapTextures = function(mapID) read[mapID] = true; return OVERLAYS[mapID] or {} end,
     GetExploredAreaIDsAtPosition = function(mapID, at)
         for _, o in ipairs(OVERLAYS[mapID] or {}) do
             local r = o.hitRect
@@ -43,7 +44,7 @@ _G.C_MapExplorationInfo = {
 local where = { map = 1411, subzone = "" }
 _G.GetSubZoneText = function() return where.subzone end
 local Z = { Zones = { [1411] = {}, [1426] = {}, [1454] = {}, [1450] = {}, [1416] = {} }, Subzones = { [1411] = { ["valley of trials"] = {}, ["razor hill barracks"] = {}, ["orgrimmar"] = {} },
-    [1426] = { ["coldridge valley"] = {} } } }
+    [1426] = { ["coldridge valley"] = {} } }, CityIn = { [1454] = 1411 } }
 local names = { [1411] = "Durotar", [1426] = "Dun Morogh", [1454] = "Orgrimmar", [1450] = "Moonglade" }
 local settings = {}
 function Z:Get(key) return settings[key] end
@@ -67,6 +68,7 @@ Expect("an explored area is found", Z:IsFound(1411, "valley of trials"), true)
 Expect("...and its zone", Z:IsFound(1411), true)
 Expect("an area with no overlay is not found before it is stood in", Z:IsFound(1411, "razor hill barracks"), false)
 Expect("a zone with nothing explored is not found", Z:IsFound(1426), false)
+Expect("...read off its own map alone, not every zone's", read[1450] or read[1416] or false, false)
 Expect("...nor one whose map has an overlay always drawn, nothing under it explored", Z:IsFound(1450), false)
 -- The game's word is followed: the Forever client reports Dalaran explored for every character.
 Expect("an area the client reports explored is found, whoever reports it", Z:IsFound(1416, "dalaran"), true)
