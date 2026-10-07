@@ -43,6 +43,8 @@ local BORDER_SIZE = 74
 local TOGGLE_TUCK = 2
 -- Zone Lore's map, so the button reads as the way back to it.
 local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map02]]
+-- Where the side tab sits down the map's right edge, as the character frame's first one does.
+local SIDE_TAB_TOP = 30
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -129,6 +131,27 @@ end
 -- The way back to a folded panel has to live on the map, not on the panel it reopens. Folding it
 -- needs nothing more than the panel's own close button.
 local function BuildToggle()
+	-- A side tab down the map's right edge, as the game's new panels have them (the character
+	-- frame's, LargeSideTabButtonTemplate): its own tooltip, press and sound. The action slot's ring
+	-- where the client has not got it. Placed with the panel (Place): in the map, or beside it under
+	-- the gamepad UI.
+	local ok, tab = pcall(CreateFrame, "Frame", "SpokenZonesPanelToggle", UIParent, "LargeSideTabButtonTemplate")
+	if ok and tab and type(tab.Icon) == "table" and tab.Icon.SetTexture and tab.SetCustomOnMouseUpHandler then
+		toggle = tab
+		toggle.fillToInterior = true
+		toggle.tooltipText = L.MAP_PANEL_EXPAND
+		toggle.Icon:SetTexture(TOGGLE_ICON)
+		-- Never shown chosen: it only ever opens. SetChecked also fits the icon to the tab's inside.
+		if toggle.SetChecked then toggle:SetChecked(false) end
+		toggle:SetCustomOnMouseUpHandler(function() SpokenZones:SetMapPanelCollapsed(false) end)
+		toggle:EnableMouse(true)
+		toggle:SetPoint("TOPLEFT", WorldMapFrame, "TOPRIGHT", 0, -SIDE_TAB_TOP)
+		toggle:SetScript("OnHide", function(self)
+			if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+		end)
+		toggle:Hide()
+		return
+	end
 	toggle = CreateFrame("Button", "SpokenZonesPanelToggle", UIParent)
 	toggle:SetSize(ICON_SIZE, ICON_SIZE)
 	local icon = toggle:CreateTexture(nil, "ARTWORK")
