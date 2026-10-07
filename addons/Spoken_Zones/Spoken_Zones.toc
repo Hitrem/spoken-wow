@@ -85,6 +85,7 @@ Data/ruRU/Aliases.lua
 Data/koKR/Aliases.lua
 Data/zhCN/Aliases.lua
 Data/zhTW/Aliases.lua
+Data/ForeverAreas.lua
 UI/Layout.lua
 UI/TextView.lua
 UI/CopyLink.lua
