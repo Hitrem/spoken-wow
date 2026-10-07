@@ -43,17 +43,6 @@ local L = SpokenZones.L
 -- an unknown layout plays silence and reports nothing.
 local PACK_FORMAT = 1
 
--- PlaySoundFile only accepts these. An unknown name makes the call fail outright,
--- so a saved variable carrying a stale channel falls back rather than going silent.
-local CHANNELS = {
-	Master = true,
-	SFX = true,
-	Music = true,
-	Ambience = true,
-	Dialog = true,
-}
-local DEFAULT_CHANNEL = "Dialog"
-
 -- Playback state lives in the Spoken player. The clip being spoken is the head of
 -- its queue, so there is one place to ask what is happening rather than a `current`,
 -- a `paused` shadow copy and a staleness token that have to agree with each other.

@@ -348,6 +348,9 @@ local defaults = {
             -- live here. They describe how anything is played rather than what this addon
             -- reads, so they are Spoken's settings now.
             StopAudioOnDisengage = false,
+            -- On, the NPC's own greeting is heard and what Spoken reads waits for it
+            -- (GreetingFirst.lua); off, Silence NPC Voices cuts it where a pack has one.
+            GreetingFirst = false,
             -- Off, no quest dialog, greeting or gossip reads itself: nothing plays until
             -- the Play button on the window is pressed (UI/DialogPlayButton.lua) or
             -- /spq read is typed. GossipFrequency then has nothing to decide.
@@ -499,6 +502,7 @@ function Addon:OnInitialize()
 
     RequirePlayer("Spoken Quests")
     Player:Setup()
+    GreetingFirst:Setup()
     -- The copy-link popup behind the Report button. Guarded because a failure to build a
     -- dialog must not stop playback initializing.
     local reportButtonReady, reportButtonError = pcall(ReportButton.Initialize, ReportButton)
@@ -1204,10 +1208,25 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
-    if not Spoken.MuteGameDialogueAhead or not self:ExpectedLine(event) then
+    if not Spoken.MuteGameDialogueAhead or not self:IsAutoplayOn() or self.dataModulesPending
+        or not Player.source then
         return
     end
-    Spoken:MuteGameDialogueAhead(Player.source)
+    local quest = QUEST_EVENTS[event]
+    if not (SPEECH_EVENTS[event] or quest) then
+        return
+    end
+    -- Game Greeting First: nothing is cut, and the line waits for the greeting instead.
+    if GreetingFirst:IsOn() then
+        GreetingFirst:Open()
+        return
+    end
+    -- Silenced only where a pack reads the line; any other NPC keeps its greeting. A quest whose
+    -- ID is not known yet is muted too: its greeting starts now, and with no line the mute lifts.
+    local questID = quest and QuestIDFor(event)
+    if (quest and (not questID or questID == 0)) or self:ExpectedLine(event) then
+        Spoken:MuteGameDialogueAhead(Player.source)
+    end
 end
 
 --- The text autoplay will read for the dialog that just opened, or nil. Asked before the line is

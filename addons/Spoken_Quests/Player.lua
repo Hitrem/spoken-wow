@@ -202,6 +202,9 @@ function Player:Prepare(soundData)
     soundData.key = soundData.fileName
     soundData.path = soundData.filePath
     soundData.priority = gossip and "low" or "normal"
+    -- Cut, so none of the NPC's greeting is heard under the line. With Game Greeting First the NPC
+    -- has had its say, so a greeting the wait fell short of fades instead.
+    soundData.cutsGameDialogue = not (GreetingFirst and GreetingFirst:IsOn())
     soundData.present = {
         header = soundData.name or "",
         label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),

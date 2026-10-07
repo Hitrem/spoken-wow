@@ -66,7 +66,7 @@ function M.Advance(seconds, step)
                 else
                     timer.at = nil
                 end
-                timer.fn()
+                if timer.args then timer.fn(unpack(timer.args, 1, timer.args.n)) else timer.fn() end
             end
         end
     end
@@ -386,7 +386,7 @@ function _G.PlaySoundFile(path, channel)
     world.playedChannels[#world.played] = channel
     return true, #world.played
 end
-function _G.StopSound(handle) table.insert(world.stopped, handle) end
+function _G.StopSound(handle, fadeMs) table.insert(world.stopped, handle); world.lastStopFade = fadeMs end
 function _G.PlayMusic(path) table.insert(world.music, path) end
 function _G.StopMusic() table.insert(world.music, false) end
 -- How many frames CreateFrame has built, across every name and kind: a model probe built
@@ -942,8 +942,8 @@ _G.LibStub = setmetatable({
 }, { __call = function(_, name) return libs[name] end })
 
 local function EmbedTimers(addon)
-    function addon:ScheduleTimer(fn, delay)
-        local timer = { at = world.time + delay, fn = fn }
+    function addon:ScheduleTimer(fn, delay, ...)
+        local timer = { at = world.time + delay, fn = fn, args = { n = select("#", ...), ... } }
         table.insert(timers, timer)
         return timer
     end
@@ -1229,7 +1229,7 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
     end
     for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "Locale/deDE", "Locale/esES",
         "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "FuzzySearch",
-        "EasterEggs", "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
+        "EasterEggs", "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
@@ -1254,7 +1254,7 @@ function M.LoadQuestsAlone(addonDirectory)
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
     for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "FuzzySearch", "EasterEggs",
-        "DataModules", "ReportButton", "Player", "VoiceOver", "Contribute" }) do
+        "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO
