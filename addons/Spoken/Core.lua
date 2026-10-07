@@ -106,10 +106,12 @@ Defaults = {
             LibDBIcon = { showInCompartment = true },
             -- What each mouse button does. "Menu" opens the list; any other value is a
             -- menu entry id, the player's or a source's.
+            -- A click on the icon opens the settings, the way most addons' do; the menu is a
+            -- right-click away.
             Commands = {
-                LeftButton = "Menu",
+                LeftButton = "Settings",
                 MiddleButton = "PlayPause",
-                RightButton = "Settings",
+                RightButton = "Menu",
             },
         },
     },

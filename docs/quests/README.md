@@ -352,6 +352,11 @@ carries them, once per language; the faction packs and every English pack are bu
 before. A language with no imported text (`make import-locale LOCALE=esMX`) still builds, with
 a warning, and its gossip is matched against the English text.
 
+A language's pack is built from its whole store, not from the English corpus, so a take of a
+quest line only that language has (see "When there is no line at all") ships with the rest.
+The addon finds a quest sound by its file name alone. A language split into faction packs would need
+`tts_cli/factions.py` to place such lines, since the split reads the English corpus.
+
 #### Italian, a language no client runs in
 
 No Classic client ships `itIT`, so the world database has no Italian and no player's client
@@ -889,6 +894,21 @@ wins where it already has the line: a quest moment is matched by quest id and mo
 contributing NPC as one more speaker instead of a copy. Progress lines are kept, marked
 `progress` and never voiced, as the extract marks its own. Once written, a contribution cannot
 be moved back to new or rejected; ignoring the line in the explorer is how to back out.
+
+A quest row sent from a client in another language is that language's text of the moment. If
+English has the moment, accepting writes its translation: a `quest_line` row in the language,
+with its structure copied from the English one and no speaker of its own. If English does not,
+the line is written as the language's own: a `quest_line` and a `quest_line_speaker` row, both
+under the language, the line's text kept with its `$N`, `$C` and `$R` as a translation's is.
+Nothing has to be sent in English first. Its id and file are the quest's and the moment's, the
+same in every language, so it is voiced into the file English would use. The language's
+explorer lists it, and the English one does not. When English sends the moment later, English's line
+and speakers become the skeleton, and the language's row becomes its translation, with the
+same id, file and takes. The translated explorer shows the English template from the
+English row itself, so the native row's own `originalText` never stands in for it. Who speaks it is answered by a moderator with `regenerate` in the
+contribution's language. The answer is about the NPC (`npc_resolution`), so it holds for
+every language. A gossip row in another language is still refused: its id is a hash of
+English text the client never shows.
 
 #### Who is speaking
 
