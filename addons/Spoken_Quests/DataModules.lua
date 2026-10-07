@@ -32,12 +32,8 @@ end
 local function ModuleNumber(addon, suffix)
     return tonumber(ModuleMeta(addon, suffix) or "")
 end
--- A pack switched off in the AddOns list stays off, as Books' and Zones' do: upstream loaded it
--- anyway (enabling it for the load and disabling it again), so a player could not mute one part
--- of the voices, and Spoken's settings counted packs the list showed as off.
-local FORCE_ENABLE_DISABLED_MODULES = false
-
---- Whether the player switched the addon off in the AddOns list, for this character. Read off
+--- Whether the player switched the addon off in the AddOns list, for this character. Such a pack
+--- stays off, as Books' and Zones' do: it is not found, loaded or counted. Read off
 --- GetAddOnInfo, which answers for the character playing. GetAddOnEnableState does not: given a
 --- name rather than a GUID, C_AddOns answers for all characters, so a pack switched off here but
 --- on for another character still read as on.
@@ -267,7 +263,7 @@ function DataModules:EnumerateAddons(loadModules)
 
     for i = 1, GetNumAddOns() do
         local moduleVersion = ModuleNumber(i, "Version")
-        if moduleVersion and (FORCE_ENABLE_DISABLED_MODULES or not SwitchedOff(i)) then
+        if moduleVersion and not SwitchedOff(i) then
             local name = GetAddOnInfo(i)
             local mapsString = ModuleMeta(i, "Maps")
             local maps = {}
@@ -365,7 +361,6 @@ end
 -- These cvars can be nil, so have to store the fact of them being changed in a separate variable.
 local prev_checkAddonVersion, changed_checkAddonVersion
 local prev_lastAddonVersion, changed_lastAddonVersion -- Added in 5.x
-local addonWasDisabled = {}
 local function EnableOutOfDate(addon)
     if not changed_checkAddonVersion then
         prev_checkAddonVersion = GetCVar("checkAddonVersion")
@@ -377,11 +372,6 @@ local function EnableOutOfDate(addon)
         SetCVar("lastAddonVersion", Version.Interface)
         changed_lastAddonVersion = true
     end
-
-    addonWasDisabled[addon] = SwitchedOff(addon)
-    if FORCE_ENABLE_DISABLED_MODULES and addonWasDisabled[addon] then
-        EnableAddOn(addon)
-    end
 end
 local function RestoreOutOfDate(addon)
     if changed_checkAddonVersion then
@@ -392,11 +382,6 @@ local function RestoreOutOfDate(addon)
         SetCVar("lastAddonVersion", prev_lastAddonVersion)
         changed_lastAddonVersion = nil
     end
-
-    if FORCE_ENABLE_DISABLED_MODULES and addonWasDisabled[addon] then
-        DisableAddOn(addon)
-    end
-    addonWasDisabled[addon] = nil
 end
 
 ---@param module DataModuleMetadata
