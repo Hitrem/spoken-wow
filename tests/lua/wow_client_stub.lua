@@ -1084,8 +1084,7 @@ function M.LoadSpoken(addonDirectory)
     -- These suites exercise the original layout, not the subtitles a first install shows
     -- (defaults_test pins those). The Minimal Classic layout, including switching back to
     -- this one, has its own UI/timer fixture.
-    env.Addon.db.profile.Frame.Window = "classic"
-    env.Addon.db.profile.Frame.SubtitlePlayer = false
+    env.Addon.db.profile.Frame.Style = "classic"
     return env
 end
 

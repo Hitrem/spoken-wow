@@ -10,13 +10,13 @@ adds a `dialogueui:` line with what was read from DialogueUI.
 
 ## The setting
 
-The window a player chose is `Frame.Window`: `"minimal"` (Small Window), `"classic"` (Large
-Window) or `"dialogueui"`. It replaces upstream's `Frame.MinimalPlayer` checkbox, with no
-migration: 3.0 settings start fresh. Subtitles Only and Voice Only stay switches of their own
-(`SubtitlePlayer`, `HideFrame`), so the window is still remembered under them.
-`Addon:PlayerStyle()` answers what is drawn. A profile set to `"dialogueui"` is drawn as the
-Small Window while DialogueUI is missing, and the setting is kept, so the window comes back
-with DialogueUI.
+The narrator style is one setting, `Frame.Style`: `"subtitle"` (Subtitles Only, the default on
+the modern clients), `"minimal"` (Small Window), `"classic"` (Large Window, the legacy clients'
+default), `"dialogueui"` or `"none"` (Voice Only). It replaces three switches, `SubtitlePlayer`,
+`HideFrame` and `MinimalPlayer`; `Addon:InitDB` carries a profile that set them over to the
+style they showed, and removes them. `Addon:PlayerStyle()` answers what is drawn where the
+chosen style is not on offer: `"dialogueui"` is drawn as the Small Window while DialogueUI is
+missing, and the setting is kept, so the window comes back with DialogueUI.
 
 ## The window
 

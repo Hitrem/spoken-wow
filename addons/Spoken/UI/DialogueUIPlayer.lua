@@ -820,7 +820,7 @@ end
 
 function Skin:Update()
     if not self.frame then return end
-    if not self:IsEnabled() or Config().HideFrame then self:SetVisible(false, true); return end
+    if not self:IsEnabled() then self:SetVisible(false, true); return end
     -- The line playing, or the sample a style tile previews (PlayerFrame:ShowSample).
     local clip = PlayerFrame:Current()
     if not clip then self:SetVisible(false); return end

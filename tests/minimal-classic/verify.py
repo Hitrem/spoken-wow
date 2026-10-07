@@ -17,7 +17,7 @@ load('Core.lua')
 lua.execute('''
 SpokenEnv.Addon.db={profile=SpokenEnv.Defaults.profile,char={IsPaused=false},global={}}
 SpokenEnv.Addon.db.profile.Audio.AutoToggleDialog=false
-SpokenEnv.Addon.db.profile.Frame.SubtitlePlayer=false -- the small window, not the subtitles a first install shows
+SpokenEnv.Addon.db.profile.Frame.Style='minimal' -- the small window, not the subtitles a first install shows
 SpokenEnv.SoundUtils={
   WhyInaudible=function() end, IsMutedByPlayer=function() return false end,
   PlaySound=function(_,clip) clip.handle=clip.id;return true end,
@@ -106,20 +106,20 @@ A.db.profile.Frame.HidePortrait=true;E.PlayerFrame:RefreshConfig()
 assert(not P.portrait:IsShown());near(P.frame:GetWidth(),300)
 A.db.profile.Frame.HidePortrait=false;E.PlayerFrame:RefreshConfig()
 assert(P.portrait:IsShown());near(P.frame:GetWidth(),380)
-A.db.profile.Frame.HideFrame=true;E.PlayerFrame:RefreshConfig()
+A.db.profile.Frame.Style='none';E.PlayerFrame:RefreshConfig()
 assert(not P.frame:IsShown() and Q:IsPlaying())
 Advance(4)
-A.db.profile.Frame.HideFrame=false;E.PlayerFrame:RefreshConfig()
+A.db.profile.Frame.Style='minimal';E.PlayerFrame:RefreshConfig()
 near(P.bar:GetValue(),.2)
 A.db.profile.Frame.LockFrame=true;P:StartDrag();assert(not P.frame.moving)
 A.db.profile.Frame.LockFrame=false;P:StartDrag();assert(P.frame.moving)
 P.frame:StopMovingOrSizing()
 print("PASS: hidden portrait, audio-only mode, progress catch-up, movement lock")
 
-A.db.profile.Frame.Window='classic';E.PlayerFrame:RefreshConfig()
+A.db.profile.Frame.Style='classic';E.PlayerFrame:RefreshConfig()
 assert(not P.frame:IsShown() and E.PlayerFrame.frame:IsShown())
 assert(Spoken:GetPlayerFrame()==E.PlayerFrame.frame)
-A.db.profile.Frame.Window='minimal';E.PlayerFrame:RefreshConfig()
+A.db.profile.Frame.Style='minimal';E.PlayerFrame:RefreshConfig()
 assert(P.frame:IsShown() and not E.PlayerFrame.frame:IsShown())
 P.frame.left=120;P.frame:SetWidth(450);P:StartDrag();P.frame.scripts.OnDragStop(P.frame)
 local saved=A:Layout().Minimal

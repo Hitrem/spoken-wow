@@ -651,7 +651,7 @@ end
 
 function MinimalPlayer:Update()
     if not self.frame then return end
-    if not self:IsEnabled() or Config().HideFrame then self:SetVisible(false, true); return end
+    if not self:IsEnabled() then self:SetVisible(false, true); return end
     local clip = PlayerFrame:Current()
     if not clip then self:SetVisible(false); self.expanded = false; return end
     if clip ~= self.clip then

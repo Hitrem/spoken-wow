@@ -44,7 +44,7 @@ local function Boot(client)
     _G.UIParent:SetSize(1920, 1080)
     local env = stub.LoadSpoken(SPOKEN)
     -- LoadSpoken picks the large window for the other suites; these start from the small one.
-    env.Addon.db.profile.Frame.Window = "minimal"
+    env.Addon.db.profile.Frame.Style = "minimal"
     env.Addon:Enable()
     local quests = env.Sources:Register("quests", { title = "Quests", addon = "Spoken_Quests", order = 1 })
     return env, quests
@@ -64,11 +64,11 @@ local Spoken = _G.Spoken
 Expect("the small window is the default window", Spoken:GetPlayerStyle(), "minimal")
 Expect("no DialogueUI tile without DialogueUI", table.concat(env.Options:Styles(), ","), "subtitle,minimal,classic,none")
 SlashCmdList.SPOKEN("player dialogueui")
-Expect("the slash command says why it cannot switch", env.Addon.db.profile.Frame.Window, "minimal")
-env.Addon.db.profile.Frame.Window = "dialogueui"
+Expect("the slash command says why it cannot switch", env.Addon.db.profile.Frame.Style, "minimal")
+env.Addon.db.profile.Frame.Style = "dialogueui"
 env.PlayerFrame:RefreshConfig()
 Expect("a DialogueUI window chosen falls back to the small one", Spoken:GetPlayerStyle(), "minimal")
-Expect("...the choice is kept, for DialogueUI coming back", env.Addon.db.profile.Frame.Window, "dialogueui")
+Expect("...the choice is kept, for DialogueUI coming back", env.Addon.db.profile.Frame.Style, "dialogueui")
 Expect("...and the player frame is the small one", Spoken:GetPlayerFrame(), env.MinimalPlayer.frame)
 Expect("...with the reason to hand", env.DialogueUITheme:Problem(), env.L.OPT_STYLE_DUI_MISSING)
 Expect("no DialogueUI window is built for it", env.DialogueUIPlayer.frame, nil)
@@ -90,7 +90,7 @@ Expect("...named, described and drawn", env.Options.STYLE_LABELS.dialogueui ~= n
 SlashCmdList.SPOKEN("player dialogueui")
 local Skin, T = env.DialogueUIPlayer, env.Transcript
 Expect("/spoken player dialogueui draws it", Spoken:GetPlayerStyle(), "dialogueui")
-Expect("...remembered as the window chosen", env.Addon.db.profile.Frame.Window, "dialogueui")
+Expect("...remembered as the style chosen", env.Addon.db.profile.Frame.Style, "dialogueui")
 Expect("...on its own frame", Spoken:GetPlayerFrame(), _G.SpokenDialogueUIPlayerFrame)
 Expect("it opens folded to Lines Shown, as the other windows' words do", Skin.lines, 2)
 Skin:SetExpanded(true)
@@ -406,7 +406,7 @@ Expect("...in their own look again", T.style, nil)
 Spoken:StopAll()
 
 loaded = false
-env.Addon.db.profile.Frame.Window = "dialogueui"
+env.Addon.db.profile.Frame.Style = "dialogueui"
 env.PlayerFrame:RefreshConfig()
 Expect("DialogueUI gone, the window stands down", Skin.frame:IsShown(), false)
 Expect("...for the small one", Spoken:GetPlayerStyle(), "minimal")

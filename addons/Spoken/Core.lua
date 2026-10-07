@@ -23,18 +23,12 @@ Defaults = {
             FrameScale = 0.7,
             FrameStrata = "HIGH",
             HidePortrait = false,
-            HideFrame = false,
-            -- Which window draws the queue: "minimal" (the Small Window), "classic" (the
-            -- Large Window) or "dialogueui", a panel in the DialogueUI addon's own art
-            -- (UI/DialogueUIPlayer.lua). Addon:PlayerStyle answers what is actually drawn:
-            -- the last needs DialogueUI installed, and the legacy clients have only the
-            -- classic one.
-            Window = "minimal",
-            -- Subtitles in place of a window. A switch of its own rather than a fourth value
-            -- of Window, so the window a player chose is still remembered when they go back
-            -- to one. Addon:PlayerStyle reads the two together. The default only on the
+            -- How lines are shown, the narrator style: "subtitle", "minimal" (the Small
+            -- Window), "classic" (the Large Window), "dialogueui" (UI/DialogueUIPlayer.lua)
+            -- or "none" (the voice alone). Addon:PlayerStyle answers what is actually drawn
+            -- where the chosen one is not on offer. Subtitles are the default only on the
             -- modern clients: the legacy ones start in the window they always had.
-            SubtitlePlayer = not Version.IsAnyLegacy or false,
+            Style = Version.IsAnyLegacy and "classic" or "subtitle",
             -- Forever only: the bronze its own frames wear, on the minimal player's metal.
             BronzeTint = true,
             MinimalWidth = 380,
@@ -151,6 +145,20 @@ function Addon:InitDB()
             end
             transcript.AutoScroll = nil
         end
+        -- The style was three switches before it was one setting: SubtitlePlayer, then
+        -- HideFrame, then MinimalPlayer choosing between the two windows. Read raw, so an
+        -- absent switch is its old default.
+        local frame = type(profile) == "table" and profile.Frame
+        if type(frame) == "table" and frame.Style == nil
+            and (frame.SubtitlePlayer ~= nil or frame.HideFrame ~= nil or frame.MinimalPlayer ~= nil) then
+            local subtitles = frame.SubtitlePlayer
+            if subtitles == nil then subtitles = not Version.IsAnyLegacy end
+            if subtitles then frame.Style = "subtitle"
+            elseif frame.HideFrame then frame.Style = "none"
+            elseif frame.MinimalPlayer == false then frame.Style = "classic"
+            else frame.Style = "minimal" end
+            frame.SubtitlePlayer, frame.HideFrame, frame.MinimalPlayer = nil, nil, nil
+        end
     end
     -- Another profile chosen, copied over this one or reset, from Spoken's page or anywhere
     -- else: its settings apply now rather than at the next reload.
@@ -265,10 +273,10 @@ end
 --- Which of the five ways of showing a line is in use: "minimal" (the Small Window),
 --- "classic" (the Large Window), "dialogueui" (a window in the DialogueUI addon's art),
 --- "subtitle" (no window, subtitles only) or "none" (nothing on screen at all, the voice
---- alone -- what HideFrame always meant). Not every one exists everywhere: the minimal one
---- is not built on the legacy clients, the DialogueUI one needs DialogueUI, and 1.12 has no
---- captions, so no subtitles either. The setting is kept when its style is not on offer, so
---- installing DialogueUI later brings that window back without choosing it again.
+--- alone). Not every one exists everywhere: the minimal one is not built on the legacy
+--- clients, the DialogueUI one needs DialogueUI, and 1.12 has no captions, so no subtitles
+--- either. The setting is kept when its style is not on offer, so installing DialogueUI
+--- later brings that window back without choosing it again.
 --- What is on screen: the chosen style, or one previewed from the welcome window or the settings
 --- (Options:Preview). The windows and the subtitles ask this; the settings ask PlayerStyle.
 function Addon:DisplayStyle()
@@ -276,21 +284,16 @@ function Addon:DisplayStyle()
 end
 
 function Addon:PlayerStyle()
-    local frame = self:Profile("Frame")
-    if frame.SubtitlePlayer and not Transcript.unavailable then return "subtitle" end
-    if frame.HideFrame then return "none" end
-    if frame.Window == "dialogueui" and DialogueUITheme and DialogueUITheme:Available() then return "dialogueui" end
-    if frame.Window ~= "classic" and not Version.IsAnyLegacy then return "minimal" end
-    return "classic"
+    local style = self:Profile("Frame").Style
+    if style == "none" or style == "classic" then return style end
+    if style == "subtitle" and not Transcript.unavailable then return "subtitle" end
+    if style == "dialogueui" and DialogueUITheme and DialogueUITheme:Available() then return "dialogueui" end
+    if Version.IsAnyLegacy then return "classic" end
+    return "minimal"
 end
 
--- The window a player last chose is kept whichever style replaces it, so going back to a
--- window finds the one they had.
 function Addon:SetPlayerStyle(style)
-    local frame = self.db.profile.Frame
-    frame.SubtitlePlayer = style == "subtitle"
-    frame.HideFrame = style == "none"
-    if style == "minimal" or style == "classic" or style == "dialogueui" then frame.Window = style end
+    self.db.profile.Frame.Style = style
 end
 
 --- Everything that needs the world: the frame, the button, the settings, the slash

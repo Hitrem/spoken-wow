@@ -479,7 +479,7 @@ function PlayerFrame:Update()
     if skin then skin:Update(); return end
     -- Hidden, not torn down, while subtitles stand in for it: going back finds it as it was.
     local head = self:Current()
-    self.frame:SetShown(not FrameConfig().HideFrame and Addon:DisplayStyle() == "classic" and head ~= nil)
+    self.frame:SetShown(Addon:DisplayStyle() == "classic" and head ~= nil)
     if not self.frame:IsShown() then return end
 
     self:SetResizeBounds(FrameConfig().HidePortrait and 100 or PORTRAIT_SIZE + 100)
