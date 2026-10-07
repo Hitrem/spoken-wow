@@ -44,8 +44,9 @@ All but **Show Spoken over DialogueUI** are on by default: DialogueUI's window, 
 line plays, already shows the words. They sit in the Quests section of Spoken's **DialogueUI** page
 (Spoken > DialogueUI), beside the DialogueUI narrator style's settings, added there through
 `Spoken:AddDialogueUISettings`; that page's Defaults button resets them too. With a Spoken too
-old to have that page, they are a **DialogueUI** section of the Quests page instead. When
-something they need is missing they are greyed out with the reason in their tooltip.
+old to have that page, they are a **DialogueUI** section of the Quests page instead. Without
+DialogueUI installed there are none anywhere. When something else they need is missing they
+are greyed out with the reason in their tooltip.
 `/spq diagnostics` prints one `DialogueUI:` line with the same answer.
 
 ## How it works

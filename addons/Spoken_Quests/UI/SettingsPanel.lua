@@ -113,11 +113,10 @@ function SettingsPanel:Setup()
         function() return audio().OGThrall end,
         function(value) audio().OGThrall = value end)
 
-    -- Inside DialogueUI's window (UI/DialogueUIBridge.lua): on Spoken's DialogueUI page, with
-    -- the rest of what is about DialogueUI, where the player has one. Here otherwise, shown
-    -- without DialogueUI too, greyed and saying so: seeing it is how a player learns the two
-    -- work together.
-    if DialogueUIBridge and DialogueUIBridge.Problem then
+    -- Inside DialogueUI's window (UI/DialogueUIBridge.lua), so only with DialogueUI installed:
+    -- on Spoken's DialogueUI page, with the rest of what is about DialogueUI, or here with a
+    -- Spoken too old to have that page.
+    if DialogueUIBridge and DialogueUIBridge.Problem and DialogueUIBridge:Problem() ~= L.OPT_DUI_MISSING then
         if Spoken and Spoken.AddDialogueUISettings then
             Spoken:AddDialogueUISettings(function(page)
                 return SettingsPanel:DialogueUIRows(page, L.OPT_PAGE_TITLE)
@@ -275,8 +274,8 @@ function SettingsPanel:DialogueUIRows(layout, title, note)
             function(value) dui()[key] = value end,
             function() DialogueUIBridge:Refresh(); layout:Refresh() end)
         -- Problem answers the first of these that holds, so exactly one condition fails
-        -- and the row names it.
-        for _, reason in ipairs({ L.OPT_DUI_MISSING, L.OPT_DUI_NO_PLAYER, L.OPT_DUI_UNKNOWN, L.OPT_DUI_OLD_PLAYER }) do
+        -- and the row names it. DialogueUI missing is not among them: then there are no rows.
+        for _, reason in ipairs({ L.OPT_DUI_NO_PLAYER, L.OPT_DUI_UNKNOWN, L.OPT_DUI_OLD_PLAYER }) do
             layout:Requires(row, function() return DialogueUIBridge:Problem(key) ~= reason end, reason)
         end
         return row

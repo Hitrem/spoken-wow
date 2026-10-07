@@ -675,9 +675,17 @@ Expect("the panel has the DialogueUI options", captions ~= nil and Row(VO.L.OPT_
     and Row(VO.L.OPT_DUI_PLAY_BUTTON) ~= nil and scroll ~= nil, true)
 layout:Refresh()
 Expect("...live while DialogueUI is loaded", captions and captions.layoutReason, nil)
+-- Without DialogueUI installed there are no DialogueUI rows anywhere: not on Spoken's page,
+-- not on the Quests page.
 loaded = false
-layout:Refresh()
-Expect("...greyed out once it is not, saying so", captions and captions.layoutReason, VO.L.OPT_DUI_MISSING)
+local before = table.getn(layout.entries)
+local bare = stub.LoadQuestsPanel(QUESTS, VO)
+bare:Setup()
+local found = table.getn(layout.entries) ~= before
+for _, entry in ipairs(bare.panel.layout.entries) do
+    if entry.label == VO.L.OPT_DUI_CAPTIONS then found = true end
+end
+Expect("...and without DialogueUI there are none", found, false)
 loaded = true
 local hooks = DUI.HandleGossip
 -- false, not nil: the fake widget answers any capitalised name with a function.

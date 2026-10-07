@@ -141,8 +141,9 @@ end
 --- Show the player over another frame, or back where it was with nil. For a feature addon
 --- whose host hides UIParent: Spoken Quests passes DialogueUI's window while it is open,
 --- since DialogueUI hides the rest of the interface, and the window and the subtitles would
---- go with it. They keep their place on screen and cannot be dragged while hosted; nil puts
---- back the parent, scale and strata from the player's settings. Additive: guard on the field.
+--- go with it. They keep their place on screen and can still be dragged; the subtitles pass
+--- clicks through to the host. nil puts back the parent, scale and strata from the player's
+--- settings. Additive: guard on the field.
 function Spoken:SetPlayerHost(frame)
     Addon:SetPlayerHost(frame)
 end
@@ -152,7 +153,8 @@ end
 --- built, with the page's SpokenLayout: it adds a section and its rows, and may return a
 --- function that puts them back to their defaults for the page's Defaults button. Nothing is
 --- called where there is no page: without DialogueUI, or without nested settings pages.
---- Additive: guard on the field, and keep the rows on the addon's own page without it.
+--- Additive: guard on the field, and with a Spoken too old to have it, keep the rows on the
+--- addon's own page, still only with DialogueUI installed.
 function Spoken:AddDialogueUISettings(build)
     DialogueUIOptions:Add(build)
 end
