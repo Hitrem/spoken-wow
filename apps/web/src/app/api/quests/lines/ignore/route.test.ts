@@ -52,16 +52,18 @@ function put(lineId: string): Request {
   });
 }
 
+function del(lineId: string): Request {
+  return new Request(
+    `https://example.com/api/quests/lines/ignore?scope=all&lineId=${encodeURIComponent(lineId)}`,
+    { method: "DELETE" },
+  );
+}
+
 describe("an ignore everywhere (scope=all)", () => {
   it("takes a line only one language has", async () => {
     await nativeLine();
     expect((await PUT(put(NATIVE))).status).toBe(200);
-    const removed = await DELETE(
-      new Request(`https://example.com/api/quests/lines/ignore?scope=all&lineId=${encodeURIComponent(NATIVE)}`, {
-        method: "DELETE",
-      }),
-    );
-    expect(removed.status).toBe(200);
+    expect((await DELETE(del(NATIVE))).status).toBe(200);
   });
 
   it("still refuses an id no language has", async () => {

@@ -6,13 +6,13 @@
  * out of the shipped module. That is the same reach as the generation settings, so it is
  * gated the same way.
  *
- * Keyed on the corpus's own lineId, and the language's lineIndex() is the whitelist: an id
- * either names lines the corpus has or it does not exist. Nothing here touches a path, so there is no
+ * Keyed on the corpus's own lineId, and isKnownLine() is the whitelist: an id either names
+ * lines the corpus has or it does not exist. Nothing here touches a path, so there is no
  * traversal to defend against - only a table that should not fill with ids nobody can resolve.
  */
 import { query } from "@/lib/db";
 import { requireConfigure, requireIn } from "@/lib/generation/authz";
-import { BASE_LANG, type Lang } from "@/lib/lang";
+import type { Lang } from "@/lib/lang";
 import { lineIndex } from "@/lib/quests/catalogue";
 import { clearIgnore, writeIgnore } from "@/lib/quests/ignores";
 
@@ -49,8 +49,7 @@ async function guard(
  * ignore everywhere may be of a line only one language has, which English's index lacks.
  */
 async function isKnownLine(lineId: string, lang: Lang | null): Promise<boolean> {
-  if ((await lineIndex(lang ?? BASE_LANG)).has(lineId)) return true;
-  if (lang) return false;
+  if (lang) return (await lineIndex(lang)).has(lineId);
   const rows = await query(`select 1 from "quest_line" where "lineId" = $1 and "isCurrent" limit 1`, [lineId]);
   return rows.length > 0;
 }
