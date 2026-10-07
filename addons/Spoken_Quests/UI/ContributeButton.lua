@@ -362,6 +362,7 @@ function ContributeButton:Setup()
     button:SetScript("OnClick", OnClick)
     button:SetScript("OnEnter", OnEnter)
     button:SetScript("OnLeave", OnLeave)
+    Contribute:OfferLogMenu(button)
 
     self.button = button
 

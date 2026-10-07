@@ -554,3 +554,100 @@ function Spoken:EnumerateAddonsWithKey(tocKey)
         end
     end
 end
+
+--------------------------------------------------------------------------------
+-- Developer tools: the Spoken_Developer module (Developer.lua)
+--------------------------------------------------------------------------------
+--
+-- Spoken keeps no log and draws no Developer page: the Spoken_Developer module does, and
+-- registers here. Without it, every call below does nothing and answers nil or false. Additive,
+-- so API_VERSION does not move: guard on the field.
+
+--- For the module: hand Spoken the functions it calls (see Developer.lua).
+function Spoken:RegisterDeveloper(provider)
+    Developer:Register(provider)
+end
+
+--- Whether the module is installed, and with it the debug log.
+function Spoken:HasLog()
+    return Developer.provider ~= nil
+end
+
+--- One line in the debug log, while it is on. `message` is a format string when arguments
+--- follow (four at most: format a longer line yourself); `category` a short word of your own.
+function Spoken:Log(category, message, a, b, c, d)
+    Developer:Log(category, message, a, b, c, d)
+end
+
+function Spoken:IsLogOn()
+    return Developer:IsLogOn()
+end
+
+function Spoken:SetLogOn(on)
+    Developer:Call("SetLogOn", on and true or false)
+end
+
+--- The last `count` lines, oldest first; all of them without a count. A copy; empty without the
+--- module.
+function Spoken:LogLines(count)
+    return Developer:Call("Lines", count) or {}
+end
+
+--- Empty the log and every log handed in, then start it again with a session line; `how` says why.
+function Spoken:ClearLog(how)
+    Developer:Call("Clear", how)
+end
+
+--- The log and the logs handed in, merged on one timeline in a box to copy from. Returns how
+--- many lines it shows; `count` keeps the newest.
+function Spoken:ShowLog(count)
+    return Developer:Call("Show", count)
+end
+
+--- Logs to read beside this one, such as other computers' that an addon collected. `list()`
+--- returns { { name, lines, offset }, ... }: lines as the log writes them, on their own clock,
+--- `offset` the seconds that put them on this one. `clear()`, optional, drops them when the log
+--- is cleared.
+function Spoken:AddLogSource(list, clear)
+    Developer:Call("AddSource", list, clear)
+end
+
+--- The debug log's menu (copy it, copy it for an AI agent), where a Report button is
+--- right-clicked. Spoken's own Report buttons, and every one made with CreateRoundButton, open it
+--- by themselves.
+function Spoken:ShowLogMenu(anchor)
+    return Developer:ShowMenu(anchor)
+end
+
+--- The line a Report button's tooltip adds about its right-click, or nil without the module.
+function Spoken:LogMenuHint()
+    return Developer:MenuHint()
+end
+
+--- Rows of a feature addon's own on the Developer page (Spoken > Developer): tools for trying it
+--- out, which a player never needs. build(layout) is called once, when the page is built, with
+--- the page's SpokenLayout, and may return a function that puts its rows back to their defaults
+--- for the page's Defaults button. Kept until the module builds its page; nothing shows without it.
+function Spoken:AddDeveloperSettings(build)
+    Developer:AddSettings(build)
+end
+
+--- For the module: every section handed in so far, in order.
+function Spoken:GetDeveloperSettings()
+    local list = {}
+    for _, build in ipairs(Developer.settings) do table.insert(list, build) end
+    return list
+end
+
+--- A feature addon's diagnostics, for the debug log and its copies: fn(detailed) returns a list of
+--- lines, what its own diagnostics command says, and with `detailed` what an AI agent reading the
+--- log needs besides.
+function Spoken:AddDiagnostics(name, fn)
+    Developer:AddDiagnostics(name, fn)
+end
+
+--- What `/spoken diagnostics` says, then each feature addon's diagnostics, as lines; with
+--- `detailed`, the state of the client, the narrator, the sound settings and the queue too.
+function Spoken:Diagnostics(detailed)
+    return Developer:Diagnostics(detailed)
+end

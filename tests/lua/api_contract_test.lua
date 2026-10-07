@@ -46,6 +46,10 @@ local METHODS = {
     "GetPlayerStyle", "SetPlayerHost", "AddDialogueUISettings",
     -- captions
     "GetCaption", "GetCaptionOptions", "SplitCaption",
+    -- developer tools: the Spoken_Developer module's
+    "RegisterDeveloper", "HasLog", "Log", "IsLogOn", "SetLogOn", "LogLines", "ClearLog", "ShowLog",
+    "AddLogSource", "ShowLogMenu", "LogMenuHint", "AddDeveloperSettings", "GetDeveloperSettings",
+    "AddDiagnostics", "Diagnostics",
     -- contributions
     "ShowContribution", "SetContributeHost", "AreContributeButtonsHidden",
 }

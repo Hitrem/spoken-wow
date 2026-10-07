@@ -697,11 +697,21 @@ setmetatable(getFileNameForEvent,
 
 ---@param soundData SoundData
 ---@return boolean found Whether the sound is found and can be played
+--- Whether a pack has the line, filling in its file, length and pack if so. When not, the second
+--- value says why, for the debug log.
 function DataModules:PrepareSound(soundData)
+    -- Spoken > Developer: a quest line answered as one no pack has, before any pack is asked,
+    -- so everything that asks here -- autoplay, the Play buttons, the Contribute button --
+    -- sees the voice-over missing, as it would be.
+    if Debug.IsMockingMissingVoice and Debug:IsMockingMissingVoice()
+        and Enums.SoundEvent:IsQuestEvent(soundData.event) then
+        return false, "Mock Missing Voice Over is on (Spoken > Developer)"
+    end
+
     soundData.fileName = getFileNameForEvent[soundData.event](soundData)
 
     if soundData.fileName == nil then
-        return false
+        return false, "no file name for it (no quest ID, or a greeting no pack's text matches)"
     end
 
     if self:ResolveSoundFile(soundData) then
@@ -709,7 +719,10 @@ function DataModules:PrepareSound(soundData)
     end
 
     -- No pack holds the line - but an easter egg for it ships with the player itself.
-    return EasterEggs:Apply(soundData)
+    if EasterEggs:Apply(soundData) then
+        return true
+    end
+    return false, format("no pack loaded has %s", tostring(soundData.fileName))
 end
 
 --- Find the pack holding `soundData.fileName` and fill in the path, length and language.

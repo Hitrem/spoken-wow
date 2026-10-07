@@ -344,9 +344,18 @@ function Addon:Enable()
             PlayerFrame:Reset()
             -- Not on 1.12, which has no captions and so no subtitles to move.
             if Subtitle then Subtitle:Reset() end
+        elseif command == "log" or string.find(command, "^log ") then
+            -- The debug log is the Spoken_Developer module's; this only hands the words on.
+            local _, _, rest = string.find(command, "^log%s*(.-)$")
+            if Developer.provider then
+                Developer:Call("Command", rest)
+            else
+                print("Spoken: the debug log comes with the Spoken Developer module, which is not installed")
+            end
         elseif command == "diagnostics" then
             print(format("Spoken %s, API %d, %d queued, %s", AddonVersion, Spoken.API_VERSION,
                 SoundQueue:GetQueueSize(), SoundQueue:IsPaused() and "paused" or "playing"))
+            print("  " .. (Developer:Call("Describe") or "debug log: no Spoken Developer module"))
             for key, source in Sources:Iterate() do
                 print(format("  source %s (%s)", key, source.addon or "?"))
             end
@@ -355,7 +364,7 @@ function Addon:Enable()
             print("  " .. DialogueUITheme:Describe())
             for _, err in ipairs(Callbacks.errors) do print("  callback error: " .. err) end
         else
-            print("Spoken: /spoken play | stop | skip | player [minimal|classic|dialogueui|subtitle|none] | transcript [on|off|1|2|reset] | options | reset | diagnostics")
+            print("Spoken: /spoken play | stop | skip | player [minimal|classic|dialogueui|subtitle|none] | transcript [on|off|1|2|reset] | log | options | reset | diagnostics")
         end
     end
 end

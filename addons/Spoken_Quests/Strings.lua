@@ -55,6 +55,10 @@ L.OPT_OG_THRALL_TIP = "Plays the original AI VoiceOver recording of Thrall's \"A
 L.OPT_GROUP_DEBUG = "Debugging Tools"
 L.OPT_DEBUG = "Enable Debug Messages"
 L.OPT_DEBUG_TIP = "Enables printing of some \"useful\" debug messages to the chat window."
+-- Spoken > Developer: every quest line taken for one no pack has (DataModules:PrepareSound).
+L.OPT_DEV_MOCK_MISSING = "Mock Missing Voice Over"
+L.OPT_DEV_MOCK_MISSING_TIP = "Treat every quest line as one no installed pack has: nothing plays when a quest opens, the Play buttons find nothing, and the link to report the missing voice-over appears. Shows how a quest without a voice-over looks. Stays on until turned off; Spoken Quests reminds you at login."
+L.OPT_DEV_MOCK_ON = "Mock Missing Voice Over is on: no quest line plays. Turn it off in Spoken > Developer."
 
 --------------------------------------------------------------------------------
 -- Options window: sound-pack tab

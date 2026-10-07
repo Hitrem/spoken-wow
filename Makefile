@@ -62,6 +62,9 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@for lang in enUS deDE esES frFR ptBR ruRU koKR zhCN zhTW; do $(LUA) tests/lua/settings_fit_test.lua $$lang || exit 1; done
 	@$(LUA) tests/lua/settings_audit_test.lua
 	@$(LUA) tests/lua/queue_test.lua
+	@$(LUA) tests/lua/developer_hooks_test.lua
+	@$(LUA) tests/lua/developer_log_test.lua
+	@$(LUA) tests/lua/quests_log_test.lua
 	@$(LUA) tests/lua/sources_test.lua
 	@$(LUA) tests/lua/api_contract_test.lua
 	@$(LUA) tests/lua/contribute_envelope_test.lua

@@ -6,6 +6,7 @@
     <Include file="Callbacks.lua"/>
     <Include file="SoundQueue.lua"/>
     <Include file="Sources.lua"/>
+    <Include file="Developer.lua"/>
     <Include file="OtherSounds.lua"/>
     <Include file="Strings.lua"/>
     <Include file="Locale\deDE.lua"/>

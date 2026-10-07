@@ -78,6 +78,9 @@ for _, file in ipairs({ "UI/Layout", "UI/Options" }) do
     assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 Z:SetupOptions()
+-- The Spoken_Developer module and its page.
+local Dev = stub.LoadDeveloper(here .. "/../../addons/Spoken_Developer/")
+Dev:SetupOptions()
 -- The DialogueUI page registers once the world is up, after Books' page (registered above).
 env.DialogueUIOptions:Register()
 local entries = {}
@@ -92,8 +95,9 @@ local pages = { { name = "General", layout = _G.SpokenOptionsPanel.layout } }
 for _, page in ipairs(env.Options.pages or {}) do
     table.insert(pages, { name = page.name, layout = page.layout })
 end
--- The stub reports every addon loaded, DialogueUI included.
-Expect("General, the three parts' pages and the DialogueUI page are all here", #pages, 5)
+-- The DialogueUI page (the stub reports every addon loaded) and the Developer page, which the
+-- Spoken_Developer module adds.
+Expect("General, the three parts' pages, the DialogueUI page and the Developer page are all here", #pages, 6)
 
 local BOX = Layout.BOX_MARGIN
 local function Label(row)

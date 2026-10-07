@@ -403,6 +403,7 @@ function Options:RunSelfTest()
                 questID = 3441,
                 name = "Spoken Quests self-test",
                 title = "Spoken Quests self-test",
+                origin = "/spq test",
             }
             if not DataModules:PrepareSound(soundData) then
                 Debug:Record("self-test-data-failed", "The Vanilla Data module did not provide the known 3441-accept test sound")
