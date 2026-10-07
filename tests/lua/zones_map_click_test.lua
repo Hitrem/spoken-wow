@@ -23,8 +23,10 @@ local Z = {
     Get = function() return false end,
     Print = function() end,
     IsZoneMap = function(_, mapID) return mapID ~= KALIMDOR end,
-    GetAreaNameAt = function(_, mapID) return mapID == MULGORE and "Bloodhoof Village" or nil end,
-    GetSubzoneLore = function(_, _, name) return { name = name }, name:lower() end,
+    AreaAt = function(_, mapID)
+        if mapID ~= MULGORE then return nil end
+        return "Bloodhoof Village", { name = "Bloodhoof Village" }, "bloodhoof village"
+    end,
     SelectSubzone = function(_, mapID, name) opened = mapID .. ":" .. name end,
 }
 assert(loadfile(ZONES .. "UI/SubzoneClick.lua"))("Spoken_Zones", Z)
