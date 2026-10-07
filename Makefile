@@ -62,6 +62,9 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@for lang in enUS deDE esES frFR ptBR ruRU koKR zhCN zhTW; do $(LUA) tests/lua/settings_fit_test.lua $$lang || exit 1; done
 	@$(LUA) tests/lua/settings_audit_test.lua
 	@$(LUA) tests/lua/queue_test.lua
+	@$(LUA) tests/lua/developer_hooks_test.lua
+	@$(LUA) tests/lua/developer_log_test.lua
+	@$(LUA) tests/lua/quests_log_test.lua
 	@$(LUA) tests/lua/sources_test.lua
 	@$(LUA) tests/lua/api_contract_test.lua
 	@$(LUA) tests/lua/contribute_envelope_test.lua
@@ -70,6 +73,7 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/contribute_box_test.lua
 	@$(LUA) tests/lua/quests_contribute_test.lua
 	@$(LUA) tests/lua/player_frame_test.lua
+	@$(LUA) tests/lua/player_dialogueui_style_test.lua
 	@$(LUA) tests/captions/verify.lua
 	@$(LUA) tests/lua/zones_source_test.lua
 	@$(LUA) tests/lua/zones_flight_test.lua
@@ -88,9 +92,11 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/subtitle_pages_test.lua
 	@$(LUA) tests/lua/defaults_test.lua
 	@$(LUA) tests/lua/scroll_mode_upgrade_test.lua
+	@$(LUA) tests/lua/style_upgrade_test.lua
 	@$(LUA) tests/lua/names_test.lua
 	@$(LUA) tests/lua/packs_test.lua
 	@$(LUA) tests/lua/quests_options_test.lua
+	@$(LUA) tests/lua/quests_dialogueui_test.lua
 	@$(LUA) tests/lua/books_source_test.lua
 	@$(LUA) tests/lua/books_options_test.lua
 	@$(LUA) tests/lua/books_reader_test.lua
@@ -102,6 +108,7 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/zones_contribute_test.lua
 	@$(LUA) tests/lua/zones_language_test.lua
 	@$(LUA) tests/lua/minimap_compartment_test.lua
+	@$(LUA) tests/lua/bronze_rings_test.lua
 
 # Rewrite the envelope fixtures the TypeScript reader is tested against. A diff here is the
 # wire format changing, and that is a change the reader's tests must be part of.

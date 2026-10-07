@@ -50,6 +50,24 @@ function Actions:Build(frame)
 end
 
 local RING = [[Interface\AddOns\Spoken\Textures\SettingsButton]]
+-- The Forever client's bronze, as its own frames wear it (MinimalPlayer's): the round buttons' rings
+-- take it while Bronze Border is on. Every ring made, to tint again when the setting changes.
+local BRONZE = Version.IsCamelot and { .95, .68, .35 } or nil
+local rings = setmetatable({}, { __mode = "k" })
+
+local function TintRing(ring)
+    local frame = Addon.db and Addon.db.profile and Addon.db.profile.Frame
+    if BRONZE and frame and frame.BronzeTint then
+        ring:SetVertexColor(BRONZE[1], BRONZE[2], BRONZE[3])
+    else
+        ring:SetVertexColor(1, 1, 1)
+    end
+end
+
+--- Every round button's ring in the bronze, or out of it, as Bronze Border now says.
+function Actions.RefreshRings()
+    for ring in pairs(rings) do TintRing(ring) end
+end
 
 --- Dress `button` as the player's round buttons are -- the windows' pause, the subtitle's
 --- controls: the ring round its edge, `icon` inside it, brighter under the pointer. Sized by the
@@ -59,6 +77,8 @@ function Actions.RoundIcon(button, icon)
     ring:SetTexture(RING)
     ring:SetPoint("TOPLEFT", button, "TOPLEFT", -3, 3)
     ring:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 3, -3)
+    rings[ring] = true
+    TintRing(ring)
     local glyph = button:CreateTexture(nil, "ARTWORK")
     glyph:SetPoint("TOPLEFT", button, "TOPLEFT", 4, -4)
     glyph:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -4, 4)
@@ -75,6 +95,27 @@ local ROUND_SIZE = 24
 local PORTRAIT_ATLAS = [[Interface\AddOns\Spoken\Textures\PortraitFrameAtlas]]
 local PORTRAIT_ATLAS_SIZE = 512
 local BUG = [[Interface\HelpFrame\HelpIcon-Bug]]
+
+--- A Report button's right-click: the debug log's menu, where the Spoken_Developer module is
+--- installed (Developer.lua). Hooked on mouse-up rather than set as the click, so whatever the
+--- caller gives the button as OnClick keeps the left button, and a caller that sets OnClick after
+--- this does not undo it. `isReport(button)`, optional, says whether the button reports right
+--- now: the windows' action buttons are reused for other actions.
+function Actions.OfferLogMenu(button, isReport)
+    if button.offersLogMenu then return end
+    button.offersLogMenu = true
+    button:HookScript("OnMouseUp", function(self, mouse)
+        if mouse ~= "RightButton" or (isReport and not isReport(self)) then return end
+        if GameTooltip:GetOwner() == self then GameTooltip_Hide() end
+        Developer:ShowMenu(self)
+    end)
+end
+
+--- The line a Report button's tooltip ends with, where the menu exists.
+function Actions.AddLogMenuHint(tooltip)
+    local hint = Developer:MenuHint()
+    if hint then tooltip:AddLine(hint, 0.6, 0.6, 0.6, true) end
+end
 
 --- The subtitle's round button, the one every window shows: 24 across, the player's ring,
 --- `glyphSize` square glyph centred in it (or reaching the rim with none). Made without a parent
@@ -181,6 +222,7 @@ function Actions.NewRound(parent, kind, name, icon)
         return button
     end
     button.glyph:SetTexture(BUG)
+    Actions.OfferLogMenu(button)
     return button
 end
 
@@ -216,10 +258,12 @@ local function NewButton(frame, action)
             if self.action and self.action.tooltip then
                 GameTooltip:SetOwner(self, "ANCHOR_LEFT")
                 self.action.tooltip(GameTooltip)
+                if self.action.id == "report" then Actions.AddLogMenuHint(GameTooltip) end
                 GameTooltip:Show()
             end
         end)
         button:HookScript("OnLeave", function() GameTooltip_Hide() end)
+        Actions.OfferLogMenu(button, function(self) return self.action and self.action.id == "report" end)
     else
         button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
         button:SetScript("OnClick", function(self)

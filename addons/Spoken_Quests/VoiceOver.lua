@@ -217,9 +217,26 @@ function Addon:InvokeQuestHandler(event, source, manual)
         Debug:Record("autoplay-off", format("Not reading %s: autoplay is off", event))
         return false
     end
+    -- Read while DialogueUI's window is still appearing, the voice would run ahead of the words
+    -- it marks, so autoplay waits for the window.
+    local bridge = not manual and rawget(VoiceOver, "DialogueUIBridge")
+    if bridge and bridge.Defer and bridge:Defer(event, function()
+        self:InvokeQuestHandler(event, source, manual)
+    end) then
+        Debug:Record("dialogueui-wait", format("Waiting for DialogueUI's window to read %s", event))
+        return true
+    end
 
     Debug:Record("quest-dispatch", format("Dispatching %s through %s", event, source or "manual reader"))
+    -- Where the lines this queues come from, for the debug log (Player:Enqueue keeps it on each).
+    Player.origin = Player:Origin(event, source, manual)
     local succeeded, errorMessage = pcall(handler, self, event, manual)
+    Player.origin = nil
+    -- The bridge keeps the page blank for this read's line; it shows the page at once if none came.
+    if bridge and bridge.Read then
+        local stage = Debug.runtime.stage
+        bridge:Read(event, succeeded and (stage == "queued" or stage == "queue-paused" or stage == "playing"))
+    end
     if not succeeded then
         Debug:Record("handler-error", format("%s failed: %s", event, tostring(errorMessage)))
         local errorHandler = geterrorhandler and geterrorhandler()
@@ -267,10 +284,13 @@ local SPEECH_EVENTS = {
 
 --- The line the open dialog would read, resolved against the packs, or nil when no dialog
 --- is open or no pack has its line. Asked without reading anything. The second value is
---- the client event it stands for.
+--- the client event it stands for. A caller that already knows the event passes it: under
+--- DialogueUI the event is the only record of which panel is up, and DialogueUI hears it
+--- before this addon's recorder does.
+---@param event string?
 ---@return SoundData?, string?
-function Addon:GetVisibleLine()
-    local event = GetVisibleDialogueEvent()
+function Addon:GetVisibleLine(event)
+    event = event or GetVisibleDialogueEvent()
     local quest = event and QUEST_EVENTS[event]
     local speech = event and SPEECH_EVENTS[event]
     local probe
@@ -346,6 +366,17 @@ local defaults = {
             VoiceLanguage = "auto",
             FallbackLanguage = "enUS",
         },
+        -- These do nothing without the DialogueUI addon.
+        DialogueUI = {
+            -- Typed out, lit, or both, by Spoken's Type Words Out and Highlight Words.
+            Captions = true,
+            AutoScroll = true,
+            -- Off by default: DialogueUI hides the rest of the interface on purpose, and its marked text
+            -- already shows the words.
+            ShowPlayer = false,
+            -- Shown whether or not DialogueUI's Text To Speech is on.
+            PlayButton = true,
+        },
         DebugEnabled = false,
     },
     char = {
@@ -353,6 +384,8 @@ local defaults = {
         RecentQuestTitleToID = Version:IsBelowLegacyVersion(30300) and {},
     }
 }
+
+Addon.DialogueUIDefaults = defaults.profile.DialogueUI
 
 local lastGossipOptions
 local selectedGossipOption
@@ -502,6 +535,17 @@ function Addon:OnInitialize()
         Debug:Record("dialog-play-button-error", tostring(dialogPlayButtonError))
     end
 
+    -- Guarded: DialogueUI is someone else's addon, and a change there must not take narration
+    -- down with it.
+    local dialogueUIReady, dialogueUIError = pcall(function()
+        if DialogueUIBridge and DialogueUIBridge.Setup then
+            DialogueUIBridge:Setup()
+        end
+    end)
+    if not dialogueUIReady then
+        Debug:Record("dialogueui-error", tostring(dialogueUIError))
+    end
+
     -- The lines NPCs say after a quest. Guarded the same way: a failed hook here must not
     -- take quest narration down with it.
     local followupReady, followupError = pcall(function()
@@ -587,6 +631,7 @@ function Addon:OnInitialize()
     local function PollAutomaticQuest()
         local state = self.autoQuestState
         if self.dataModulesPending then
+            Debug:Note("watcher", "pending", "quest watcher waits: the voice packs are still loading")
             return
         end
         if not self:IsAutoplayOn() then
@@ -594,6 +639,12 @@ function Addon:OnInitialize()
             -- dropped too, so turning autoplay back on does not replay a dialog long closed.
             questSnapshot = nil
             ResetCandidate(state)
+            -- Said once for each quest opened meanwhile, which is the question a player asks.
+            local open = GetQuestID and GetQuestID() or 0
+            if open and open ~= 0 then
+                Debug:Note("watcher", "off:" .. tostring(open),
+                    "quest %s open, not read: Read Automatically is off", tostring(open))
+            end
             return
         end
         local questCallSucceeded, questID = pcall(function()
@@ -1127,18 +1178,22 @@ function Addon:ShouldPlayGossip(guid, text, manual)
 
     local gossipSeenForNPC = self.db.char.hasSeenGossipForNPC[npcKey]
 
+    -- Asked again for the same NPC while its window stays open; the log says it once.
     if self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.OncePerQuestNPC then
         local numActiveQuests = GetNumGossipActiveQuests()
         local numAvailableQuests = GetNumGossipAvailableQuests()
         local npcHasQuests = (numActiveQuests > 0 or numAvailableQuests > 0)
         if npcHasQuests and gossipSeenForNPC then
+            Debug:Note("gossip", npcKey .. ":quest-npc", "greeting of %s not read: an NPC with quests, heard before (NPC Greetings: once per quest NPC)", npcKey)
             return
         end
     elseif self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.OncePerNPC then
         if gossipSeenForNPC then
+            Debug:Note("gossip", npcKey .. ":once", "greeting of %s not read: heard before (NPC Greetings: once per NPC)", npcKey)
             return
         end
     elseif self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.Never then
+        Debug:Note("gossip", "never", "greetings not read: NPC Greetings is set to never")
         return
     end
 
@@ -1153,11 +1208,12 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
-    if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source
-        or not Spoken.MuteGameDialogueAhead then
+    if not Spoken.MuteGameDialogueAhead or not self:IsAutoplayOn() or self.dataModulesPending
+        or not Player.source then
         return
     end
-    if not (event == "GOSSIP_SHOW" or event == "QUEST_GREETING" or QUEST_EVENTS[event]) then
+    local quest = QUEST_EVENTS[event]
+    if not (SPEECH_EVENTS[event] or quest) then
         return
     end
     -- Game Greeting First: nothing is cut, and the line waits for the greeting instead.
@@ -1165,32 +1221,54 @@ function Addon:MuteGreetingAhead(event)
         GreetingFirst:Open()
         return
     end
-    if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
-        -- Silenced only where a pack reads its greeting, so the pack's replaces the game's. Any
-        -- other NPC, quest-givers included, keeps its own.
+    -- Silenced only where a pack reads the line, so the pack's replaces the game's. Any other
+    -- NPC, quest-givers included, keeps its own. The quest ID can still be missing this early.
+    -- Then the NPC is muted anyway: waiting for the line let the first moment of its greeting
+    -- through, and with no line coming the mute lifts itself.
+    local questID = quest and QuestIDFor(event)
+    if (quest and (not questID or questID == 0)) or self:ExpectedLine(event) then
+        Spoken:MuteGameDialogueAhead(Player.source)
+    end
+end
+
+--- The text autoplay will read for the dialog that just opened, or nil. Asked before the line is
+--- queued; `textIsCurrent` when the page is drawn, to check its own line, not just the speaker.
+---@param event string
+---@param textIsCurrent boolean?
+---@return string?
+function Addon:ExpectedLine(event, textIsCurrent)
+    if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source then
+        return nil
+    end
+    local speech, quest = SPEECH_EVENTS[event], QUEST_EVENTS[event]
+    if speech then
         -- The page text is not to be trusted yet (see the deferred read), so this asks only
         -- whether any pack voices this speaker at all.
         local guid = Utils:GetNPCGUID()
         local speaker = { unitGUID = guid, name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
         if not guid and not speaker.name then
-            return
+            return nil
         end
         if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
-            return
+            return nil
         end
-    elseif QUEST_EVENTS[event] then
-        -- The quest ID can still be missing this early. Then the NPC is muted anyway: waiting for
-        -- the line let the first moment of its greeting through, and with no line coming the mute
-        -- lifts itself. Kept only where the quest is known and no pack holds it.
+        if textIsCurrent and not self:GetVisibleLine(event) then
+            return nil
+        end
+        return speech.text() or ""
+    elseif quest then
+        -- The quest ID can still be the previous quest's this early; the worst that costs is
+        -- one greeting muted for nothing, or one cut off as it was before.
         local questID = QuestIDFor(event)
-        if questID and questID ~= 0
-            and not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
-            return
+        if not questID or questID == 0 then
+            return nil
         end
-    else
-        return
+        if not DataModules:PrepareSound({ event = quest.sound, questID = questID }) then
+            return nil
+        end
+        return quest.text() or ""
     end
-    Spoken:MuteGameDialogueAhead(Player.source)
+    return nil
 end
 
 function Addon:QUEST_GREETING(event, manual)

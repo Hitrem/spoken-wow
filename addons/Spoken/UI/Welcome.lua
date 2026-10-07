@@ -23,6 +23,9 @@ local NAME_Y = 22       -- the page's name, under the page's top: the layout's h
 local FOOTER_GAP = 20   -- between the last row of tiles and the footer's divider
 local RULE_GAP = 16     -- between the footer's divider and its buttons
 local BUTTON_WIDTH, BUTTON_HEIGHT = 160, 22   -- the game's red panel button
+-- A second switch, above the one beside the buttons. As tall as a switch, so the two do not
+-- overlap, and no taller: the window had 25 to spare before running off a 768-high screen.
+local CHECK_ROW, CHECK_SIZE = 24, 24
 local FOOTER = FOOTER_GAP + 1 + RULE_GAP + BUTTON_HEIGHT + BORDER + BOTTOM_MARGIN
 
 local function Refresh()
@@ -66,6 +69,25 @@ local function Button(frame, label, onClick)
     button:SetSize(BUTTON_WIDTH, BUTTON_HEIGHT)
     button:SetScript("OnClick", onClick)
     return button
+end
+
+-- A switch in the footer, its label beside it and what it does in its tooltip, `y` above the
+-- window's bottom.
+local function FooterCheck(page, frame, y, label, tip, write)
+    local check = Layout.NewCheck(page, CHECK_SIZE)
+    check:SetPoint("LEFT", frame, "BOTTOMLEFT", CONTENT_X, y)
+    check.label = page:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    check.label:SetPoint("LEFT", check, "RIGHT", 8, 0)
+    check.label:SetText(label)
+    check:SetScript("OnClick", function(button) write(button:GetChecked() and true or false) end)
+    check:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(label, 1, 1, 1)
+        GameTooltip:AddLine(tip, nil, nil, nil, true)
+        GameTooltip:Show()
+    end)
+    check:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    return check
 end
 
 function Welcome:Build()
@@ -140,10 +162,15 @@ function Welcome:Build()
             Options:StyleChosen()
         end, { choose = L.STYLE_CHOOSE })
 
-    -- The footer: the header's divider again, as wide and as centred, then the one switch more
-    -- on the left and the two ways out on the right.
+    -- The footer: the header's divider again, as wide and as centred, then the switches on the
+    -- left and the two ways out on the right: Lower Other Sounds where the client has it, and the
+    -- debug log where the Spoken_Developer module is installed, beside the buttons, the other
+    -- stacked above it.
+    local lowerShown = OtherSounds:IsAvailable()
+    local logShown = Developer.provider ~= nil
+    local extra = (lowerShown and logShown) and CHECK_ROW or 0
     local rule = Layout.Rule(page)
-    local ruleY = BORDER + BOTTOM_MARGIN + BUTTON_HEIGHT + RULE_GAP
+    local ruleY = BORDER + BOTTOM_MARGIN + BUTTON_HEIGHT + RULE_GAP + extra
     rule:SetPoint("BOTTOM", frame, "BOTTOM", 0, ruleY)
     if not rule.layoutAtlas then rule:SetWidth(WIDTH - TITLE_X * 2) end
     self.rule = rule
@@ -157,37 +184,35 @@ function Welcome:Build()
     all:SetPoint("RIGHT", done, "LEFT", -10, 0)
     self.done, self.all = done, all
 
-    -- Along the bottom beside the buttons rather than in a section of its own: a third section
-    -- would make the window taller than the screen at the default UI scale. Its tooltip says
-    -- what it does.
-    if OtherSounds:IsAvailable() then
-        local lower = Layout.NewCheck(page, 28)
-        lower:SetPoint("LEFT", frame, "BOTTOMLEFT", CONTENT_X, BORDER + BOTTOM_MARGIN + BUTTON_HEIGHT / 2)
-        lower.label = page:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        lower.label:SetPoint("LEFT", lower, "RIGHT", 8, 0)
-        lower.label:SetText(L.OPT_LOWER_OTHERS)
-        lower:SetScript("OnClick", function(button)
-            Addon.db.profile.Audio.LowerOthers.Enabled = button:GetChecked() and true or false
-            OtherSounds:RefreshConfig()
-            Options:UpdateRows()
-        end)
-        lower:SetScript("OnEnter", function(button)
-            GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-            GameTooltip:SetText(L.OPT_LOWER_OTHERS, 1, 1, 1)
-            GameTooltip:AddLine(L.WELCOME_LOWER_TIP, nil, nil, nil, true)
-            GameTooltip:Show()
-        end)
-        lower:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        self.lower = lower
+    -- Along the bottom beside the buttons rather than in sections of their own: a third section
+    -- would make the window taller than the screen at the default UI scale. Their tooltips say
+    -- what they do. Stacked, not side by side: two labels and the buttons do not fit one row
+    -- in German.
+    local bottomY = BORDER + BOTTOM_MARGIN + BUTTON_HEIGHT / 2
+    if lowerShown then
+        self.lower = FooterCheck(page, frame, bottomY + extra, L.OPT_LOWER_OTHERS, L.WELCOME_LOWER_TIP,
+            function(on)
+                Addon.db.profile.Audio.LowerOthers.Enabled = on
+                OtherSounds:RefreshConfig()
+                Options:UpdateRows()
+            end)
+    end
+    -- The debug log is offered here, off: a player who turns it on now has a log to send with
+    -- the first report, rather than being asked to turn it on and wait for it to happen again.
+    -- Its words are the module's.
+    if logShown then
+        self.log = FooterCheck(page, frame, bottomY, Developer:Call("SwitchLabel") or "",
+            Developer:Call("SwitchTip") or "", function(on) Developer:Call("SetLogOn", on) end)
     end
 
-    frame:SetHeight(BAR + TOP_MARGIN - NAME_Y + layout:Height() + Layout.BOX_MARGIN + FOOTER)
+    frame:SetHeight(BAR + TOP_MARGIN - NAME_Y + layout:Height() + Layout.BOX_MARGIN + FOOTER + extra)
 end
 
 --- Show what is chosen now, and for each part whether it is installed.
 function Welcome:Sync()
     if self.layout then self.layout:Refresh() end
     if self.lower then self.lower:SetChecked(Addon.db.profile.Audio.LowerOthers.Enabled and true or false) end
+    if self.log then self.log:SetChecked(Developer:IsLogOn()) end
 end
 
 function Welcome:Show()

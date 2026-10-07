@@ -86,10 +86,10 @@ Expect("the first row is the clip's label", F.frame.container.buttons[1].textWid
 env.SoundQueue:RemoveAllSoundsFromQueue()
 Expect("hidden again when the queue empties", F.frame:IsShown(), false)
 
-env.Addon.db.profile.Frame.HideFrame = true
+env.Addon:SetPlayerStyle("none")
 quests:Enqueue(H.Clip())
-Expect("HideFrame keeps it hidden with a queue", F.frame:IsShown(), false)
-env.Addon.db.profile.Frame.HideFrame = false
+Expect("Voice Only keeps it hidden with a queue", F.frame:IsShown(), false)
+env.Addon:SetPlayerStyle("classic")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
 ---------------------------------------------------------------- rows and held reason
@@ -177,12 +177,21 @@ Expect("the menu is the player's entries then each source's in order", table.con
 env.Minimap:RemoveEntry("zones", "lore")
 Expect("RemoveEntry", getn(env.Minimap:BuildMenu()), 4)
 
+-- A click on the icon opens the settings at once; the menu is a right-click away.
+local openSettings, settingsOpened = env.Options.Open, false
+env.Options.Open = function() settingsOpened = true end
+stub.ResetDropDowns()
+stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+Expect("left-clicking the button opens the settings", settingsOpened, true)
+Expect("...and no menu", stub.openDropDown, nil)
+env.Options.Open = openSettings
+
 -- Opening it on a Blizzard client: the client's own context menu, which brings its
 -- background, its highlight under the cursor, its closing on a click elsewhere and its
 -- toggling with it. Nothing here reimplements any of that.
 stub.ResetDropDowns()
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
-Expect("left-clicking opens the client's menu", stub.openDropDown ~= nil, true)
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
+Expect("right-clicking opens the client's menu", stub.openDropDown ~= nil, true)
 local shown = {}
 for _, entry in ipairs(stub.dropDownEntries) do
     table.insert(shown, entry.isSeparator and "---"
@@ -203,15 +212,15 @@ stub.ldbObjects.Spoken.OnTooltipShow(tip)
 Expect("the tooltip says nothing while the menu is open", tip:NumLines(), 1)
 Expect("...and hides itself if the cursor goes back over the button", tip:IsShown(), false)
 
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 stub.ldbObjects.Spoken.OnTooltipShow(tip)
 Expect("with the menu closed it says what the clicks do again", tip:NumLines() > 3, true)
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 Expect("clicking the button again closes it", stub.openDropDown, nil)
 
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 local chose = false
 for _, entry in ipairs(stub.dropDownEntries) do
     if entry.text == "Quest settings" then
@@ -230,7 +239,7 @@ Expect("...and the menu closes itself", stub.openDropDown, nil)
 env, quests, zones = Boot("1.12")
 mmButton = stub.dbIcons.Spoken.button
 env.Minimap:AddEntry("quests", { id = "opts", text = "Quest settings", order = 1, onClick = function() end })
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 local frame = _G.SpokenMinimapMenu
 Expect("a menu of its own opens", frame ~= nil and frame:IsShown(), true)
 Expect("...on a background of its own", frame and frame:GetBackdrop() ~= nil, true)
@@ -239,9 +248,9 @@ local firstRow = frame.rows[1]
 Expect("...rows that clear the border", firstRow and firstRow.anchor and firstRow.anchor.x >= 12, true)
 Expect("...that highlight under the cursor", firstRow and firstRow:GetHighlightTexture() ~= nil
     and firstRow:GetHighlightTexture():GetTexture() ~= nil, true)
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 Expect("clicking the button again closes it", frame:IsShown(), false)
-stub.ldbObjects.Spoken.OnClick(mmButton, "LeftButton")
+stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 Expect("something catches a click outside", _G.SpokenMinimapMenuCatcher:IsShown(), true)
 _G.SpokenMinimapMenuCatcher:Click()
 Expect("...and that click closes the menu", frame:IsShown(), false)
@@ -332,7 +341,9 @@ end
 Expect("no control escapes the row it was given", escaped, 0)
 
 -- Label on the left, control on the right, ending at the same edge for every row: a panel
--- whose controls end at different places reads as several panels.
+-- whose controls end at different places reads as several panels. The narrator style's box
+-- narrows its rows by its padding on both sides, so their middle, where the controls start,
+-- stays where every other row's is.
 local columns, captioned = {}, 0
 for _, child in ipairs(host.children) do
     if child.layoutColumn then
@@ -343,20 +354,54 @@ end
 Expect("there are labelled controls to line up", captioned > 1, true)
 local distinctColumns = 0
 for _ in pairs(columns) do distinctColumns = distinctColumns + 1 end
-Expect("...and every one of them ends at the same edge", distinctColumns, 1)
+Expect("...and every one of them ends at the same edge, inside the box too", distinctColumns, 1)
 
 -- From where each section ends -- the bottom of its box, or of its cards where it has no box --
--- to the next one's title.
+-- to the next one's title. A group's title (the narrator style's settings) is a heading too, and
+-- after the group comes the bottom of its box; its first section follows its title, not a section.
 local headingGaps, last = {}, nil
+local groups = 0
 for _, item in ipairs(_G.SpokenOptionsPanel.layout.items) do
     if item.kind == "section" and item.shown then
         if last and last.bottom and item.heading then
             table.insert(headingGaps, last.bottom - item.heading.layoutY)
         end
         last = item
+    elseif item.kind == "group" and item.shown then
+        groups = groups + 1
+        if last and last.bottom then
+            table.insert(headingGaps, last.bottom - item.heading.layoutY)
+        end
+        last = nil
+    elseif item.kind == "groupEnd" and item.group.shown then
+        last = item.group
     end
 end
-Expect("every section heading the same distance below the section above", Distinct(headingGaps), 1)
+Expect("every heading the same distance below the section or box above", Distinct(headingGaps), 1)
+Expect("the narrator style's settings are a group of their own, in a box", groups, 1)
+-- The box as wide as the module cards above it, and what is inside it in by the same padding on
+-- every side: to the rows' sides, to the first section's title (16 down its band), under the last.
+do
+    local layout = _G.SpokenOptionsPanel.layout
+    local group
+    for _, item in ipairs(layout.items) do
+        if item.kind == "group" and item.shown then group = item end
+    end
+    local shown = {}
+    for _, section in ipairs(group and group.sections or {}) do
+        if section.shown then table.insert(shown, section) end
+    end
+    local first, last = shown[1], shown[#shown]
+    -- The first title's words start 16 down its band and 7 in from the rows' edge.
+    local pads = { group.top - (first.heading.layoutY - 16), last.bottom - group.bottom,
+        first.left + 7 - group.left }
+    Expect("the titles as far from the box's top and bottom as from its left", Distinct(pads), 1)
+    Expect("...23, more than the rows' own spacing", pads[1], 23)
+    Expect("...and the rows in by as much on the right as on the left", group.right - (first.left + first.width),
+        first.left - group.left)
+    Expect("...and the box is as wide as the module cards", group.left == layout.left
+        and group.right == layout.left + layout:Width(), true)
+end
 
 -- A heading introduces the section under it. Sit it midway and it reads as belonging to
 -- neither: the space above its words has to be the larger of the two. As the game's section

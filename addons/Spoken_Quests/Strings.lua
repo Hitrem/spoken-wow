@@ -55,6 +55,10 @@ L.OPT_OG_THRALL_TIP = "Plays the original AI VoiceOver recording of Thrall's \"A
 L.OPT_GROUP_DEBUG = "Debugging Tools"
 L.OPT_DEBUG = "Enable Debug Messages"
 L.OPT_DEBUG_TIP = "Enables printing of some \"useful\" debug messages to the chat window."
+-- Spoken > Developer: every quest line taken for one no pack has (DataModules:PrepareSound).
+L.OPT_DEV_MOCK_MISSING = "Mock Missing Voice Over"
+L.OPT_DEV_MOCK_MISSING_TIP = "Treat every quest line as one no installed pack has: nothing plays when a quest opens, the Play buttons find nothing, and the link to report the missing voice-over appears. Shows how a quest without a voice-over looks. Stays on until turned off; Spoken Quests reminds you at login."
+L.OPT_DEV_MOCK_ON = "Mock Missing Voice Over is on: no quest line plays. Turn it off in Spoken > Developer."
 
 --------------------------------------------------------------------------------
 -- Options window: sound-pack tab
@@ -174,6 +178,8 @@ L.OPT_READ_TIP = "Read this aloud"
 L.OPT_GREETING = "Greeting"
 L.OPT_AUTOPLAY_OFF_TIP = "Read Automatically is turned off on the Quests page of the Spoken settings."
 L.OPT_CONTRIBUTE = "Contribute"
+-- Beside the Report icon on DialogueUI's window, for a line no pack has.
+L.OPT_CONTRIBUTE_NO_VO = "No voice-over playing? Contribute!"
 L.OPT_REPORT = "Report"
 L.OPT_CONTRIBUTE_TIP_LINE = "Spoken Quests doesn't have this line"
 L.OPT_CONTRIBUTE_TIP_QUEST = "Spoken Quests doesn't have this quest"
@@ -199,6 +205,24 @@ L.OPT_CANCEL = "Cancel"
 
 
 L.OPT_SECTION_EXTRAS = "Extras"
+L.OPT_SECTION_DIALOGUEUI = "DialogueUI"
+L.OPT_DUI_NOTE = "For the DialogueUI addon, whose window replaces the quest and gossip frames and hides the rest of the interface while it is open."
+L.OPT_DUI_CAPTIONS = "Mark the Words Being Read"
+L.OPT_DUI_CAPTIONS_TIP = "In DialogueUI's quest and gossip text, the words follow the line as Spoken's captions do. Whether they type out, light up or both is set on Spoken's page: Type Words Out and Highlight Words."
+L.OPT_DUI_AUTOSCROLL = "Keep the Words in View"
+L.OPT_DUI_AUTOSCROLL_TIP = "Scrolls DialogueUI's text when the words being read move out of sight."
+L.OPT_DUI_SHOW_PLAYER = "Show Spoken Over DialogueUI"
+L.OPT_DUI_SHOW_PLAYER_TIP = "DialogueUI hides the rest of the interface while it is open, Spoken's window or subtitles with it. On, they stay on screen where you put them, and can still be moved."
+L.OPT_DUI_PLAY_BUTTON = "Play Button on DialogueUI"
+L.OPT_DUI_PLAY_BUTTON_TIP = "Spoken Quests' Play button in the top-left corner of DialogueUI's window, on the pages it has a recording for, whether or not DialogueUI's Text To Speech is on. Left-click plays the line or stops it. Right-click turns Read Automatically on or off. With DialogueUI's Text To Speech on, its own button plays the recording too."
+L.OPT_DUI_ON = "On"
+L.OPT_DUI_OFF = "Off"
+L.OPT_DUI_PLAY_RIGHT_CLICK = "Right-click to turn Read Automatically on or off."
+L.OPT_DUI_MISSING = "DialogueUI is not loaded."
+L.OPT_DUI_NO_PLAYER = "Needs the Spoken addon."
+L.OPT_DUI_OLD_PLAYER = "Needs a newer Spoken."
+L.OPT_DUI_UNKNOWN = "This version of DialogueUI is not recognised."
+L.REASON_DUI_CAPTIONS = "Turn on Mark the Words Being Read to use this."
 
 L.OPT_SECTION_START_OVER = "Start Over"
 L.OPT_REPORT_LINE_TIP = "Get a link to report a wrong reading or a mispronounced name."

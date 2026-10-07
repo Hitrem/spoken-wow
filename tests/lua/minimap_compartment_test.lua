@@ -41,6 +41,25 @@ env.Minimap:ToggleCompartment(true)
 Expect("turning it back on re-registers it", #registered, 1)
 Expect("...and marks it on", mm.showInCompartment, true)
 
+---------------------------------------------------------------- the choice survives a reload
+-- The lib clears the flag when it removes the entry, which AceDB reads back as on.
+env.Minimap:ToggleCompartment(false)
+stub.Logout()
+_G.AddonCompartmentFrame.registeredAddons = {}
+env = stub.LoadSpoken(SPOKEN)
+env.Addon:Enable()
+Expect("turned off, the flag is still off after a reload",
+    env.Addon.db.profile.Minimap.LibDBIcon.showInCompartment, false)
+Expect("...and the button stays out of the compartment", #_G.AddonCompartmentFrame.registeredAddons, 0)
+env.Minimap:ToggleCompartment(true)
+stub.Logout()
+_G.AddonCompartmentFrame.registeredAddons = {}
+env = stub.LoadSpoken(SPOKEN)
+env.Addon:Enable()
+Expect("turned back on, the flag is still on after a reload",
+    env.Addon.db.profile.Minimap.LibDBIcon.showInCompartment, true)
+Expect("...and the button is in the compartment", #_G.AddonCompartmentFrame.registeredAddons, 1)
+
 --------------------------------------------------------------- clicks open on our button, not the menu's
 -- Blizzard's compartment calls the entry with its own menu frame, which is closing as
 -- the click is handled. The minimap passes the real button, so that path runs now and
@@ -48,11 +67,11 @@ Expect("...and marks it on", mm.showInCompartment, true)
 local ldb = stub.ldbObjects["Spoken"]
 local button = stub.dbIcons["Spoken"].button
 local compartmentMenu = stub.Frame("SpokenCompartmentMenu")
-ldb.OnClick(button, "LeftButton")
+ldb.OnClick(button, "RightButton")
 Expect("a minimap click opens the menu at once", stub.openDropDown, _G.SpokenMinimapDropDown)
 Expect("...anchored to the button", _G.SpokenMinimapDropDown.dropdownAnchor, button)
 _G.CloseDropDownMenus()
-ldb.OnClick(compartmentMenu, "LeftButton")
+ldb.OnClick(compartmentMenu, "RightButton")
 Expect("a compartment click waits for the menu to close", stub.openDropDown, nil)
 stub.Advance(0.06)
 Expect("...then opens on our button", stub.openDropDown, _G.SpokenMinimapDropDown)
