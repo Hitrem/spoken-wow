@@ -32,11 +32,8 @@ end
 local function ModuleNumber(addon, suffix)
     return tonumber(ModuleMeta(addon, suffix) or "")
 end
---- Whether the player switched the addon off in the AddOns list, for this character. Such a pack
---- stays off, as Books' and Zones' do: it is not found, loaded or counted. Read off
---- GetAddOnInfo, which answers for the character playing. GetAddOnEnableState does not: given a
---- name rather than a GUID, C_AddOns answers for all characters, so a pack switched off here but
---- on for another character still read as on.
+--- Whether the player switched the addon off in the AddOns list for this character. Not
+--- GetAddOnEnableState: given a name rather than a GUID, C_AddOns answers for all characters.
 local function SwitchedOff(addon)
     local _, _, _, loadable, reason = GetAddOnInfo(addon)
     return not loadable and reason == "DISABLED"

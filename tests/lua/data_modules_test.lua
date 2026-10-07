@@ -59,8 +59,6 @@ local ok = pcall(function() VO.DataModules:Register("TestPack", { GetSoundPath =
 Expect("a new-key pack can register its data", ok, true)
 
 ---------------------------------------------------------------- switched off in the AddOns list
--- Off stays off, as for the other modules' packs: not found, not loaded, not counted on Spoken's
--- settings page.
 stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
 stub.SetAddOns({
     { folder = "OnPack", meta = { [OLD .. "Version"] = "1", Title = "OnPack", Version = "1.2.1" } },
