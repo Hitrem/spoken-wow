@@ -49,6 +49,11 @@ local function HandleClick(x, y)
 
 	if entry then
 		SpokenZones:SelectSubzone(mapID, areaName, entry)
+		-- Closed beside the map, the panel opens on the area clicked: the click asked for its story.
+		-- Not where the player turned the panel off in the settings.
+		if SpokenZones:Get("showMapPanel") and SpokenZones:Get("mapPanelCollapsed") then
+			SpokenZones:SetMapPanelCollapsed(false)
+		end
 	end
 end
 
