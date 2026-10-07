@@ -237,6 +237,10 @@ local function Discard(clip, reason)
     AfterRemoval()
 end
 
+-- The last line, skipped or taken away mid-word, fades out as Stop does rather than cutting
+-- off. One with a line after it is cut: the next starts at once, and would talk over the fade.
+local REMOVE_FADE_MS = 400
+
 ---@param clip SpokenClip
 ---@param finishedPlaying? boolean
 function SoundQueue:RemoveSoundFromQueue(clip, finishedPlaying)
@@ -262,7 +266,7 @@ function SoundQueue:RemoveSoundFromQueue(clip, finishedPlaying)
     local wasSpeaking = clip.nextSoundTimer ~= nil
     if removedIndex == 1 then
         if not finishedPlaying then
-            SoundUtils:StopSound(clip)
+            SoundUtils:StopSound(clip, not self.sounds[1] and REMOVE_FADE_MS or nil)
         else
             clip.handle = nil
         end
@@ -332,7 +336,8 @@ end
 --- no Dialog channel to mute, and what the client can do is cut a bark already playing, so
 --- the effects channel is toggled off and straight back on as the line starts.
 ---@param speakingOn string|nil
-function SoundQueue:MuteGameDialogue(speakingOn)
+---@param cut boolean? switch it off at once rather than fade it out
+function SoundQueue:MuteGameDialogue(speakingOn, cut)
     if not Addon.db.profile.Audio.AutoToggleDialog then
         return
     end
@@ -343,8 +348,8 @@ function SoundQueue:MuteGameDialogue(speakingOn)
         end
         return
     end
-    -- Faded, so the NPC is not cut off mid-word.
-    SoundUtils:MuteChannel("Dialog", speakingOn ~= nil and speakingOn ~= "Dialog", true)
+    -- Faded, so the NPC is not cut off mid-word; cut where it should not be heard at all.
+    SoundUtils:MuteChannel("Dialog", speakingOn ~= nil and speakingOn ~= "Dialog", not cut)
 end
 
 -- How long a mute taken ahead of a line holds with nothing queued. Quest lines are read
@@ -367,7 +372,9 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
     if Version.IsLegacyVanilla and not self:IsEmpty() then
         return
     end
-    self:MuteGameDialogue(speakingOn)
+    -- Cut, not faded: in the frame the window opens the greeting has barely started, and a fade
+    -- lets its first half-second through.
+    self:MuteGameDialogue(speakingOn, true)
     if muteAheadTimer then
         Addon:CancelTimer(muteAheadTimer)
     end
@@ -408,7 +415,8 @@ function SoundQueue:PlaySound(clip)
         return
     end
 
-    self:MuteGameDialogue(channel)
+    -- A line read off an NPC's window cuts its voice; one starting elsewhere (a zone's story) fades it.
+    self:MuteGameDialogue(channel, clip.cutsGameDialogue)
 
     if clip.startCallback then
         clip.startCallback(clip)
