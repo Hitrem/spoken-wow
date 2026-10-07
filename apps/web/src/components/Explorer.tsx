@@ -172,7 +172,7 @@ export default function Explorer({ facets }: { facets: Facets }) {
       setTranslating({
         title: line.npcName,
         subtitle: line.lineId,
-        english: line.originalText,
+        english: line.english ? line.originalText : "There is no English line yet.",
         current: line.missing?.text ? null : line.text,
         endpoint: "/api/quests/lines/text",
         address: { lineId: line.lineId, variant: line.variant ?? 0 },

@@ -292,7 +292,7 @@ export default function ContributionTable({
       answer: SpeakerAnswer,
     ) => {
       setNpcBusy(contributionId);
-      const response = await fetch("/api/contributions/npc", {
+      const response = await fetch(`/api/contributions/npc?lang=${lang}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         // A kind-less row's moderator-chosen kind wins over the row's own null. `??` rather than
@@ -321,7 +321,7 @@ export default function ContributionTable({
         [overrideKey(resolution.npcKind, resolution.npcId)]: summary,
       }));
     },
-    [flavorScopes],
+    [flavorScopes, lang],
   );
 
   /**
