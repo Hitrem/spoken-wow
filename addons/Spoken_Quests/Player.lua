@@ -377,25 +377,6 @@ function Player:Setup()
             for _, module in DataModules:GetPresentModules() do table.insert(names, module.Title) end
             return names
         end,
-        -- The voices come in parts -- Alliance, Horde and the rest, or All of them in one -- so
-        -- Spoken shows how many of the parts are here out of how many there are. All counts as
-        -- every part.
-        packCount = function()
-            local total, have, all = 0, 0, false
-            for _, module in DataModules:GetAvailableModules() do
-                if module.AddonName ~= "SpokenQuestsAudioAll" then total = total + 1 end
-            end
-            for _, module in DataModules:GetPresentModules() do
-                if module.AddonName == "SpokenQuestsAudioAll" then
-                    all = true
-                else
-                    have = have + 1
-                end
-            end
-            if total == 0 then total = math.max(have, 1) end
-            if all then have = total end
-            return math.min(have, total), total
-        end,
     })
 
     -- What the watcher reads to know whether an event reached the speaker.

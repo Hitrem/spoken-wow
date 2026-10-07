@@ -313,9 +313,9 @@ do
     Expect("a section has its title and no rule under it, as the game's do", plain.items[1].rule, nil)
 end
 
----------------------------------------------------------------- the voice pack meter
-Expect("a module's voice packs are a bar, its count on the right, filled as far as it goes",
-    tostring(cards[1].status.layoutMeter) .. " " .. cards[1].status.count.text .. " " .. cards[1].status.fraction, "true 1/1 1")
+---------------------------------------------------------------- the voice pack count
+Expect("a module's voice packs are a line, its count on the right and no bar under it",
+    cards[1].status.count.text .. " " .. tostring(cards[1].status.bar), "1/1 nil")
 Expect("...grey with the module off, as its icon is", cards[2].status.layoutGreyed, true)
 Expect("...and in colour with it on", cards[1].status.layoutGreyed, false)
 

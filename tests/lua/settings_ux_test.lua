@@ -399,9 +399,16 @@ do
         for _, frame in ipairs(links) do table.insert(names, frame.layoutLink.title) end
         Expect("...GitHub, Discord, CurseForge, Wago and Buy Me a Coffee", table.concat(names, ", "),
             "GitHub, Discord, CurseForge, Wago, Buy Me a Coffee")
+        -- A row outside the narrator style's box, which moves its own rows in by its padding.
+        local boxed = {}
+        for _, item in ipairs(home.items) do
+            if item.kind == "group" then
+                for _, section in ipairs(item.sections) do boxed[section] = true end
+            end
+        end
         local caption
         for _, item in ipairs(home.items) do
-            for _, row in ipairs(item.rows or {}) do
+            for _, row in ipairs(not boxed[item] and item.rows or {}) do
                 if not caption and row.control.layoutLabel then caption = row.control.layoutLabel end
             end
         end

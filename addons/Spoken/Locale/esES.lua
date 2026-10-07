@@ -119,6 +119,7 @@ L.REASON_TYPEWRITER = "Activa «Ir escribiendo el texto» para usar esto."
 -- Display: narrator style
 L.OPT_SHOW_TITLE = "Visualización"
 L.OPT_PLAYER_STYLE = "Estilo del narrador"
+L.OPT_NARRATOR_SETTINGS = "Configuración del estilo del narrador"
 L.OPT_PLAYER_STYLE_TIP = "Ventana grande: el retrato del hablante y las líneas que esperan para sonar a continuación.\n\nSolo subtítulos, en los clientes que los tienen: sin ventana, solo el texto escribiéndose en la parte baja del centro de la pantalla. Pasa el ratón por encima para Detener o Repetir, Omitir e Informar, y arrástralo arriba o abajo para moverlo.\n\nSolo voz: nada en pantalla; las líneas solo se oyen. Las teclas de abajo siguen sirviendo para detener, repetir y omitir."
 L.OPT_STYLE_MINIMAL = "Ventana pequeña"
 L.OPT_STYLE_CLASSIC = "Ventana grande"
@@ -191,8 +192,7 @@ L.PART_OFF = "Desactivado: no se lee nada"
 L.PART_NO_PACK = "Ningún paquete de voces instalado"
 L.PART_ONE_PACK = "Paquete de voces instalado"
 L.PART_PACKS_FMT = "%1$d paquetes de voces instalados"
-L.PART_VOICE = "Paquete de voces"
-L.PART_VOICE_COUNT_FMT = "%1$d/%2$d"
+L.PART_VOICE = "Paquetes de voces"
 
 -- Sound: other game sounds while Spoken talks
 L.OPT_LOWER_TITLE = "Bajar el juego mientras Spoken habla"
