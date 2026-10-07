@@ -443,6 +443,7 @@ local function Voiced() return stub.OpenDropdown(window.filterMenu)[2] end
 Expect("the filter menu holds Voiced Only after Discovered Only", Voiced().text == Z.L.LORE_VOICED_ONLY and Voiced().isNotRadio, true)
 Voiced().func()
 Expect("...on, only what has a recording is listed, with the zone that holds it", Shown(), "Azeroth|Kalimdor|Durotar|Valley of Trials")
+Expect("...counting only what it lists", RowFor("Durotar").count.text, "1/1 • 100%")
 Expect("...and is remembered", Z:Get("loreVoicedOnly"), true)
 Voiced().func()
 Expect("...off, everything again", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")

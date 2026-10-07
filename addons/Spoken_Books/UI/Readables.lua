@@ -173,11 +173,15 @@ local function ReadablesIn(mapID, into)
 	return into
 end
 
+-- Found out of all, of what is listed: under Voiced Only, what no voice pack reads is left out of
+-- the count as it is of the rows, so the number is of the rows beneath it.
 local function Tally(set)
 	local found, total = 0, 0
 	for id in pairs(set) do
-		total = total + 1
-		if Found(id) then found = found + 1 end
+		if not OnlyVoiced() or Voiced(id) then
+			total = total + 1
+			if Found(id) then found = found + 1 end
+		end
 	end
 	return found, total
 end

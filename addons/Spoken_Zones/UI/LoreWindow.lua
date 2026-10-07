@@ -219,9 +219,14 @@ local function ZoneRows(mapID, depth)
 	local open = (expandedZone == mapID or CITY_IN[expandedZone] == mapID) and not locked
 	local cities = CitiesIn(mapID)
 	local inside = {}
-	local found = 0
+	-- Found out of all, of what is listed: under Voiced Only, what no voice pack reads is left
+	-- out of the count as it is of the rows, so the number is of the rows beneath it.
+	local found, total = 0, 0
 	for _, city in ipairs(cities) do
-		if Found(city) then found = found + 1 end
+		if not OnlyVoiced() or AnyVoiced(city) then
+			total = total + 1
+			if Found(city) then found = found + 1 end
+		end
 		if filter ~= "" or open then
 			for _, row in ipairs(ZoneRows(city, depth + 1)) do table.insert(inside, row) end
 		end
@@ -229,7 +234,10 @@ local function ZoneRows(mapID, depth)
 	if subKeys then
 		for _, key in ipairs(subKeys) do
 			local isFound = Found(mapID, key)
-			if isFound then found = found + 1 end
+			if not OnlyVoiced() or Voiced(mapID, key) then
+				total = total + 1
+				if isFound then found = found + 1 end
+			end
 			local entry = SpokenZones.Subzones[mapID][key]
 			local name = entry.name or key
 			local shown = filter == "" and open or filter ~= "" and Matches(name)
@@ -240,7 +248,6 @@ local function ZoneRows(mapID, depth)
 		end
 	end
 	if filter ~= "" and not Matches(zoneName) and #inside == 0 then return {} end
-	local total = (subKeys and #subKeys or 0) + #cities
 	local rows = { { kind = "zone", mapID = mapID, label = zoneName, depth = depth,
 		count = found, total = total,
 		open = filter ~= "" and #inside > 0 or open,
@@ -269,22 +276,25 @@ local function BuildRowList()
 			end
 		end
 		local name = ZoneName(continent)
-		local found = 0
+		-- Counted as a zone's are, of the zones listed; locked by all of them, listed or not.
+		local found, total, anyFound = 0, 0, false
 		for _, mapID in ipairs(ZonesOf(continent)) do
-			if Found(mapID) then found = found + 1 end
+			local isFound = Found(mapID)
+			anyFound = anyFound or isFound
+			if not OnlyVoiced() or AnyVoiced(mapID) then
+				total = total + 1
+				if isFound then found = found + 1 end
+			end
 		end
 		-- A continent with none of its zones found yet is listed locked, and does not open; with
 		-- Discovered Only it is left out. Found through its zones alone: finding Brill finds the
 		-- Eastern Kingdoms.
-		local unfound = found == 0
+		local unfound = not anyFound
 		local locked = unfound and not SpokenZones:ShowsUndiscovered()
-		local voiced = not OnlyVoiced()
-		for _, mapID in ipairs(voiced and {} or ZonesOf(continent)) do
-			if AnyVoiced(mapID) then voiced = true break end
-		end
+		local voiced = not OnlyVoiced() or total > 0
 		if (not searching or Matches(name) or #zones > 0) and not (unfound and OnlyFound()) and voiced then
 			table.insert(continents, { kind = "continent", mapID = continent, label = name, depth = 1,
-				count = found, total = #ZonesOf(continent),
+				count = found, total = total,
 				open = searching and #zones > 0 or (not searching and continentOpen[continent] and not locked),
 				missing = Missing(continent), zones = zones, locked = locked })
 		end
