@@ -194,7 +194,10 @@ stub.FireEvent("ITEM_TEXT_CLOSED")
 
 ---------------------------------------------------------------- the Report buttons' menu
 local report = Spoken:CreateRoundButton(UIParent, "report")
-for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end
+local function RightClick(button)
+    for _, fn in ipairs(button.hooks.OnMouseUp) do fn(button, "RightButton") end
+end
+RightClick(report)
 local menu = _G.SpokenDeveloperMenu
 Expect("a Report button's right-click opens the menu", menu ~= nil and menu:IsShown(), true)
 local items = Dev.Menu:Items(report)
@@ -228,13 +231,13 @@ menu:GetScript("OnHide")(menu)   -- the client runs it; the stub's Hide does not
 Expect("Escape closing the menu uncovers the Write row too", secure:IsShown(), false)
 
 local MouseDown = menu:GetScript("OnEvent")
-for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end
+RightClick(report)
 report.IsMouseOver = function() return true end
 MouseDown(menu, "GLOBAL_MOUSE_DOWN", "RightButton")
 Expect("right-clicking its button again leaves the press alone", menu:IsShown(), true)
-for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end
+RightClick(report)
 Expect("...and the release closes the menu, not opening it again", menu:IsShown(), false)
-for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end
+RightClick(report)
 MouseDown(menu, "GLOBAL_MOUSE_DOWN", "LeftButton")
 Expect("a left-click on its button closes it", menu:IsShown(), false)
 report.IsMouseOver = nil
