@@ -48,7 +48,7 @@ local PARTS = {
     { key = "books", label = L.OPT_PART_BOOKS, text = L.OPT_PART_BOOKS_TEXT, tip = L.OPT_PART_BOOKS_TIP,
         icon = [[Interface\Icons\INV_Misc_Book_09]], order = 2 },
     { key = "zones", label = L.OPT_PART_ZONES, text = L.OPT_PART_ZONES_TEXT, tip = L.OPT_PART_ZONES_TIP,
-        icon = [[Interface\Icons\INV_Misc_Map_01]], order = 3 },
+        icon = [[Interface\Icons\INV_Misc_Map02]], order = 3 },
 }
 
 -- Sketches of the ways of showing a line, in flat colour, for their tiles: a portrait in
@@ -460,6 +460,36 @@ local function Build(canvas)
     -- The narrator style's settings end here; what follows is Spoken's whatever the style.
     layout:EndGroup()
 
+    -- Azeroth's Compendium, after the narrator style's settings: the window Zones and Books each
+    -- add a tab to, opened here and from the minimap menu, with each tab's Unlock switch. The tabs
+    -- register once the world is up, after this page is built, so the rows ask for them each time
+    -- they are drawn; with neither part installed the section has nothing showing and hides.
+    local function Compendium() return _G.SpokenCompendium end
+    local function Tab(key)
+        local compendium = Compendium()
+        return compendium and compendium.Tab and compendium:Tab(key)
+    end
+    layout:Section(L.OPT_COMPENDIUM_TITLE)
+    local open = layout:Button(L.OPT_COMPENDIUM_OPEN, 200, function()
+        local compendium = Compendium()
+        if compendium and compendium.Toggle then compendium:Toggle() end
+    end, L.OPT_COMPENDIUM_OPEN_TIP)
+    Only(open, function() local compendium = Compendium(); return compendium ~= nil and compendium.Toggle ~= nil end)
+    Requires(open, function()
+        local compendium = Compendium()
+        return compendium ~= nil and compendium.Available ~= nil and compendium:Available()
+    end, L.REASON_COMPENDIUM_OFF)
+    for _, unlock in ipairs({
+        { tab = "places", part = "zones", label = L.OPT_UNLOCK_PLACES, tip = L.OPT_UNLOCK_PLACES_TIP, module = L.OPT_PART_ZONES },
+        { tab = "readables", part = "books", label = L.OPT_UNLOCK_WRITINGS, tip = L.OPT_UNLOCK_WRITINGS_TIP, module = L.OPT_PART_BOOKS },
+    }) do
+        local row = layout:Checkbox(unlock.label, unlock.tip,
+            function() local tab = Tab(unlock.tab); return tab ~= nil and tab.unlock ~= nil and tab.unlock.get() end,
+            function(v) local tab = Tab(unlock.tab); if tab and tab.unlock then tab.unlock.set(v) end end)
+        Only(row, function() local tab = Tab(unlock.tab); return tab ~= nil and tab.unlock ~= nil end)
+        Requires(row, function() return Spoken:IsPartOn(unlock.part) end, format(L.REASON_MODULE_OFF_FMT, unlock.module))
+    end
+
     -- Everything about how a line is played, whichever addon queued it: the two feature
     -- addons each used to carry their own channel control, and a player with both
     -- installed had two settings for one thing.
@@ -672,6 +702,12 @@ local function Build(canvas)
     -- Every setting back, from the header's Defaults as the game's pages have it.
     layout:StartOver(L.OPT_START_OVER_TITLE, L.OPT_RESET_ALL, function()
         Layout.Confirm(L.OPT_RESET_ALL_CONFIRM, L.OPT_RESET_AND_RELOAD, L.CANCEL, function()
+            -- The Unlock switches are on this page but kept with each part's settings, which
+            -- ResetProfile does not reach, and each part's own Reset skips them.
+            for _, key in ipairs({ "places", "readables" }) do
+                local tab = Tab(key)
+                if tab and tab.unlock then tab.unlock.set(false) end
+            end
             Addon.db:ResetProfile()
             Addon.db.global.Layout = nil
             ReloadUI()

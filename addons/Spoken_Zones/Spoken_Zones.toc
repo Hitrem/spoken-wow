@@ -53,6 +53,7 @@ Core.lua
 Audio.lua
 Contribute.lua
 Autoplay.lua
+Discovery.lua
 Data/enUS/Zones.lua
 Data/enUS/Subzones.lua
 # Keep the selected lore and caption text for installed voices. Other languages return early.
@@ -84,6 +85,7 @@ Data/ruRU/Aliases.lua
 Data/koKR/Aliases.lua
 Data/zhCN/Aliases.lua
 Data/zhTW/Aliases.lua
+Data/ForeverAreas.lua
 UI/Layout.lua
 UI/TextView.lua
 UI/CopyLink.lua
@@ -92,7 +94,8 @@ UI/ReportButton.lua
 UI/LorePage.lua
 UI/MapPanel.lua
 UI/SubzoneClick.lua
-UI/HoverPreview.lua
+UI/MapHighlight.lua
+UI/Compendium.lua
 UI/LoreWindow.lua
 UI/MinimapButton.lua
 UI/Options.lua

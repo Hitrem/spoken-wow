@@ -427,7 +427,10 @@ do
         local caption
         for _, item in ipairs(home.items) do
             for _, row in ipairs(not boxed[item] and item.rows or {}) do
-                if not caption and row.control.layoutLabel then caption = row.control.layoutLabel end
+                -- A row shown: one hidden (the Compendium's, with no part's tab here) has no place.
+                if not caption and row.control.layoutLabel and row.control.layoutLabel.anchor then
+                    caption = row.control.layoutLabel
+                end
             end
         end
         Expect("...starting where the rows' names do", caption and links[1].anchor.x, caption and caption.anchor.x)

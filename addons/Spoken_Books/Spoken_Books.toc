@@ -29,6 +29,7 @@
 
 Checksum.lua
 Data/Books.lua
+Data/Places.lua
 Locale/enUS.lua
 Locale/deDE.lua
 Locale/esES.lua
@@ -48,6 +49,9 @@ UI/Layout.lua
 UI/Options.lua
 UI/PlayButton.lua
 UI/CopyLink.lua
+UI/TextView.lua
+UI/Compendium.lua
+UI/Readables.lua
 Events.lua
 Commands.lua
 

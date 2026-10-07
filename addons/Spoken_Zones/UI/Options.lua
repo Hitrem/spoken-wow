@@ -66,7 +66,7 @@ function SpokenZones:SetupOptions()
 
 	local layout = SpokenLayout.New(content, INDENT, -16)
 	panel.layout = layout
-	layout:Header(L.OPT_PAGE_TITLE, L.OPT_NOTE, nil, [[Interface\Icons\INV_Misc_Map_01]])
+	layout:Header(L.OPT_PAGE_TITLE, L.OPT_NOTE, nil, [[Interface\Icons\INV_Misc_Map02]])
 	local refresh = function() layout:Refresh() end
 
 	-- The part's own switch first, as on Spoken's page: off, everything under it is greyed
@@ -78,7 +78,7 @@ function SpokenZones:SetupOptions()
 	-- part's card on Spoken's page turns it on and off too.
 	if Spoken and Spoken.SettingsStyle and Spoken:SettingsStyle() == "pages" then
 		layout:HideHeader()
-		layout:Intro([[Interface\Icons\INV_Misc_Map_01]], L.OPT_PAGE_TITLE)
+		layout:Intro([[Interface\Icons\INV_Misc_Map02]], L.OPT_PAGE_TITLE)
 		switch = layout:Checkbox(L.OPT_PART_SWITCH, L.OPT_PART_SWITCH_TIP, PartOn,
 			function(value) Spoken:SetPartOn("zones", value) end, refresh)
 	else
@@ -139,9 +139,6 @@ function SpokenZones:SetupOptions()
 		Get("showMapPanel"), function(value) SpokenZones:SetMapPanelShown(value) end,
 		function() RedrawPanel(); layout:Refresh() end)
 	local besideMap = Get("showMapPanel")
-	layout:Checkbox(L.OPT_HOVER,
-		L.OPT_HOVER_TIP,
-		Get("showHoverPreview"), Set("showHoverPreview"))
 	layout:Checkbox(L.OPT_PICTURES,
 		L.OPT_PICTURES_TIP,
 		Get("showPictures"), Set("showPictures"), RedrawEverything)
@@ -151,9 +148,15 @@ function SpokenZones:SetupOptions()
 	layout:Slider(L.OPT_FONT_SIZE, 9, 20, 1,
 		Get("fontSize"), Set("fontSize"), RedrawEverything, SpokenLayout.Number, L.OPT_FONT_SIZE_TIP)
 
-	-- The lore window: every zone's stories to browse, which nothing else on the page leads to.
-	layout:Section(L.OPT_SECTION_LORE)
-	layout:Button(L.MENU_LORE_WINDOW, 200, function() SpokenZones:ToggleLoreWindow() end, L.OPT_LORE_WINDOW_TIP)
+	-- Azeroth's Compendium: opened, and its places unlocked, from Spoken's page where Spoken is
+	-- installed (Spoken:ShowsCompendium), with the other tabs'. Here only without it.
+	if not (Spoken and Spoken.ShowsCompendium) then
+		layout:Section(L.OPT_SECTION_LORE)
+		layout:Button(L.MENU_LORE_WINDOW, 200, function() SpokenZones:ToggleLoreWindow() end, L.OPT_LORE_WINDOW_TIP)
+		layout:Checkbox(L.OPT_SHOW_UNDISCOVERED,
+			L.OPT_SHOW_UNDISCOVERED_TIP,
+			Get("showUndiscovered"), Set("showUndiscovered"), RedrawEverything)
+	end
 
 	layout:Section(L.OPT_SECTION_LANGUAGE)
 	-- Only finished languages are offered. A player choosing from a list has no way to

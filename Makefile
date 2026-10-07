@@ -89,6 +89,9 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/zones_test_line_test.lua
 	@$(LUA) tests/lua/zones_lore_ui_test.lua
 	@$(LUA) tests/lua/zones_map_click_test.lua
+	@$(LUA) tests/lua/zones_map_highlight_test.lua
+	@$(LUA) tests/lua/zones_area_at_test.lua
+	@$(LUA) tests/lua/zones_discovery_test.lua
 	@$(LUA) tests/lua/subtitle_pages_test.lua
 	@$(LUA) tests/lua/defaults_test.lua
 	@$(LUA) tests/lua/scroll_mode_upgrade_test.lua
@@ -103,10 +106,13 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/books_playlist_test.lua
 	@$(LUA) tests/lua/books_events_test.lua
 	@$(LUA) tests/lua/books_contribute_test.lua
+	@$(LUA) tests/lua/books_readables_test.lua
 	@$(LUA) tests/lua/books_language_test.lua
 	@$(LUA) tests/lua/gather_test.lua
 	@$(LUA) tests/lua/zones_contribute_test.lua
 	@$(LUA) tests/lua/zones_language_test.lua
+	@$(LUA) tests/lua/zones_each_place_once_test.lua
+	@$(LUA) tests/lua/zones_city_test.lua
 	@$(LUA) tests/lua/minimap_compartment_test.lua
 	@$(LUA) tests/lua/bronze_rings_test.lua
 

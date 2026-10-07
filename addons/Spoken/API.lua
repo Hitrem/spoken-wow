@@ -337,6 +337,12 @@ function Spoken:SetPartOn(key, on)
     Options:UpdateRows()
 end
 
+--- Whether Spoken's page and minimap menu open Azeroth's Compendium and hold its Unlock switches,
+--- so the parts leave theirs off their own pages.
+function Spoken:ShowsCompendium()
+    return true
+end
+
 --- A button on the player's panel that opens a feature addon's own settings, for the
 --- addons whose panel cannot be nested.
 function Spoken:AddSettingsLink(text, onClick)

@@ -140,6 +140,16 @@ function SpokenBooks:SetupOptions()
 		SpokenBooks:Print(L.OPT_FORGET_DONE_FMT:format(count))
 	end, L.OPT_FORGET_TIP)
 
+	-- Every writing, found or not, in Azeroth's Compendium (UI/Readables.lua): opened, and unlocked,
+	-- from Spoken's page where Spoken is installed (Spoken:ShowsCompendium). Here only without it.
+	if SpokenBooks.ShowReadables and not (Spoken and Spoken.ShowsCompendium) then
+		layout:Section(L.COMPENDIUM_TITLE)
+		layout:Button(L.OPT_OPEN_READABLES, 200, function() SpokenBooks:ShowReadables() end, L.OPT_OPEN_READABLES_TIP)
+		layout:Checkbox(L.OPT_UNLOCK_UNFOUND, L.OPT_UNLOCK_UNFOUND_TIP,
+			Get("unlockUnfound"), Set("unlockUnfound"),
+			function() if SpokenBooks.RefreshReadables then SpokenBooks:RefreshReadables() end end)
+	end
+
 	-- Every voice pack, a row each, as on the quests page: its version where it is installed,
 	-- and where it is not, a button with the address to get it.
 	layout:Section(L.OPT_SECTION_PACKS)

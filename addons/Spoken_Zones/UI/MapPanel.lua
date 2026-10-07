@@ -41,8 +41,8 @@ local ICON_SIZE = 40
 local BORDER_SIZE = 74
 -- How far the button's left edge tucks under the map's frame, so it reads as attached to it.
 local TOGGLE_TUCK = 2
--- Lore of Azeroth's portrait, so the button reads as the way back to the same lore.
-local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map_01]]
+-- Zone Lore's map, so the button reads as the way back to it.
+local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map02]]
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -275,16 +275,21 @@ local function Refresh(mapID)
 		-- Prefer the name the client reported, which is what the player sees on the map ("The
 		-- Bulwark"), over the wiki page title ("Bulwark").
 		local name = selected.areaName or selected.entry.name or ""
-		-- Audio, the report link and Lore of Azeroth are keyed by the canonical form, not the name
+		-- Audio, the report link and Azeroth's Compendium are keyed by the canonical form, not the name
 		-- the client reported. Resolve, not Normalise: on a localized client the reported name
 		-- reaches the corpus key only through the alias table, and normalising a non-Latin name
 		-- yields nil -- which would silently retarget the buttons at the zone's lore.
 		local key = SpokenZones:ResolveAreaKey(selected.areaName)
 		local line = SpokenZones:PlaceLine(mapID, key or name)
 		local back = function() SpokenZones:ClearSubzone() end
+		-- Not found yet: named, and no more, as Azeroth's Compendium has it.
+		if SpokenZones.IsLocked and SpokenZones:IsLocked(mapID, key) then
+			page:Show({ title = name, subtitle = line, onSubtitle = back, text = L.NOT_DISCOVERED, missing = true })
+			return
+		end
 		if SpokenZones:IsPending(selected.entry) then
 			-- Named, listed, and honest about the rest: nothing to play and nothing written to
-			-- report on. Lore of Azeroth lists it all the same, so Open goes to its row there.
+			-- report on. Azeroth's Compendium lists it all the same, so Open goes to its row there.
 			page:Show({ title = name, subtitle = line, onSubtitle = back, text = L.LORE_NOT_WRITTEN:format(name),
 				missing = true, contribute = { mapID, name }, lore = { mapID, key } })
 			return
@@ -312,6 +317,10 @@ local function Refresh(mapID)
 		local up
 		caption, up = SpokenZones:PlaceLine(mapID)
 		if up and WorldMapFrame.SetMapID then onCaption = function() WorldMapFrame:SetMapID(up) end end
+	end
+	if SpokenZones.IsLocked and SpokenZones:IsLocked(foundOn) then
+		page:Show({ title = zoneName, subtitle = caption, onSubtitle = onCaption, text = L.NOT_DISCOVERED, missing = true })
+		return
 	end
 	if SpokenZones:IsPending(entry) then
 		page:Show({ title = zoneName, subtitle = caption, onSubtitle = onCaption,

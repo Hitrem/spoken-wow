@@ -75,6 +75,9 @@ superpowers/
 # Raw MediaWiki API responses. Regenerate with `node pipelines/zones/tools/scrape.mjs`.
 /pipelines/zones/tools/cache/
 
+# The client's map tables from wago.tools, for `make books-places`.
+/pipelines/books/tools/cache/
+
 # The pack's clips, assembled from the take archive by `make zones-sounds`.
 # No trailing slash: a test client is pointed at this pack by symlinking its audio in,
 # and a trailing slash matches only a real directory, leaving the link to be committed.
