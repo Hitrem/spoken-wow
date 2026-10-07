@@ -338,16 +338,16 @@ end
 
 --- Whether the Spoken button also shows in Blizzard's addon compartment, on the
 --- modern clients that have one. The flag is the settings panel's; the lib's add and
---- remove keep the compartment's entry in step, and writing the flag first means the
---- choice sticks even where the frame does not exist to be updated.
+--- remove keep the compartment's entry in step. The flag is written last: removing the
+--- entry clears it to nil, which AceDB reads back as the default, on.
 function Minimap:ToggleCompartment(shouldShow)
-    local db = Addon.db.profile.Minimap.LibDBIcon
-    db.showInCompartment = shouldShow
     local LibDBIcon = LibStub("LibDBIcon-1.0", true)
-    if not LibDBIcon then return end
-    if shouldShow then
-        LibDBIcon:AddButtonToCompartment("Spoken")
-    else
-        LibDBIcon:RemoveButtonFromCompartment("Spoken")
+    if LibDBIcon then
+        if shouldShow then
+            LibDBIcon:AddButtonToCompartment("Spoken")
+        else
+            LibDBIcon:RemoveButtonFromCompartment("Spoken")
+        end
     end
+    Addon.db.profile.Minimap.LibDBIcon.showInCompartment = shouldShow
 end
