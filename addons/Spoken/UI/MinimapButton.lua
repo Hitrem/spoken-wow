@@ -3,9 +3,9 @@ setfenv(1, SpokenEnv)
 -- The one minimap button. Feature addons contribute menu entries rather than buttons of
 -- their own, so a player with two Spoken addons installed gets one icon, not two.
 --
--- Left-click opens a menu: the player's entries, then each source's, grouped in source
--- order. Right-click opens settings. Middle-click runs the configured command. All
--- three are rebindable, which is what keeps VoiceOverRedux's three-configurable-clicks
+-- Left-click opens settings. Right-click opens a menu: the player's entries, then each
+-- source's, grouped in source order. Middle-click stops or replays. All three are
+-- rebindable (Minimap.Commands in the profile), which is what keeps VoiceOverRedux's three-configurable-clicks
 -- behaviour for the players who use it.
 Minimap = { entries = {} }
 
