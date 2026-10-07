@@ -17,7 +17,7 @@ WorldMapFrame = {
 }
 MapUtil = { FindBestAreaNameAtMouse = function() end }
 
-local opened
+local opened, marked
 local settings = { showMapPanel = true, mapPanelCollapsed = false }
 local Z = {
     IsPartOn = function() return true end,
@@ -30,6 +30,7 @@ local Z = {
         return "Bloodhoof Village", { name = "Bloodhoof Village" }, "bloodhoof village"
     end,
     SelectSubzone = function(_, mapID, name) opened = mapID .. ":" .. name end,
+    MarkFound = function(_, mapID, key) marked = mapID .. "/" .. key end,
 }
 assert(loadfile(ZONES .. "UI/SubzoneClick.lua"))("Spoken_Zones", Z)
 Z:SetupSubzoneClicks()
@@ -49,6 +50,9 @@ Expect("a click on Mulgore on Kalimdor's map opens the zone, not one of its area
 
 WorldMapFrame.mapID = MULGORE
 Expect("a click on Mulgore's map opens the area under the cursor", Click(), MULGORE .. ":Bloodhoof Village")
+-- Only an explored area resolves under a click, so the click finds it, whatever the map's samples
+-- missed of its shape (Discovery.lua).
+Expect("...and finds it", marked, MULGORE .. "/bloodhoof village")
 
 -- Closed beside the map, the panel opens on the area clicked.
 settings.mapPanelCollapsed = true

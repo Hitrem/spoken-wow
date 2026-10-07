@@ -67,6 +67,9 @@ Expect("a city is found by its name explored on the zone around it, whichever is
 Expect("an explored area is found", Z:IsFound(1411, "valley of trials"), true)
 Expect("...and its zone", Z:IsFound(1411), true)
 Expect("an area with no overlay is not found before it is stood in", Z:IsFound(1411, "razor hill barracks"), false)
+Z:MarkFound(1411, "razor hill barracks")
+Expect("...or clicked on the map, which resolves only an explored one", Z:IsFound(1411, "razor hill barracks"), true)
+SpokenZonesCharacter.visited["1411/razor hill barracks"] = nil
 Expect("a zone with nothing explored is not found", Z:IsFound(1426), false)
 Expect("...read off its own map alone, not every zone's", read[1450] or read[1416] or false, false)
 Expect("...nor one whose map has an overlay always drawn, nothing under it explored", Z:IsFound(1450), false)

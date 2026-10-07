@@ -243,11 +243,26 @@ _G.SpokenCompendium:Relayout()
 Expect("the part of the tab shown switched off, the window closes", window:IsShown(), false)
 on.readables = true
 
--- Listening is not finding: a book heard from the Compendium (Play marks it read, for Read Only
--- Once) stays unfound until it is opened in the world. One heard before Found was kept still is.
+-- Played from the Compendium is browsing: it does not count for Read Only Once, so the book still
+-- reads itself the first time it is opened in the world.
+do
+    local source, clipFor, isQueued = B.source, B.ClipFor, B.IsQueued
+    B.source = { Enqueue = function() return true end, StopAll = function() end }
+    B.ClipFor = function() return {} end
+    B.IsQueued = function() return false end
+    SpokenBooksCharacter.read[KURDRAN] = nil
+    B:SyncTo(SpokenBooksData.books[KURDRAN].pages[1], true)
+    Expect("Play in the Compendium does not count for Read Only Once", B:HasReadBook(KURDRAN), false)
+    B:SyncTo(SpokenBooksData.books[KURDRAN].pages[1])
+    Expect("...a book read in the world does", B:HasReadBook(KURDRAN), true)
+    B.source, B.ClipFor, B.IsQueued = source, clipFor, isQueued
+end
+
+-- Listening is not finding: a book heard (Read Only Once's record) stays unfound until it is
+-- opened in the world. One heard before Found was kept still is.
 SpokenBooksCharacter.found[ALLERIA] = nil
 B:MarkBookRead(ALLERIA)
-Expect("a book heard from the Compendium is not found by it", B:IsBookFound(ALLERIA), false)
+Expect("a book heard is not found by it", B:IsBookFound(ALLERIA), false)
 _G.SpokenBooksCharacter = { read = { [LETTER] = true } }
 B:InitDB()
 Expect("...one heard before Found was kept is found", B:IsBookFound(LETTER), true)

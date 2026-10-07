@@ -336,7 +336,8 @@ end
 local PLAY = {
 	has = function(id) local book = Books()[id] return book ~= nil and SpokenBooks:HasAudio(book.pages[1]) end,
 	playing = function(id) return SpokenBooks:IsNarrating(id) end,
-	start = function(id) SpokenBooks:SyncTo(Books()[id].pages[1]) end,
+	-- Browsing: heard here is not heard in the world (Read Only Once), nor found.
+	start = function(id) SpokenBooks:SyncTo(Books()[id].pages[1], true) end,
 	stop = function() SpokenBooks:StopReading() end,
 }
 

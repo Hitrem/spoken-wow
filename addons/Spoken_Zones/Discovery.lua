@@ -133,6 +133,12 @@ function SpokenZones:IsFound(mapID, areaKey)
 	return false
 end
 
+--- An area a click on the map just resolved: only an explored one resolves, so it is found, even
+--- where the samples IsFound reads miss its shape (a road, a riverbank).
+function SpokenZones:MarkFound(mapID, areaKey)
+	if mapID and areaKey then CharDB().visited[VisitKey(mapID, areaKey)] = true end
+end
+
 --- Every place counted found, and why, for /spz found.
 function SpokenZones:PrintFound()
 	ScanEveryZone()

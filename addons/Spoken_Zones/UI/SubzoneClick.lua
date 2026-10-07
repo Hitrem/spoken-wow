@@ -49,6 +49,8 @@ local function HandleClick(x, y)
 	if not entry then
 		return
 	end
+	-- Clicked, so explored: found, whatever the map's samples say (Discovery.lua).
+	if key and SpokenZones.MarkFound then SpokenZones:MarkFound(mapID, key) end
 	-- A city inside the zone (Stormwind City on Elwynn Forest's map) is a map of its own: the click
 	-- opens it, as one on a zone opens the zone from its continent, and the panel tells its story.
 	if city then
