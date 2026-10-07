@@ -856,7 +856,7 @@ function Options:OpenPage(order)
             if page.order == order then category = page.category end
         end
         if not category then return false end
-        Layout.OpenCategory(category)
+        Layout.OpenCategory(category, L.OPT_OPEN_COMBAT)
         return true
     end
     return false
@@ -984,7 +984,7 @@ end
 
 function Options:Open()
     if self.category and Settings and Settings.OpenToCategory then
-        Layout.OpenCategory(self.category)
+        Layout.OpenCategory(self.category, L.OPT_OPEN_COMBAT)
     elseif panel then
         panel:SetShown(not panel:IsShown())
     else

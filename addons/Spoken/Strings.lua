@@ -111,6 +111,7 @@ L = {
     OPT_KEY_TAKEN_FMT = "%1$s is used for %2$s. Use it for %3$s instead?",
     OPT_KEY_REPLACE = "Use It",
     OPT_KEY_COMBAT = "Keys cannot be changed in combat.",
+    OPT_OPEN_COMBAT = "You can't open Spoken settings while in combat.",
     STOP_TOOLTIP = "Stops the line. Replay plays it from the beginning.",
     REPLAY = "Replay",
     REPLAY_TOOLTIP = "Plays the line again from the beginning.",
