@@ -3,9 +3,9 @@ setfenv(1, SpokenEnv)
 -- The one minimap button. Feature addons contribute menu entries rather than buttons of
 -- their own, so a player with two Spoken addons installed gets one icon, not two.
 --
--- Left-click opens a menu: the player's entries, then each source's, grouped in source
--- order. Right-click opens settings. Middle-click runs the configured command. All
--- three are rebindable, which is what keeps VoiceOverRedux's three-configurable-clicks
+-- Left-click opens settings. Right-click opens a menu: the player's entries, then each
+-- source's, grouped in source order. Middle-click stops or replays. All three are
+-- rebindable (Minimap.Commands in the profile), which is what keeps VoiceOverRedux's three-configurable-clicks
 -- behaviour for the players who use it.
 Minimap = { entries = {} }
 
@@ -345,16 +345,16 @@ end
 
 --- Whether the Spoken button also shows in Blizzard's addon compartment, on the
 --- modern clients that have one. The flag is the settings panel's; the lib's add and
---- remove keep the compartment's entry in step, and writing the flag first means the
---- choice sticks even where the frame does not exist to be updated.
+--- remove keep the compartment's entry in step. The flag is written last: removing the
+--- entry clears it to nil, which AceDB reads back as the default, on.
 function Minimap:ToggleCompartment(shouldShow)
-    local db = Addon.db.profile.Minimap.LibDBIcon
-    db.showInCompartment = shouldShow
     local LibDBIcon = LibStub("LibDBIcon-1.0", true)
-    if not LibDBIcon then return end
-    if shouldShow then
-        LibDBIcon:AddButtonToCompartment("Spoken")
-    else
-        LibDBIcon:RemoveButtonFromCompartment("Spoken")
+    if LibDBIcon then
+        if shouldShow then
+            LibDBIcon:AddButtonToCompartment("Spoken")
+        else
+            LibDBIcon:RemoveButtonFromCompartment("Spoken")
+        end
     end
+    Addon.db.profile.Minimap.LibDBIcon.showInCompartment = shouldShow
 end

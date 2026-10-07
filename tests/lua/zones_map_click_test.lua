@@ -18,9 +18,11 @@ WorldMapFrame = {
 MapUtil = { FindBestAreaNameAtMouse = function() end }
 
 local opened
+local settings = { showMapPanel = true, mapPanelCollapsed = false }
 local Z = {
     IsPartOn = function() return true end,
-    Get = function() return false end,
+    Get = function(_, key) return settings[key] end,
+    SetMapPanelCollapsed = function(_, collapsed) settings.mapPanelCollapsed = collapsed end,
     Print = function() end,
     IsZoneMap = function(_, mapID) return mapID ~= KALIMDOR end,
     AreaAt = function(_, mapID)
@@ -48,6 +50,22 @@ Expect("a click on Mulgore on Kalimdor's map opens the zone, not one of its area
 WorldMapFrame.mapID = MULGORE
 Expect("a click on Mulgore's map opens the area under the cursor", Click(), MULGORE .. ":Bloodhoof Village")
 
+-- Closed beside the map, the panel opens on the area clicked.
+settings.mapPanelCollapsed = true
+Click()
+Expect("a click on an area with a story opens the panel when it is closed", settings.mapPanelCollapsed, false)
+-- Turned off in the settings, it stays off.
+settings.showMapPanel, settings.mapPanelCollapsed = false, true
+Click()
+Expect("...but not when the panel is turned off in the settings", settings.mapPanelCollapsed, true)
+settings.showMapPanel = true
+-- An area with no story opens nothing, and leaves the panel as it is.
+local areaAt = Z.AreaAt
+Z.AreaAt = function(_, mapID) if mapID == MULGORE then return "Bloodhoof Village" end end
+settings.mapPanelCollapsed = true
+Click()
+Expect("...nor for an area with no story", settings.mapPanelCollapsed, true)
+Z.AreaAt = areaAt
 -- A city inside the zone: no area of the zone's by its name, so the click opens the city's own map.
 local THUNDER_BLUFF = 1456
 local shownMap
@@ -58,6 +76,10 @@ Z.AreaAt = function(_, mapID)
 end
 Expect("a click on a city inside the zone selects no area of the zone's", Click(), nil)
 Expect("...and opens the city's own map, whose story the panel tells", shownMap, THUNDER_BLUFF)
+-- Closed beside the map, the panel opens on the city too.
+settings.mapPanelCollapsed = true
+Click()
+Expect("...and opens the panel when it is closed, as an area does", settings.mapPanelCollapsed, false)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones map click tests passed")

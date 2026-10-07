@@ -373,10 +373,10 @@ local function Build(canvas)
     Only(layout:Checkbox(L.OPT_HIDE_PORTRAIT, L.OPT_HIDE_PORTRAIT_TIP,
         function() return cfg().HidePortrait end, function(v) cfg().HidePortrait = v end, refresh),
         InWindow)
+    -- The small window's metal and every round button's ring: offered whatever the style.
     if Version.IsCamelot then
-        Only(layout:Checkbox(L.OPT_BRONZE_TINT, L.OPT_BRONZE_TINT_TIP,
-            function() return cfg().BronzeTint end, function(v) cfg().BronzeTint = v end, refresh),
-            Small)
+        layout:Checkbox(L.OPT_BRONZE_TINT, L.OPT_BRONZE_TINT_TIP,
+            function() return cfg().BronzeTint end, function(v) cfg().BronzeTint = v end, refresh)
     end
     -- One row per action an addon declared optional, named by that addon. The player is
     -- not told what any of them do. The subtitle shows the corner icon too, so the row is
