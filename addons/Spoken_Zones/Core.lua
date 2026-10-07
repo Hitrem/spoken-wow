@@ -126,6 +126,8 @@ end
 function SpokenZones:SetMapPanelShown(shown)
 	SpokenZones:Set("showMapPanel", shown)
 	if shown then SpokenZones:Set("mapPanelCollapsed", false) end
+	-- The map's fade goes with the panel (UI/MapPanel.lua).
+	if SpokenZones.ApplyMapFade then SpokenZones:ApplyMapFade() end
 end
 
 --- Every setting back to its default. The language chosen and the record of places already

@@ -237,6 +237,17 @@ Expect("the button that reopens it fades with the map as the player walks", _G.S
 Expect("...the panel does not", panel:GetAlpha(), 1)
 WorldMapFrame:SetAlpha(1)
 Expect("...and the button is clear again when the player stops", _G.SpokenZonesPanelToggle:GetAlpha(), 1)
+-- With the panel beside the map, the map does not fade as the player walks: the game's setting is
+-- switched off, the player's kept, and given back when the panel is not beside the map.
+Expect("the map does not fade while the panel is beside it", GetCVar("mapFade"), "0")
+Expect("...the player's own setting kept", Z:Get("mapFadeBefore"), "1")
+Z:Set("showMapPanel", false)
+Z:RefreshPanel()
+Expect("...and given back once the panel is not beside the map", GetCVar("mapFade"), "1")
+Expect("...and no longer kept", Z:Get("mapFadeBefore"), nil)
+Z:Set("showMapPanel", true)
+Z:RefreshPanel()
+Expect("...and off again with the panel back", GetCVar("mapFade"), "0")
 local mapPage = panel.page
 Expect("...round the quest details' parchment", mapPage.parchment, "QuestDetailsBackgrounds")
 -- The frame is nine-sliced, as the game draws it: stretched whole, its corners grew with the panel.

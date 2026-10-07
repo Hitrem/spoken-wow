@@ -288,7 +288,31 @@ local function Refresh(mapID)
 		audio = { foundOn, nil }, report = { foundOn, nil }, lore = { foundOn, nil } })
 end
 
+-- The map does not fade as the player walks while the panel is beside it: the panel cannot fade
+-- evenly with it (FollowAlpha), so the two stay clear together. The game's own setting (the
+-- mapFade CVar) is switched off, the player's value kept, and given back once the panel is not
+-- beside the map -- Place Lore Beside Map off, or Places switched off.
+function SpokenZones:ApplyMapFade()
+	local get = (C_CVar and C_CVar.GetCVar) or GetCVar
+	local set = (C_CVar and C_CVar.SetCVar) or SetCVar
+	if not (get and set) or get("mapFade") == nil then return end
+	if SpokenZones:IsPartOn() and SpokenZones:Get("showMapPanel") then
+		local now = get("mapFade")
+		if now ~= "0" then
+			if SpokenZones:Get("mapFadeBefore") == nil then SpokenZones:Set("mapFadeBefore", now) end
+			set("mapFade", "0")
+		end
+	else
+		local before = SpokenZones:Get("mapFadeBefore")
+		if before ~= nil then
+			set("mapFade", before)
+			SpokenZones:Set("mapFadeBefore", nil)
+		end
+	end
+end
+
 function SpokenZones:RefreshPanel()
+	SpokenZones:ApplyMapFade()
 	Refresh(SpokenZones:GetDisplayedMapID())
 end
 
@@ -320,6 +344,7 @@ function SpokenZones:SetupMapPanel()
 	BuildPanel()
 	BuildToggle()
 	ApplyAnchors()
+	SpokenZones:ApplyMapFade()
 	if hooksecurefunc then hooksecurefunc(WorldMapFrame, "SetAlpha", FollowAlpha) end
 
 	-- Re-evaluate visibility whenever the map changes shape: maximising and minimising both
