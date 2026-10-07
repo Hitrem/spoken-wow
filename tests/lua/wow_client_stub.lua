@@ -66,7 +66,7 @@ function M.Advance(seconds, step)
                 else
                     timer.at = nil
                 end
-                timer.fn()
+                if timer.args then timer.fn(unpack(timer.args, 1, timer.args.n)) else timer.fn() end
             end
         end
     end
@@ -942,8 +942,8 @@ _G.LibStub = setmetatable({
 }, { __call = function(_, name) return libs[name] end })
 
 local function EmbedTimers(addon)
-    function addon:ScheduleTimer(fn, delay)
-        local timer = { at = world.time + delay, fn = fn }
+    function addon:ScheduleTimer(fn, delay, ...)
+        local timer = { at = world.time + delay, fn = fn, args = { n = select("#", ...), ... } }
         table.insert(timers, timer)
         return timer
     end

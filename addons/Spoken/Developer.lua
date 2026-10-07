@@ -122,8 +122,8 @@ function Developer:Context()
     local audio = profile and profile.Audio or {}
     table.insert(lines, format("narrator style %s, window %s", tostring(Addon:PlayerStyle()),
         PlayerFrame.frame and (PlayerFrame.frame:IsShown() and "shown" or "hidden") or "not built"))
-    table.insert(lines, format("sound channel %s, line gap %s s, master %s/%s, dialog %s/%s",
-        tostring(audio.SoundChannel), tostring(audio.LineGap),
+    table.insert(lines, format("line gap %s s, master %s/%s, dialog %s/%s",
+        tostring(audio.LineGap),
         tostring(GetCVar("Sound_EnableAllSound")), tostring(GetCVar("Sound_MasterVolume")),
         tostring(GetCVar("Sound_EnableDialog")), tostring(GetCVar("Sound_DialogVolume"))))
     for key, source in Sources:Iterate() do

@@ -20,8 +20,6 @@ local pendingLinks = {}
 -- Spoken addon carries a copy of, so the three panels read alike.
 local Layout = SpokenLayout
 
-local CHANNELS = { "Master", "SFX", "Music", "Ambience", "Dialog" }
-
 -- The ways of showing a line, by the name Addon:PlayerStyle gives each.
 local STYLE_LABELS = {
     minimal = L.OPT_STYLE_MINIMAL,
