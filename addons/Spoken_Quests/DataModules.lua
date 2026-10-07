@@ -36,6 +36,15 @@ end
 -- anyway (enabling it for the load and disabling it again), so a player could not mute one part
 -- of the voices, and Spoken's settings counted packs the list showed as off.
 local FORCE_ENABLE_DISABLED_MODULES = false
+
+--- Whether the player switched the addon off in the AddOns list, for this character. Read off
+--- GetAddOnInfo, which answers for the character playing. GetAddOnEnableState does not: given a
+--- name rather than a GUID, C_AddOns answers for all characters, so a pack switched off here but
+--- on for another character still read as on.
+local function SwitchedOff(addon)
+    local _, _, _, loadable, reason = GetAddOnInfo(addon)
+    return not loadable and reason == "DISABLED"
+end
 local LOAD_ALL_MODULES = true
 
 ---@class DataModuleMetadata
@@ -256,10 +265,9 @@ function DataModules:EnumerateAddons(loadModules)
     assert(GetNumAddOns and GetAddOnMetadata and GetAddOnInfo,
         "No compatible AddOn-management API was found (expected C_AddOns on current clients)")
 
-    local playerName = UnitName("player")
     for i = 1, GetNumAddOns() do
         local moduleVersion = ModuleNumber(i, "Version")
-        if moduleVersion and (FORCE_ENABLE_DISABLED_MODULES or GetAddOnEnableState(playerName, i) ~= 0) then
+        if moduleVersion and (FORCE_ENABLE_DISABLED_MODULES or not SwitchedOff(i)) then
             local name = GetAddOnInfo(i)
             local mapsString = ModuleMeta(i, "Maps")
             local maps = {}
@@ -370,7 +378,7 @@ local function EnableOutOfDate(addon)
         changed_lastAddonVersion = true
     end
 
-    addonWasDisabled[addon] = GetAddOnEnableState(UnitName("player"), addon) == 0
+    addonWasDisabled[addon] = SwitchedOff(addon)
     if FORCE_ENABLE_DISABLED_MODULES and addonWasDisabled[addon] then
         EnableAddOn(addon)
     end

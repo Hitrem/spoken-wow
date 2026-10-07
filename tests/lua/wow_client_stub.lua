@@ -877,11 +877,12 @@ function _G.GetAddOnMetadata(addon, key)
     return entry and entry.meta and entry.meta[key] or ""
 end
 function _G.IsAddOnLoadOnDemand() return false end
--- The pre-11.0 order, character first, as the quests addon calls it. An entry the player has
--- switched off (reason "DISABLED") is 0, anything else enabled for everyone.
+-- The pre-11.0 order, character first. As the client answers a character given by name rather
+-- than GUID: for all characters, so an entry switched off for this one (reason "DISABLED") is
+-- still on for some (1). Only GetAddOnInfo says it is off here.
 function _G.GetAddOnEnableState(character, addon)
     local entry = AddOnAt(addon or character)
-    return (entry and entry.reason == "DISABLED") and 0 or 2
+    return (entry and entry.reason == "DISABLED") and 1 or 2
 end
 function _G.DisableAddOn(addon) table.insert(M.disabledAddOns, addon) end
 function _G.LoadAddOn() return true end
