@@ -144,12 +144,18 @@ function SpokenBooks:SetupOptions()
 	-- and where it is not, a button with the address to get it.
 	layout:Section(L.OPT_SECTION_PACKS)
 	local GetMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
-	local function Wanted(code)
-		for _, wanted in ipairs(SpokenBooks:LanguageOrder()) do
-			if wanted == code then return true end
+	-- The packs to get are the voice language's; any pack installed is listed too. Not the
+	-- fallback's to get: it buried the one that mattered.
+	local function Installed(addon)
+		for _, pack in ipairs(SpokenBooks:GetAudioPacks()) do
+			if pack.addon == addon then return true end
 		end
+		return false
 	end
-	-- The packs for what the player will hear, each language's shown while that language is wanted.
+	local function Wanted(code, addon)
+		return code == SpokenBooks:GetVoiceLanguage() or Installed(addon)
+	end
+	-- Each language's row shown while it is wanted.
 	local listed = {}
 	local function PackRow(addon, name, url)
 		listed[addon] = true
@@ -167,10 +173,10 @@ function SpokenBooks:SetupOptions()
 		local folder, url = Spoken and Spoken.VoicePack and Spoken:VoicePack("books", locale.code)
 		if folder then
 			local code = locale.code
-			layout:ShowWhen(PackRow(folder, SpokenBooks:GetLanguageName(code), url), function() return Wanted(code) end)
+			layout:ShowWhen(PackRow(folder, SpokenBooks:GetLanguageName(code), url), function() return Wanted(code, folder) end)
 		end
 	end
-	layout:ShowWhen(PackRow(AUDIO_ADDON, L.OPT_PACK_OFFICIAL), function() return Wanted("enUS") end)
+	layout:ShowWhen(PackRow(AUDIO_ADDON, L.OPT_PACK_OFFICIAL), function() return Wanted("enUS", AUDIO_ADDON) end)
 	-- A pack the list does not know, after the ones it does.
 	for _, pack in ipairs(SpokenBooks:GetAudioPacks()) do
 		if not listed[pack.addon] then PackRow(pack.addon, pack.title or pack.addon) end
