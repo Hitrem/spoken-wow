@@ -120,8 +120,8 @@ end
 local function BuildToggle()
 	-- A side tab down the map's right edge, as the game's new panels have them (the character
 	-- frame's, LargeSideTabButtonTemplate): its own tooltip, press and sound. The action slot's ring
-	-- where the client has not got it. On UIParent, as the panel is: FollowMap puts both in front of
-	-- the map and at its scale each time it shows.
+	-- where the client has not got it. Placed with the panel (Place): in the map, or beside it under
+	-- the gamepad UI.
 	local ok, tab = pcall(CreateFrame, "Frame", "SpokenZonesPanelToggle", UIParent, "LargeSideTabButtonTemplate")
 	if ok and tab and type(tab.Icon) == "table" and tab.Icon.SetTexture and tab.SetCustomOnMouseUpHandler then
 		toggle = tab
