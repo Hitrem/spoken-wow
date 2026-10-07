@@ -113,6 +113,18 @@ function SettingsPanel:Setup()
         function() return audio().OGThrall end,
         function(value) audio().OGThrall = value end)
 
+    -- Only with DialogueUI installed: on Spoken's DialogueUI page, or here with a Spoken too old
+    -- to have that page.
+    if DialogueUIBridge and DialogueUIBridge.Problem and IsAddOnLoaded and IsAddOnLoaded("DialogueUI") then
+        if Spoken and Spoken.AddDialogueUISettings then
+            Spoken:AddDialogueUISettings(function(page)
+                return SettingsPanel:DialogueUIRows(page, L.OPT_PAGE_TITLE)
+            end)
+        else
+            self:DialogueUIRows(layout, L.OPT_SECTION_DIALOGUEUI, L.OPT_DUI_NOTE)
+        end
+    end
+
     -- The voice language is set once for every module, on Spoken's page. Here only where the
     -- player is too old to have that setting.
     if not (Spoken and Spoken.GetLanguageChoice) then
@@ -246,6 +258,38 @@ function SettingsPanel:Setup()
         Settings.RegisterAddOnCategory(category)
     end
     self.panel, self.category = panel, category
+end
+
+--- Adds the DialogueUI rows to `layout` under `title`. Returns what resets them, for the
+--- Defaults button of Spoken's DialogueUI page.
+function SettingsPanel:DialogueUIRows(layout, title, note)
+    layout:Section(title)
+    if note then layout:Note(note, nil, 32) end
+    local dui = function() return Addon.db.profile.DialogueUI end
+    local function Box(key, label, tip)
+        local row = layout:Checkbox(label, tip,
+            function() return dui()[key] end,
+            function(value) dui()[key] = value end,
+            function() DialogueUIBridge:Refresh(); layout:Refresh() end)
+        -- Problem answers the first of these that holds, so exactly one condition fails
+        -- and the row names it. DialogueUI missing is not among them: then there are no rows.
+        for _, reason in ipairs({ L.OPT_DUI_NO_PLAYER, L.OPT_DUI_UNKNOWN, L.OPT_DUI_OLD_PLAYER }) do
+            layout:Requires(row, function() return DialogueUIBridge:Problem(key) ~= reason end, reason)
+        end
+        return row
+    end
+    Box("Captions", L.OPT_DUI_CAPTIONS, L.OPT_DUI_CAPTIONS_TIP)
+    -- Scrolling follows the marked words, so it waits on them.
+    layout:Indent()
+    layout:Requires(Box("AutoScroll", L.OPT_DUI_AUTOSCROLL, L.OPT_DUI_AUTOSCROLL_TIP),
+        function() return dui().Captions end, L.REASON_DUI_CAPTIONS)
+    layout:Outdent()
+    Box("ShowPlayer", L.OPT_DUI_SHOW_PLAYER, L.OPT_DUI_SHOW_PLAYER_TIP)
+    Box("PlayButton", L.OPT_DUI_PLAY_BUTTON, L.OPT_DUI_PLAY_BUTTON_TIP)
+    return function()
+        for key, value in pairs(Addon.DialogueUIDefaults) do dui()[key] = value end
+        DialogueUIBridge:Refresh()
+    end
 end
 
 function SettingsPanel:Open()

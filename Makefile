@@ -70,6 +70,7 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/contribute_box_test.lua
 	@$(LUA) tests/lua/quests_contribute_test.lua
 	@$(LUA) tests/lua/player_frame_test.lua
+	@$(LUA) tests/lua/player_dialogueui_style_test.lua
 	@$(LUA) tests/captions/verify.lua
 	@$(LUA) tests/lua/zones_source_test.lua
 	@$(LUA) tests/lua/zones_flight_test.lua
@@ -86,9 +87,11 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/subtitle_pages_test.lua
 	@$(LUA) tests/lua/defaults_test.lua
 	@$(LUA) tests/lua/scroll_mode_upgrade_test.lua
+	@$(LUA) tests/lua/style_upgrade_test.lua
 	@$(LUA) tests/lua/names_test.lua
 	@$(LUA) tests/lua/packs_test.lua
 	@$(LUA) tests/lua/quests_options_test.lua
+	@$(LUA) tests/lua/quests_dialogueui_test.lua
 	@$(LUA) tests/lua/books_source_test.lua
 	@$(LUA) tests/lua/books_options_test.lua
 	@$(LUA) tests/lua/books_reader_test.lua

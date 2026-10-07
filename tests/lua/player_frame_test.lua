@@ -86,10 +86,10 @@ Expect("the first row is the clip's label", F.frame.container.buttons[1].textWid
 env.SoundQueue:RemoveAllSoundsFromQueue()
 Expect("hidden again when the queue empties", F.frame:IsShown(), false)
 
-env.Addon.db.profile.Frame.HideFrame = true
+env.Addon:SetPlayerStyle("none")
 quests:Enqueue(H.Clip())
-Expect("HideFrame keeps it hidden with a queue", F.frame:IsShown(), false)
-env.Addon.db.profile.Frame.HideFrame = false
+Expect("Voice Only keeps it hidden with a queue", F.frame:IsShown(), false)
+env.Addon:SetPlayerStyle("classic")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
 ---------------------------------------------------------------- rows and held reason
