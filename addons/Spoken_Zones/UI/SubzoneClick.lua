@@ -26,7 +26,8 @@ local function HandleClick(x, y)
 		return
 	end
 
-	local areaName = SpokenZones:GetAreaNameAt(mapID, x, y)
+	-- The highlight lights what this finds (SpokenZones:AreaAt), so a lit area is one a click opens.
+	local areaName, entry, key = SpokenZones:AreaAt(mapID, x, y)
 	local debug = SpokenZones:Get("debug")
 
 	if not areaName then
@@ -35,8 +36,6 @@ local function HandleClick(x, y)
 		end
 		return
 	end
-
-	local entry, key = SpokenZones:GetSubzoneLore(mapID, areaName)
 
 	if debug then
 		SpokenZones:Print(

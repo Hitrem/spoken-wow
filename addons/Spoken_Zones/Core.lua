@@ -367,38 +367,19 @@ function SpokenZones:GetAreaNameAt(mapID, x, y)
 	return nil
 end
 
--- What the cursor is over, at a normalised canvas position on the map `mapID`.
--- Shared by the click handler and the map highlight so both agree.
---
--- Returns kind ("zone"|"subzone"), display name, lore entry, and the resolved
--- uiMapID for the "zone" case. Returns nil when nothing is resolvable.
-function SpokenZones:ResolveAt(mapID, x, y)
+--- The area at a normalised canvas position on the zone map `mapID`: the name the game gives it,
+--- and the zone's story for that name and its key (nil where it has none). The click
+--- (UI/SubzoneClick.lua) and the map highlight (UI/MapHighlight.lua) both ask this, so what lights
+--- up under the pointer is what a click there opens.
+function SpokenZones:AreaAt(mapID, x, y)
 	if not mapID or not x or not y then
 		return nil
 	end
-
-	-- A child *map* under the cursor: a zone on a continent map, or a dungeon
-	-- entrance on a zone map. Prefer this when we actually have lore for it.
-	local childInfo = C_Map.GetMapInfoAtPosition(mapID, x, y)
-	if childInfo and childInfo.mapID and childInfo.mapID ~= mapID then
-		local entry = self:GetLore(childInfo.mapID)
-		if entry then
-			return "zone", childInfo.name or entry.name, entry, childInfo.mapID
-		end
-	end
-
-	-- Otherwise fall back to the area (subzone) name, which has no uiMapID.
 	local areaName = self:GetAreaNameAt(mapID, x, y)
-	if areaName then
-		local entry = self:GetSubzoneLore(mapID, areaName)
-		if entry then
-			return "subzone", areaName, entry, nil
-		end
-		-- Name but no lore: still useful to the caller for debug reporting.
-		return "subzone", areaName, nil, nil
+	if not areaName then
+		return nil
 	end
-
-	return nil
+	return areaName, self:GetSubzoneLore(mapID, areaName)
 end
 
 function SpokenZones:SelectSubzone(mapID, areaName, entry)
