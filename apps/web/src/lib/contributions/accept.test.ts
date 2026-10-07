@@ -627,7 +627,6 @@ describe("resolveContribution: a translation", () => {
         originalText: "Bring me six wolf pelts, druid.",
         english: { questTitle: "A Test Quest" },
       });
-      expect((await rowsIn(LOCALE)).map((row) => row.originalText)).toEqual(["Bring me six wolf pelts, druid."]);
       expect(listed[0].missing?.text).toBeFalsy();
     });
 

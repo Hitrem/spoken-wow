@@ -501,20 +501,6 @@ async function writeLine(
 }
 
 /**
- * A moment English did not have may already be other languages' own lines (acceptNativeLine),
- * each holding its own text as `originalText`. They are now translations of this line, and a
- * translation's `originalText` is the English template it translates: the translated explorer
- * shows it as the English, and every edit carries it forward. Every version, since none of
- * them was made from any English.
- */
-async function adoptNativeLines(client: PoolClient, lineId: string, template: string): Promise<void> {
-  await client.query(
-    `update "quest_line" set "originalText" = $3 where "lang" <> $1 and "lineId" = $2`,
-    [BASE_LANG, lineId, template],
-  );
-}
-
-/**
  * A contribution sent from a pack in another language: that language's version of a quest line,
  * or, when English does not have the moment, a line of that language's own.
  *
@@ -874,7 +860,6 @@ export async function resolveContribution(
         await lockLine(client, prepared.identity.lineId);
         if (!(await momentTaken(client, BASE_LANG, prepared.identity.lineId))) {
           await writeLine(client, id, userId, prepared.identity, prepared.text, prepared.speaker, BASE_LANG);
-          await adoptNativeLines(client, prepared.identity.lineId, prepared.text);
         } else if (prepared.identity.source === "gossip") {
           await addSpeakerOnce(client, id, prepared.identity.lineId, 0, prepared.speaker);
         }

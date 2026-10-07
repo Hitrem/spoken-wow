@@ -904,9 +904,8 @@ Nothing has to be sent in English first. Its id and file are the quest's and the
 same in every language, so it is voiced into the file English would use. The language's
 explorer lists it, and the English one does not. When English sends the moment later, English's line
 and speakers become the skeleton, and the language's row becomes its translation, with the
-same id, file and takes. Its `originalText` is then rewritten to the English template, in
-every version, as every translation holds it. That happens on an English contribution's
-accept only; an import that brings the moment carries no such step. Who speaks it is answered by a moderator with `regenerate` in the
+same id, file and takes. The translated explorer shows the English template from the
+English row itself, so the native row's own `originalText` never stands in for it. Who speaks it is answered by a moderator with `regenerate` in the
 contribution's language. The answer is about the NPC (`npc_resolution`), so it holds for
 every language. A gossip row in another language is still refused: its id is a hash of
 English text the client never shows.

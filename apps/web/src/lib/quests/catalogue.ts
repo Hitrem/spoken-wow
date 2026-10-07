@@ -179,7 +179,7 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
             s."npcId", coalesce(nn."name", s."npcName") as "npcName", s."npcType",
             s."race", s."gender", s."flavor", s."voice",
             l."playerGender", coalesce(t."text", l."text") as "text",
-            coalesce(t."originalText", l."originalText") as "originalText", l."fileName",
+            l."originalText", l."fileName",
             coalesce(t."generatable", false) as "generatable",
             case when t."id" is null then 'untranslated' else t."skipReason" end as "skipReason",
             s."contributionId",
