@@ -438,6 +438,36 @@ local function Build(canvas)
         end, L.SUBTITLE_SAMPLE_TIP), Subtitles)
     end
 
+    -- Azeroth's Compendium, after the narrator style's settings: the window Places and Writings each
+    -- add a tab to, opened here and from the minimap menu, with each tab's Unlock switch. The tabs
+    -- register once the world is up, after this page is built, so the rows ask for them each time
+    -- they are drawn; with neither part installed the section has nothing showing and hides.
+    local function Compendium() return _G.SpokenCompendium end
+    local function Tab(key)
+        local compendium = Compendium()
+        return compendium and compendium.Tab and compendium:Tab(key)
+    end
+    layout:Section(L.OPT_COMPENDIUM_TITLE)
+    local open = layout:Button(L.OPT_COMPENDIUM_OPEN, 200, function()
+        local compendium = Compendium()
+        if compendium and compendium.Toggle then compendium:Toggle() end
+    end, L.OPT_COMPENDIUM_OPEN_TIP)
+    Only(open, function() local compendium = Compendium(); return compendium ~= nil and compendium.Toggle ~= nil end)
+    Requires(open, function()
+        local compendium = Compendium()
+        return compendium ~= nil and compendium.Available ~= nil and compendium:Available()
+    end, L.REASON_COMPENDIUM_OFF)
+    for _, unlock in ipairs({
+        { tab = "places", part = "zones", label = L.OPT_UNLOCK_PLACES, tip = L.OPT_UNLOCK_PLACES_TIP, module = L.OPT_PART_ZONES },
+        { tab = "readables", part = "books", label = L.OPT_UNLOCK_WRITINGS, tip = L.OPT_UNLOCK_WRITINGS_TIP, module = L.OPT_PART_BOOKS },
+    }) do
+        local row = layout:Checkbox(unlock.label, unlock.tip,
+            function() local tab = Tab(unlock.tab); return tab ~= nil and tab.unlock ~= nil and tab.unlock.get() end,
+            function(v) local tab = Tab(unlock.tab); if tab and tab.unlock then tab.unlock.set(v) end end)
+        Only(row, function() local tab = Tab(unlock.tab); return tab ~= nil and tab.unlock ~= nil end)
+        Requires(row, function() return Spoken:IsPartOn(unlock.part) end, format(L.REASON_MODULE_OFF_FMT, unlock.module))
+    end
+
     -- Everything about how a line is played, whichever addon queued it: the two feature
     -- addons each used to carry their own channel control, and a player with both
     -- installed had two settings for one thing.

@@ -88,16 +88,20 @@ function Z:RefreshFound() end
 Z.ToggleLoreWindow = nil
 _G.hooksecurefunc = _G.hooksecurefunc or function() end
 
-for _, file in ipairs({ "UI/Layout", "UI/TextView", "UI/AudioButton", "UI/ReportButton", "UI/LorePage", "UI/LoreWindow", "UI/MapPanel" }) do
+for _, file in ipairs({ "UI/Layout", "UI/TextView", "UI/AudioButton", "UI/ReportButton", "UI/LorePage", "UI/Compendium", "UI/LoreWindow", "UI/MapPanel" }) do
     assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 
 ---------------------------------------------------------------- the lore window
 Z:SetupLoreWindow()
+-- The places are a tab of Azeroth's Compendium (UI/Compendium.lua); Z.window is the tab.
+local compendium = _G.SpokenCompendium.window
 local window = Z.window
-Expect("the lore window is the game's portrait frame", window.template, "PortraitFrameTemplate")
-Expect("...titled, with the map in its portrait", window.title .. "|" .. tostring(window.portrait), "Lore of Azeroth|Interface\\Icons\\INV_Misc_Map_01")
-Expect("...closed by Escape", _G.UISpecialFrames[#_G.UISpecialFrames], "SpokenZonesWindow")
+Expect("the places are a tab of Azeroth's Compendium, the game's portrait frame", compendium.template, "PortraitFrameTemplate")
+Expect("...titled, with the Compendium's tome in its portrait", compendium.title .. "|" .. tostring(compendium.portrait),
+    Z.L.LORE_WINDOW_TITLE .. "|Interface\\Icons\\INV_Misc_Book_11")
+Expect("...closed by Escape", _G.UISpecialFrames[#_G.UISpecialFrames], "SpokenCompendiumWindow")
+Expect("...with no tabs while the places are its only one", _G.SpokenCompendiumWindowTab1:IsShown(), false)
 local page = window.page
 Expect("its story is on the spellbook's parchment", page.parchment, "spellbook-Page-Right-C60")
 Expect("...in an inset of its own, as the list is, so their borders part them", window.pageInset.template, "InsetFrameTemplate")
@@ -160,8 +164,9 @@ Shown()
 RowFor("Orgrimmar").scripts.OnClick(RowFor("Orgrimmar"))
 Expect("a city is listed inside the zone around it", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 Expect("...one level in, as an area is", RowFor("Orgrimmar").row.depth, RowFor("Valley of Trials").row.depth)
-Expect("...counted with the zone's areas", RowFor("Durotar").count.text, 3)
-Expect("...and not beside it on the continent", RowFor("Kalimdor").count.text, 1)
+Expect("...and with nothing inside to open, still a zone, its plus greyed as its name is",
+    not RowFor("Orgrimmar").row.leaf and RowFor("Orgrimmar").toggle.texture, [[Interface\Buttons\UI-PlusButton-Disabled]])Expect("...counted with the zone's areas", RowFor("Durotar").count.text:match("/(%d+)"), "3")
+Expect("...and not beside it on the continent", RowFor("Kalimdor").count.text:match("/(%d+)"), "1")
 Expect("...its page says the zone it is in", page.title.text .. ": " .. page.sub.text.text, "Orgrimmar: in Durotar")
 page.sub.scripts.OnClick(page.sub)
 Expect("...which leads back to the zone", page.title.text, "Durotar")
@@ -186,18 +191,19 @@ Expect("...not counting a map this client has not got", RowFor("Somewhere Else")
 Expect("an area only Forever has is not listed on another client", RowFor("Camp Forever"), nil)
 
 RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
-Expect("a place with no story says so, faded", page.body.text.text, Z.L.LORE_NOT_WRITTEN:format("Sen'jin Village"))
+Expect("a place with no story says so", page.body.text.text, Z.L.LORE_NOT_WRITTEN:format("Sen'jin Village"))
 Expect("...offers to Contribute one", page.contribute.mapID, 1411)
 Expect("...and has nothing to play or report", page.play.mapID == nil and page.report.mapID == nil, true)
 
--- Its faded ink kept through a re-wrap, which sets the text again.
+-- In the ink like every other page, not a lighter one that was hard to read, and still in it
+-- after a re-wrap, which sets the text again.
 local Art = Z.Art
 local painted
 local setTextColor = page.body.text.SetTextColor
 page.body.text.SetTextColor = function(self, r, g, b) painted = { r, g, b }; return setTextColor(self, r, g, b) end
 page.body.frame:SetWidth(page.body.frame:GetWidth() + 40)
 page.body.frame.scripts.OnSizeChanged(page.body.frame)
-Expect("...still faded once the page re-wraps it", painted and painted[1], Art.FADED[1])
+Expect("...in the full ink once the page re-wraps it", painted and painted[1], Art.INK[1])
 page.body.text.SetTextColor = setTextColor
 
 -- A list scrolled further than it now reaches comes back to its end.
@@ -342,21 +348,21 @@ local function Locked()
 end
 showAll, found = false, { ["1411"] = true, ["1411/valley of trials"] = true }
 Z:ShowLoreFor(1411, nil)
-Expect("every place is listed, discovered or not", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
-Expect("...those not yet discovered locked: a continent with none found, an area not found", Locked(), "Eastern Kingdoms|Sen'jin Village")
+Expect("every place is listed, discovered or not", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
+Expect("...those not yet discovered locked: a continent with none found, a city, an area", Locked(), "Eastern Kingdoms|Orgrimmar|Sen'jin Village")
 found["1415"] = true
 Z:RefreshLoreWindow(); Shown()
-Expect("...a continent found only through its zones, not by being on its map", Locked(), "Eastern Kingdoms|Sen'jin Village")
+Expect("...a continent found only through its zones, not by being on its map", Locked(), "Eastern Kingdoms|Orgrimmar|Sen'jin Village")
 found["1415"] = nil
 Expect("...a padlock in place of the count", RowFor("Eastern Kingdoms").lock.shown ~= false and RowFor("Eastern Kingdoms").count.shown == false, true)
 Expect("...and on a locked area", RowFor("Sen'jin Village").lock.shown ~= false, true)
 Expect("...none on a place found", RowFor("Valley of Trials").lock.shown, false)
 RowFor("Sen'jin Village").scripts.OnEnter(RowFor("Sen'jin Village"))
 Expect("...not lit under the pointer", RowFor("Sen'jin Village").over, false)
-Expect("...a zone's count its areas found out of all, and the share of them", RowFor("Durotar").count.text, "1/2 • 50%")
+Expect("...a zone's count its areas found out of all, and the share of them", RowFor("Durotar").count.text, "1/3 • 33%")
 Expect("...a continent's its zones found", RowFor("Kalimdor").count.text, "1/1 • 100%")
 RowFor("Eastern Kingdoms").scripts.OnClick(RowFor("Eastern Kingdoms"))
-Expect("a locked continent does not open", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
+Expect("a locked continent does not open", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 RowFor("Sen'jin Village").scripts.OnClick(RowFor("Sen'jin Village"))
 Expect("a locked area cannot be chosen", RowFor("Sen'jin Village").row and RowFor("Durotar").selected, true)
 -- Opened from the map's panel, a place not discovered says so instead of telling its story.
@@ -374,21 +380,36 @@ Shown()
 showAll = true
 Z:RefreshLoreWindow()
 Expect("Unlock Undiscovered Places opens them all", Locked(), "")
-Expect("...the continent opened before shows its zones again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
-Expect("...the counts still what this character has found", RowFor("Durotar").count.text, "1/2 • 50%")
+Expect("...the continent opened before shows its zones again", Shown(), "Azeroth|Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
+Expect("...the counts still what this character has found", RowFor("Durotar").count.text, "1/3 • 33%")
 showAll = false
 
--- Discovered Only, under the list, leaves the places not found out of it.
-local only = window.discoveredOnly
-Expect("Discovered Only starts off", only:GetChecked() and true or false, false)
-only:SetChecked(true)
-only:GetScript("OnClick")(only)
+-- Discovered Only, in the filter menu beside the search box, leaves the places not found out of it.
+local function Only() return stub.OpenDropdown(window.filterMenu)[1] end
+Expect("the filter menu holds Discovered Only, a checkbox", Only().text == Z.L.LORE_DISCOVERED_ONLY and Only().isNotRadio, true)
+Expect("...which starts off", Only().checked and true or false, false)
+Expect("...and nothing is left under the list", window.discoveredOnly, nil)
+Only().func()
 Expect("...on, it leaves out what is not found: a continent, an area", Shown(), "Azeroth|Kalimdor|Durotar|Valley of Trials")
 Expect("...and is remembered", Z:Get("loreDiscoveredOnly"), true)
-only:SetChecked(false)
-only:GetScript("OnClick")(only)
-Expect("...off, they are listed again", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Sen'jin Village|Valley of Trials")
-Expect("...greyed out", Locked(), "Eastern Kingdoms|Sen'jin Village")
+Expect("...and ticked in the menu", Only().checked, true)
+Only().func()
+Expect("...off, they are listed again", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
+Expect("...greyed out", Locked(), "Eastern Kingdoms|Orgrimmar|Sen'jin Village")
+Expect("...a locked branch with its plus greyed as its name is, as every branch with nothing to open",
+    RowFor("Eastern Kingdoms").toggle.texture, [[Interface\Buttons\UI-PlusButton-Disabled]])
 
+-- Voiced Only, after it in the same menu: what no installed voice pack reads is left out, and a
+-- zone stays while an area in it has a recording.
+local hasAudio = Z.HasAudio
+Z.HasAudio = function(_, mapID, key) return mapID == 1411 and key == "valley of trials" end
+local function Voiced() return stub.OpenDropdown(window.filterMenu)[2] end
+Expect("the filter menu holds Voiced Only after Discovered Only", Voiced().text == Z.L.LORE_VOICED_ONLY and Voiced().isNotRadio, true)
+Voiced().func()
+Expect("...on, only what has a recording is listed, with the zone that holds it", Shown(), "Azeroth|Kalimdor|Durotar|Valley of Trials")
+Expect("...and is remembered", Z:Get("loreVoicedOnly"), true)
+Voiced().func()
+Expect("...off, everything again", Shown(), "Azeroth|Eastern Kingdoms|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
+Z.HasAudio = hasAudio
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones lore window tests passed")

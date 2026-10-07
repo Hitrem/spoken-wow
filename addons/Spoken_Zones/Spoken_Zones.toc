@@ -95,6 +95,7 @@ UI/LorePage.lua
 UI/MapPanel.lua
 UI/SubzoneClick.lua
 UI/MapHighlight.lua
+UI/Compendium.lua
 UI/LoreWindow.lua
 UI/MinimapButton.lua
 UI/Options.lua

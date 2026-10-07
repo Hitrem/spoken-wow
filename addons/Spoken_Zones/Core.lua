@@ -36,10 +36,11 @@ local defaults = {
 	loreWindowHeight = 600,
 	fontSize = 12,
 	showPictures = true,
-	-- Off, so Lore of Azeroth opens only the places this character has found (Discovery.lua).
+	-- Off, so Azeroth's Compendium opens only the places this character has found (Discovery.lua).
 	showUndiscovered = false,
-	-- Lore of Azeroth's Discovered Only, under its list: off, so every place is listed.
+	-- Azeroth's Compendium's Discovered Only, under its list: off, so every place is listed.
 	loreDiscoveredOnly = false,
+	loreVoicedOnly = false,
 	showMinimapButton = true,
 	voiceEnabled = true,
 	-- Dialog so narration rides the player's dialog volume slider rather than
@@ -135,8 +136,10 @@ end
 --- narrated are not settings in that sense, and stay.
 function SpokenZones:ResetOptions()
 	if SpokenZonesSettings == nil then return end
+	-- Unlock Undiscovered Places is on Spoken's page where Spoken is installed, and not this one's.
+	local elsewhere = Spoken and Spoken.ShowsCompendium and { showUndiscovered = true } or {}
 	for key, value in pairs(defaults) do
-		SpokenZonesSettings[key] = value
+		if not elsewhere[key] then SpokenZonesSettings[key] = value end
 	end
 	-- Applied as the checkboxes apply them, not only written: a hidden minimap button comes
 	-- back, and the play buttons follow the voice being on again.
@@ -982,7 +985,7 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 		SpokenZones:Print('simulating discovery of "%s"', tostring(areaName))
 		SpokenZones:OnAreaDiscovered(areaName)
 	elseif cmd == "found" then
-		-- What Lore of Azeroth counts as found for this character, and why: for finding a place
+		-- What Azeroth's Compendium counts as found for this character, and why: for finding a place
 		-- counted found that should not be.
 		if SpokenZones.PrintFound then SpokenZones:PrintFound() end
 	elseif cmd == "debug" then

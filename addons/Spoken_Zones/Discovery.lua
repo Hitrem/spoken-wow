@@ -1,6 +1,6 @@
--- SpokenZones -- which places this character has found, for Lore of Azeroth's list.
+-- SpokenZones -- which places this character has found, for Azeroth's Compendium's list.
 --
--- Lore of Azeroth opens only the places found and lists the rest greyed out, each count out of
+-- Azeroth's Compendium opens only the places found and lists the rest greyed out, each count out of
 -- all, unless the player turns on Unlock Undiscovered Places. A place counts as found when either:
 --
 --   * the client has it explored. Every explored area is drawn on its zone's map as an
@@ -13,9 +13,9 @@
 --
 -- A zone is found when it, or any of its areas, is; a city also when its name is explored on
 -- the zone around it (Orgrimmar on Durotar's map). A continent is found only through its zones
--- (Lore of Azeroth counts them): being on its map, at sea or on a zeppelin, finds nothing. The map scan is done once per zone a session,
+-- (Azeroth's Compendium counts them): being on its map, at sea or on a zeppelin, finds nothing. The map scan is done once per zone a session,
 -- and the zone the character is in is scanned again whenever the list is drawn, so a discovery
--- shows the next time Lore of Azeroth is opened.
+-- shows the next time Azeroth's Compendium is opened.
 
 local ADDON_NAME, SpokenZones = ...
 
@@ -100,7 +100,7 @@ local function ScanEveryZone()
 end
 
 --- Forget what the maps said, so they are read again when next asked: exploring anywhere since
---- (a GM's .cheat explore too) shows. Called when the world map or Lore of Azeroth opens and when
+--- (a GM's .cheat explore too) shows. Called when the world map or Azeroth's Compendium opens and when
 --- the game reports something explored.
 function SpokenZones:RefreshFound()
 	explored, exploredNames, everyZone = {}, {}, false
@@ -153,7 +153,7 @@ function SpokenZones:PrintFound()
 	self:Print("%d found", lines)
 end
 
---- Whether Lore of Azeroth lists every place or only those found.
+--- Whether Azeroth's Compendium lists every place or only those found.
 function SpokenZones:ShowsUndiscovered()
 	return self:Get("showUndiscovered") == true
 end

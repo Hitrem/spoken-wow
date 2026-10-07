@@ -270,8 +270,11 @@ function SpokenZones:SetupAudio()
 		end)
 	end
 
-	Spoken.Minimap:AddEntry("zones", { id = "lore", text = L.MENU_LORE_WINDOW, order = 1,
-		onClick = function() SpokenZones:ToggleLoreWindow() end })
+	-- The Compendium is in Spoken's own part of the menu where Spoken has one.
+	if not Spoken.ShowsCompendium then
+		Spoken.Minimap:AddEntry("zones", { id = "lore", text = L.MENU_LORE_WINDOW, order = 1,
+			onClick = function() SpokenZones:ToggleLoreWindow() end })
+	end
 	Spoken.Minimap:AddEntry("zones", { id = "settings", text = L.MENU_ZONE_SETTINGS, order = 2,
 		onClick = function() SpokenZones:OpenOptions() end })
 	if Spoken.AddSettingsLink then

@@ -275,3 +275,18 @@ def test_the_shared_layout_is_the_same_file_in_every_addon():
         with open(path, "rb") as handle:
             copies[addon] = hashlib.sha256(handle.read()).hexdigest()
     assert len(set(copies.values())) == 1, f"UI/Layout.lua differs between addons: {copies}"
+
+
+def test_the_compendium_files_are_the_same_in_every_addon_that_carries_them():
+    # Azeroth's Compendium (UI/Compendium.lua) and the text view its pages scroll in
+    # (UI/TextView.lua) are carried by Spoken Zones and Spoken Books for the reason UI/Layout.lua
+    # is: either installs on its own, and both together share one window.
+    import hashlib
+    for name in ("Compendium.lua", "TextView.lua"):
+        copies = {}
+        for addon in ("Spoken_Zones", "Spoken_Books"):
+            path = os.path.join(REPO, "addons", addon, "UI", name)
+            assert os.path.isfile(path), f"{addon} is missing its copy of UI/{name}"
+            with open(path, "rb") as handle:
+                copies[addon] = hashlib.sha256(handle.read()).hexdigest()
+        assert len(set(copies.values())) == 1, f"UI/{name} differs between addons: {copies}"

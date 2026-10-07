@@ -43,6 +43,14 @@ for _, file in ipairs({ "UI/Layout", "UI/Options" }) do
     assert(loadfile(ZONES .. file .. ".lua"))("Spoken_Zones", Z)
 end
 Z:SetupOptions()
+-- Azeroth's Compendium, with the two tabs Spoken's page shows an Unlock switch for: stand-ins
+-- that keep the switch, as Places' and Writings' real tabs keep it in their settings.
+assert(loadfile(ZONES .. "UI/Compendium.lua"))("Spoken_Zones", Z)
+local unlocked = {}
+for _, key in ipairs({ "places", "readables" }) do
+    SpokenCompendium:Register(key, { label = key, order = 1, build = function() end, open = function() end,
+        unlock = { get = function() return unlocked[key] == true end, set = function(v) unlocked[key] = v end } })
+end
 
 
 -- What the test's stand-ins lack and the real addons have: the zones addon here is a stand-in

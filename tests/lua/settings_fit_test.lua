@@ -69,7 +69,7 @@ QuestsPanel:Setup()
 local B = {}
 for _, file in ipairs({ "Locale/enUS", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
     "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "Checksum", "Core", "Language", "Reader", "Audio", "Playlist",
-    "UI/Layout", "UI/Options", "Events", "Commands" }) do
+    "UI/Layout", "UI/TextView", "UI/Compendium", "UI/Readables", "UI/Options", "Events", "Commands" }) do
     assert(loadfile(BOOKS .. file .. ".lua"))("Spoken_Books", B)
 end
 B:InitDB(); B:SetupOptions()
