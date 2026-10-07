@@ -42,9 +42,9 @@ local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map_01]]
 -- it: closing the map with the gamepad is then blocked, and the "blocked from an action" dialog
 -- that raises hangs the client.
 --
--- A workaround for the gamepad UI alone, paid for by every player: the panel no longer fades with
--- the map as the player moves, and follows a scale or level the map takes while open only at its
--- next refresh. Once the client stops tainting a map with an addon's buttons in it (check on a
+-- A workaround for the gamepad UI alone, paid for by every player: the panel follows a scale or
+-- level the map takes while open only at its next refresh, and its fade as the player moves only
+-- through FollowAlpha. Once the client stops tainting a map with an addon's buttons in it (check on a
 -- newer build), the panel belongs back in WorldMapFrame, and FollowMap and the map's OnHide hook
 -- go with it.
 local function NewPanel()
@@ -149,13 +149,16 @@ end
 -- Layout
 --------------------------------------------------------------------------------
 
--- The button that reopens the panel fades with the map as the player walks, as it did as the map's
--- child: the game's movement fader sets the map's alpha every frame, and the button takes it each
--- time. The panel does not: faded, its layers -- the parchment, the strips softening its words'
--- edges, the frame -- showed through each other in patches, and the one way to fade a frame as a
--- whole (SetIsFrameBuffer) crashes the Forever client.
+-- The panel and its button fade with the map as the player walks, as they did as the map's
+-- children: the game's movement fader sets the map's alpha every frame, and they take it each
+-- time. Faded, the strips softening the text's cut edges showed through the parchment under them
+-- in darker bands, so they are off until the panel is clear again; the one way to fade a frame as
+-- a whole (SetIsFrameBuffer) crashes the Forever client.
 local function FollowAlpha()
-	toggle:SetAlpha(WorldMapFrame:GetAlpha() or 1)
+	local alpha = WorldMapFrame:GetAlpha() or 1
+	toggle:SetAlpha(alpha)
+	panel:SetAlpha(alpha)
+	page.body:SetFadeShown(alpha >= 1)
 end
 
 -- In front of the map and as large, as a child of it would be. Copied on every show, since the
@@ -288,31 +291,7 @@ local function Refresh(mapID)
 		audio = { foundOn, nil }, report = { foundOn, nil }, lore = { foundOn, nil } })
 end
 
--- The map does not fade as the player walks while the panel is beside it: the panel cannot fade
--- evenly with it (FollowAlpha), so the two stay clear together. The game's own setting (the
--- mapFade CVar) is switched off, the player's value kept, and given back once the panel is not
--- beside the map -- Place Lore Beside Map off, or Places switched off.
-function SpokenZones:ApplyMapFade()
-	local get = (C_CVar and C_CVar.GetCVar) or GetCVar
-	local set = (C_CVar and C_CVar.SetCVar) or SetCVar
-	if not (get and set) or get("mapFade") == nil then return end
-	if SpokenZones:IsPartOn() and SpokenZones:Get("showMapPanel") then
-		local now = get("mapFade")
-		if now ~= "0" then
-			if SpokenZones:Get("mapFadeBefore") == nil then SpokenZones:Set("mapFadeBefore", now) end
-			set("mapFade", "0")
-		end
-	else
-		local before = SpokenZones:Get("mapFadeBefore")
-		if before ~= nil then
-			set("mapFade", before)
-			SpokenZones:Set("mapFadeBefore", nil)
-		end
-	end
-end
-
 function SpokenZones:RefreshPanel()
-	SpokenZones:ApplyMapFade()
 	Refresh(SpokenZones:GetDisplayedMapID())
 end
 
@@ -344,7 +323,6 @@ function SpokenZones:SetupMapPanel()
 	BuildPanel()
 	BuildToggle()
 	ApplyAnchors()
-	SpokenZones:ApplyMapFade()
 	if hooksecurefunc then hooksecurefunc(WorldMapFrame, "SetAlpha", FollowAlpha) end
 
 	-- Re-evaluate visibility whenever the map changes shape: maximising and minimising both

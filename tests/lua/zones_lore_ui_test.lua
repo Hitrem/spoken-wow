@@ -230,24 +230,18 @@ for _, hook in ipairs(WorldMapFrame.hooks.OnHide or {}) do hook(WorldMapFrame) e
 Expect("...and goes with it", panel:IsShown(), false)
 WorldMapFrame:Show()
 Z:RefreshPanel()
--- Walking with the map open, the game fades the map: the button that reopens the panel fades
--- with it, the panel does not.
+-- Walking with the map open, the game fades the map: the panel and the button that reopens it
+-- fade with it, and the strips softening the text's cut edges are off while they do.
+local strip = panel.page.body.strips[1]
+Expect("the text's cut edges soften into the parchment", strip:IsShown(), true)
 WorldMapFrame:SetAlpha(0.5)
-Expect("the button that reopens it fades with the map as the player walks", _G.SpokenZonesPanelToggle:GetAlpha(), 0.5)
-Expect("...the panel does not", panel:GetAlpha(), 1)
+Expect("the panel fades with the map as the player walks", panel:GetAlpha(), 0.5)
+Expect("...and the button that reopens it", _G.SpokenZonesPanelToggle:GetAlpha(), 0.5)
+Expect("...the text's soft edges off while it is faded", strip:IsShown(), false)
 WorldMapFrame:SetAlpha(1)
-Expect("...and the button is clear again when the player stops", _G.SpokenZonesPanelToggle:GetAlpha(), 1)
--- With the panel beside the map, the map does not fade as the player walks: the game's setting is
--- switched off, the player's kept, and given back when the panel is not beside the map.
-Expect("the map does not fade while the panel is beside it", GetCVar("mapFade"), "0")
-Expect("...the player's own setting kept", Z:Get("mapFadeBefore"), "1")
-Z:Set("showMapPanel", false)
-Z:RefreshPanel()
-Expect("...and given back once the panel is not beside the map", GetCVar("mapFade"), "1")
-Expect("...and no longer kept", Z:Get("mapFadeBefore"), nil)
-Z:Set("showMapPanel", true)
-Z:RefreshPanel()
-Expect("...and off again with the panel back", GetCVar("mapFade"), "0")
+Expect("...and clear again when the player stops", panel:GetAlpha(), 1)
+Expect("...the button too", _G.SpokenZonesPanelToggle:GetAlpha(), 1)
+Expect("...and the soft edges back", strip:IsShown(), true)
 local mapPage = panel.page
 Expect("...round the quest details' parchment", mapPage.parchment, "QuestDetailsBackgrounds")
 -- The frame is nine-sliced, as the game draws it: stretched whole, its corners grew with the panel.

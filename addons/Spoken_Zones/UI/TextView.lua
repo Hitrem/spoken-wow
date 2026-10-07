@@ -327,13 +327,24 @@ function TextView:PaintFade()
 	self:UpdateFade()
 end
 
--- Shown whenever the view is and the strips have been cut from the page under them.
+-- Shown whenever the view is and the strips have been cut from the page under them, unless held
+-- off (TextView:SetFadeShown).
 function TextView:UpdateFade()
 	if not self.fadeTop then return end
-	local on = (self.fadeSource and self.fadePainted and self.frame:IsShown()) and true or false
+	local on = (self.fadeSource and self.fadePainted and self.frame:IsShown() and not self.fadeHeld)
+		and true or false
 	for _, strip in ipairs(self.strips) do
 		if on then strip:Show() else strip:Hide() end
 	end
+end
+
+--- Off while the view is faded as a whole: each strip fades on its own over the page under it,
+--- and the two showed through each other as darker bands.
+function TextView:SetFadeShown(shown)
+	local held = not shown
+	if self.fadeHeld == held then return end
+	self.fadeHeld = held
+	self:UpdateFade()
 end
 
 --------------------------------------------------------------------------------
