@@ -898,11 +898,13 @@ libs["LibDBIcon-1.0"] = {
     Show = function() end, Hide = function() end, Lock = function() end, Unlock = function() end, Refresh = function() end,
     -- Enough of the addon compartment for the player's wrapper to be testable: entries
     -- join the frame's list and leave it again, and nothing happens on the clients
-    -- (every one before the modern) without the frame.
+    -- (every one before the modern) without the frame. Like the real lib, adding sets the
+    -- db's flag and removing clears it to nil.
     AddButtonToCompartment = function(self, name)
         if not _G.AddonCompartmentFrame then return end
         local icon = M.dbIcons[name]
         if not icon then return end
+        if icon.db then icon.db.showInCompartment = true end
         icon.compartmentData = { text = name, icon = icon.obj.icon or "" }
         table.insert(_G.AddonCompartmentFrame.registeredAddons, icon.compartmentData)
     end,
@@ -915,6 +917,7 @@ libs["LibDBIcon-1.0"] = {
                 if list[i] == icon.compartmentData then
                     table.remove(list, i)
                     icon.compartmentData = nil
+                    if icon.db then icon.db.showInCompartment = nil end
                     return
                 end
             end
