@@ -216,7 +216,48 @@ search.hooks.OnTextChanged[1](search)
 Z:SetupMapPanel()
 local panel = Z.panel
 Expect("the story beside the map wears the quest log's frame", panel ~= nil, true)
+-- Inside the map, so the game fades, scales and hides it with the map.
 Z:RefreshPanel()
+Expect("...and is the map's", panel.parent, WorldMapFrame)
+Expect("...as is the button that reopens it", _G.SpokenZonesPanelToggle.parent, WorldMapFrame)
+local strip = panel.page.body.strips[1]
+WorldMapFrame:Show()
+Z:RefreshPanel()
+WorldMapFrame:SetAlpha(0.5)
+Expect("inside the map, the panel keeps its own alpha: the map's reaches it", panel:GetAlpha(), 1)
+Expect("...and the text's soft edges stay, fading with it", strip:IsShown(), true)
+WorldMapFrame:SetAlpha(1)
+WorldMapFrame:Hide()
+for _, hook in ipairs(WorldMapFrame.hooks.OnHide or {}) do hook(WorldMapFrame) end
+-- Under the gamepad UI, beside the map: the Forever client takes the open map's buttons into its
+-- own navigation, and closing the map is then blocked.
+SetCVar("InputDeviceInterfaceStyle", "1")
+Z:RefreshPanel()
+Expect("under the gamepad UI, the panel is not the map's", panel.parent, UIParent)
+Expect("...nor is the button that reopens it", _G.SpokenZonesPanelToggle.parent, UIParent)
+Expect("...so nothing shows it while the map is closed", panel:IsShown(), false)
+WorldMapFrame:Show()
+Z:RefreshPanel()
+Expect("...and it shows with the map", panel:IsShown(), true)
+WorldMapFrame:Hide()
+for _, hook in ipairs(WorldMapFrame.hooks.OnHide or {}) do hook(WorldMapFrame) end
+Expect("...and goes with it", panel:IsShown(), false)
+WorldMapFrame:Show()
+Z:RefreshPanel()
+-- Walking with the map open, the game fades the map: the panel and the button that reopens it
+-- fade with it, and the strips softening the text's cut edges are off while they do.
+Expect("the text's cut edges soften into the parchment", strip:IsShown(), true)
+WorldMapFrame:SetAlpha(0.5)
+Expect("the panel fades with the map as the player walks", panel:GetAlpha(), 0.5)
+Expect("...and the button that reopens it", _G.SpokenZonesPanelToggle:GetAlpha(), 0.5)
+Expect("...the text's soft edges off while it is faded", strip:IsShown(), false)
+WorldMapFrame:SetAlpha(1)
+Expect("...and clear again when the player stops", panel:GetAlpha(), 1)
+Expect("...the button too", _G.SpokenZonesPanelToggle:GetAlpha(), 1)
+Expect("...and the soft edges back", strip:IsShown(), true)
+SetCVar("InputDeviceInterfaceStyle", "0")
+Z:RefreshPanel()
+Expect("with the gamepad UI off again, the panel goes back into the map", panel.parent, WorldMapFrame)
 local mapPage = panel.page
 Expect("...round the quest details' parchment", mapPage.parchment, "QuestDetailsBackgrounds")
 -- The frame is nine-sliced, as the game draws it: stretched whole, its corners grew with the panel.

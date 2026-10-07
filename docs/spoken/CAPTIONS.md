@@ -40,14 +40,13 @@ How the captions in the window follow the voice:
 
 | Mode | Behaviour |
 |---|---|
-| **Centered** (default) | The line being read stays in the middle of the captions and the text glides up under it, about a quarter of a second per line. Synced-lyrics players (Apple Music, Spotify) keep the sung line this way, so the eye stays put and there is no jump. |
-| **Reading Line** | The line being read stays a third of the way down, a teleprompter's reading line: more of what is coming is in view. |
+| **Line by Line** (default) | The text glides up a line at a time as the voice reaches each line, about a quarter of a second per line, so there is no jump. The line being read is on the last row with **Type Words Out** on (below), and in the middle with it off, as synced-lyrics players (Apple Music, Spotify) keep the sung line. |
 | **Page by Page** | A whole page turns when the voice reaches its end, as the captions always did. Closest to broadcast pop-on captions, which read best when the text should not move while it is read. |
-| **Off** | The text holds still; the wheel moves it. Clicking the captions turns following back on, Centered. |
+| **Off** | The text holds still; the wheel moves it. Clicking the captions turns following back on, line by line. |
 
-With two caption lines, Centered and Reading Line both keep the line being read on top
-with the next one under it; the difference shows on taller pages. The glide needs the
-client to clip the captions' frame (`SetClipsChildren`); where it cannot, the text steps a
+With **Type Words Out** on, the lines below the voice are still blank, so Line by Line keeps the
+line being read on the last row instead, with what has been read above it, as roll-up
+broadcast captions do. The glide needs the client to clip the captions' frame (`SetClipsChildren`); where it cannot, the text steps a
 line at a time. `Transcript:GetScroll` and `Transcript:ScrollTo` let a player draw its own
 scrollbar. Subtitles Only pages on its own and is not affected.
 

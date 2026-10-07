@@ -282,6 +282,8 @@ function PlayerFrame:Skin()
 end
 
 function PlayerFrame:RefreshConfig()
+    -- Bronze Border tints every round button, whichever way lines are shown.
+    Actions.RefreshRings()
     local skin = self:Skin()
     -- Each skin dresses the captions its own way; the others' look must not stay on them.
     if skin ~= DialogueUIPlayer then Transcript:SetStyle(nil) end

@@ -370,7 +370,10 @@ function _G.UnitExists() return true end
 function _G.UnitIsPlayer() return false end
 function _G.UnitSex() return world.unitSex end
 function _G.UnitCreatureType() return world.creatureType end
-function _G.GetCVar(key) return world.cvars[key] or "1" end
+-- The mouse UI unless a test turns the gamepad's on: read as "1", every popup an addon raises
+-- unasked would go to chat instead.
+local CVAR_DEFAULTS = { InputDeviceInterfaceStyle = "0" }
+function _G.GetCVar(key) return world.cvars[key] or CVAR_DEFAULTS[key] or "1" end
 function _G.SetCVar(key, value)
     world.cvars[key] = tostring(value)
     table.insert(world.cvarLog, { key, tostring(value) })
@@ -524,7 +527,8 @@ _G.Settings = M.modernSettings
 M.SetClient("20506")
 
 -- What the zones addon's playback and autoplay files reach for.
-_G.DEFAULT_CHAT_FRAME = { AddMessage = function() end }
+M.chat = {}
+_G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) table.insert(M.chat, text) end }
 world.inCombat = false
 function _G.UnitAffectingCombat() return world.inCombat end
 function _G.GetSubZoneText() return world.subZone or "" end
@@ -829,6 +833,7 @@ end
 
 function M.ResetUIActions()
     for i = #M.popups, 1, -1 do M.popups[i] = nil end
+    for i = #M.chat, 1, -1 do M.chat[i] = nil end
     for i = #M.enabledAddOns, 1, -1 do M.enabledAddOns[i] = nil end
     for i = #M.disabledAddOns, 1, -1 do M.disabledAddOns[i] = nil end
     M.reloads = 0
@@ -899,11 +904,13 @@ libs["LibDBIcon-1.0"] = {
     Show = function() end, Hide = function() end, Lock = function() end, Unlock = function() end, Refresh = function() end,
     -- Enough of the addon compartment for the player's wrapper to be testable: entries
     -- join the frame's list and leave it again, and nothing happens on the clients
-    -- (every one before the modern) without the frame.
+    -- (every one before the modern) without the frame. Like the real lib, adding sets the
+    -- db's flag and removing clears it to nil.
     AddButtonToCompartment = function(self, name)
         if not _G.AddonCompartmentFrame then return end
         local icon = M.dbIcons[name]
         if not icon then return end
+        if icon.db then icon.db.showInCompartment = true end
         icon.compartmentData = { text = name, icon = icon.obj.icon or "" }
         table.insert(_G.AddonCompartmentFrame.registeredAddons, icon.compartmentData)
     end,
@@ -916,6 +923,7 @@ libs["LibDBIcon-1.0"] = {
                 if list[i] == icon.compartmentData then
                     table.remove(list, i)
                     icon.compartmentData = nil
+                    if icon.db then icon.db.showInCompartment = nil end
                     return
                 end
             end

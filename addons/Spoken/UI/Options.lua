@@ -408,10 +408,10 @@ local function Build(canvas)
     Only(layout:Checkbox(L.OPT_HIDE_PORTRAIT, L.OPT_HIDE_PORTRAIT_TIP,
         function() return cfg().HidePortrait end, function(v) cfg().HidePortrait = v end, refresh),
         InWindow)
+    -- The small window's metal and every round button's ring: offered whatever the style.
     if Version.IsCamelot then
-        Only(layout:Checkbox(L.OPT_BRONZE_TINT, L.OPT_BRONZE_TINT_TIP,
-            function() return cfg().BronzeTint end, function(v) cfg().BronzeTint = v end, refresh),
-            Small)
+        layout:Checkbox(L.OPT_BRONZE_TINT, L.OPT_BRONZE_TINT_TIP,
+            function() return cfg().BronzeTint end, function(v) cfg().BronzeTint = v end, refresh)
     end
     -- One row per action an addon declared optional, named by that addon. The player is
     -- not told what any of them do. The subtitle shows the corner icon too, so the row is
@@ -445,10 +445,10 @@ local function Build(canvas)
         OwnText(layout:Slider(L.TRANSCRIPT_LINES, 1, 2, 1,
             function() return transcript().Lines end,
             function(v) transcript().Lines = v end, refreshTranscript, Layout.Number, L.TRANSCRIPT_LINES_TIP))
-        local SCROLL_LABELS = { centered = L.TRANSCRIPT_SCROLL_CENTERED, reading = L.TRANSCRIPT_SCROLL_READING,
-            page = L.TRANSCRIPT_SCROLL_PAGE, off = L.TRANSCRIPT_SCROLL_OFF }
-        InWindowText(layout:Dropdown(L.TRANSCRIPT_SCROLL, L.TRANSCRIPT_SCROLL_TIP, { "centered", "reading", "page", "off" },
-            function() return transcript().ScrollMode or "centered" end,
+        local SCROLL_LABELS = { line = L.TRANSCRIPT_SCROLL_LINE, page = L.TRANSCRIPT_SCROLL_PAGE,
+            off = L.TRANSCRIPT_SCROLL_OFF }
+        InWindowText(layout:Dropdown(L.TRANSCRIPT_SCROLL, L.TRANSCRIPT_SCROLL_TIP, { "line", "page", "off" },
+            function() return Transcript:ScrollMode() end,
             function(v) transcript().ScrollMode = v; Transcript.manualScroll = false end, refreshTranscript,
             function(v) return SCROLL_LABELS[v] or v end))
 
