@@ -167,16 +167,18 @@ local function InMap()
 end
 
 -- The panel and its button fade with the map as the player walks: the game's movement fader sets
--- the map's alpha every frame. Inside the map that reaches them as its children; beside it they
--- take it each time. Faded, the strips softening the text's cut edges showed through the
--- parchment under them in darker bands, so they are off until the panel is clear again; the one
--- way to fade a frame as a whole (SetIsFrameBuffer) crashes the Forever client.
+-- the map's alpha every frame. Inside the map that reaches them as its children, and they fade
+-- whole, soft edges and all. Beside it they take the alpha each time, and each layer fades on its
+-- own: the strips softening the text's cut edges showed through the parchment under them in
+-- darker bands, so there they are off until the panel is clear again. The one way to fade a frame
+-- as a whole (SetIsFrameBuffer) crashes the Forever client.
 local function FollowAlpha()
 	local alpha = WorldMapFrame:GetAlpha() or 1
-	local own = InMap() and 1 or alpha
+	local inMap = InMap()
+	local own = inMap and 1 or alpha
 	toggle:SetAlpha(own)
 	panel:SetAlpha(own)
-	page.body:SetFadeShown(alpha >= CLEAR)
+	page.body:SetFadeShown(inMap or alpha >= CLEAR)
 end
 
 -- Into the map, or out of it under the gamepad UI. Asked on every refresh, as the player can

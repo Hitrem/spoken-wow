@@ -225,9 +225,8 @@ WorldMapFrame:Show()
 Z:RefreshPanel()
 WorldMapFrame:SetAlpha(0.5)
 Expect("inside the map, the panel keeps its own alpha: the map's reaches it", panel:GetAlpha(), 1)
-Expect("...the text's soft edges off while the map is faded", strip:IsShown(), false)
+Expect("...and the text's soft edges stay, fading with it", strip:IsShown(), true)
 WorldMapFrame:SetAlpha(1)
-Expect("...and back once it is clear", strip:IsShown(), true)
 WorldMapFrame:Hide()
 for _, hook in ipairs(WorldMapFrame.hooks.OnHide or {}) do hook(WorldMapFrame) end
 -- Under the gamepad UI, beside the map: the Forever client takes the open map's buttons into its
