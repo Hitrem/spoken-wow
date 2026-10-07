@@ -352,7 +352,7 @@ export default async function Page({
           // What api/contributions/npc asks, so the speaker controls are offered only to
           // somebody it will answer. An NPC's race and gender decide its voice in every
           // language, so that stays narrower than triaging this language's text.
-          canAnswerNpc={can(viewer, "regenerate", BASE_LANG)}
+          canAnswerNpc={can(viewer, "regenerate", lang)}
         />
       </Wide>
     </main>

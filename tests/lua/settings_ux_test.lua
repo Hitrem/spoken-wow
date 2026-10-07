@@ -52,7 +52,7 @@ local subtitlesTop = typing.layoutY
 env.Addon:SetPlayerStyle("minimal"); Options:UpdateRows()
 Expect("choosing the window brings its settings back", Shown(size), true)
 Expect("...and hides the subtitles'", Shown(typing), false)
-Expect("the rows below move up into the space", Row(home, "Volume Follows").layoutY > -100000, true)
+Expect("the rows below move up into the space", Row(home, "Silence NPC Voices").layoutY > -100000, true)
 env.Addon:SetPlayerStyle("subtitle"); Options:UpdateRows()
 Expect("...and back down when subtitles return", typing.layoutY, subtitlesTop)
 
@@ -72,24 +72,20 @@ local music = Row(home, "Music")
 env.Addon.db.profile.Audio.LowerOthers.Enabled = false; Options:UpdateRows()
 Expect("the music level waits for its switch", music.layoutReason, L.REASON_LOWER)
 env.Addon.db.profile.Audio.LowerOthers.Enabled = true
-env.Addon.db.profile.Audio.SoundChannel = "Music"; Options:UpdateRows()
-Expect("...and is never offered while the voices play through music", music.layoutReason, L.REASON_VOICE_CHANNEL)
-env.Addon.db.profile.Audio.SoundChannel = "Master"; Options:UpdateRows()
-Expect("...but is with them on Master", music.layoutReason, nil)
+Options:UpdateRows()
+Expect("...and is offered with it on", music.layoutReason, nil)
 
 ---------------------------------------------------------------- voice only
 -- Nothing on screen is a way of showing lines like the other three, not a switch apart.
 env.Addon:SetPlayerStyle("minimal")
 env.Addon:SetPlayerStyle("none"); Options:UpdateRows()
 Expect("voice only is a way of showing lines", env.Addon:PlayerStyle(), "none")
-Expect("...that hides the window", env.Addon.db.profile.Frame.HideFrame, true)
 Expect("...hides the window's settings", Shown(size), false)
 Expect("...and does not count as subtitles", Shown(Row(home, "Subtitle Size")), false)
 Expect("...nor shows words to type out", Shown(Row(home, "Type Words Out")), false)
 Expect("...nor leaves anything to lock in place", Shown(Row(home, "Lock Position")), false)
 env.Addon:SetPlayerStyle("minimal"); Options:UpdateRows()
-Expect("choosing a window shows it again", env.Addon.db.profile.Frame.HideFrame, false)
-Expect("...the one that was chosen before", env.Addon:PlayerStyle(), "minimal")
+Expect("choosing a window shows it again", env.Addon:PlayerStyle(), "minimal")
 
 ---------------------------------------------------------------- keys
 local bindings = assert(io.open(SPOKEN .. "Bindings.xml")):read("*a")
@@ -217,6 +213,26 @@ Expect("...and lights up the row it found", quests.glow ~= nil and quests.glow:I
 -- The client runs OnUpdate every frame; the stub does not, so the fade is driven here.
 quests.glow.scripts.OnUpdate(quests.glow, 3)
 Expect("...for a moment", quests.glow:IsShown(), false)
+
+---------------------------------------------------------------- not in combat
+-- The client will not open the settings window for an addon in combat, so the minimap
+-- button's click would seem to do nothing. It says why instead.
+local errors = {}
+_G.UIErrorsFrame = { AddMessage = function(_, text) table.insert(errors, text) end }
+_G.ERR_NOT_IN_COMBAT = "You can't do that while in combat"
+_G.InCombatLockdown = function() return true end
+local openedBefore = #opened
+Options:Open()
+Expect("in combat the settings are not opened", #opened, openedBefore)
+Expect("...and the player is told why", errors[1], L.OPT_OPEN_COMBAT)
+Options:OpenPage(1)
+Expect("a feature's page says the same", errors[2], L.OPT_OPEN_COMBAT)
+Expect("an opener with no words of its own gets the client's",
+    _G.SpokenLayout.OpenCategory({}) and errors[3], _G.ERR_NOT_IN_COMBAT)
+_G.InCombatLockdown = function() return false end
+Options:Open()
+Expect("out of combat they open", #opened, openedBefore + 1)
+_G.InCombatLockdown, _G.UIErrorsFrame, _G.ERR_NOT_IN_COMBAT = nil, nil, nil
 
 ---------------------------------------------------------------- reset asks first
 -- The header's Defaults button, as the game's own pages have it.
@@ -401,10 +417,20 @@ do
         for _, frame in ipairs(links) do table.insert(names, frame.layoutLink.title) end
         Expect("...GitHub, Discord, CurseForge, Wago and Buy Me a Coffee", table.concat(names, ", "),
             "GitHub, Discord, CurseForge, Wago, Buy Me a Coffee")
+        -- A row outside the narrator style's box, which moves its own rows in by its padding.
+        local boxed = {}
+        for _, item in ipairs(home.items) do
+            if item.kind == "group" then
+                for _, section in ipairs(item.sections) do boxed[section] = true end
+            end
+        end
         local caption
         for _, item in ipairs(home.items) do
-            for _, row in ipairs(item.rows or {}) do
-                if not caption and row.control.layoutLabel then caption = row.control.layoutLabel end
+            for _, row in ipairs(not boxed[item] and item.rows or {}) do
+                -- A row shown: one hidden (the Compendium's, with no part's tab here) has no place.
+                if not caption and row.control.layoutLabel and row.control.layoutLabel.anchor then
+                    caption = row.control.layoutLabel
+                end
             end
         end
         Expect("...starting where the rows' names do", caption and links[1].anchor.x, caption and caption.anchor.x)

@@ -13,10 +13,11 @@
 ## Version: 3.1.0
 ## IconTexture: Interface\AddOns\Spoken_Quests\icon.tga
 ## SavedVariables: SpokenQuestsSettings
-## OptionalDeps: Spoken
+## OptionalDeps: Spoken, DialogueUI
 # Spoken is the player this addon speaks through: optional, so a hand-installed copy
 # without it loads and says what is missing; addon managers install it from the
 # CurseForge dependency.
+# DialogueUI, when installed, loads first so its window exists to be hooked: UI/DialogueUIBridge.lua.
 ## Group: Spoken
 ## X-Part-Of: Spoken
 ## X-VoiceOver-Player: 1
