@@ -58,10 +58,15 @@ local function Build()
 	menu:Hide()
 	rows = {}
 	if UISpecialFrames then table.insert(UISpecialFrames, "SpokenDeveloperMenu") end
-	-- A click anywhere else closes it. pcall: an event the client does not define throws.
+	-- However it closes, Escape included, the secure /reload button must not stay over the Write row.
+	menu:SetScript("OnHide", function() Write.Uncover() end)
+	-- A click anywhere else closes it. pcall: an event the client does not define throws. Not a
+	-- right-click on its own button, whose release (Menu:Show) closes it instead of opening it again.
 	pcall(menu.RegisterEvent, menu, "GLOBAL_MOUSE_DOWN")
-	menu:SetScript("OnEvent", function(self)
-		if self:IsShown() and not self:IsMouseOver() then self:Hide() end
+	menu:SetScript("OnEvent", function(self, _, button)
+		if not self:IsShown() or self:IsMouseOver() then return end
+		if button == "RightButton" and self.anchor and self.anchor:IsMouseOver() then return end
+		self:Hide()
 	end)
 end
 

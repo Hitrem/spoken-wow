@@ -147,7 +147,10 @@ Expect("...with the detailed diagnostics of the moment", Has("diag written for a
 Expect("...the context included", Has("narrator style "), true)
 Expect("...a line saying when", Last():find("session written for an AI agent at ", 1, true) ~= nil, true)
 Expect("...marked, for after the reload", type(_G.SpokenDeveloperDB.written), "table")
-Expect("...then /reload typed in the chat box, for the player's Enter", opened, "/reload")
+Expect(".../reload not typed yet: from /spoken log write, the chat box is still sending that",
+    opened, nil)
+stub.Advance(0.05)
+Expect("...then typed in the chat box a frame later, for the player's Enter", opened, "/reload")
 Expect("...never the addon's own reload, which Forever refuses", reloadAsked, false)
 local snapshots = Count("diag written for an AI agent:")
 Dev.Write:Prepare()
@@ -219,6 +222,22 @@ secure:GetScript("PreClick")(secure, "LeftButton", true)
 Expect("...after taking the snapshot", Count("diag written for an AI agent:"), before + 1)
 secure:GetScript("OnLeave")(secure)
 Expect("...and uncovered when the pointer leaves", secure:IsShown(), false)
+for _, fn in ipairs(writeRow.hooks.OnEnter) do fn(writeRow) end
+menu:Hide()
+menu:GetScript("OnHide")(menu)   -- the client runs it; the stub's Hide does not
+Expect("Escape closing the menu uncovers the Write row too", secure:IsShown(), false)
+
+local MouseDown = menu:GetScript("OnEvent")
+for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end
+report.IsMouseOver = function() return true end
+MouseDown(menu, "GLOBAL_MOUSE_DOWN", "RightButton")
+Expect("right-clicking its button again leaves the press alone", menu:IsShown(), true)
+for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end
+Expect("...and the release closes the menu, not opening it again", menu:IsShown(), false)
+for _, fn in ipairs(report.hooks.OnMouseUp) do fn(report, "RightButton") end
+MouseDown(menu, "GLOBAL_MOUSE_DOWN", "LeftButton")
+Expect("a left-click on its button closes it", menu:IsShown(), false)
+report.IsMouseOver = nil
 
 ---------------------------------------------------------------- cleared, then off
 Spoken:ClearLog()
@@ -260,7 +279,9 @@ Expect("/spoken diagnostics says how the log stands, and its size", Has("debug l
     and Has(" KB (Spoken Developer ", Spoken:Diagnostics()), true)
 opened = nil
 SlashCmdList.SPOKEN("log write")
-Expect("/spoken log write takes the snapshot and types /reload in", opened, "/reload")
+Expect("/spoken log write types nothing while its own Enter is still being sent", opened, nil)
+stub.Advance(0.05)
+Expect("...then takes the snapshot and types /reload in", opened, "/reload")
 
 ---------------------------------------------------------------- the Developer page
 Expect("the module builds the Developer page", Dev.optionsPanel ~= nil, true)

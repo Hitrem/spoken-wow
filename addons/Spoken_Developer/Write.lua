@@ -52,7 +52,9 @@ function Write:Now()
 		return false
 	end
 	if not self:Prepare() then return false end
-	if ChatFrame_OpenChat then ChatFrame_OpenChat("/reload") end
+	-- A frame later: run from /spoken log write, the chat box is still handling that Enter and
+	-- would clear what was typed into it now.
+	if ChatFrame_OpenChat then C_Timer.After(0, function() ChatFrame_OpenChat("/reload") end) end
 	Developer:Print("the log is ready: press Enter to run /reload, which writes it")
 	return true
 end
