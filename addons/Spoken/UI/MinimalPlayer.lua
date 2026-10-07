@@ -66,6 +66,11 @@ local function BelongsTo(frame, root)
     end
     return false
 end
+-- A waiting line's label, with why it is held when it is.
+local function HeldLabel(clip)
+    local held = SoundQueue:GetHeldReason(clip)
+    return held and format("%s (%s)", Label(clip), held) or Label(clip)
+end
 
 function MinimalPlayer:IsEnabled()
     return Addon.db and Addon:DisplayStyle() == "minimal"
@@ -73,7 +78,8 @@ end
 
 -- The pieces the DialogueUI window (UI/DialogueUIPlayer.lua) builds its queue rows and
 -- labels from, so the two lists of waiting lines behave alike.
-MinimalPlayer.parts = { Font = Font, Removable = Removable, ShowRemove = ShowRemove, Label = Label, BADGES = BADGES }
+MinimalPlayer.parts = { Font = Font, Removable = Removable, ShowRemove = ShowRemove, Label = Label,
+    HeldLabel = HeldLabel, Clamp = Clamp, Waiting = Waiting, BelongsTo = BelongsTo }
 
 function MinimalPlayer:HideTooltip()
     local owner = GameTooltip:GetOwner()
@@ -539,8 +545,7 @@ function MinimalPlayer:LayoutQueue()
         if index <= shown then
             button = button or self:CreateQueueRow(index)
             button.clip = SoundQueue.sounds[index + self.offset + 1]
-            local held = SoundQueue:GetHeldReason(button.clip)
-            button.text:SetText(held and format("%s (%s)", Label(button.clip), held) or Label(button.clip))
+            button.text:SetText(HeldLabel(button.clip))
             ShowRemove(button, false)
             button:Show()
         elseif button then button:Hide(); button.clip = nil end
@@ -643,7 +648,7 @@ function MinimalPlayer:RefreshConfig(original)
     -- click from the pointer passing over, the window keeps both.
     if frame.SetMouseClickEnabled and frame.SetMouseMotionEnabled then
         frame:SetMouseMotionEnabled(true)
-        frame:SetMouseClickEnabled(not cfg.LockFrame)
+        frame:SetMouseClickEnabled(not Addon:IsFrameLocked())
     end
     Addon:ApplyHost(frame)
     self:Update()

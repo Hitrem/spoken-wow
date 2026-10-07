@@ -116,7 +116,7 @@ function SettingsPanel:Setup()
     -- Inside DialogueUI's window (UI/DialogueUIBridge.lua), so only with DialogueUI installed:
     -- on Spoken's DialogueUI page, with the rest of what is about DialogueUI, or here with a
     -- Spoken too old to have that page.
-    if DialogueUIBridge and DialogueUIBridge.Problem and DialogueUIBridge:Problem() ~= L.OPT_DUI_MISSING then
+    if DialogueUIBridge and DialogueUIBridge.Problem and IsAddOnLoaded and IsAddOnLoaded("DialogueUI") then
         if Spoken and Spoken.AddDialogueUISettings then
             Spoken:AddDialogueUISettings(function(page)
                 return SettingsPanel:DialogueUIRows(page, L.OPT_PAGE_TITLE)

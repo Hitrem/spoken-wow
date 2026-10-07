@@ -364,14 +364,6 @@ local function Observations(fields)
     add("creature", UnitCreatureType and UnitCreatureType("npc") or nil)
 end
 
---- The page DialogueUI's window shows in place of the game's quest and gossip frames, as the
---- dialog event it stands for, or nil without DialogueUI (UI/DialogueUIBridge.lua). DialogueUI
---- never shows the game's frames, so without this nothing would ever be on screen.
-local function DialogueUIPage()
-    local bridge = rawget(VoiceOver, "DialogueUIBridge")
-    return bridge and bridge.Page and bridge:Page()
-end
-
 --- Which panel the player is looking at, as the event it would have played.
 local function EventOnScreen()
     if QuestFrameRewardPanel and QuestFrameRewardPanel:IsShown() then
@@ -383,7 +375,7 @@ local function EventOnScreen()
     end
     -- The same three pages in DialogueUI's window: the quest API answers for the dialog
     -- whichever window draws it.
-    local page = DialogueUIPage()
+    local page = Utils:DialogueUIPage()
     if page == "QUEST_COMPLETE" then
         return Enums.SoundEvent.QuestComplete, GetRewardText and GetRewardText()
     elseif page == "QUEST_PROGRESS" then
@@ -400,7 +392,7 @@ end
 --- the game's own, or DialogueUI's in its place. A client without a GossipFrame to ask is
 --- taken at its word.
 local function GossipOnScreen()
-    if DialogueUIPage() == "GOSSIP_SHOW" then
+    if Utils:DialogueUIPage() == "GOSSIP_SHOW" then
         return GetGossipText and GetGossipText()
     end
     local frame = _G.GossipFrame

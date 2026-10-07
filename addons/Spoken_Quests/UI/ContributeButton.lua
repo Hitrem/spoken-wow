@@ -158,12 +158,6 @@ local function OnLeave()
     end
 end
 
--- The page DialogueUI's window shows, as the dialog event it stands for, or nil.
-local function DialogueUIPage()
-    local bridge = rawget(VoiceOver, "DialogueUIBridge")
-    return bridge and bridge.Page and bridge:Page()
-end
-
 --- Report what DialogueUI's window shows: the quest page, or the NPC (ReportButton reads the
 --- page from the bridge), in the language its line would be heard in.
 function ContributeButton:ReportFromDialogueUI()
@@ -171,7 +165,7 @@ function ContributeButton:ReportFromDialogueUI()
     if not target then
         return
     end
-    local ok, line = pcall(Addon.GetVisibleLine, Addon, DialogueUIPage())
+    local ok, line = pcall(Addon.GetVisibleLine, Addon, Utils:DialogueUIPage())
     ReportButton:ShowLink(target, ok and line and line.language or nil)
 end
 
@@ -268,15 +262,7 @@ function ContributeButton:ShowOnDialogueUI(frame, missing)
     end
     local icon, link = corner.icon, corner.link
     corner.missing = missing and true or false
-    -- The theme, from the colour DialogueUI gives the font for it (dark text on parchment),
-    -- asked each time: DialogueUI's theme can change while the game runs.
-    local font = _G.DUIFont_QuestType_Left
-    local r, g, b = 1, 1, 1
-    if type(font) == "table" and font.GetTextColor then
-        r, g, b = font:GetTextColor()
-    end
-    local red = ((r or 1) * 0.299 + (g or 1) * 0.587 + (b or 1) * 0.114 < 0.5) and DUI_RED_ON_LIGHT
-        or DUI_RED_ON_DARK
+    local red = Utils:DialogueUIThemeID() == 2 and DUI_RED_ON_DARK or DUI_RED_ON_LIGHT
     link.label:SetTextColor(red[1], red[2], red[3])
     -- Sized to the words: their font is DialogueUI's, and the font size its setting.
     link:SetWidth((link.label:GetStringWidth() or 0) + 2)
@@ -332,7 +318,7 @@ function ContributeButton:Refresh()
     end
 
     -- DialogueUI's window: the corner is there on every page, Report or Contribute.
-    local page = DialogueUIPage()
+    local page = Utils:DialogueUIPage()
     if page then
         button:Hide()
         self.gossip = page == "GOSSIP_SHOW"

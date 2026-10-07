@@ -76,8 +76,7 @@ local function Config()
 end
 
 local function IsLoaded(name)
-    local isLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
-    return isLoaded and isLoaded(name) and true or false
+    return IsAddOnLoaded ~= nil and IsAddOnLoaded(name) and true or false
 end
 
 --- Whether DUIQuestFrame still has everything this file reaches for.
@@ -269,10 +268,7 @@ end
 --- The highlight for a paragraph's text colour: gold on dark text's light background is
 --- unreadable, so dark text gets the red.
 function Bridge.ColorFor(r, g, b)
-    if (r or 1) * 0.299 + (g or 1) * 0.587 + (b or 1) * 0.114 < 0.5 then
-        return ON_LIGHT
-    end
-    return ON_DARK
+    return Utils:IsBright(r, g, b) and ON_DARK or ON_LIGHT
 end
 
 --------------------------------------------------------------------------------
@@ -610,21 +606,8 @@ local function LookForLine(event)
     end
 end
 
---- 1 on DialogueUI's parchment, 2 on its dark theme: told by the colour DialogueUI gives its
---- text, dark on parchment, as the Contribute corner tells it (UI/ContributeButton.lua).
-local function ThemeID()
-    local font = _G.DUIFont_QuestType_Left
-    if type(font) == "table" and font.GetTextColor then
-        local r, g, b = font:GetTextColor()
-        if (r or 1) * 0.299 + (g or 1) * 0.587 + (b or 1) * 0.114 >= 0.5 then
-            return 2
-        end
-    end
-    return 1
-end
-
 local function SetPlayTheme(button)
-    local x = (ThemeID() - 1) * 0.125
+    local x = (Utils:DialogueUIThemeID() - 1) * 0.125
     button.Icon:SetTexCoord(x, 64 / 512 + x, 0, 0.5)
     button.Wave1:SetTexCoord(x, 16 / 512 + x, 0.5, 1)
     button.Wave2:SetTexCoord(16 / 512 + x, 40 / 512 + x, 0.5, 1)
@@ -997,8 +980,9 @@ end
 
 --- One line for /spq diagnostics.
 function Bridge:Describe()
+    local cfg = Config()
     return format("DialogueUI: %s; words=%s scroll=%s player=%s play=%s button=%s provider=%s", tostring(self.status),
-        tostring(Config().Captions), tostring(Config().AutoScroll), tostring(Config().ShowPlayer),
-        tostring(Config().PlayButton), playButton and playButton:IsShown() and "shown" or "hidden",
+        tostring(cfg.Captions), tostring(cfg.AutoScroll), tostring(cfg.ShowPlayer),
+        tostring(cfg.PlayButton), playButton and playButton:IsShown() and "shown" or "hidden",
         tostring(self.provider == true))
 end

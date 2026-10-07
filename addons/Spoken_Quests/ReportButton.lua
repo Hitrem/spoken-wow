@@ -36,13 +36,6 @@ local function IsFrameVisible(frame)
     return frame:IsShown()
 end
 
--- The page DialogueUI's window shows, as the dialog event it stands for, or nil without
--- DialogueUI (UI/DialogueUIBridge.lua): the game's quest frames stay hidden under it.
-local function DialogueUIPage()
-    local bridge = rawget(VoiceOver, "DialogueUIBridge")
-    return bridge and bridge.Page and bridge:Page()
-end
-
 -- DialogueUI's pages, as the events their lines play for.
 local PAGE_EVENTS =
 {
@@ -105,7 +98,7 @@ function ReportButton:CurrentTarget()
     elseif IsFrameVisible(QuestFrameDetailPanel) then
         event = Enums.SoundEvent.QuestAccept
     else
-        local page = DialogueUIPage()
+        local page = Utils:DialogueUIPage()
         event = page and PAGE_EVENTS[page]
     end
 
@@ -140,7 +133,7 @@ end
 --- game's popups with it, in Spoken's copy box instead, which shows over that window
 --- (Spoken:SetContributeHost).
 local function ShowCopy(url)
-    if DialogueUIPage() and Spoken and Spoken.ShowContribution then
+    if Utils:DialogueUIPage() and Spoken and Spoken.ShowContribution then
         Spoken:ShowContribution(url, nil, true)
         return
     end

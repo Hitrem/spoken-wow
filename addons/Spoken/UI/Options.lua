@@ -258,7 +258,6 @@ local function Build(canvas)
         local style = Style()
         return style == "minimal" or style == "classic" or style == "dialogueui"
     end
-    local function Dui() return Style() == "dialogueui" end
     local function Small() return Style() == "minimal" end
     local function Subtitles() return Style() == "subtitle" end
     local function Words() return transcript().Enabled end
@@ -400,7 +399,8 @@ local function Build(canvas)
     -- What only the DialogueUI window has, its theme above all, is on the DialogueUI page
     -- (UI/DialogueUIOptions.lua), with the rest of what is about DialogueUI.
     if canvas then
-        Only(layout:Button(L.OPT_DUI_OPEN_PAGE, 200, function() DialogueUIOptions:Open() end), Dui)
+        Only(layout:Button(L.OPT_DUI_OPEN_PAGE, 200, function() DialogueUIOptions:Open() end),
+            function() return Style() == "dialogueui" end)
     end
     Only(layout:Checkbox(L.OPT_HIDE_PORTRAIT, L.OPT_HIDE_PORTRAIT_TIP,
         function() return cfg().HidePortrait end, function(v) cfg().HidePortrait = v end, refresh),

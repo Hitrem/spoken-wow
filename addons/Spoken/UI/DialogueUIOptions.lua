@@ -32,11 +32,6 @@ local INDENT, TOP = 25, 16
 -- After every part's page (Quests, Books and Zones are 1-3).
 local ORDER = 1000
 
-local function IsLoaded(name)
-    local isLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
-    return isLoaded ~= nil and isLoaded(name) and true or false
-end
-
 local function Panel() return Addon.db.profile.Frame.DialogueUI end
 
 --- Add a feature addon's rows. build(layout) adds a section and its rows to the page's
@@ -74,7 +69,7 @@ function Page:Reset()
 end
 
 function Page:Setup()
-    if self.panel or not (Settings and Settings.RegisterCanvasLayoutSubcategory) or not IsLoaded("DialogueUI") then
+    if self.panel or not (Settings and Settings.RegisterCanvasLayoutSubcategory) or not DialogueUITheme:Installed() then
         return
     end
     local panel = CreateFrame("Frame", "SpokenDialogueUIOptionsPanel", UIParent)

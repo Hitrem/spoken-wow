@@ -53,7 +53,6 @@ local MIN_WIDTH_SHARE, MAX_WIDTH_SHARE = 0.6, 2
 -- DialogueUI's paddings at multiplier 1, and its window height as a share of the screen,
 -- from which the multiplier its window was drawn at is recovered.
 local PAD_H, PAD_TOP, PAD_BOTTOM = 26, 48, 36
-local HEIGHT_SHARE = 0.618
 -- Where in Parchment.png each strip is. The caps are 256 of 2048 rows each, the middle
 -- the 640 between them; the dividers sit lower in the same image.
 local CAP_ROWS, MIDDLE_ROWS = 0.125, 0.3125
@@ -69,23 +68,14 @@ local FONT_SIZES = { 12, 26 }
 
 local parts = MinimalPlayer.parts
 local Font, Removable, ShowRemove, Label = parts.Font, parts.Removable, parts.ShowRemove, parts.Label
-local function Clamp(n, low, high) return math.max(low, math.min(high, n)) end
+local HeldLabel, Clamp, Waiting, BelongsTo = parts.HeldLabel, parts.Clamp, parts.Waiting, parts.BelongsTo
 local function Round(n) return math.floor(n + 0.5) end
 -- Through Addon:Profile: the frame still redraws while the UI is torn down, after AceDB
 -- strips the profile. Its DialogueUI table likewise, from the defaults when stripped.
 local function Config() return Addon:Profile("Frame") end
-local function Panel() return Config().DialogueUI or Defaults.profile.Frame.DialogueUI end
 -- Open to the panel's size or folded to Lines Shown: the expand state the other windows'
 -- captions share.
 local function Expanded() return Addon.db and Addon:Layout().CaptionsExpanded and true or false end
-local function Waiting() return math.max(0, SoundQueue:GetQueueSize() - 1) end
-local function BelongsTo(frame, root)
-    while frame do
-        if frame == root then return true end
-        frame = frame.GetParent and frame:GetParent()
-    end
-    return false
-end
 
 function Skin:IsEnabled()
     return Addon.db and Addon:DisplayStyle() == "dialogueui"
@@ -123,7 +113,7 @@ local function WheelHint()
     GameTooltip:AddLine(L.DUI_WHEEL_HINT, 1, .82, 0, true)
 end
 
-function Skin:Initialize(original)
+function Skin:Initialize()
     if self.frame then return end
     local frame = CreateFrame("Frame", "SpokenDialogueUIPlayerFrame", UIParent)
     self.frame = frame
@@ -372,7 +362,8 @@ end
 --- Size and dress the panel from DialogueUI's window and theme. Called on every refresh,
 --- so a theme or size change in DialogueUI lands on the next one.
 function Skin:Layout()
-    local frame, cfg = self.frame, Panel()
+    local frame, cfg = self.frame, Theme:Config()
+    local parchment = Theme:TexturePath() .. "Parchment.png"
     self.layingOut = true
     -- Laid out exactly as DialogueUI lays out its window: its size, its paddings, its text
     -- size and spacing. Window Size then scales the whole frame, text and all, from
@@ -381,7 +372,7 @@ function Skin:Layout()
     frame.spokenBaseScale = scale * Theme:FrameScale() / UIParent:GetEffectiveScale()
     local duiWidth, duiHeight = Theme:FrameSize()
     -- The multiplier DialogueUI drew its window at, so the paddings keep its proportions.
-    local multiplier = duiHeight / (HEIGHT_SHARE * math.max(1, UIParent:GetHeight()))
+    local multiplier = duiHeight / (Theme.HEIGHT_SHARE * math.max(1, UIParent:GetHeight()))
     local padH, padTop, padBottom = PAD_H * multiplier, PAD_TOP * multiplier, PAD_BOTTOM * multiplier
     -- DialogueUI's width, or the one dragged with Shift held.
     local width = self.sizingWidth and Round(frame:GetWidth()) or Addon:Layout().DialogueUIWidth or Round(duiWidth)
@@ -457,7 +448,7 @@ function Skin:Layout()
     self.lines = lines
 
     local capWidth, capHeight = Theme:ParchmentSize()
-    for index = 1, 3 do self.parchments[index]:SetTexture(Theme:TexturePath() .. "Parchment.png") end
+    for index = 1, 3 do self.parchments[index]:SetTexture(parchment) end
     -- The paper follows the panel's width, keeping DialogueUI's overhang either side.
     local paperWidth = capWidth * width / math.max(1, Round(duiWidth))
     self.parchments[1]:SetSize(paperWidth, capHeight)
@@ -471,11 +462,11 @@ function Skin:Layout()
     self.headerSocket:ClearAllPoints()
     self.headerSocket:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
     self.headerSocket:SetSize(socket, stripHeight)
-    self.headerSocket:SetTexture(Theme:TexturePath() .. "Parchment.png")
+    self.headerSocket:SetTexture(parchment)
     self.headerDivider:ClearAllPoints()
     self.headerDivider:SetPoint("TOPLEFT", self.headerSocket, "TOPRIGHT", 0, 0)
     self.headerDivider:SetSize(math.max(1, inner - socket), stripHeight)
-    self.headerDivider:SetTexture(Theme:TexturePath() .. "Parchment.png")
+    self.headerDivider:SetTexture(parchment)
     self.portrait:SetSize(face, face)
     self.portrait:ClearAllPoints()
     self.portrait:SetPoint("CENTER", self.headerSocket, "TOPLEFT", Round(23 * ratio), -Round(23 * ratio))
@@ -509,7 +500,7 @@ function Skin:Layout()
     self.footerDivider:ClearAllPoints()
     self.footerDivider:SetPoint("BOTTOM", self.controls, "TOP", 0, 0)
     self.footerDivider:SetSize(inner, footerStrip)
-    self.footerDivider:SetTexture(Theme:TexturePath() .. "Parchment.png")
+    self.footerDivider:SetTexture(parchment)
     self.bar:ClearAllPoints()
     self.bar:SetPoint("BOTTOMLEFT", self.footerDivider, "TOPLEFT", 0, 2)
     self.bar:SetPoint("BOTTOMRIGHT", self.footerDivider, "TOPRIGHT", 0, 2)
@@ -653,10 +644,16 @@ function Skin:LayoutControls()
     end
 end
 
-function Skin:UpdateControls()
+--- `relayout` when the row's buttons may have changed (Update); otherwise the row is laid out
+--- again only when the play button's label does.
+function Skin:UpdateControls(relayout)
     if not self.clip then return end
     local paused, playing = SoundQueue:IsPaused(), SoundQueue:IsPlaying()
-    self.play.text:SetText(paused and L.REPLAY or L.STOP)
+    local label = paused and L.REPLAY or L.STOP
+    if self.play.text:GetText() ~= label then
+        self.play.text:SetText(label)
+        relayout = true
+    end
     -- The glyph on the face: Stop while the line speaks, Replay once it is stopped.
     Actions.Glyph(self.pause:GetNormalTexture(), Actions.HeadState())
     self.pause:GetNormalTexture():SetAlpha((paused or MouseIsOver(self.pause)) and .9 or 0)
@@ -668,12 +665,13 @@ function Skin:UpdateControls()
     end
     local held = not paused and not playing and SoundQueue:GetHeldReason(self.clip)
     self.title.text:SetText(held and format("%s (%s)", Label(self.clip), held) or Label(self.clip))
+    local pausable = SoundQueue:CanBePaused()
     for _, button in ipairs(self.buttons) do
-        local color = SoundQueue:CanBePaused() and colors and colors.paragraph or colors and colors.disabled
+        local color = pausable and colors and colors.paragraph or colors and colors.disabled
         if color then button.text:SetTextColor(color[1], color[2], color[3]) end
-        if SoundQueue:CanBePaused() then button:Enable() else button:Disable() end
+        if pausable then button:Enable() else button:Disable() end
     end
-    self:LayoutControls()
+    if relayout then self:LayoutControls() end
 end
 
 function Skin:UpdateProgress()
@@ -723,8 +721,7 @@ function Skin:LayoutQueue()
         if index <= shown then
             button = button or self:CreateQueueRow(index)
             button.clip = SoundQueue.sounds[index + self.offset + 1]
-            local held = SoundQueue:GetHeldReason(button.clip)
-            button.text:SetText(held and format("%s (%s)", Label(button.clip), held) or Label(button.clip))
+            button.text:SetText(HeldLabel(button.clip))
             ShowRemove(button, false)
             button:Show()
         elseif button then button:Hide(); button.clip = nil end
@@ -807,7 +804,7 @@ function Skin:TextLines(width)
 end
 
 function Skin:RefreshConfig(original)
-    self:Initialize(original.frame)
+    self:Initialize()
     local frame = self.frame
     frame:SetFrameStrata(Config().FrameStrata)
     self:Layout()
@@ -842,7 +839,7 @@ function Skin:Update()
     self:ConfigureActions()
     self:LayoutQueue()
     self:UpdateProgress()
-    self:UpdateControls()
+    self:UpdateControls(true)
 end
 
 --- Shown only when the line runs past the page; its range is the page count.
@@ -850,11 +847,14 @@ function Skin:UpdateScrollbar()
     -- By line, so the thumb rides the captions' glide rather than jumping a page at a time.
     local top, maxTop = Transcript:GetScroll()
     if maxTop <= 1 then self.scrollbar:Hide(); return end
-    self.scrollbar:SetMinMaxValues(1, maxTop)
-    local lines = (self.lines or 1)
-    local thumb = self.scrollbar:GetThumbTexture()
-    if thumb then
-        thumb:SetHeight(math.max(24, (self.scrollbar:GetHeight() or 0) * lines / (lines + maxTop - 1)))
+    -- The range and the thumb only when the page or the text changed; the value every frame.
+    local lines, height = self.lines or 1, self.scrollbar:GetHeight() or 0
+    local key = maxTop .. ":" .. lines .. ":" .. height
+    if key ~= self.scrollKey then
+        self.scrollKey = key
+        self.scrollbar:SetMinMaxValues(1, maxTop)
+        local thumb = self.scrollbar:GetThumbTexture()
+        if thumb then thumb:SetHeight(math.max(24, height * lines / (lines + maxTop - 1))) end
     end
     if math.abs((self.scrollbar:GetValue() or 1) - top) > 0.001 then self.scrollbar:SetValue(top) end
     self.scrollbar:Show()

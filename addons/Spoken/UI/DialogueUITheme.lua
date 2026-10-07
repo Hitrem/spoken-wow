@@ -29,6 +29,8 @@ local ART = "Interface/AddOns/DialogueUI/Art/"
 -- and 4 for its mobile mode), for when its window has not measured itself yet.
 local SIZE_MULTIPLIER = { [0] = 0.9, [1] = 1.0, [2] = 1.1, [3] = 1.25, [4] = 1.4 }
 local HEIGHT_SHARE, WIDTH_OF_HEIGHT = 0.618, 0.85
+-- The window lays itself out from this too (UI/DialogueUIPlayer.lua).
+Theme.HEIGHT_SHARE = HEIGHT_SHARE
 -- Its parchment's end caps at multiplier 1: the strips are this wide whatever the window.
 local PARCHMENT_WIDTH, PARCHMENT_CAP = 546.13, 136.53
 
@@ -47,18 +49,20 @@ local PALETTE = {
     },
 }
 
--- Through Addon:Profile, and the defaults' own table when AceDB has stripped this one.
-local function Config()
+--- The DialogueUI window's settings, for reading: through Addon:Profile, and the defaults'
+--- own table when AceDB has stripped this one.
+function Theme:Config()
     return Addon:Profile("Frame").DialogueUI or Defaults.profile.Frame.DialogueUI
 end
+local function Config() return Theme:Config() end
 
-local function IsLoaded(name)
-    local isLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
-    return isLoaded ~= nil and isLoaded(name) and true or false
+--- Whether the DialogueUI addon is loaded, recognised or not.
+function Theme:Installed()
+    return IsAddOnLoaded ~= nil and IsAddOnLoaded("DialogueUI") and true or false
 end
 
 local function Probe()
-    if not IsLoaded("DialogueUI") then return false end
+    if not Theme:Installed() then return false end
     if type(_G.DialogueUI_DB) ~= "table" or type(_G.DUIQuestFrame) ~= "table" then return false end
     local font = _G.DUIFont_Quest_Paragraph
     return type(font) == "table" and type(font.GetFont) == "function"
@@ -73,7 +77,7 @@ end
 --- Why the DialogueUI style cannot be drawn, or nil: what /spoken player dialogueui says
 --- instead of switching.
 function Theme:Problem()
-    if not IsLoaded("DialogueUI") then return L.OPT_STYLE_DUI_MISSING end
+    if not self:Installed() then return L.OPT_STYLE_DUI_MISSING end
     if not self:Available() then return L.OPT_STYLE_DUI_UNKNOWN end
     return nil
 end
@@ -201,6 +205,6 @@ function Theme:Describe()
         return "dialogueui: " .. (self:Problem() or "unavailable")
     end
     local width, height = self:FrameSize()
-    return format("dialogueui: theme=%d follow=%s size=%.0fx%.0f scale=%.2f watching=%s", self:ThemeID(),
-        tostring(Config().FollowTheme), width, height, Config().Scale or 0, tostring(self.watching or false))
+    return format("dialogueui: theme=%d follow=%s size=%.0fx%.0f watching=%s", self:ThemeID(),
+        tostring(Config().FollowTheme), width, height, tostring(self.watching or false))
 end
