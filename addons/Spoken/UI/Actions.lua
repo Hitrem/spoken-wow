@@ -50,6 +50,24 @@ function Actions:Build(frame)
 end
 
 local RING = [[Interface\AddOns\Spoken\Textures\SettingsButton]]
+-- The Forever client's bronze, as its own frames wear it (MinimalPlayer's): the round buttons' rings
+-- take it while Bronze Border is on. Every ring made, to tint again when the setting changes.
+local BRONZE = Version.IsCamelot and { .95, .68, .35 } or nil
+local rings = setmetatable({}, { __mode = "k" })
+
+local function TintRing(ring)
+    local frame = Addon.db and Addon.db.profile and Addon.db.profile.Frame
+    if BRONZE and frame and frame.BronzeTint then
+        ring:SetVertexColor(BRONZE[1], BRONZE[2], BRONZE[3])
+    else
+        ring:SetVertexColor(1, 1, 1)
+    end
+end
+
+--- Every round button's ring in the bronze, or out of it, as Bronze Border now says.
+function Actions.RefreshRings()
+    for ring in pairs(rings) do TintRing(ring) end
+end
 
 --- Dress `button` as the player's round buttons are -- the windows' pause, the subtitle's
 --- controls: the ring round its edge, `icon` inside it, brighter under the pointer. Sized by the
@@ -59,6 +77,8 @@ function Actions.RoundIcon(button, icon)
     ring:SetTexture(RING)
     ring:SetPoint("TOPLEFT", button, "TOPLEFT", -3, 3)
     ring:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 3, -3)
+    rings[ring] = true
+    TintRing(ring)
     local glyph = button:CreateTexture(nil, "ARTWORK")
     glyph:SetPoint("TOPLEFT", button, "TOPLEFT", 4, -4)
     glyph:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -4, 4)

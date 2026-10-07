@@ -43,8 +43,11 @@ local METHODS = {
     "EnumerateAddonsWithKey",
     -- frame, settings
     "GetPlayerFrame", "GetSettingsCategory", "OpenSettings", "AddSettingsLink", "RefreshPlayer",
+    "GetPlayerStyle", "SetPlayerHost", "AddDialogueUISettings",
+    -- captions
+    "GetCaption", "GetCaptionOptions", "SplitCaption",
     -- contributions
-    "ShowContribution", "AreContributeButtonsHidden",
+    "ShowContribution", "SetContributeHost", "AreContributeButtonsHidden",
 }
 for _, name in ipairs(METHODS) do
     Expect("Spoken:" .. name .. " exists", type(Spoken[name]), "function")
