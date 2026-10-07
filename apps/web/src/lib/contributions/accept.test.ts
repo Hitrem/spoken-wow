@@ -622,7 +622,12 @@ describe("resolveContribution: a translation", () => {
 
       const listed = (await corpus(LOCALE)).lines.filter((line) => line.lineId === momentId());
       expect(listed).toHaveLength(1);
-      expect(listed[0]).toMatchObject({ text: PORTUGUESE, english: { questTitle: "A Test Quest" } });
+      expect(listed[0]).toMatchObject({
+        text: PORTUGUESE,
+        originalText: "Bring me six wolf pelts, druid.",
+        english: { questTitle: "A Test Quest" },
+      });
+      expect((await rowsIn(LOCALE)).map((row) => row.originalText)).toEqual(["Bring me six wolf pelts, druid."]);
       expect(listed[0].missing?.text).toBeFalsy();
     });
 
