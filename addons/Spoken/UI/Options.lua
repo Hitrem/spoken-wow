@@ -258,10 +258,7 @@ local function Build(canvas)
         local style = Style()
         return style == "minimal" or style == "classic" or style == "dialogueui"
     end
-    -- The DialogueUI window takes its size and its text's from DialogueUI's own window, with
-    -- rows of its own for them; the other two take the player's.
     local function Dui() return Style() == "dialogueui" end
-    local function OwnSizes() return InWindow() and not Dui() end
     local function Small() return Style() == "minimal" end
     local function Subtitles() return Style() == "subtitle" end
     local function Words() return transcript().Enabled end
@@ -399,8 +396,8 @@ local function Build(canvas)
     layout:Section(L.OPT_WINDOW_TITLE)
     Only(layout:Slider(L.OPT_SCALE, 0.5, 2, 0.05,
         function() return cfg().FrameScale end, function(v) cfg().FrameScale = v end, refresh,
-        nil, L.OPT_SCALE_TIP), OwnSizes)
-    -- The DialogueUI window's own size, theme and text are on the DialogueUI page
+        nil, L.OPT_SCALE_TIP), InWindow)
+    -- What only the DialogueUI window has, its theme above all, is on the DialogueUI page
     -- (UI/DialogueUIOptions.lua), with the rest of what is about DialogueUI.
     if canvas then
         Only(layout:Button(L.OPT_DUI_OPEN_PAGE, 200, function() DialogueUIOptions:Open() end), Dui)
@@ -434,15 +431,10 @@ local function Build(canvas)
             Only(row, InWindow)
             Requires(row, Words, L.REASON_WORDS)
         end
-        -- Size and lines are the DialogueUI window's to set, on its own page.
-        local function OwnText(row)
-            Only(row, OwnSizes)
-            Requires(row, Words, L.REASON_WORDS)
-        end
-        OwnText(layout:Slider(L.TRANSCRIPT_SIZE, 12, 26, 1,
+        InWindowText(layout:Slider(L.TRANSCRIPT_SIZE, 12, 26, 1,
             function() return transcript().FontSize end,
             function(v) transcript().FontSize = v end, refreshTranscript, Layout.Number, L.TRANSCRIPT_SIZE_TIP))
-        OwnText(layout:Slider(L.TRANSCRIPT_LINES, 1, 2, 1,
+        InWindowText(layout:Slider(L.TRANSCRIPT_LINES, 1, 2, 1,
             function() return transcript().Lines end,
             function(v) transcript().Lines = v end, refreshTranscript, Layout.Number, L.TRANSCRIPT_LINES_TIP))
         local SCROLL_LABELS = { line = L.TRANSCRIPT_SCROLL_LINE, page = L.TRANSCRIPT_SCROLL_PAGE,
@@ -952,7 +944,7 @@ function Options:Setup()
     -- Rows come and go with the way lines are shown; the window or scroller follows what is left.
     panel.layout.onResize = function() FitWindow() end
     self:UpdateRows()
-    -- Queued with the feature addons' pages, so it is listed after them.
+    -- Built with this page; registered last, after every part's (UI/DialogueUIOptions.lua).
     if canvas and DialogueUIOptions then DialogueUIOptions:Setup() end
     if canvas then
         -- Spoken's entry in the game's settings, and each feature addon's page an entry nested

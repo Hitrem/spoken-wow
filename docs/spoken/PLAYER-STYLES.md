@@ -50,42 +50,42 @@ object which font it writes in. That is why the style exists only with DialogueU
 
 ## Its settings
 
-Everything about DialogueUI is on its own page, **Spoken > DialogueUI**, listed after the
-modules' pages and built only with DialogueUI installed (`addons/Spoken/UI/DialogueUIOptions.lua`).
-Spoken's page shows a **DialogueUI Settings** button in its place while this style is chosen.
-The page holds this window's settings, and a section from each module that registered one
-with `Spoken:AddDialogueUISettings(build)`: Spoken Quests puts its DialogueUI switches there
-(see [`docs/quests/DIALOGUEUI-BRIDGE.md`](../quests/DIALOGUEUI-BRIDGE.md)). Its Defaults button
-puts all of them back. The window's rows are greyed, saying where to choose the style, while
+It follows the player's own settings on Spoken's page, as the other windows do:
+
+- **Window Size** scales the whole panel, text included. The panel is laid out exactly as
+  DialogueUI's window, at its size, paddings, text size (its Font Size setting), line spacing
+  (0.35 of the text size) and paragraph gap. At the default Window Size (70%) it is 65% of
+  DialogueUI's window; the size scales from there.
+- **Text Size** sets the words against DialogueUI's: at the default 16 they are DialogueUI's
+  size, at 24 half as large again. The line spacing follows the text; the header, queue rows
+  and buttons stay with the panel.
+- **Lines Shown** and the expand state: the plus or minus button beside the close cross opens
+  the panel to its size or folds it to Lines Shown (1 or 2). It is the same expand state the
+  other windows' captions share (`CaptionsExpanded`), so it opens folded by default and
+  opening it opens theirs. Expanded, the handle in the bottom-right corner drags the panel
+  taller or shorter. Hold **Shift** as you start the drag to change its width too, from 60%
+  to twice DialogueUI's. The size is kept until **Reset Position**.
+- **Mouse wheel**: Ctrl and the wheel over the panel step Window Size by 5%; Ctrl, Shift and
+  the wheel step Text Size by 1. Both stay within those sliders' ranges, keep the panel's top
+  left corner where it was, and show the new value in a tooltip. The words and the queue pass
+  a Ctrl wheel on to the panel (`frame.spokenWheel`) and scroll as before without it.
+
+What only this window has is on its own page, **Spoken > DialogueUI**, built only with
+DialogueUI installed (`addons/Spoken/UI/DialogueUIOptions.lua`). It is always the last entry
+under Spoken: it is registered a frame after `PLAYER_ENTERING_WORLD`, once every module's page
+is in (Spoken Books registers its own at that event). Spoken's page shows a **DialogueUI
+Settings** button while this style is chosen. The page holds the rows below, and a section
+from each module that registered one with `Spoken:AddDialogueUISettings(build)`: Spoken Quests
+puts its DialogueUI switches there (see
+[`docs/quests/DIALOGUEUI-BRIDGE.md`](../quests/DIALOGUEUI-BRIDGE.md)). Its Defaults button puts
+all of them back. The window's rows are greyed, saying where to choose the style, while
 another narrator style is chosen.
 
 - **Follow DialogueUI's Theme** (on): parchment or dark, whichever DialogueUI is set to,
   switching the moment DialogueUI does. Off, **Theme** picks one for good.
-- **Window Size** (65%), standing in for the other windows' Window Size, which Spoken's page
-  hides for this style. The panel is laid out
-  exactly as DialogueUI's window, at its size, paddings, text size (its Font Size setting),
-  line spacing (0.35 of the text size) and paragraph gap. Window Size then scales the whole
-  frame, text included. At 100% the two windows are the same size on screen.
-- **Opens As**: Expanded opens the panel at its share of DialogueUI's window; Minimized folds
-  it to the lines **Lines Shown** sets (2, from 1 to 10; the Small Window's Lines Shown stops
-  at 2). The plus or minus button beside the close cross switches between the two
-  for the session. Expanded, the handle in the bottom-right corner drags the panel taller or
-  shorter. Hold **Shift** as you start the drag to change its width too, from 60% to twice
-  DialogueUI's. The size is kept until **Reset Position**.
 - **Fit to the Words** (on): the panel is only as tall as the line's words need, its size
-  (expanded) or Lines Shown (minimized) being the most it grows to; a long line still fills it
+  (expanded) or Lines Shown (folded) being the most it grows to; a long line still fills it
   and scrolls. Off, the panel always opens at its full size.
-- **Scale Text With Window** (on) and **Text Size**, standing in for the other windows' Text
-  Size and Lines, likewise hidden. Turned off, the words' size is set on its own, as a share of DialogueUI's
-  text on screen: 100% reads the same size as DialogueUI. It is applied against Window
-  Size, so changing the window leaves the text as it reads. The line spacing follows the
-  text; the header, queue rows and buttons stay with the panel. Turning it off starts the
-  slider at the window's size, so nothing jumps.
-- **Mouse wheel**: Ctrl and the wheel over the panel step Window Size by 5%. Ctrl, Shift and
-  the wheel step Text Size, turning off Scale Text With Window first. Both stay within the
-  sliders' ranges (`DialogueUIPlayer.PANEL_SIZES`, `FONT_SIZES`), keep the panel's top left
-  corner where it was, and show the new value in a tooltip. The words and the queue pass a
-  Ctrl wheel on to the panel (`frame.spokenWheel`) and scroll as before without it.
 
 The highlight on the words being read is deep red on parchment and gold on dark, the same
 pair Spoken Quests lights DialogueUI's own text with.

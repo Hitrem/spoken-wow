@@ -8,13 +8,14 @@ setfenv(1, SpokenEnv)
 -- Everything DialogueUI-shaped comes through UI/DialogueUITheme.lua: the art folder, the
 -- window size the panel is a share of, the text colours. The panel itself keeps DialogueUI's
 -- proportions -- its paddings and its parchment strips, which overhang the frame as its
--- do -- scaled by the Panel Size setting. Playback, actions and portraits are the services
+-- do -- scaled by Window Size. Playback, actions and portraits are the services
 -- the other windows use; the queue rows are built from MinimalPlayer's parts. Nothing here
 -- is about quests: a zone's lore or a book page plays in it as any line does, the book for
 -- a face and the page's title under the book's.
 --
--- Not at the Window Scale: the panel is already sized from DialogueUI's window, and that
--- slider is hidden for this style.
+-- The player's own settings size it as they size the other windows: Window Size scales the
+-- panel from its default share of DialogueUI's window, Text Size the words from DialogueUI's
+-- text size, and Lines Shown with the shared expand button set how much text it shows.
 --
 -- Parsed by the 1.12 client too (addon.xml is shared), so Lua 5.0 syntax throughout; the
 -- stub below is all that client runs.
@@ -37,8 +38,12 @@ local CORNER_ICON = 20
 local CONTROL_HEIGHT = 22
 local BAR_HEIGHT = 3
 local MIN_LINES = 2
--- The most caption lines Lines Shown gives the folded panel.
-local MAX_MINIMIZED_LINES = 10
+-- The panel's size at the default Window Size, as a share of DialogueUI's window: read beside
+-- the dialog, not instead of it.
+local BASE_SCALE = 0.65
+local DEFAULT_WINDOW_SIZE = Defaults.profile.Frame.FrameScale
+-- Text Size's default, at which the words are DialogueUI's own size.
+local BASE_FONT_SIZE = 16
 local SCROLLBAR = 10
 -- The quest title a little under DialogueUI's: its title shares the strip with nothing,
 -- and here the speaker's name sits above it.
@@ -57,12 +62,10 @@ local HEADER_DIVIDER = { 0, 0.65625, 0.56640625, 0.61328125, 358, 51 }
 -- line. The socket is drawn as is; only the line past it stretches with the panel.
 local SOCKET_WIDTH = 64
 local FOOTER_DIVIDER = { 0, 0.71875, 0.6875, 0.71875, 392, 34 }
--- What Panel size and Font size scale may be set to, by the settings' sliders or by the
--- wheel with Ctrl held, and the step of each.
-Skin.PANEL_SIZES = { 0.3, 1.2 }
-Skin.MAX_MINIMIZED_LINES = MAX_MINIMIZED_LINES
-Skin.FONT_SIZES = { 0.3, 1.5 }
-Skin.SIZE_STEP = 0.05
+-- What the wheel with Ctrl held may set Window Size and Text Size to, as their sliders on
+-- Spoken's page, and the step of each.
+local WINDOW_SIZES, WINDOW_STEP = { 0.5, 2 }, 0.05
+local FONT_SIZES = { 12, 26 }
 
 local parts = MinimalPlayer.parts
 local Font, Removable, ShowRemove, Label = parts.Font, parts.Removable, parts.ShowRemove, parts.Label
@@ -72,6 +75,9 @@ local function Round(n) return math.floor(n + 0.5) end
 -- strips the profile. Its DialogueUI table likewise, from the defaults when stripped.
 local function Config() return Addon:Profile("Frame") end
 local function Panel() return Config().DialogueUI or Defaults.profile.Frame.DialogueUI end
+-- Open to the panel's size or folded to Lines Shown: the expand state the other windows'
+-- captions share.
+local function Expanded() return Addon.db and Addon:Layout().CaptionsExpanded and true or false end
 local function Waiting() return math.max(0, SoundQueue:GetQueueSize() - 1) end
 local function BelongsTo(frame, root)
     while frame do
@@ -258,15 +264,14 @@ function Skin:Initialize(original)
     self.fold:SetSize(CORNER_ICON - 4, CORNER_ICON - 4)
     self.fold:SetPoint("RIGHT", self.close, "LEFT", 0, 0)
     self.fold:SetHighlightTexture([[Interface\Buttons\UI-PlusButton-Hilight]], "ADD")
-    self.fold:SetScript("OnClick", function() self:SetExpanded(not self.expanded) end)
+    self.fold:SetScript("OnClick", function() self:SetExpanded(not Expanded()) end)
     self.fold:SetScript("OnEnter", function()
         GameTooltip:SetOwner(self.fold, "ANCHOR_LEFT")
-        GameTooltip:SetText(self.expanded and L.TRANSCRIPT_COLLAPSE or L.TRANSCRIPT_EXPAND)
+        GameTooltip:SetText(Expanded() and L.TRANSCRIPT_COLLAPSE or L.TRANSCRIPT_EXPAND)
         WheelHint()
         GameTooltip:Show()
     end)
     self.fold:SetScript("OnLeave", function() self:HideTooltip() end)
-    self.expanded = Panel().Expanded ~= false
 
     -- The waiting lines, under the captions.
     self.drawer = CreateFrame("Frame", nil, content)
@@ -336,7 +341,7 @@ function Skin:Initialize(original)
     end)
     self.resizer:SetScript("OnLeave", function() self.resizer:SetAlpha(.5); self:HideTooltip() end)
     self.resizer:SetScript("OnMouseDown", function(_, button)
-        if button ~= "LeftButton" or Addon:IsFrameLocked() or not self.expanded then return end
+        if button ~= "LeftButton" or Addon:IsFrameLocked() or not Expanded() then return end
         self.sizing = true
         self.sizingWidth = IsShiftKeyDown and IsShiftKeyDown() and true or false
         self:Layout() -- the resize bounds for this drag: free width only with Shift
@@ -370,9 +375,9 @@ function Skin:Layout()
     local frame, cfg = self.frame, Panel()
     self.layingOut = true
     -- Laid out exactly as DialogueUI lays out its window: its size, its paddings, its text
-    -- size and spacing. Panel size then scales the whole frame, text and all, so at 100%
-    -- the two are the same size on screen and at 80% this is the same page, smaller.
-    local scale = cfg.Scale or 0.65
+    -- size and spacing. Window Size then scales the whole frame, text and all, from
+    -- BASE_SCALE at its default: the same page as DialogueUI's, smaller.
+    local scale = BASE_SCALE * (Config().FrameScale or DEFAULT_WINDOW_SIZE) / DEFAULT_WINDOW_SIZE
     frame.spokenBaseScale = scale * Theme:FrameScale() / UIParent:GetEffectiveScale()
     local duiWidth, duiHeight = Theme:FrameSize()
     -- The multiplier DialogueUI drew its window at, so the paddings keep its proportions.
@@ -393,13 +398,10 @@ function Skin:Layout()
     -- paragraphs (here an empty line, which comes to about the same).
     local fonts = Theme:Fonts()
     local fontSize = fonts.paragraphSize
-    -- The captions' size. Linked, it is DialogueUI's, scaled with the rest of the panel.
-    -- Unlinked, Font size scale is its share of DialogueUI's on screen, so it is set here
-    -- against the panel's scale, which the whole frame is drawn at.
-    local captionSize = fontSize
-    if cfg.LinkFontScale == false then
-        captionSize = math.max(6, Round(fontSize * (cfg.FontScale or scale) / scale))
-    end
+    -- The captions' size: DialogueUI's at the default Text Size, larger or smaller with it,
+    -- scaled with the rest of the panel.
+    local textSize = tonumber(Addon:Profile("Transcript").FontSize) or BASE_FONT_SIZE
+    local captionSize = math.max(6, Round(fontSize * textSize / BASE_FONT_SIZE))
     local lineGap = Round(0.35 * captionSize)
     local lineHeight = captionSize + lineGap
     self.fonts, self.captionSize, self.lineGap = fonts, captionSize, lineGap
@@ -427,8 +429,9 @@ function Skin:Layout()
     local body = height - padTop - headerHeight - queueHeight - padBottom - footerHeight
     local lines = math.max(MIN_LINES, math.floor(body / lineHeight))
     -- Folded, the panel is only as tall as Lines Shown asks.
-    if not self.expanded then
-        lines = Clamp(math.floor(tonumber(cfg.MinimizedLines) or MIN_LINES), 1, MAX_MINIMIZED_LINES)
+    local expanded = Expanded()
+    if not expanded then
+        lines = Addon:Profile("Transcript").Lines == 1 and 1 or 2
         height = 0
     end
     -- Fit to the Words: no taller than the line's words need, the size above being the most.
@@ -436,7 +439,7 @@ function Skin:Layout()
     if cfg.FitText ~= false and not self.sizing then
         local needed = self:TextLines(inner)
         if needed and needed < lines then
-            lines, height = math.max(needed, self.expanded and MIN_LINES or 1), 0
+            lines, height = math.max(needed, expanded and MIN_LINES or 1), 0
         end
     end
     local captionHeight = lines * lineHeight
@@ -450,7 +453,7 @@ function Skin:Layout()
             frame:SetResizeBounds(width, minHeight, width, 4000)
         end
     end
-    self.resizer:SetShown(self.expanded and not Addon:IsFrameLocked())
+    self.resizer:SetShown(expanded and not Addon:IsFrameLocked())
     self.lines = lines
 
     local capWidth, capHeight = Theme:ParchmentSize()
@@ -486,7 +489,7 @@ function Skin:Layout()
     self.name:SetPoint("BOTTOMLEFT", self.title, "TOPLEFT", 0, 2)
     self.name:SetPoint("RIGHT", content, "RIGHT", -(2 * CORNER_ICON), 0)
     self.name:SetHeight(fonts.subtitleSize + 2)
-    local glyph = [[Interface\Buttons\UI-]] .. (self.expanded and "Minus" or "Plus")
+    local glyph = [[Interface\Buttons\UI-]] .. (expanded and "Minus" or "Plus")
     self.fold:SetNormalTexture(glyph .. "Button-Up")
     self.fold:SetPushedTexture(glyph .. "Button-Down")
 
@@ -596,24 +599,23 @@ function Skin:ConfigureActions()
     self.actionsWidth = x
 end
 
---- The wheel with Ctrl held: Panel size a step up or down, or with Shift too, Font size
---- scale, which unlinks the text from the panel. The panel keeps its top left corner where
---- it was, rather than sliding as its scale changes. True when the wheel was taken.
+--- The wheel with Ctrl held: Window Size a step up or down, or with Shift too, Text Size --
+--- the player's own settings, which the other windows follow too. The panel keeps its top
+--- left corner where it was, rather than sliding as its scale changes. True when the wheel
+--- was taken.
 function Skin:Wheel(delta)
     if delta == 0 or not (IsControlKeyDown and IsControlKeyDown()) then return false end
-    local cfg = Panel()
-    local step = delta > 0 and self.SIZE_STEP or -self.SIZE_STEP
-    local function Snap(value, range)
-        return Clamp(math.floor(value / self.SIZE_STEP + 0.5) * self.SIZE_STEP, range[1], range[2])
-    end
-    local label, value
+    local text
     if IsShiftKeyDown and IsShiftKeyDown() then
-        if cfg.LinkFontScale ~= false then cfg.FontScale, cfg.LinkFontScale = cfg.Scale or 0.65, false end
-        cfg.FontScale = Snap(cfg.FontScale + step, self.FONT_SIZES)
-        label, value = L.OPT_DUI_FONT_SCALE, cfg.FontScale
+        local transcript = Addon:Profile("Transcript")
+        transcript.FontSize = Clamp((transcript.FontSize or BASE_FONT_SIZE) + (delta > 0 and 1 or -1),
+            FONT_SIZES[1], FONT_SIZES[2])
+        text = format("%s: %d", L.TRANSCRIPT_SIZE, transcript.FontSize)
     else
-        cfg.Scale = Snap((cfg.Scale or 0.65) + step, self.PANEL_SIZES)
-        label, value = L.OPT_DUI_SCALE, cfg.Scale
+        local cfg = Config()
+        local value = (cfg.FrameScale or DEFAULT_WINDOW_SIZE) + (delta > 0 and WINDOW_STEP or -WINDOW_STEP)
+        cfg.FrameScale = Clamp(math.floor(value / WINDOW_STEP + 0.5) * WINDOW_STEP, WINDOW_SIZES[1], WINDOW_SIZES[2])
+        text = format("%s: %d%%", L.OPT_SCALE, Round(cfg.FrameScale * 100))
     end
     local frame = self.frame
     local left, top, before = frame:GetLeft(), frame:GetTop(), frame:GetEffectiveScale()
@@ -627,17 +629,17 @@ function Skin:Wheel(delta)
         Addon:SaveLayout("DialogueUI", frame)
     end
     GameTooltip:SetOwner(frame, "ANCHOR_CURSOR")
-    GameTooltip:SetText(format("%s: %d%%", label, Round(value * 100)))
+    GameTooltip:SetText(text)
     GameTooltip:Show()
     return true
 end
 
---- Fold the panel to two caption lines, or open it to its share of DialogueUI's window.
---- For the session: the Opening setting is what it opens as.
+--- Fold the panel to Lines Shown, or open it to its size. Kept, and shared with the other
+--- windows' expand button.
 function Skin:SetExpanded(expanded)
     expanded = expanded and true or false
-    if self.expanded == expanded then return end
-    self.expanded = expanded
+    if Expanded() == expanded then return end
+    Addon:Layout().CaptionsExpanded = expanded
     if self.frame then self:Layout(); self:Update() end
 end
 
@@ -864,8 +866,6 @@ function Skin:Reset()
     Addon:Layout().DialogueUI = nil
     Addon:Layout().DialogueUIHeight = nil
     Addon:Layout().DialogueUIWidth = nil
-    -- Folded or open as the Opening setting says, again.
-    self.expanded = Panel().Expanded ~= false
     -- Back where DialogueUI puts its window (RefreshConfig, with no saved place).
     self:RefreshConfig(PlayerFrame)
 end

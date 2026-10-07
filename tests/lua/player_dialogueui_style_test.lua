@@ -1,7 +1,7 @@
 -- The DialogueUI narrator style (UI/DialogueUITheme.lua and UI/DialogueUIPlayer.lua): offered
 -- only with DialogueUI, its window falling back to the small one without it, and with a fake
 -- DialogueUI the window takes its size, its art, its theme and its font, follows a theme or
--- size change, sizes its text apart from itself, opens folded or not, shows a zone's or a
+-- size change, follows the player's Window Size, Text Size, Lines Shown and expand button, shows a zone's or a
 -- book's line as well as a quest's, and can be hosted over DialogueUI's window. Run with
 -- `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
@@ -92,10 +92,13 @@ local Skin, T = env.DialogueUIPlayer, env.Transcript
 Expect("/spoken player dialogueui draws it", Spoken:GetPlayerStyle(), "dialogueui")
 Expect("...remembered as the window chosen", env.Addon.db.profile.Frame.Window, "dialogueui")
 Expect("...on its own frame", Spoken:GetPlayerFrame(), _G.SpokenDialogueUIPlayerFrame)
+Expect("it opens folded to Lines Shown, as the other windows' words do", Skin.lines, 2)
+Skin:SetExpanded(true)
+Expect("...and opened, the other windows' words are opened too", env.Addon:Layout().CaptionsExpanded, true)
 Expect("the window is laid out as DialogueUI's", Skin.frame:GetWidth(), 624)
 Expect("...in height too", Skin.frame:GetHeight(), 734)
--- DialogueUI's window has no parent and is drawn at 0.8 here; UIParent at 1. Window Size
--- 0.65 of that is 0.52: the whole window scaled, not the player's Window Size.
+-- DialogueUI's window has no parent and is drawn at 0.8 here; UIParent at 1. At the default
+-- Window Size the window is 0.65 of that, 0.52: the whole window scaled.
 Expect("...and its size scales the whole of it", math.abs(Skin.frame.scale - 0.52) < 1e-6, true)
 Expect("the parchment is DialogueUI's own", Skin.parchments[2].texture, BROWN .. "Parchment.png")
 Expect("...its top cap at the top of the image", table.concat(Skin.parchments[1].texCoord, ","), "0,1,0,0.125")
@@ -114,53 +117,50 @@ Expect("...in DialogueUI's font", T.style.font, "Interface/AddOns/DialogueUI/Fon
 Expect("...and the parchment's red highlight", T.style.highlight, RED)
 Expect("the expand button has no place on a fixed page", T.expand:IsShown(), false)
 
--- The settings: the DialogueUI window's own on the DialogueUI page, Spoken > DialogueUI; on
--- Spoken's page, a button to it in place of the sizes the window does not use.
+-- The settings: the window's size, its words' size and lines are the player's own, on Spoken's
+-- page as for the other windows; the DialogueUI page, Spoken > DialogueUI, has only what this
+-- window alone has, and a button on Spoken's page leads there.
 env.Options:UpdateRows()
 local main, Page = _G.SpokenOptionsPanel.layout, env.DialogueUIOptions
 main:Refresh()
 local function Shown(layout, label, tooltip) local row = Row(layout, label, tooltip); return row ~= nil and row:IsShown() end
 Expect("Spoken's page points to the DialogueUI page", Shown(main, env.L.OPT_DUI_OPEN_PAGE), true)
-Expect("...which is listed after the modules' pages", Page.page and Page.page.order, 4)
+Expect("the DialogueUI page waits for the world to be up", Page.page, nil)
+stub.FireEvent("PLAYER_ENTERING_WORLD"); stub.Advance(0.1)
+Expect("...then is listed after every part's page", Page.page and Page.page.order, 1000)
 Expect("...under DialogueUI's name", Page.page and Page.page.name, env.L.OPT_STYLE_DIALOGUEUI)
-Expect("the small and large windows' size is not offered", Shown(main, env.L.OPT_SCALE, env.L.OPT_SCALE_TIP), false)
-Expect("...nor their words' size and lines", Shown(main, env.L.TRANSCRIPT_SIZE, env.L.TRANSCRIPT_SIZE_TIP)
-    or Shown(main, env.L.TRANSCRIPT_LINES), false)
-Expect("...but how the words scroll is", Shown(main, env.L.TRANSCRIPT_SCROLL), true)
+Expect("the window's size is the player's Window Size", Shown(main, env.L.OPT_SCALE, env.L.OPT_SCALE_TIP), true)
+Expect("...its words' size and lines theirs", Shown(main, env.L.TRANSCRIPT_SIZE, env.L.TRANSCRIPT_SIZE_TIP)
+    and Shown(main, env.L.TRANSCRIPT_LINES), true)
+Expect("...and how the words scroll too", Shown(main, env.L.TRANSCRIPT_SCROLL), true)
 local page = Page.layout
 page:Refresh()
 local function Live(label, tooltip) local row = Row(page, label, tooltip); return row ~= nil and row.layoutReason == nil end
-Expect("the page has the window's size", Live(env.L.OPT_DUI_SCALE, env.L.OPT_DUI_SCALE_TIP), true)
-Expect("...its theme", Live(env.L.OPT_DUI_FOLLOW_THEME), true)
-Expect("...how it opens", Live(env.L.OPT_DUI_MODE), true)
-Expect("...and its text's size", Live(env.L.OPT_DUI_LINK_FONT), true)
+Expect("the page has the window's theme", Live(env.L.OPT_DUI_FOLLOW_THEME), true)
+Expect("...and Fit to the Words", Live(env.L.OPT_DUI_FIT_TEXT), true)
+Expect("...but nothing Spoken's page has already", Row(page, env.L.OPT_SCALE) == nil
+    and Row(page, env.L.TRANSCRIPT_SIZE) == nil and Row(page, env.L.TRANSCRIPT_LINES) == nil, true)
 Expect("the theme waits on not following DialogueUI's", Row(page, env.L.OPT_DUI_THEME).layoutReason, env.L.REASON_DUI_FOLLOW)
-Expect("the text size waits on unlinking it",
-    Row(page, env.L.OPT_DUI_FONT_SCALE, env.L.OPT_DUI_FONT_SCALE_TIP).layoutReason, env.L.REASON_DUI_LINKED)
 env.Addon:SetPlayerStyle("minimal")
 page:Refresh()
 Expect("with another style chosen they wait on this one, saying where to choose it",
-    Row(page, env.L.OPT_DUI_SCALE, env.L.OPT_DUI_SCALE_TIP).layoutReason, env.L.REASON_DUI_STYLE)
+    Row(page, env.L.OPT_DUI_FIT_TEXT).layoutReason, env.L.REASON_DUI_STYLE)
 env.Addon:SetPlayerStyle("dialogueui")
-env.Addon.db.profile.Frame.DialogueUI.Scale = 0.9
+env.Addon.db.profile.Frame.DialogueUI.FitText = false
 Page:Reset()
-Expect("the page's Defaults puts the window's settings back", env.Addon.db.profile.Frame.DialogueUI.Scale, 0.65)
-Expect("the page has Fit to the Words", Live(env.L.OPT_DUI_FIT_TEXT), true)
-Expect("...and the folded window's Lines Shown", Live(env.L.TRANSCRIPT_LINES, env.L.OPT_DUI_LINES_TIP), true)
+Expect("the page's Defaults puts the window's settings back", env.Addon.db.profile.Frame.DialogueUI.FitText, true)
 
 ---------------------------------------------------------------- folded or open
 Skin:SetExpanded(false)
 Expect("folded, the window keeps two lines", Skin.lines, 2)
 Expect("...and shrinks to them", Skin.frame:GetHeight() < 734, true)
-Expect("...for the session: the setting is unchanged", env.Addon.db.profile.Frame.DialogueUI.Expanded, true)
+Expect("...the other windows' words folded with it", env.Addon:Layout().CaptionsExpanded, false)
 Skin:SetExpanded(true)
 Expect("...and opens back up", Skin.lines > 8, true)
-env.Addon.db.profile.Frame.DialogueUI.Expanded = false
-env.PlayerFrame:Reset()
-Expect("set to open minimized, it opens folded", Skin.lines, 2)
-env.Addon.db.profile.Frame.DialogueUI.Expanded = true
-env.PlayerFrame:Reset()
-Expect("...and set to open expanded, open", Skin.lines > 8, true)
+T:ToggleExpanded(); env.PlayerFrame:RefreshConfig()
+Expect("the other windows' expand button folds it too", Skin.lines, 2)
+T:ToggleExpanded(); env.PlayerFrame:RefreshConfig()
+Expect("...and opens it", Skin.lines > 8, true)
 
 local saved = env.Addon:Layout()
 saved.DialogueUIHeight = 900
@@ -205,10 +205,10 @@ local hadCtrl = _G.IsControlKeyDown
 _G.IsControlKeyDown = function() return true end
 Skin:Wheel(1)
 _G.IsControlKeyDown = hadCtrl
-Expect("...still there at another size", env.Addon.db.profile.Frame.DialogueUI.Scale > 0.65
+Expect("...still there at another size", env.Addon.db.profile.Frame.FrameScale > 0.7
     and At(960 - 480 * 0.8), true)
 Expect("...the size not taken for a move", saved.DialogueUI, nil)
-env.Addon.db.profile.Frame.DialogueUI.Scale = 0.65
+env.Addon.db.profile.Frame.FrameScale = 0.7
 env.PlayerFrame:RefreshConfig()
 Skin:StopDrag()
 Expect("dragged, its place is kept", saved.DialogueUI ~= nil, true)
@@ -220,9 +220,8 @@ env.PlayerFrame:Reset()
 Expect("reset, it goes back to where DialogueUI puts its window", saved.DialogueUI == nil and At(960 + 480 * 0.8), true)
 
 ---------------------------------------------------------------- as tall as the words need
-local panel = env.Addon.db.profile.Frame.DialogueUI
+local panel, transcript = env.Addon.db.profile.Frame.DialogueUI, env.Addon.db.profile.Transcript
 Expect("Fit to the Words is on by default", panel.FitText, true)
-Expect("...and the folded window shows two lines", panel.MinimizedLines, 2)
 local function Play(text)
     Spoken:StopAll()
     quests:Enqueue(H.Clip({ length = 30, present = { header = "Marshal McBride", label = "Kobold Camp Cleanup",
@@ -248,14 +247,16 @@ saved.DialogueUIHeight = nil
 Play(long)
 Skin:SetExpanded(false)
 Expect("folded, it shows two lines", Skin.lines, 2)
-panel.MinimizedLines = 5
+transcript.Lines = 1
 env.PlayerFrame:RefreshConfig()
-Expect("...or as many as its Lines Shown says", Skin.lines, 5)
+Expect("...or one, as the player's Lines Shown says", Skin.lines, 1)
+transcript.Lines = 2
 Play("Go north.")
 Expect("...and no more than the words need", Skin.lines, 1)
 Skin:SetExpanded(true)
+panel.FitText = false
 Page:Reset()
-Expect("the page's Defaults puts both back", panel.MinimizedLines == 2 and panel.FitText == true, true)
+Expect("the page's Defaults puts Fit to the Words back", panel.FitText, true)
 -- The wheel's shortcuts, which nothing on the window shows, on its tooltips and on the page.
 local function Says(text)
     for _, line in ipairs(_G.GameTooltip.lines or {}) do
@@ -333,57 +334,55 @@ dui.FollowTheme = true
 DUI.frameWidth, DUI.frameHeight = 600, 700
 DUI:UpdateFrameSize()
 Expect("DialogueUI resizing resizes the window", Skin.frame:GetWidth(), 600)
-dui.Scale = 0.3
+local frameCfg, words = env.Addon.db.profile.Frame, env.Addon.db.profile.Transcript
+frameCfg.FrameScale = 0.35
 env.PlayerFrame:RefreshConfig()
-Expect("a smaller size scales it down", math.abs(Skin.frame.scale - 0.3 * 0.8) < 1e-6, true)
+Expect("half the Window Size scales it down by half", math.abs(Skin.frame.scale - 0.65 * 0.5 * 0.8) < 1e-6, true)
 Expect("...keeping DialogueUI's layout inside", Skin.frame:GetWidth(), 600)
-dui.Scale = 0.65
+frameCfg.FrameScale = 0.7
 env.PlayerFrame:RefreshConfig()
-dui.LinkFontScale, dui.FontScale = false, 1.3
+words.FontSize = 26
 env.PlayerFrame:RefreshConfig()
--- Drawn at 0.65, a 14 that should read as 1.3 of DialogueUI's is set at 28.
-Expect("unlinked, Text Size sets the words on their own", T.style.size, 28)
-Expect("...their spacing following", T.style.lineGap, 10)
+-- DialogueUI's 14 at the default Text Size of 16; at 26, 14 * 26 / 16.
+Expect("Text Size sets the words against DialogueUI's", T.style.size, 23)
+Expect("...their spacing following", T.style.lineGap, 8)
 Expect("...the window keeping its scale", math.abs(Skin.frame.scale - 0.52) < 1e-6, true)
-dui.Scale = 0.3
+words.FontSize = 16
 env.PlayerFrame:RefreshConfig()
-Expect("...and a smaller window leaving the text as it reads", T.style.size, 61)
-dui.Scale, dui.LinkFontScale = 0.65, true
-env.PlayerFrame:RefreshConfig()
-Expect("linked again, the words are DialogueUI's size in the window", T.style.size, 14)
+Expect("at the default Text Size the words are DialogueUI's size", T.style.size, 14)
 
 -- The wheel with Ctrl held over the window. Ctrl alone sizes the window, keeping its top left
--- corner on screen; Shift with it sizes the text and unlinks it.
+-- corner on screen; Shift with it sizes the text. Both the player's own settings.
 local ctrl, shift = false, false
 _G.IsControlKeyDown = function() return ctrl end
 _G.IsShiftKeyDown = function() return shift end
 T.top = 1
 T.frame:GetScript("OnMouseWheel")(T.frame, -1)
 Expect("the wheel alone still scrolls the words", T.manualScroll, true)
-Expect("...the size untouched", dui.Scale, 0.65)
+Expect("...the size untouched", frameCfg.FrameScale, 0.7)
 -- Dragged before, so the corner stays where the player left it (never dragged, it stays where
 -- DialogueUI puts its window: see "where it opens").
 Skin:StopDrag()
 ctrl = true
 T.frame:GetScript("OnMouseWheel")(T.frame, 1)
-Expect("Ctrl and the wheel over the words grow the window", math.abs(dui.Scale - 0.7) < 1e-9, true)
-Expect("...drawing it larger", math.abs(Skin.frame.scale - 0.7 * 0.8) < 1e-6, true)
-Expect("...its corner kept where it was", math.abs(Skin.frame.anchor.y - 100 * 0.52 / 0.56) < 1e-6, true)
-Expect("...the text still linked", dui.LinkFontScale, true)
-Expect("...and saying so", _G.GameTooltip.text, env.L.OPT_DUI_SCALE .. ": 70%")
-dui.Scale = 1.2
+Expect("Ctrl and the wheel over the words grow Window Size", math.abs(frameCfg.FrameScale - 0.75) < 1e-9, true)
+local grown = 0.65 * 0.75 / 0.7 * 0.8
+Expect("...drawing it larger", math.abs(Skin.frame.scale - grown) < 1e-6, true)
+Expect("...its corner kept where it was", math.abs(Skin.frame.anchor.y - 100 * 0.52 / grown) < 1e-6, true)
+Expect("...and saying so", _G.GameTooltip.text, env.L.OPT_SCALE .. ": 75%")
+frameCfg.FrameScale = 2
 Skin.frame:GetScript("OnMouseWheel")(Skin.frame, 1)
-Expect("...no further than the slider goes", dui.Scale, 1.2)
-dui.Scale = 0.65
+Expect("...no further than the slider goes", frameCfg.FrameScale, 2)
+frameCfg.FrameScale = 0.7
 env.PlayerFrame:RefreshConfig()
 shift = true
 Skin.frame:GetScript("OnMouseWheel")(Skin.frame, 1)
-Expect("Ctrl, Shift and the wheel unlink the text", dui.LinkFontScale, false)
-Expect("...and grow it from the window's size", math.abs(dui.FontScale - 0.7) < 1e-9, true)
-Expect("...the window left alone", dui.Scale, 0.65)
+Expect("Ctrl, Shift and the wheel grow Text Size", words.FontSize, 17)
+Expect("...the window left alone", frameCfg.FrameScale, 0.7)
 Expect("...and the words set larger", T.style.size, 15)
+Expect("...saying so", _G.GameTooltip.text, env.L.TRANSCRIPT_SIZE .. ": 17")
 ctrl, shift = false, false
-dui.LinkFontScale = true
+words.FontSize = 16
 env.PlayerFrame:RefreshConfig()
 
 ---------------------------------------------------------------- over DialogueUI's window

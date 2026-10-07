@@ -46,18 +46,8 @@ Defaults = {
                 FollowTheme = true,
                 -- The theme when not following: 1 parchment, 2 dark, DialogueUI's own numbers.
                 Theme = 1,
-                -- The panel's size as a share of DialogueUI's window. Under 1: the panel is
-                -- read beside the dialog, not instead of it.
-                Scale = 0.65,
-                -- The captions' text grows and shrinks with the panel. Unlinked, FontScale
-                -- sets it on its own, as a share of DialogueUI's text size on screen.
-                LinkFontScale = true,
-                FontScale = 0.65,
-                -- How the panel opens: the full panel, or folded to MinimizedLines caption
-                -- lines. The button on the panel changes it for the session.
-                Expanded = true,
-                -- Caption lines shown while folded, 1 to 10.
-                MinimizedLines = 2,
+                -- Its size, text size, lines and expand state are the player's own settings
+                -- (FrameScale, Transcript.FontSize, Transcript.Lines, CaptionsExpanded).
                 -- Only as tall as the line's words need, up to the panel's size.
                 FitText = true,
             },

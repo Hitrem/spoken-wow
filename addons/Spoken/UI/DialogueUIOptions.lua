@@ -10,6 +10,11 @@ setfenv(1, SpokenEnv)
 -- with neither there is nothing to set. Built at PLAYER_LOGIN with Spoken's own page, after
 -- every feature addon has registered its rows; one registered later is added then.
 --
+-- Always the last entry under Spoken: not a part of Spoken, a companion's settings. The game
+-- lists pages in the order they are registered, and Spoken_Books registers its page at
+-- PLAYER_ENTERING_WORLD, after this page is built; so this one is registered a frame after
+-- that event, once the parts' pages are in.
+--
 -- Parsed by the 1.12 client too (addon.xml is shared), so Lua 5.0 syntax throughout; that
 -- client has no DialogueUI and returns below.
 
@@ -24,8 +29,8 @@ end
 local Page = DialogueUIOptions
 local Layout = SpokenLayout
 local INDENT, TOP = 25, 16
--- After Quests, Books and Zones (1-3): not a part of Spoken, a companion's settings.
-local ORDER = 4
+-- After every part's page (Quests, Books and Zones are 1-3).
+local ORDER = 1000
 
 local function IsLoaded(name)
     local isLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
@@ -64,7 +69,6 @@ function Page:Reset()
     local cfg = Panel()
     for key, value in pairs(Defaults.profile.Frame.DialogueUI) do cfg[key] = value end
     for _, reset in ipairs(self.resets) do pcall(reset) end
-    if DialogueUIPlayer.frame then DialogueUIPlayer:SetExpanded(cfg.Expanded ~= false) end
     PlayerFrame:RefreshConfig()
     self.layout:Refresh()
 end
@@ -86,15 +90,11 @@ function Page:Setup()
 
     local refresh = function() PlayerFrame:RefreshConfig(); layout:Refresh() end
     -- The window's rows wait on its style being the one chosen, and on DialogueUI being a
-    -- version its art can be read from; the text's, on the words being shown at all.
+    -- version its art can be read from. Its size, text size and lines are not here: they are
+    -- the player's own settings on Spoken's page, which this window follows as the others do.
     local function Window(row)
         layout:Requires(row, function() return DialogueUITheme:Available() end, L.OPT_STYLE_DUI_UNKNOWN)
         layout:Requires(row, function() return Addon:PlayerStyle() == "dialogueui" end, L.REASON_DUI_STYLE)
-        return row
-    end
-    local function Words(row)
-        Window(row)
-        layout:Requires(row, function() return Addon:Profile("Transcript").Enabled end, L.REASON_WORDS)
         return row
     end
 
@@ -107,52 +107,31 @@ function Page:Setup()
         function(v) return v == 2 and L.OPT_DUI_THEME_DARK or L.OPT_DUI_THEME_PARCHMENT end)),
         function() return not Panel().FollowTheme end, L.REASON_DUI_FOLLOW)
     layout:Outdent()
-    local sizes = DialogueUIPlayer.PANEL_SIZES
-    Window(layout:Slider(L.OPT_DUI_SCALE, sizes[1], sizes[2], DialogueUIPlayer.SIZE_STEP,
-        function() return Panel().Scale end, function(v) Panel().Scale = v end, refresh,
-        nil, L.OPT_DUI_SCALE_TIP))
-    Window(layout:Dropdown(L.OPT_DUI_MODE, L.OPT_DUI_MODE_TIP, { true, false },
-        function() return Panel().Expanded end, function(v) Panel().Expanded = v end,
-        -- Shown at once as it will open, folded or not.
-        function() DialogueUIPlayer:SetExpanded(Panel().Expanded ~= false); refresh() end,
-        function(v) return v == false and L.OPT_DUI_MODE_MINIMIZED or L.OPT_DUI_MODE_EXPANDED end))
-    -- The folded panel's lines, the Small Window's Lines Shown for this window. Live whatever
-    -- Opens As says: the corner button folds the panel either way.
-    layout:Indent()
-    Window(layout:Slider(L.TRANSCRIPT_LINES, 1, DialogueUIPlayer.MAX_MINIMIZED_LINES, 1,
-        function() return Panel().MinimizedLines or 2 end, function(v) Panel().MinimizedLines = v end, refresh,
-        Layout.Number, L.OPT_DUI_LINES_TIP))
-    layout:Outdent()
     Window(layout:Checkbox(L.OPT_DUI_FIT_TEXT, L.OPT_DUI_FIT_TEXT_TIP,
         function() return Panel().FitText ~= false end, function(v) Panel().FitText = v end, refresh))
     -- The wheel shortcuts for Window Size and Text Size, which nothing on the window shows.
     layout:Note(L.DUI_WHEEL_HINT, nil, 40)
-
-    layout:Section(L.OPT_TEXT_TITLE)
-    Words(layout:Checkbox(L.OPT_DUI_LINK_FONT, L.OPT_DUI_LINK_FONT_TIP,
-        function() return Panel().LinkFontScale end,
-        function(v)
-            -- Unlinked at the size the text has now, so nothing jumps.
-            if not v and Panel().LinkFontScale ~= false then Panel().FontScale = Panel().Scale end
-            Panel().LinkFontScale = v
-        end, refresh))
-    sizes = DialogueUIPlayer.FONT_SIZES
-    layout:Indent()
-    layout:Requires(Words(layout:Slider(L.OPT_DUI_FONT_SCALE, sizes[1], sizes[2], DialogueUIPlayer.SIZE_STEP,
-        function() return Panel().FontScale end, function(v) Panel().FontScale = v end, refresh,
-        nil, L.OPT_DUI_FONT_SCALE_TIP)),
-        function() return Panel().LinkFontScale == false end, L.REASON_DUI_LINKED)
-    layout:Outdent()
 
     for _, build in ipairs(self.builders) do self:Run(build) end
 
     scroller.child:SetScript("OnShow", function() layout:Refresh() end)
     layout:Refresh()
     self:Fit()
-    self.page = Options:AddPage(panel, L.OPT_STYLE_DIALOGUEUI, ORDER, layout, scroller)
+    local waiter = CreateFrame("Frame")
+    waiter:RegisterEvent("PLAYER_ENTERING_WORLD")
+    waiter:SetScript("OnEvent", function()
+        waiter:UnregisterAllEvents()
+        C_Timer.After(0, function() Page:Register() end)
+    end)
+end
+
+function Page:Register()
+    if self.page or not self.panel then return end
+    self.page = Options:AddPage(self.panel, L.OPT_STYLE_DIALOGUEUI, ORDER, self.layout, self.scroller)
 end
 
 --- Open the page, from the button Spoken's own page shows while the DialogueUI style is chosen.
 function Page:Open()
+    self:Register()
     return self.page ~= nil and Options:OpenPage(ORDER)
 end

@@ -86,8 +86,8 @@ was regenerated from the public `/api/books/search?lang=enUS` catalogue on
 2026-09-27; page IDs, book order and lookup checksums are unchanged.
 
 The DialogueUI window draws the captions in DialogueUI's font, size and colours, with an
-empty line between paragraphs; its own settings, on the DialogueUI page, replace Text Size and
-Lines there. See
+empty line between paragraphs, at the player's Text Size and Lines Shown like the other
+windows. See
 [`PLAYER-STYLES.md`](PLAYER-STYLES.md).
 
 ## Captions in another window
