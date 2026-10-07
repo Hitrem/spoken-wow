@@ -15,6 +15,23 @@ local Art = SpokenZones.Art
 
 local panel, page, toggle
 
+-- What the map's alpha is at when the player stands still. The fader's last step may stop a hair
+-- short of 1.
+local CLEAR = 0.99
+
+-- The gamepad UI, Forever's InputDeviceInterfaceStyle 1. pcall, because a client that has never
+-- heard of the CVar raises on it.
+local function IsGamepadUI()
+	local ok, style = pcall(GetCVar, "InputDeviceInterfaceStyle")
+	return ok and style == "1"
+end
+
+-- Inside the map, unless the gamepad UI is on (NewPanel).
+local function Host()
+	if IsGamepadUI() then return UIParent end
+	return WorldMapFrame
+end
+
 -- Space between the map's frame and the panel's: a small gap, so the two read as neighbours
 -- rather than one frame.
 local GAP = 2
@@ -36,17 +53,13 @@ local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map_01]]
 -- the quest log's frame and the filigree on its top edge, round the quest details' parchment
 -- (UI/LorePage.lua). The old dark dialog box where the client has not got the template.
 --
--- Beside the map, not in it: the panel and its button are UIParent's, anchored to the map and
--- shown, hidden, layered and scaled with it here. The Forever client's gamepad UI takes every
--- button inside the open map into the map's own navigation, and an addon's buttons there taint
--- it: closing the map with the gamepad is then blocked, and the "blocked from an action" dialog
--- that raises hangs the client.
---
--- A workaround for the gamepad UI alone, paid for by every player: the panel follows a scale or
--- level the map takes while open only at its next refresh, and its fade as the player moves only
--- through FollowAlpha. Once the client stops tainting a map with an addon's buttons in it (check on a
--- newer build), the panel belongs back in WorldMapFrame, and FollowMap and the map's OnHide hook
--- go with it.
+-- The panel and its button are the map's children, so they fade, scale and hide with it -- except
+-- under the gamepad UI (Host). There the Forever client takes every button inside the open map
+-- into the map's own navigation, and an addon's buttons there taint it: closing the map with the
+-- gamepad is then blocked, and the "blocked from an action" dialog that raises hangs the client.
+-- Under it they are UIParent's, anchored to the map and shown, hidden, layered, scaled and faded
+-- with it here. Once the client stops tainting a map with an addon's buttons in it (check on a
+-- newer build), Host can always answer the map.
 local function NewPanel()
 	local ok, frame = pcall(CreateFrame, "Frame", "SpokenZonesPanel", UIParent, "DefaultPanelFlatTemplate")
 	if ok and frame and frame.SetTitle then
@@ -149,27 +162,45 @@ end
 -- Layout
 --------------------------------------------------------------------------------
 
--- The panel and its button fade with the map as the player walks, as they did as the map's
--- children: the game's movement fader sets the map's alpha every frame, and they take it each
--- time. Faded, the strips softening the text's cut edges showed through the parchment under them
--- in darker bands, so they are off until the panel is clear again; the one way to fade a frame as
--- a whole (SetIsFrameBuffer) crashes the Forever client.
-local function FollowAlpha()
-	local alpha = WorldMapFrame:GetAlpha() or 1
-	toggle:SetAlpha(alpha)
-	panel:SetAlpha(alpha)
-	page.body:SetFadeShown(alpha >= 1)
+local function InMap()
+	return panel:GetParent() == WorldMapFrame
 end
 
--- In front of the map and as large, as a child of it would be. Copied on every show, since the
--- map's level and scale are its own to change.
+-- The panel and its button fade with the map as the player walks: the game's movement fader sets
+-- the map's alpha every frame. Inside the map that reaches them as its children; beside it they
+-- take it each time. Faded, the strips softening the text's cut edges showed through the
+-- parchment under them in darker bands, so they are off until the panel is clear again; the one
+-- way to fade a frame as a whole (SetIsFrameBuffer) crashes the Forever client.
+local function FollowAlpha()
+	local alpha = WorldMapFrame:GetAlpha() or 1
+	local own = InMap() and 1 or alpha
+	toggle:SetAlpha(own)
+	panel:SetAlpha(own)
+	page.body:SetFadeShown(alpha >= CLEAR)
+end
+
+-- Into the map, or out of it under the gamepad UI. Asked on every refresh, as the player can
+-- switch the gamepad UI on and off without a reload.
+local function Place()
+	local host = Host()
+	if panel:GetParent() == host then return end
+	panel:SetParent(host)
+	toggle:SetParent(host)
+end
+
+-- In front of the map and, beside it, as large as a child of it would be. Copied on every show,
+-- since the map's level and scale are its own to change.
 local function FollowMap()
 	local strata, level = WorldMapFrame:GetFrameStrata(), WorldMapFrame:GetFrameLevel()
 	local mapScale, uiScale = WorldMapFrame:GetEffectiveScale(), UIParent:GetEffectiveScale()
 	for _, frame in ipairs({ panel, toggle }) do
 		if strata then frame:SetFrameStrata(strata) end
 		if level then frame:SetFrameLevel(level + 10) end
-		if mapScale and uiScale and uiScale > 0 then frame:SetScale(mapScale / uiScale) end
+		if InMap() then
+			frame:SetScale(1)
+		elseif mapScale and uiScale and uiScale > 0 then
+			frame:SetScale(mapScale / uiScale)
+		end
 	end
 	FollowAlpha()
 end
@@ -185,7 +216,7 @@ end
 -- Maximised, the map fills the screen and a side panel would sit off-screen, so
 -- the panel only shows in windowed mode. Whether it is folded away is a separate question.
 local function Available()
-	-- Not the map's child, so nothing hides it with the map but this.
+	-- Beside the map, nothing hides it with the map but this.
 	if not WorldMapFrame:IsShown() then
 		return false
 	end
@@ -211,6 +242,7 @@ local function Refresh(mapID)
 		return
 	end
 
+	Place()
 	mapID = mapID or SpokenZones:GetDisplayedMapID()
 	if not Available() or not mapID then
 		panel:Hide()
