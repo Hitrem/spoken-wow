@@ -148,7 +148,7 @@ Expect("with the game's dialogue off the line does not wait", Played(), true)
 Close()
 world.cvars.Sound_EnableDialog = "1"
 
--- Off, the quest window silences the NPC as it opens, as before, and the line cuts the NPC.
+-- Off, the quest window silences the NPC as it opens, and the line cuts the NPC.
 VO.Addon.db.profile.Audio.GreetingFirst = false
 OpenQuest(1.2)
 Expect("turned off, the quest window silences the NPC as it opens", GetCVar("Sound_EnableDialog"), "0")

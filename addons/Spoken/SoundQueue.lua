@@ -373,7 +373,7 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
         return
     end
     -- Cut, not faded: in the frame the window opens the greeting has barely started, and a fade
-    -- let its first half-second through.
+    -- lets its first half-second through.
     self:MuteGameDialogue(speakingOn, true)
     if muteAheadTimer then
         Addon:CancelTimer(muteAheadTimer)

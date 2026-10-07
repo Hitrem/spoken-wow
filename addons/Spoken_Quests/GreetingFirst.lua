@@ -1,18 +1,13 @@
 setfenv(1, VoiceOver)
 
--- Game Greeting First (Audio.GreetingFirst, off by default). Off, Silence NPC Voices cuts the
--- NPC's own greeting as its window opens where a pack reads one (Addon:MuteGreetingAhead). On,
--- nothing is cut as the window opens: the NPC says its greeting, and what Spoken reads off that
--- window, the pack's greeting or the quest, waits until it is over.
+-- Game Greeting First (Audio.GreetingFirst, off by default): the NPC's own greeting is not cut as
+-- its window opens, and what Spoken reads off that window waits until the greeting is over.
 --
--- The client cannot say which sound is an NPC's voice. The way in is AstroOat's
--- (SpokenGreetingDelay, shared on Spoken's Discord): a sound played at no volume hands back a
--- handle number next to the greeting's, the handles around it are asked whether they are
--- playing, and one playing at exactly Master x Dialog volume is the voice. That needs the Dialog
--- slider at a level none of SFX, Music or Ambience is at, and below 100%: a sound on the Master
--- channel plays at Master x 1, as a voice does with Dialog at 100%. Where it is not, Spoken moves it 1%
--- (SetDialogApart), which cannot be heard. On a client without these calls, or for the one greeting
--- already playing as Dialog is moved, the line waits a fixed 1.5 seconds.
+-- The client cannot say which sound is an NPC's voice. A sound played at no volume hands back a
+-- handle number next to the greeting's, and of the handles around it, one playing at exactly
+-- Master x Dialog volume is the voice. That needs Dialog below 100% (a Master sound plays at
+-- Master x 1) and at a level none of SFX, Music or Ambience is at, so SetDialogApart moves it 1%.
+-- Without these calls, or for a greeting already playing as Dialog moves, the line waits 1.5s.
 GreetingFirst = {}
 
 local FALLBACK, END_GAP, POLL = 1.5, 0.05, 0.025
@@ -127,7 +122,6 @@ local function Wait(seconds)
     Addon:ScheduleTimer(Retry, seconds)
 end
 
---- The fixed wait, counted from when the greeting started.
 local function Fallback(state, now)
     return Wait(math.max(0, state.started + FALLBACK - now))
 end

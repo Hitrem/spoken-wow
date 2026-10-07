@@ -245,7 +245,7 @@ VO, env, Spoken = MuteBoot()
 world.questID = 101
 stub.ShowPanel("QuestFrameDetailPanel")
 Open(VO, "QUEST_DETAIL")
--- Cut, not faded: a fade let the first half-second of the greeting through.
+-- Cut, not faded: a fade lets the first half-second of the greeting through.
 Expect("a quest dialog opening cuts the NPC's voice at once", world.cvars.Sound_EnableDialog, "0")
 stub.Advance(1.0)
 Expect("...and its line is read under the mute", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")

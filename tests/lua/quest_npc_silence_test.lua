@@ -1,5 +1,5 @@
--- Silence NPC Voices: only an NPC whose greeting a pack reads is silenced as its window opens
--- (quests_source_test.lua); a quest-giver no pack voices keeps its own greeting. A quest window
+-- Silence NPC Voices: only an NPC whose greeting a pack reads is silenced as its window opens;
+-- a quest-giver no pack voices keeps its own greeting. A quest window
 -- whose quest is not known yet is silenced at once. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path

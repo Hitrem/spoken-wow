@@ -100,8 +100,8 @@ world.cvars.Sound_EnableDialog = "0"
 Expect("a channel the user disabled is still inaudible", (onDialog:Enqueue(H.Clip())), nil)
 
 ---------------------------------------------------------------- one sound channel, Master
--- Every addon speaks on Master. A source may still declare its own -- the API keeps the field --
--- but none of the shipped addons does, and there is no setting for it.
+-- Every addon speaks on Master. A source can still name its own channel; none of the shipped
+-- addons does.
 env, quests, zones = H.Fresh(stub, SPOKEN)
 Expect("the quests source speaks on Master", quests:GetChannel(), "Master")
 Expect("...and so does the zones source", zones:GetChannel(), "Master")

@@ -1221,10 +1221,8 @@ function Addon:MuteGreetingAhead(event)
         GreetingFirst:Open()
         return
     end
-    -- Silenced only where a pack reads the line, so the pack's replaces the game's. Any other
-    -- NPC, quest-givers included, keeps its own. The quest ID can still be missing this early.
-    -- Then the NPC is muted anyway: waiting for the line let the first moment of its greeting
-    -- through, and with no line coming the mute lifts itself.
+    -- Silenced only where a pack reads the line; any other NPC keeps its greeting. A quest whose
+    -- ID is not known yet is muted too: its greeting starts now, and with no line the mute lifts.
     local questID = quest and QuestIDFor(event)
     if (quest and (not questID or questID == 0)) or self:ExpectedLine(event) then
         Spoken:MuteGameDialogueAhead(Player.source)

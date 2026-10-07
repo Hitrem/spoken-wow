@@ -498,7 +498,6 @@ local function Build(canvas)
         function(code) language().Fallback = code end, nil,
         function(code) return code == "none" and L.OPT_FALLBACK_NONE or Native(code) end)
 
-    -- No choice of channel: the voices play on Master (Sources.lua, GetChannel).
     layout:Section(L.OPT_AUDIO_TITLE)
     if audio().AutoToggleDialog ~= nil then
         layout:Checkbox(L.OPT_MUTE_DIALOGUE,
