@@ -46,7 +46,13 @@ import { corpus } from "@/lib/quests/catalogue";
 import { isVoice } from "@/lib/voices/voices";
 
 import type { ContributionStatus } from "./contributions";
-import { answersQuestMoment, lineIdentityFor, voiceNameFor, type LineIdentity } from "./naming";
+import {
+  answersQuestMoment,
+  answersQuestMomentSql,
+  lineIdentityFor,
+  voiceNameFor,
+  type LineIdentity,
+} from "./naming";
 import { CONTRIBUTION_COLUMNS, observationMeta, type Contribution } from "./store";
 import { spokenFromTemplate } from "./tokens";
 import { idOnlyResolution } from "./triage";
@@ -352,11 +358,13 @@ async function questsInExplorer(candidates: readonly Contribution[]): Promise<Se
   const found = new Set(rows.map((row) => row.contributionId));
 
   const unwritten = candidates.filter((c) => !found.has(c.id));
-  for (const id of await translationsInExplorer(unwritten.filter((c) => c.locale !== BASE_LANG))) found.add(id);
-
   const rest = unwritten.filter((c) => c.locale === BASE_LANG);
-  if (rest.length === 0) return found;
-  const [resolutions, lines] = await Promise.all([resolutionsFor(rest), corpus().then((c) => c.lines)]);
+  const [translated, resolutions, lines] = await Promise.all([
+    translationsInExplorer(unwritten.filter((c) => c.locale !== BASE_LANG)),
+    rest.length ? resolutionsFor(rest) : undefined,
+    rest.length ? corpus().then((c) => c.lines) : [],
+  ]);
+  for (const id of translated) found.add(id);
   for (const contribution of rest) {
     const result = await prepareLine(contribution, lines, resolutions);
     if (result.ok && result.prepared.kind === "exists") found.add(contribution.id);
@@ -376,7 +384,7 @@ async function translationsInExplorer(contributions: readonly Contribution[]): P
     `select m."id" from unnest($1::int[], $2::text[], $3::text[]) as m ("id", "lineId", "lang")
       where exists (select 1 from "quest_line" q
                      where q."lang" = m."lang" and q."isCurrent"
-                       and (q."lineId" = m."lineId" or q."lineId" like m."lineId" || ':%'))`,
+                       and ${answersQuestMomentSql(`q."lineId"`, `m."lineId"`)})`,
     [moments.map((m) => m.id), moments.map((m) => m.lineId), moments.map((m) => m.lang)],
   );
   return rows.map((row) => row.id);
@@ -448,12 +456,12 @@ async function insertLine(
   template: string,
   lang: Lang = BASE_LANG,
 ): Promise<void> {
+  const english = lang === BASE_LANG;
   // A progress line is kept but never voiced, as the extract marks its own (skipReason
   // "progress"): the game plays no audio for that panel.
-  const skipReason =
-    lang === BASE_LANG
-      ? identity.source === "progress" ? "progress" : null
-      : skipReasonFor(identity.source, template, lang, null);
+  const skipReason = english
+    ? identity.source === "progress" ? "progress" : null
+    : skipReasonFor(identity.source, template, lang, null);
   await client.query(
     `insert into "quest_line"
        ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "questId",
@@ -462,11 +470,34 @@ async function insertLine(
      values ($1, 0, $2, 1, true, 'contributed', $3, $4, $5, null, $6, $7, $8, $9, $10, $11, $12, $13)`,
     [
       identity.lineId, lang, identity.source, identity.questId, identity.questTitle,
-      identity.fileName, lang === BASE_LANG ? spokenFromTemplate(template) : template, template,
-      lang === BASE_LANG ? null : template, skipReason === null, skipReason,
+      identity.fileName, english ? spokenFromTemplate(template) : template, template,
+      english ? null : template, skipReason === null, skipReason,
       userId, `contribution #${contributionId}`,
     ],
   );
+}
+
+/** Whether the language has any row for a quest moment, current or not. */
+async function momentTaken(client: PoolClient, lang: Lang, momentId: string): Promise<boolean> {
+  const { rowCount } = await client.query(
+    `select 1 from "quest_line" where "lang" = $1 and ${answersQuestMomentSql(`"lineId"`, "$2")}`,
+    [lang, momentId],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
+/** A contributed line and who speaks it, as its first version in `lang`. */
+async function writeLine(
+  client: PoolClient,
+  contributionId: number,
+  userId: string,
+  identity: LineIdentity,
+  template: string,
+  speaker: Speaker,
+  lang: Lang,
+): Promise<void> {
+  await insertLine(client, contributionId, userId, identity, template, lang);
+  await insertSpeaker(client, contributionId, identity.lineId, 0, speaker, lang);
 }
 
 /**
@@ -503,23 +534,16 @@ async function acceptTranslation(
     return { ok: false, reason: "malformed", message: `unknown quest event "${event}"` };
   }
 
-  let english: Pick<CorpusLine, "lineId" | "variant" | "playerGender">[] = answering(
-    corpusLines ?? (await corpus()).lines,
-    identity.lineId,
-  );
+  const text = contribution.text;
+  const lang = contribution.locale as Lang;
+
+  const cached = answering(corpusLines ?? (await corpus()).lines, identity.lineId);
+  const english = cached.length ? cached : await englishMoment(client, identity.lineId);
   if (english.length === 0) {
-    // Asked again of the table, under the line's lock: a batch reads the catalogue once, before
-    // any of it is written, and English may have landed since.
-    await lockLine(client, identity.lineId);
-    english = await englishMoment(client, identity.lineId);
-    if (english.length === 0) {
-      const refused = await acceptNativeLine(client, contribution, userId, identity);
-      if (!refused) await nameAll(client, contribution, userId);
-      return refused;
-    }
+    const refused = await acceptNativeLine(client, contribution, userId, identity, text);
+    if (refused) return refused;
   }
 
-  const text = contribution.text;
   const seen = new Set<string>();
   for (const line of english) {
     // Variant 0 only: a language keeps one text per line id, whichever content patch the
@@ -529,7 +553,7 @@ async function acceptTranslation(
     seen.add(line.lineId);
     // Per line id: its $N is spoken in the form the line's player gender takes.
     const skipReason = skipReasonFor(
-      identity.source, text, contribution.locale as Lang, line.playerGender,
+      identity.source, text, lang, line.playerGender,
     );
     await client.query(
       `insert into "quest_line"
@@ -548,23 +572,25 @@ async function acceptTranslation(
       ],
     );
   }
-  await nameAll(client, contribution, userId);
+  for (const name of namesSeenIn(contribution)) {
+    await nameIfUnnamed(client, { ...name, lang, userId, note: noteFor(contribution.id) });
+  }
   return null;
 }
 
-async function nameAll(client: PoolClient, contribution: Contribution, userId: string): Promise<void> {
-  for (const name of namesSeenIn(contribution)) {
-    await nameIfUnnamed(client, { ...name, lang: contribution.locale as Lang, userId, note: noteFor(contribution.id) });
-  }
-}
-
+/**
+ * The English lines answering a moment the catalogue did not have, from the table and under
+ * the line's lock: a batch reads the catalogue once, before any of it is written, and English
+ * may have landed since.
+ */
 async function englishMoment(
   client: PoolClient,
   momentId: string,
 ): Promise<Pick<CorpusLine, "lineId" | "variant" | "playerGender">[]> {
+  await lockLine(client, momentId);
   const { rows } = await client.query<Pick<CorpusLine, "lineId" | "variant" | "playerGender">>(
     `select "lineId", "variant", "playerGender" from "quest_line"
-      where "lang" = $1 and "isCurrent" and ("lineId" = $2 or "lineId" like $2 || ':%')
+      where "lang" = $1 and "isCurrent" and ${answersQuestMomentSql(`"lineId"`, "$2")}
       order by "lineId", "variant"`,
     [BASE_LANG, momentId],
   );
@@ -581,17 +607,13 @@ async function acceptNativeLine(
   contribution: Contribution,
   userId: string,
   identity: LineIdentity,
+  text: string,
 ): Promise<ResolveRefusal | null> {
   const lang = contribution.locale as Lang;
-  const { rowCount: taken } = await client.query(
-    `select 1 from "quest_line" where "lang" = $1 and ("lineId" = $2 or "lineId" like $2 || ':%')`,
-    [lang, identity.lineId],
-  );
-  if (taken) return null;
+  if (await momentTaken(client, lang, identity.lineId)) return null;
   const found = await speakerFor(contribution);
   if (!found.ok) return found;
-  await insertLine(client, contribution.id, userId, identity, contribution.text!, lang);
-  await insertSpeaker(client, contribution.id, identity.lineId, 0, found.speaker, lang);
+  await writeLine(client, contribution.id, userId, identity, text, found.speaker, lang);
   return null;
 }
 
@@ -836,13 +858,8 @@ export async function resolveContribution(
         // gossip line gets this NPC as one more speaker, as prepareLine would have said had it
         // seen the line.
         await lockLine(client, prepared.identity.lineId);
-        const { rowCount: taken } = await client.query(
-          `select 1 from "quest_line" where "lang" = $1 and ("lineId" = $2 or "lineId" like $2 || ':%')`,
-          [BASE_LANG, prepared.identity.lineId],
-        );
-        if (!taken) {
-          await insertLine(client, id, userId, prepared.identity, prepared.text);
-          await insertSpeaker(client, id, prepared.identity.lineId, 0, prepared.speaker);
+        if (!(await momentTaken(client, BASE_LANG, prepared.identity.lineId))) {
+          await writeLine(client, id, userId, prepared.identity, prepared.text, prepared.speaker, BASE_LANG);
         } else if (prepared.identity.source === "gossip") {
           await addSpeakerOnce(client, id, prepared.identity.lineId, 0, prepared.speaker);
         }

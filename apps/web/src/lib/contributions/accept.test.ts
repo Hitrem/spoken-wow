@@ -592,9 +592,9 @@ describe("resolveContribution: a translation", () => {
           npcName: "Orador de Teste",
           voice: "tauren-male-warrior",
           generatable: true,
-          native: true,
         }),
       ]);
+      expect(listed[0].english).toBeUndefined();
       expect(listed[0].missing).toBeUndefined();
       expect((await corpus(BASE_LANG)).lines.some((line) => line.lineId === momentId())).toBe(false);
     });
@@ -623,7 +623,6 @@ describe("resolveContribution: a translation", () => {
       const listed = (await corpus(LOCALE)).lines.filter((line) => line.lineId === momentId());
       expect(listed).toHaveLength(1);
       expect(listed[0]).toMatchObject({ text: PORTUGUESE, english: { questTitle: "A Test Quest" } });
-      expect(listed[0].native).toBeUndefined();
       expect(listed[0].missing?.text).toBeFalsy();
     });
 

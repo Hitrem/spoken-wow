@@ -107,10 +107,13 @@ export async function saveQuestText(args: {
         where "lineId" = $1 and "variant" = $2 and "lang" = $3 and "isCurrent"`,
       [args.lineId, args.variant, BASE_LANG],
     );
-    // A line only this language has has no English row; its own current row is the structure.
+    // Structure from the row being replaced, or from the English one for a first translation.
+    // A line only this language has has no English row, but always has a current one.
     const english = englishRows[0];
-    const structure = english ?? current;
-    if (!structure) throw new QuestTextMissing(`${args.lineId} is not a line the corpus has`);
+    const from = current
+      ? { lang: args.lang, ...current }
+      : english && { lang: BASE_LANG as Lang, ...english };
+    if (!from) throw new QuestTextMissing(`${args.lineId} is not a line the corpus has`);
 
     if (
       current &&
@@ -146,10 +149,9 @@ export async function saveQuestText(args: {
     // same rules the English uses: progress text never is, and a stray bracket or a token
     // this language has no word for would be read aloud. Its $N does have one
     // (player-words.ts), in the form the line's player gender takes.
-    const skipReason = skipReasonFor(structure.source, text, args.lang, structure.playerGender);
+    const skipReason = skipReasonFor(from.source, text, args.lang, from.playerGender);
 
-    // Structure from the row being replaced, or from the English one for a first
-    // translation; localeText from the replaced row only, since the English has none.
+    // localeText from the replaced row only, since the English has none.
     const { rows: inserted } = await client.query<Row>(
       `insert into "quest_line"
          ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "questId",
@@ -174,8 +176,8 @@ export async function saveQuestText(args: {
         args.editedBy,
         current?.version ?? null,
         args.note?.trim() || null,
-        current ? args.lang : BASE_LANG,
-        current ? current.version : english!.version,
+        from.lang,
+        from.version,
       ],
     );
     await recordActivity(

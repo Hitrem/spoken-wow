@@ -28,6 +28,7 @@ import { query } from "@/lib/db";
 import { memoByLang } from "@/lib/memo";
 import { nameStamp, versionStamp } from "@/lib/stamp";
 import { npcKey, type Corpus, type CorpusLine } from "@/lib/corpus";
+import { answersQuestMomentSql } from "@/lib/contributions/naming";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 import { flavorsOf } from "@/lib/voices/voices";
 
@@ -63,18 +64,21 @@ export function isCorpusEmpty(error: unknown): boolean {
   return error instanceof Error && error.name === "CorpusEmpty";
 }
 
+/** Speakers have no live flag, so their max id and count are the whole stamp. */
+function speakerStamp(where: string): string {
+  return `(select coalesce(max("id"), 0) || ':' || count(*) from "quest_line_speaker" where ${where})`;
+}
+
 async function stampOf(lang: Lang): Promise<string> {
   const english = `${versionStamp("quest_line", `"lang" = '${BASE_LANG}'`)} || '/' ||
-    (select coalesce(max("id"), 0) || ':' || count(*)
-       from "quest_line_speaker" where "lang" = '${BASE_LANG}')`;
+    ${speakerStamp(`"lang" = '${BASE_LANG}'`)}`;
   // Another language is read over the English lines and speakers, so its memo moves when
   // they do as well as when its own text, speakers or names do -- one statement either way.
   const rows = await query<{ stamp: string }>(
     lang === BASE_LANG
       ? `select ${english} as "stamp"`
       : `select ${english} || '|' || ${versionStamp("quest_line", `"lang" = $1`)} || '/' ||
-                (select coalesce(max("id"), 0) || ':' || count(*)
-                   from "quest_line_speaker" where "lang" = $1) || '/' ||
+                ${speakerStamp(`"lang" = $1`)} || '/' ||
                 ${nameStamp(["quest", "creature", "gameobject", "item"])} as "stamp"`,
     lang === BASE_LANG ? [] : [lang],
   );
@@ -156,8 +160,8 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
  * missing is not generatable, so the English cannot be recorded under the language's name.
  *
  * A LINE ENGLISH DOES NOT HAVE is read from this language's own speakers, which only such a
- * line has. Once English has the moment its line and speakers are the skeleton again, and
- * this language's row is its translation: same id, same file.
+ * line has, and carries no `english`. Once English has the moment its line and speakers are
+ * the skeleton again, and this language's row is its translation: same id, same file.
  */
 async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
   const rows = await query<
@@ -165,15 +169,12 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
       textMissing: boolean;
       titleMissing: boolean;
       nameMissing: boolean;
+      native: boolean;
       englishTitle: string | null;
       englishName: string;
-      native: boolean;
-      branch: number;
-      ord: number;
     }
   >(
-    `select * from (
-     select l."lineId", l."variant", l."source", l."questId",
+    `select l."lineId", l."variant", l."source", l."questId",
             coalesce(qn."name", l."questTitle") as "questTitle",
             s."npcId", coalesce(nn."name", s."npcName") as "npcName", s."npcType",
             s."race", s."gender", s."flavor", s."voice",
@@ -185,8 +186,8 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
             t."id" is null as "textMissing",
             l."questId" is not null and qn."id" is null as "titleMissing",
             nn."id" is null as "nameMissing",
-            l."questTitle" as "englishTitle", s."npcName" as "englishName",
-            false as "native", 0 as "branch", s."ord"
+            s."lang" <> '${BASE_LANG}' as "native",
+            l."questTitle" as "englishTitle", s."npcName" as "englishName"
        from "quest_line_speaker" s
        join "quest_line" l
          on l."lineId" = s."lineId" and l."variant" = s."variant"
@@ -200,47 +201,24 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
        left join "entity_name" nn
          on nn."kind" = s."npcType" and nn."entityId" = s."npcId"::text
         and nn."lang" = $1 and nn."isCurrent"
-      where s."lang" = '${BASE_LANG}' and s."variant" = 0
-     union all
-     select n."lineId", n."variant", n."source", n."questId",
-            coalesce(qn."name", n."questTitle") as "questTitle",
-            s."npcId", coalesce(nn."name", s."npcName") as "npcName", s."npcType",
-            s."race", s."gender", s."flavor", s."voice",
-            n."playerGender", n."text", n."originalText", n."fileName",
-            n."generatable", n."skipReason", s."contributionId",
-            false as "textMissing",
-            n."questId" is not null and qn."id" is null as "titleMissing",
-            nn."id" is null as "nameMissing",
-            null as "englishTitle", s."npcName" as "englishName",
-            true as "native", 1 as "branch", s."ord"
-       from "quest_line_speaker" s
-       join "quest_line" n
-         on n."lineId" = s."lineId" and n."variant" = s."variant"
-        and n."lang" = s."lang" and n."isCurrent"
-       left join "entity_name" qn
-         on qn."kind" = 'quest' and qn."entityId" = n."questId"::text
-        and qn."lang" = $1 and qn."isCurrent"
-       left join "entity_name" nn
-         on nn."kind" = s."npcType" and nn."entityId" = s."npcId"::text
-        and nn."lang" = $1 and nn."isCurrent"
-      where s."lang" = $1 and s."variant" = 0
-        and not exists (select 1 from "quest_line" e
-                         where e."lang" = '${BASE_LANG}' and e."isCurrent"
-                           and (e."lineId" = s."lineId" or e."lineId" like s."lineId" || ':%'))
-     ) as "lines"
-      order by "branch", "ord"`,
+      where s."variant" = 0
+        and (s."lang" = '${BASE_LANG}'
+             or (s."lang" = $1
+                 and not exists (select 1 from "quest_line" e
+                                  where e."lang" = '${BASE_LANG}' and e."isCurrent"
+                                    and ${answersQuestMomentSql(`e."lineId"`, `s."lineId"`)})))
+      order by s."lang" <> '${BASE_LANG}', s."ord"`,
     [lang],
   );
 
   if (rows.length === 0) throw new CorpusEmpty();
 
   return rows.map((raw) => {
-    const { textMissing, titleMissing, nameMissing, englishTitle, englishName, native, branch, ord, ...row } = raw;
+    const { textMissing, titleMissing, nameMissing, native, englishTitle, englishName, ...row } = raw;
     return {
       ...row,
       lang,
-      english: { questTitle: englishTitle, npcName: englishName },
-      ...(native ? { native: true as const } : {}),
+      ...(native ? {} : { english: { questTitle: englishTitle, npcName: englishName } }),
       npcType: row.npcType as CorpusLine["npcType"],
       source: row.source as CorpusLine["source"],
       playerGender: row.playerGender as CorpusLine["playerGender"],
