@@ -84,6 +84,10 @@ existing compatible sound pack unless the release notes say otherwise.
 - **Every page re-recorded** with ElevenLabs' newer voice model: all 1143 pages replaced.
   Install over the previous version.
 
+## 2.0.1 — books-audio-esMX — 2026-10-08
+
+- 319 pages re-recorded. Install over the previous version.
+
 ## 2.0.0 — books-audio-deDE — 2026-09-27
 
 - **The first German sound pack**, `SpokenBooksAudio_deDE`: 1143 pages read aloud from

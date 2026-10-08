@@ -87,6 +87,18 @@ section with no kind in its heading is the addon's. A language's pack numbers it
 - 15 narrations that duplicated another place's are gone: cities that were also listed as
   an area of the zone around them, and areas copied into a neighbouring zone.
 
+## 2.0.1 — zones-audio-esES — 2026-10-08
+
+- 12 narrations re-recorded. Install over the previous version.
+- 15 narrations that duplicated another place's are gone: cities that were also listed as
+  an area of the zone around them, and areas copied into a neighbouring zone.
+
+## 1.0.1 — zones-audio-esMX — 2026-10-08
+
+- 76 narrations re-recorded. Install over the previous version.
+- 15 narrations that duplicated another place's are gone: cities that were also listed as
+  an area of the zone around them, and areas copied into a neighbouring zone.
+
 ## 2.0.0 — zones-audio-deDE — 2026-09-26
 
 - **The first German sound pack**, `SpokenZonesAudio_deDE`: every zone and subzone
