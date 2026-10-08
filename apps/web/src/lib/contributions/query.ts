@@ -10,7 +10,7 @@
  */
 import type { ClientFamily } from "./client";
 import type { ContributionStatus } from "./contributions";
-import type { EnvelopeSource } from "./envelope";
+import { isEnvelopeSource, type EnvelopeSource } from "./envelope";
 import type { Provenance } from "../npc/npc";
 import type { Filter } from "../search";
 import type { QuestSummary } from "./triage";
@@ -52,7 +52,24 @@ export function isSpeakerSentinel(value: unknown): value is typeof NEEDS_DECISIO
 
 export type ClientFilter = ClientFamily | "all";
 
-export type SourceFilter = EnvelopeSource | "all";
+/**
+ * An envelope source, or gossip: the quests rows tied to no quest, which the site shows as a
+ * section of their own although the addon still files them as quests.
+ */
+export type SourceFilter = EnvelopeSource | "gossip" | "all";
+
+export function isSourceFilter(value: unknown): value is SourceFilter {
+  return isEnvelopeSource(value) || value === "gossip" || value === "all";
+}
+
+/** The section a row is listed under, as the Source column and dropdown name it. */
+export function sectionOf(row: { source: EnvelopeSource }, quest: QuestSummary | null): EnvelopeSource | "gossip" {
+  return quest === "gossip" ? "gossip" : row.source;
+}
+
+export function matchesSource(section: EnvelopeSource | "gossip", filter: SourceFilter): boolean {
+  return filter === "all" || section === filter;
+}
 
 /**
  * The quest panel a quests row was read off, as the addon's `event` field names it (SpokenQuests'
@@ -66,11 +83,10 @@ export function isQuestStage(value: unknown): value is QuestStage {
   return QUEST_STAGES.includes(value as QuestStage);
 }
 
-/** A quest stage, or "gossip" for the quests rows tied to no quest at all. */
-export type StageFilter = QuestStage | "gossip" | "all";
+export type StageFilter = QuestStage | "all";
 
 export function isStageFilter(value: unknown): value is StageFilter {
-  return isQuestStage(value) || value === "gossip" || value === "all";
+  return isQuestStage(value) || value === "all";
 }
 
 /**
@@ -80,8 +96,7 @@ export function isStageFilter(value: unknown): value is StageFilter {
  */
 export function matchesStage(quest: QuestSummary | null, filter: StageFilter): boolean {
   if (filter === "all") return true;
-  if (quest === null) return false;
-  if (quest === "gossip") return filter === "gossip";
+  if (quest === null || quest === "gossip") return false;
   return quest.stage === filter;
 }
 

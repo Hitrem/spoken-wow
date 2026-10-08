@@ -16,11 +16,14 @@ import { linesInExplorer } from "@/lib/contributions/accept";
 import {
   isSearchIn,
   isSpeakerSentinel,
-  matchesSearch,
+  isSourceFilter,
   isStageFilter,
+  matchesSearch,
   matchesSpeaker,
+  matchesSource,
   matchesStage,
   pageOf,
+  sectionOf,
   PAGE_SIZE,
   sortOf,
   type ClientFilter,
@@ -29,7 +32,6 @@ import {
   type SpeakerFilter,
   type StageFilter,
 } from "@/lib/contributions/query";
-import { isEnvelopeSource } from "@/lib/contributions/envelope";
 import { listContributions, observationMeta, type Contribution } from "@/lib/contributions/store";
 import {
   bookFor,
@@ -263,10 +265,10 @@ export default async function Page({
   // the Forever beta, the client nearly all of this queue comes from; "all" has to be asked for.
   const client: ClientFilter = isClientFamily(rawClient) ? rawClient : rawClient === "all" ? "all" : "forever";
 
-  // Which corpus the row is for: quests, zones or books.
-  const source: SourceFilter = isEnvelopeSource(rawSource) ? rawSource : "all";
+  // Which section the row is for: quests, gossip, zones or books.
+  const source: SourceFilter = isSourceFilter(rawSource) ? rawSource : "all";
 
-  // Which quest panel the text was read off -- accept, progress or complete -- or gossip.
+  // Which quest panel the text was read off: accept, progress or complete.
   const stage: StageFilter = isStageFilter(rawStage) ? rawStage : "all";
 
   const q = typeof rawQ === "string" ? rawQ.trim() : "";
@@ -289,7 +291,7 @@ export default async function Page({
   const matching = contributions
     .filter((row) => matchesSpeaker(npcs[row.id]?.provenance, provenance, row.source))
     .filter((row) => client === "all" || clientOf(row.build).family === client)
-    .filter((row) => source === "all" || row.source === source)
+    .filter((row) => matchesSource(sectionOf(row, questFor(row)), source))
     .filter((row) => matchesStage(questFor(row), stage))
     .filter((row) => matchesSearch({ text: row.text, npc: npcs[row.id], quest: questFor(row) }, q, searchIn));
 
