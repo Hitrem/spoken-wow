@@ -12,6 +12,7 @@ import type { ClientFamily } from "./client";
 import type { ContributionStatus } from "./contributions";
 import type { EnvelopeSource } from "./envelope";
 import type { Provenance } from "../npc/npc";
+import type { Filter } from "../search";
 import type { QuestSummary } from "./triage";
 
 /**
@@ -141,6 +142,10 @@ export type ContributionFilters = {
   source: SourceFilter;
   stage: StageFilter;
   sort: ContributionSort;
+  /** The search box, as the explorer's: absent or blank searches nothing. */
+  q?: string;
+  /** Which field `q` is matched in, the explorer's "search in"; absent is "any". */
+  searchIn?: Filter;
 };
 
 export type FilterChange = {
@@ -150,6 +155,8 @@ export type FilterChange = {
   source?: SourceFilter;
   stage?: StageFilter;
   sort?: ContributionSort;
+  q?: string;
+  searchIn?: Filter;
 };
 
 /**
@@ -171,6 +178,8 @@ export function nextContributionFilters(
     source: "source" in next ? (next.source ?? "all") : current.source,
     stage: "stage" in next ? (next.stage ?? "all") : current.stage,
     sort: "sort" in next ? (next.sort ?? DEFAULT_SORT) : current.sort,
+    q: "q" in next ? next.q : current.q,
+    searchIn: "searchIn" in next ? next.searchIn : current.searchIn,
   };
 }
 
@@ -199,6 +208,8 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
     source: filters.source,
     stage: filters.stage,
   });
+  if (filters.q?.trim()) params.set("q", filters.q.trim());
+  if (filters.searchIn && filters.searchIn !== "any") params.set("filter", filters.searchIn);
   if (filters.sort.column !== DEFAULT_SORT.column || filters.sort.direction !== DEFAULT_SORT.direction) {
     params.set("sort", filters.sort.column);
     params.set("dir", filters.sort.direction);
@@ -221,4 +232,41 @@ export function matchesSpeaker(provenance: Provenance | undefined, filter: Speak
   if (provenance === undefined) return false;
   if (filter === NEEDS_DECISION) return provenance === "client" || provenance === "none";
   return provenance === filter;
+}
+
+export function isSearchIn(value: unknown): value is Filter {
+  return value === "any" || value === "npc" || value === "quest" || value === "text";
+}
+
+/**
+ * Whether one row answers the search box, read as the explorer reads it (search.ts's matches):
+ * a bare number is an NPC or quest id, never a substring, so "240" finds that NPC rather than
+ * every line mentioning 240 gold; words match the NPC's name, the quest's title or the text.
+ */
+export function matchesSearch(
+  row: { text: string | null; npc: { npcId: number; npcName: string | null } | undefined; quest: QuestSummary | null },
+  q: string,
+  filter: Filter = "any",
+): boolean {
+  const query = q.trim();
+  if (!query) return true;
+  const needle = query.toLowerCase();
+  const textHit = (row.text ?? "").toLowerCase().includes(needle);
+  if (filter === "text") return textHit;
+
+  const quest = row.quest === null || row.quest === "gossip" ? null : row.quest;
+  const asNumber = /^\d+$/.test(query) ? Number(query) : null;
+  if (asNumber !== null) {
+    const npcHit = row.npc?.npcId === asNumber;
+    const questHit = quest?.questId === asNumber;
+    if (filter === "npc") return npcHit;
+    if (filter === "quest") return questHit;
+    return npcHit || questHit;
+  }
+
+  const npcHit = (row.npc?.npcName ?? "").toLowerCase().includes(needle);
+  const questHit = (quest?.title ?? "").toLowerCase().includes(needle);
+  if (filter === "npc") return npcHit;
+  if (filter === "quest") return questHit;
+  return npcHit || questHit || textHit;
 }

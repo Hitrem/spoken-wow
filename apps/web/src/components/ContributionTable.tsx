@@ -23,7 +23,7 @@ import { useLang } from "@/components/LangProvider";
 import { localeHref, type Lang } from "@/lib/lang";
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import SpeakerCell, { ProvenanceBadge, type SpeakerAnswer } from "@/components/SpeakerCell";
@@ -34,6 +34,7 @@ import { usePendingPush } from "@/components/usePendingPush";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   RESOLVE_MANY_MAX,
   type ContributionStatus,
@@ -66,6 +67,7 @@ import type { BookMatch, BookSummary, NpcConflictOption, NpcSummary, QuestSummar
 // (values, not just types) out of it would drag Postgres's own node built-ins into this bundle.
 import { NPC_KINDS, PROVENANCES, type NpcKind, type Provenance } from "@/lib/npc/npc";
 import type { NpcResolution } from "@/lib/npc/store";
+import type { Filter } from "@/lib/search";
 import { cn } from "@/lib/utils";
 import { wowheadEntityUrl, wowheadForeverUrl, wowheadQuestUrl } from "@/lib/wowhead";
 
@@ -151,6 +153,15 @@ const SPEAKER_CHIP_OPTIONS: ChipOption[] = [
   { value: MISSING, label: "Missing" },
 ];
 
+/** Where the search box is matched, as the explorer's own "search in"; "any" is the idle state. */
+const SEARCH_IN_OPTIONS: ChipOption[] = [
+  { value: "npc", label: "NPC only" },
+  { value: "quest", label: "Quest only" },
+  { value: "text", label: "Text only" },
+];
+
+const SEARCH_DEBOUNCE_MS = 300;
+
 const CLIENT_CHIP_OPTIONS: ChipOption[] = CLIENT_FAMILIES.map((option) => ({
   value: option,
   label: CLIENT_FAMILY_LABELS[option],
@@ -216,6 +227,8 @@ export default function ContributionTable({
   source,
   stage,
   sort,
+  q,
+  searchIn,
   existing,
   books,
   flavorScopes,
@@ -233,6 +246,8 @@ export default function ContributionTable({
   source: SourceFilter;
   stage: StageFilter;
   sort: ContributionSort;
+  q: string;
+  searchIn: Filter;
   /** id -> corpus text, present only where the row's key resolves to something on file. */
   existing: Record<number, string>;
   /** The English books, for matching a translated page to one. Empty when no row here needs it. */
@@ -535,9 +550,35 @@ export default function ContributionTable({
    * ReportTable.tsx's own `go`; the mapping itself is contributionsHref, pulled out to
    * lib/contributions/query.ts so it can be tested without rendering FilterChip or this table.
    */
+  const filters = { status, provenance, client, source, stage, sort, q, searchIn };
   function go(next: FilterChange, toPage = 1) {
-    push(localeHref(lang, contributionsHref({ status, provenance, client, source, stage, sort }, next, toPage)));
+    push(localeHref(lang, contributionsHref(filters, next, toPage)));
   }
+
+  /**
+   * The search box as typed, sent once typing pauses -- each send is a whole server render.
+   * `sent` is what this box last asked for: a `q` that differs from it came from elsewhere (the
+   * back button), and is shown rather than overwritten by the box's older text.
+   */
+  const [query, setQuery] = useState(q);
+  const sent = useRef(q);
+  const goRef = useRef(go);
+  useEffect(() => {
+    goRef.current = go;
+  });
+  useEffect(() => {
+    if (q === sent.current) return;
+    sent.current = q;
+    setQuery(q);
+  }, [q]);
+  useEffect(() => {
+    if (query.trim() === sent.current) return;
+    const timer = setTimeout(() => {
+      sent.current = query.trim();
+      goRef.current({ q: query });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   return (
     <>
@@ -545,11 +586,25 @@ export default function ContributionTable({
         active={status}
         onGo={push}
         hrefFor={(next) =>
-          localeHref(lang, contributionsHref({ status, provenance, client, source, stage, sort }, { status: next }))
+          localeHref(lang, contributionsHref(filters, { status: next }))
         }
       />
       {/* Dropdowns, the same control the explorers filter with -- matching ReportTable. */}
       <nav className="mb-4 flex flex-wrap items-center gap-2">
+        <Input
+          type="search"
+          value={query}
+          placeholder="NPC, quest, or what they sent…"
+          aria-label="Search"
+          className="h-8 min-w-0 basis-64"
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <FilterChip
+          label="search in"
+          value={searchIn === "any" ? undefined : searchIn}
+          options={SEARCH_IN_OPTIONS}
+          onChange={(next) => go({ searchIn: (next ?? "any") as Filter })}
+        />
         <FilterChip
           label="speaker"
           value={provenance === "all" ? undefined : provenance}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_SORT, MISSING, NEEDS_DECISION, contributionsHref, nextSort, sortOf, matchesSpeaker, matchesStage, nextContributionFilters, pageOf } from "./query";
+import { DEFAULT_SORT, MISSING, NEEDS_DECISION, contributionsHref, nextSort, sortOf, matchesSearch, matchesSpeaker, matchesStage, nextContributionFilters, pageOf } from "./query";
 
 describe("nextContributionFilters", () => {
   const current = { status: "new", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
@@ -154,5 +154,52 @@ describe("matchesStage", () => {
     expect(matchesStage("gossip", "accept")).toBe(false);
     expect(matchesStage(null, "gossip")).toBe(false);
     expect(matchesStage(null, "complete")).toBe(false);
+  });
+});
+
+describe("matchesSearch", () => {
+  const row = {
+    text: "Bring me 240 gold, mortal.",
+    npc: { npcId: 240, npcName: "Marshal Dughan" },
+    quest: { title: "A Threat Within", questId: 783, stage: "accept" as const },
+  };
+
+  it("reads a bare number as an NPC or quest id, never as text", () => {
+    expect(matchesSearch(row, "240")).toBe(true);
+    expect(matchesSearch(row, "783")).toBe(true);
+    expect(matchesSearch(row, "240", "quest")).toBe(false);
+    expect(matchesSearch({ ...row, npc: undefined }, "240")).toBe(false);
+  });
+
+  it("matches words in the NPC's name, the quest's title or the text, without case", () => {
+    expect(matchesSearch(row, "dughan")).toBe(true);
+    expect(matchesSearch(row, "threat")).toBe(true);
+    expect(matchesSearch(row, "MORTAL")).toBe(true);
+    expect(matchesSearch(row, "murloc")).toBe(false);
+  });
+
+  it("keeps to the field asked for", () => {
+    expect(matchesSearch(row, "mortal", "npc")).toBe(false);
+    expect(matchesSearch(row, "dughan", "text")).toBe(false);
+    expect(matchesSearch(row, "240", "text")).toBe(true);
+    expect(matchesSearch(row, "threat", "quest")).toBe(true);
+  });
+
+  it("matches everything on a blank query, and a gossip row on no quest", () => {
+    expect(matchesSearch(row, "  ")).toBe(true);
+    expect(matchesSearch({ ...row, quest: "gossip" }, "783")).toBe(false);
+  });
+});
+
+describe("contributionsHref search", () => {
+  const filters = { status: "new", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
+
+  it("writes the query and where it is searched only when set, and keeps them across a filter change", () => {
+    expect(contributionsHref(filters, { q: " dughan ", searchIn: "npc" })).toBe(
+      "/contributions?status=new&provenance=all&client=all&source=all&stage=all&q=dughan&filter=npc",
+    );
+    expect(contributionsHref({ ...filters, q: "dughan", searchIn: "any" }, { status: "accepted" })).toBe(
+      "/contributions?status=accepted&provenance=all&client=all&source=all&stage=all&q=dughan",
+    );
   });
 });
