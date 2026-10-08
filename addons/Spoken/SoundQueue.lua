@@ -34,6 +34,7 @@ setfenv(1, SpokenEnv)
 ---@field length number       Seconds. The client cannot report this; the caller must know.
 ---@field delay? number       Silence before the clip. Only the 2.4.3/3.3.5 path sets it.
 ---@field priority? string    "normal" (default) or "low".
+---@field group? string       Clips of one item, e.g. a book's pages. No pause or cue between them.
 ---@field present table       See API.lua.
 ---@field addedCallback? fun(clip)
 ---@field startCallback? fun(clip)
@@ -390,24 +391,65 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
     end, MUTE_AHEAD_SECONDS)
 end
 
---- The quiet after `clip`: its source's gap plus the player's LineGap, except between a book's pages.
-function SoundQueue:GapAfter(clip)
-    local gap = clip.source.interClipGap or 0
-    if not clip.source.continuous then
-        local audio = Addon.db and Addon.db.profile.Audio
-        gap = gap + (audio and audio.LineGap or 0)
+-- The channel a clip speaks on, ready for it. Whatever we muted, we cannot speak on, so it
+-- is lifted first: a clip on the very channel the last line silenced is heard.
+local function SpeakingChannel(clip)
+    local channel = clip.source:GetChannel()
+    if SoundUtils:IsMutedByPlayer(channel) then
+        SoundUtils:MuteChannel(channel, false)
     end
-    return gap
+    return channel
+end
+
+-- Clips of one item, a book's pages, read on as one: no LineGap between them, and no cue.
+local function SameItem(clip, nextClip)
+    return clip.group ~= nil and clip.group == nextClip.group
+end
+
+-- The first clip from `from` on that no gate holds.
+local function FirstPlayable(from)
+    for index = from, #SoundQueue.sounds do
+        if not SoundQueue:GetHeldReason(SoundQueue.sounds[index]) then
+            return index, SoundQueue.sounds[index]
+        end
+    end
+end
+
+-- `clip`'s voice has ended. The pause after it, and the cue halfway through that pause, only
+-- separate it from a line that will play next: the last line ends with its voice, and one a
+-- gate holds waits out the gate, which separates it well enough.
+local function AfterSpoken(clip)
+    local function Finish()
+        SoundQueue:RemoveSoundFromQueue(clip, true)
+    end
+    local _, nextClip = FirstPlayable(2)
+    if not nextClip then
+        Finish()
+        return
+    end
+    local audio = Addon.db.profile.Audio
+    local sameItem = SameItem(clip, nextClip)
+    local gap = (clip.source.interClipGap or 0) + (sameItem and 0 or audio.LineGap or 0)
+    if gap <= 0 then
+        Finish()
+    elseif sameItem or not audio.CueBetweenLines then
+        clip.nextSoundTimer = Addon:ScheduleTimer(Finish, gap)
+    else
+        clip.nextSoundTimer = Addon:ScheduleTimer(function()
+            -- For whichever line waits now: the one that did may have gone since the voice ended.
+            local _, waiting = FirstPlayable(2)
+            if waiting and not SameItem(clip, waiting) then
+                -- On the next line's channel, so it follows the voice's volume, not the effects'.
+                SoundUtils:PlayCue(SpeakingChannel(waiting))
+            end
+            clip.nextSoundTimer = Addon:ScheduleTimer(Finish, gap / 2)
+        end, gap / 2)
+    end
 end
 
 ---@param clip SpokenClip
 function SoundQueue:PlaySound(clip)
-    local channel = clip.source:GetChannel()
-    -- Whatever we muted, we cannot speak on. Lifted first, so a clip on the very channel
-    -- the last line silenced is heard.
-    if SoundUtils:IsMutedByPlayer(channel) then
-        SoundUtils:MuteChannel(channel, false)
-    end
+    local channel = SpeakingChannel(clip)
     local willPlay = SoundUtils:PlaySound(clip, channel)
     if not willPlay then
         Discard(clip, "missing")
@@ -425,11 +467,16 @@ function SoundQueue:PlaySound(clip)
 
     -- The client fires no event when a sound finishes, so the recorded duration is the
     -- only signal that the clip is over.
-    -- When the voice itself ends; the timer runs on through the pause after it (GapAfter).
     clip.spokenAt = GetTime() + (clip.delay or 0) + clip.length
     clip.nextSoundTimer = Addon:ScheduleTimer(function()
-        self:RemoveSoundFromQueue(clip, true)
-    end, (clip.delay or 0) + clip.length + self:GapAfter(clip))
+        AfterSpoken(clip)
+    end, (clip.delay or 0) + clip.length)
+end
+
+--- Seconds of `clip`'s voice heard so far: 0 before it starts, its length once it has ended.
+function SoundQueue:VoiceElapsed(clip)
+    local length = tonumber(clip.length) or 0
+    return math.max(0, math.min(length, length - (clip.spokenAt - GetTime())))
 end
 
 --- Start something if nothing is speaking and something may. Safe to call at any time;
@@ -442,13 +489,7 @@ function SoundQueue:Advance()
     end
 
     -- The first clip no gate holds. A held head is skipped, not waited on.
-    local playable = nil
-    for index, clip in ipairs(self.sounds) do
-        if not self:GetHeldReason(clip) then
-            playable = index
-            break
-        end
-    end
+    local playable = FirstPlayable(1)
     if not playable then
         StartRetryTicker()
         return

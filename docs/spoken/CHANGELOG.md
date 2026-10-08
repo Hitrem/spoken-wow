@@ -13,6 +13,13 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   [DEBUG-LOG.md](DEBUG-LOG.md).
 - For feature addons: `Spoken:Log`, `AddDiagnostics`, `AddDeveloperSettings`, `AddLogSource`
   and the rest, all doing nothing without the module.
+- **A sound between queued lines, if you want one** (Sound > Sound Between Lines). At a quest hub
+  a hand-in and the next pickup, often in the same NPC's voice, no longer run together: when a
+  line finishes and another is waiting, the game's quest-log-close sound plays halfway through
+  the pause before the next. Off by default, and never between the pages of one book.
+- Pause Between Lines only runs when another line is waiting. After the last line Spoken is
+  done as soon as the voice ends, so its window closes and the game's NPC voices come back
+  without the extra wait.
 
 ## 3.1.0 — 2026-10-06
 

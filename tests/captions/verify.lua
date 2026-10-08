@@ -24,7 +24,6 @@ function Timer:ScheduleRepeatingTimer(fn, delay)
     local id=self:ScheduleTimer(fn,delay); timers[id].interval=delay; return id
 end
 function Timer:CancelTimer(id) timers[id]=nil end
-function Timer:TimeLeft(id) return timers[id] and timers[id].at-clock or 0 end
 LibStub=function(name)
     if name=='AceTimer-3.0' then
         return { Embed=function(_,obj) for k,v in pairs(Timer) do obj[k]=v end; return obj end }
@@ -188,9 +187,7 @@ Check(Captions()=='|cffffd100Second|r |cffffd100quest|r text','current and next 
 Advance(19)
 Check(Captions()=='Second |cffffd100quest|r |cffffd100text|r','the last visible word keeps its previous neighbor highlighted')
 Advance(1.25)
-Check(T.frame:IsShown() and HighlightCount()==0,'highlight ends during the inter-clip gap')
-Advance(1)
-Check(Q:IsEmpty() and not T.frame:IsShown(),'normal completion hides captions')
+Check(Q:IsEmpty() and not T.frame:IsShown(),'normal completion hides captions as the last voice ends')
 Check(Captions()=='' and T.activeWord==nil,'queue exhaustion clears stale dialogue and highlighting')
 
 -- Chinese has no spaces: each character is a word, punctuation stays with

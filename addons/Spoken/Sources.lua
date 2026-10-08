@@ -37,8 +37,6 @@ function Sources:Register(key, info)
         queueLimit = info.queueLimit,
         -- 0.55 is upstream's figure; it absorbs a duration that is slightly short.
         interClipGap = info.interClipGap or 0.55,
-        -- Pages of one book read on: no LineGap between them.
-        continuous = info.continuous,
         channel = info.channel,
         admit = info.admit,
         testBeforeQueue = info.testBeforeQueue,
