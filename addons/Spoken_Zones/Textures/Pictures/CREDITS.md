@@ -385,7 +385,7 @@ page gives its uploader and terms.
 | 1433-stonewatch-falls | Stonewatch Falls | [Stonewatch Falls.jpg](https://warcraft.wiki.gg/wiki/File:Stonewatch_Falls.jpg) |
 | 1433-stonewatch-keep | Stonewatch Keep | [Stonewatch Keep.jpg](https://warcraft.wiki.gg/wiki/File:Stonewatch_Keep.jpg) |
 | 1433-stonewatch-tower | Stonewatch Tower | [Stonewatch Tower.jpg](https://warcraft.wiki.gg/wiki/File:Stonewatch_Tower.jpg) |
-| 1433-three-corners | Three Corners | [Three Corners 1.jpg](https://warcraft.wiki.gg/wiki/File:Three_Corners_1.jpg) |
+| 1433-three-corners | Three Corners | [Three Corners.jpg](https://warcraft.wiki.gg/wiki/File:Three_Corners.jpg) |
 | 1433-tower-of-ilgalar | Tower of Ilgalar | [Tower of Ilgalar.jpg](https://warcraft.wiki.gg/wiki/File:Tower_of_Ilgalar.jpg) |
 | 1434-baliamah-ruins | Balia'mah Ruins | [Balia'mah Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Balia'mah_Ruins.jpg) |
 | 1434-ballal-ruins | Bal'lal Ruins | [Bal'lal Ruins.jpg](https://warcraft.wiki.gg/wiki/File:Bal'lal_Ruins.jpg) |
