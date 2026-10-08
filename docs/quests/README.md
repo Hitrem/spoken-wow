@@ -1020,20 +1020,12 @@ nothing in `C_GossipInfo`, `GOSSIP_SHOW` or any event while the window was open)
 client writes every row it is sent to `Cache/ADB/<locale>/DBCache.bin`, with the id. Forever's
 client ships almost none of the table, so every greeting a player sees passes through there.
 
-`broadcast_text` (migration 0066) keeps those rows per language, from two sources:
-
-- **Players' caches.** `/contribute` takes `DBCache.bin` and its per-session
-  `DBCache.bin<n>.tmp` files from signed-in players, reads them in the browser
-  (`apps/web/src/lib/broadcast/cache.ts`) and posts only the BroadcastText rows to
-  `/api/broadcast-text`. A cache says nothing about its language except the folder it sat in, so
-  the player picks it, and a non-English upload that mostly matches English under the same ids
-  is refused.
-- **EG Link**, Efficient Games' published copy of its players' caches
-  ([JIVESCORP/eg-link-output-wowf](https://github.com/JIVESCORP/eg-link-output-wowf),
-  CC BY 4.0, data from [Efficient Games](https://efficient.games)).
-  A one-off import, kept outside this repository, loads its `broadcast_text.<locale>` rows,
-  and from `texts.<locale>` which NPC's gossip or greeting showed which ids, into
-  `broadcast_text_speaker`.
+`broadcast_text` (migration 0066) keeps those rows per language. `/contribute` takes
+`DBCache.bin` and its per-session `DBCache.bin<n>.tmp` files from signed-in players, reads them
+in the browser (`apps/web/src/lib/broadcast/cache.ts`) and posts only the BroadcastText rows to
+`/api/broadcast-text`. A cache says nothing about its language except the folder it sat in, so
+the player picks it, and a non-English upload that mostly matches English under the same ids is
+refused.
 
 A row's text is replaced only by one from the same or a newer client build, because a hotfix
 edits a row in place and keeps its id. One text can sit under several ids ("What are you

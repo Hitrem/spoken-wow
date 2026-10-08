@@ -1,23 +1,17 @@
 /**
- * The broadcast_text tables (migration 0066): BroadcastText rows per language, and which NPC
- * showed which row.
+ * The broadcast_text tables (migration 0066): BroadcastText rows per language, and who
+ * uploaded them.
  */
 import { db, query } from "@/lib/db";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 
-export type BroadcastSource = "cache" | "eglink";
+export type BroadcastSource = "cache";
 export type BroadcastRow = { id: number; text: string; text1: string };
-export type BroadcastSpeaker = {
-  entityKind: "npc" | "object";
-  entityId: number;
-  broadcastTextId: number;
-  window: "gossip" | "greeting";
-};
 
 export type RecordedTexts = { texts: number; added: number; changed: number };
 
 /**
- * Write one source's rows for a language.
+ * Write uploaded rows for a language.
  *
  * A row's text is replaced only by one from the same or a newer build: a hotfix rewrites a
  * row in place, and an upload of an old cache must not undo it. Every copy counts as an
@@ -93,24 +87,6 @@ export async function recordUpload(
      values ($1, $2, $3, $4, $5, $6)`,
     [userId, lang, build, counts.texts, counts.added, counts.changed],
   );
-}
-
-export async function recordSpeakers(source: "eglink", speakers: BroadcastSpeaker[]): Promise<number> {
-  if (speakers.length === 0) return 0;
-  const result = await db().query(
-    `insert into "broadcast_text_speaker" ("entityKind", "entityId", "broadcastTextId", "window", "source")
-     select t."kind", t."entity", t."id", t."window", $1
-       from unnest($2::text[], $3::int[], $4::int[], $5::text[]) as t("kind", "entity", "id", "window")
-     on conflict do nothing`,
-    [
-      source,
-      speakers.map((s) => s.entityKind),
-      speakers.map((s) => s.entityId),
-      speakers.map((s) => s.broadcastTextId),
-      speakers.map((s) => s.window),
-    ],
-  );
-  return result.rowCount ?? 0;
 }
 
 /**
