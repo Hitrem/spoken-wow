@@ -66,8 +66,8 @@ type Filters = { status: ContributionStatus; client: ClientFilter; stage: StageF
 
 /** The corrections tab's own URL for `filters`, with whatever is unset left out. */
 function correctionsHref(filters: Filters): string {
-  const params = new URLSearchParams({ status: filters.status });
-  if (filters.client !== "all") params.set("client", filters.client);
+  // Client always written, "all" included: left out, it means the Forever default.
+  const params = new URLSearchParams({ status: filters.status, client: filters.client });
   if (filters.stage !== "all") params.set("stage", filters.stage);
   if (filters.q.trim()) params.set("q", filters.q.trim());
   if (filters.searchIn !== "any") params.set("filter", filters.searchIn);
