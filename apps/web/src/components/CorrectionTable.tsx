@@ -14,10 +14,10 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 
-import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { useLang } from "@/components/LangProvider";
 import { LiteButton } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
+import StatusTabs from "@/components/StatusTabs";
 import { usePendingPush } from "@/components/usePendingPush";
 import type { ClientSummary } from "@/lib/contributions/client";
 import { wordDiff, type DiffPart } from "@/lib/contributions/compare";
@@ -52,12 +52,6 @@ const STAGE_LABELS: Record<QuestStage, string> = {
   complete: "Complete",
 };
 
-const STATUS_CHIP_OPTIONS: ChipOption[] = [
-  { value: "new", label: "New" },
-  { value: "accepted", label: "Accepted" },
-  { value: "rejected", label: "Rejected" },
-];
-
 function when(at: string): string {
   return new Date(at).toLocaleString(undefined, {
     month: "short",
@@ -72,7 +66,7 @@ export default function CorrectionTable({
   status,
 }: {
   initial: CorrectionRow[];
-  status: ContributionStatus | "all";
+  status: ContributionStatus;
 }) {
   const lang = useLang();
   const { pending, push } = usePendingPush();
@@ -106,15 +100,12 @@ export default function CorrectionTable({
 
   return (
     <>
+      <StatusTabs
+        active={status}
+        onGo={push}
+        hrefFor={(next) => localeHref(lang, `/contributions/corrections?${new URLSearchParams({ status: next })}`)}
+      />
       <nav className="mb-4 flex flex-wrap items-center gap-2">
-        <FilterChip
-          label="status"
-          value={status === "all" ? undefined : status}
-          options={STATUS_CHIP_OPTIONS}
-          onChange={(next) =>
-            push(localeHref(lang, `/contributions/corrections?${new URLSearchParams({ status: next ?? "all" })}`))
-          }
-        />
         <span className="text-muted-foreground text-xs">
           {initial.length} {initial.length === 1 ? "correction" : "corrections"}
         </span>

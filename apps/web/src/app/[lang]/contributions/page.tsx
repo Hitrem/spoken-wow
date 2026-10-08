@@ -227,11 +227,7 @@ export default async function Page({
     dir: rawDir,
     page: rawPage,
   } = await searchParams;
-  const status: ContributionStatus | "all" = isStatus(rawStatus)
-    ? rawStatus
-    : rawStatus === "all"
-      ? "all"
-      : "new";
+  const status: ContributionStatus = isStatus(rawStatus) ? rawStatus : "new";
   // Defaults to "all", not a narrowing anyone needs applied before they ask for it. There used
   // to be a second dimension here (a "confirmed" param) alongside this one, spelled as its own
   // Confirmed/Unconfirmed pills: gone, replaced by the NEEDS_DECISION sentinel folded into this

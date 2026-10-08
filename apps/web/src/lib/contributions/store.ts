@@ -271,7 +271,6 @@ const SORT_EXPRESSIONS: Record<SortColumn, string> = {
   filed: `"createdAt"`,
   source: `"source"`,
   count: `"count"`,
-  status: `"status"`,
 };
 
 /** Ties fall back to most sent, then newest, then id -- the default order, made total so a page cut is stable. */

@@ -29,6 +29,7 @@ import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import SpeakerCell, { ProvenanceBadge, type SpeakerAnswer } from "@/components/SpeakerCell";
 import { ACCEPT_TONE, LiteButton, LiteCheckbox, REJECT_TONE } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
+import StatusTabs from "@/components/StatusTabs";
 import { usePendingPush } from "@/components/usePendingPush";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -129,11 +130,6 @@ const STATUS_LABELS: Record<ContributionStatus, string> = {
   rejected: "Rejected",
 };
 
-const STATUS_OPTIONS: readonly ContributionStatus[] = ["new", "accepted", "rejected"];
-const STATUS_CHIP_OPTIONS: ChipOption[] = STATUS_OPTIONS.map((option) => ({
-  value: option,
-  label: STATUS_LABELS[option],
-}));
 
 const PROVENANCE_LABELS: Record<Provenance, string> = {
   corpus: "Corpus",
@@ -231,7 +227,7 @@ export default function ContributionTable({
   matching: { id: number; status: ContributionStatus }[];
   page: number;
   pages: number;
-  status: ContributionStatus | "all";
+  status: ContributionStatus;
   provenance: SpeakerFilter;
   client: ClientFilter;
   source: SourceFilter;
@@ -252,7 +248,7 @@ export default function ContributionTable({
 
   /**
    * What this session resolved, overlaid on the server's rows -- the same shape ReportTable
-   * uses and for the same reason: the status dropdown below is a navigation, so seeding state
+   * uses and for the same reason: the status tabs above are a navigation, so seeding state
    * from `initial` once would leave a resolved row sitting in a queue it no longer belongs to
    * until the next reload.
    */
@@ -505,10 +501,7 @@ export default function ContributionTable({
     [landed, router],
   );
 
-  const rows = initial.filter((row) => {
-    const current = resolved[row.id] ?? row.status;
-    return status === "all" || current === status;
-  });
+  const rows = initial.filter((row) => (resolved[row.id] ?? row.status) === status);
 
   // Only rows still on screen count: a selected row a bulk reject just moved out of this view
   // must not be accepted by the next click on a button that no longer shows it.
@@ -548,16 +541,15 @@ export default function ContributionTable({
 
   return (
     <>
-      {/* Dropdowns, the same control the explorers filter with -- matching ReportTable.
-          Status/Speaker being one dropdown each, rather than a row of link pills, is what makes
-          "New / Accepted / Rejected / All" and the six speaker pills fit without crowding. */}
+      <StatusTabs
+        active={status}
+        onGo={push}
+        hrefFor={(next) =>
+          localeHref(lang, contributionsHref({ status, provenance, client, source, stage, sort }, { status: next }))
+        }
+      />
+      {/* Dropdowns, the same control the explorers filter with -- matching ReportTable. */}
       <nav className="mb-4 flex flex-wrap items-center gap-2">
-        <FilterChip
-          label="status"
-          value={status === "all" ? undefined : status}
-          options={STATUS_CHIP_OPTIONS}
-          onChange={(next) => go({ status: next as ContributionStatus | undefined })}
-        />
         <FilterChip
           label="speaker"
           value={provenance === "all" ? undefined : provenance}
@@ -688,9 +680,6 @@ export default function ContributionTable({
                 Count
               </SortHeader>
               <th className="border-b py-2 pr-3 font-normal">What they sent</th>
-              <SortHeader column="status" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
-                Status
-              </SortHeader>
               <th className="border-b py-2 font-normal" />
             </tr>
           </thead>
@@ -997,8 +986,6 @@ const ContributionTableRow = memo(function ContributionTableRow({
             </div>
           ) : null}
         </td>
-
-        <td className="pr-3 text-xs whitespace-nowrap">{STATUS_LABELS[current]}</td>
 
         <td>
           <div className="flex items-center justify-end gap-1">

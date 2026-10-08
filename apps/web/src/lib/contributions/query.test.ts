@@ -48,8 +48,8 @@ describe("contributionsHref", () => {
   // encoding, just the same string page.tsx's own parsing compares rawProvenance against.
   it("round-trips the NEEDS_DECISION sentinel through the href", () => {
     expect(
-      contributionsHref({ status: "all", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT }, { provenance: NEEDS_DECISION }),
-    ).toBe(`/contributions?status=all&provenance=${NEEDS_DECISION}&client=all&source=all&stage=all`);
+      contributionsHref({ status: "new", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT }, { provenance: NEEDS_DECISION }),
+    ).toBe(`/contributions?status=new&provenance=${NEEDS_DECISION}&client=all&source=all&stage=all`);
   });
 });
 
@@ -80,7 +80,7 @@ describe("sort", () => {
   });
 
   it("keeps the sort across a filter change", () => {
-    const sort = { column: "status", direction: "desc" } as const;
+    const sort = { column: "source", direction: "desc" } as const;
     expect(nextContributionFilters({ ...filters, sort }, { status: "accepted" }).sort).toEqual(sort);
   });
 });

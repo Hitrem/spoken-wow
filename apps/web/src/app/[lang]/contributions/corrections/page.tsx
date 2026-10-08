@@ -44,11 +44,7 @@ export default async function Page({
   if (!session || !can(viewer, "edit", lang)) notFound();
 
   const { status: rawStatus } = await searchParams;
-  const status: ContributionStatus | "all" = isStatus(rawStatus)
-    ? rawStatus
-    : rawStatus === "all"
-      ? "all"
-      : "new";
+  const status: ContributionStatus = isStatus(rawStatus) ? rawStatus : "new";
 
   const listed = (await listContributions(status, lang)).filter((row) => row.source === "quests");
   const states = await lineStates(listed);
