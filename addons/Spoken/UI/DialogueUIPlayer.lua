@@ -626,11 +626,10 @@ function Skin:UpdateProgress()
     local clip = self.clip
     if not clip then return end
     local duration = tonumber(clip.length) or 0
-    if clip.nextSoundTimer and duration > 0 then
-        -- The queue's timer includes the source's trailing gap and any initial silence,
-        -- so TimeLeft is right through hidden UI and replays alike.
-        local remaining = Addon:TimeLeft(clip.nextSoundTimer)
-        self.seconds = Clamp(duration + SoundQueue:GapAfter(clip) - remaining, 0, duration)
+    if clip.nextSoundTimer and clip.spokenAt and duration > 0 then
+        -- From when the voice ends rather than the queue's timer, which runs on through the
+        -- pause after it and any silence before.
+        self.seconds = Clamp(duration - (clip.spokenAt - GetTime()), 0, duration)
     elseif not SoundQueue:IsPaused() then self.seconds = 0 end
     self.bar:SetValue(duration > 0 and (self.seconds or 0) / duration or 0)
 end

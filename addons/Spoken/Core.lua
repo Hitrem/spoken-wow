@@ -53,10 +53,10 @@ Defaults = {
             -- clip is the one being talked over. Not on clients without the channel, where
             -- Compat.lua interrupts the bark a different way.
             AutoToggleDialog = (Version.IsLegacyVanilla or Version:IsRetailOrAboveLegacyVersion(60100)) or false,
-            -- A short sound between one item and the next (#142): at a quest hub a hand-in
+            -- A short sound in the pause between one line and the next (#142): at a quest hub a hand-in
             -- and the next pickup otherwise run together, often in the same NPC's voice.
             -- Off by default, as the queue has always played without it.
-            CueBetweenItems = false,
+            CueBetweenLines = false,
             -- The other channels turned down while a line is spoken (OtherSounds.lua), each to
             -- this share of the player's own volume, for the length of a line. Not on the legacy
             -- clients, where speech itself goes out on the music channel.

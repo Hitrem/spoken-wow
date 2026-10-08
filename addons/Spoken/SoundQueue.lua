@@ -55,19 +55,15 @@ local RETRY_INTERVAL = 1
 local gates = {}
 local retryTicker = nil
 
--- The cue between items: the kit sound is about half a second, and the rest is the pause
--- after it that lets the next line read as a new one rather than a continuation.
-local CUE_SECONDS = 1
--- The clip that just finished on its own, until the next Advance has looked at it. A clip
--- skipped or stopped leaves nil: the player moved on themselves and wants no ceremony.
-local lastFinished = nil
--- Set while the cue plays. Nothing starts until it fires.
-local cueTimer = nil
-
-local function CancelCue()
-    if cueTimer then
-        Addon:CancelTimer(cueTimer)
-        cueTimer = nil
+-- Both of a clip's timers: the one that ends it, and the cue in the pause after it.
+local function CancelTimers(clip)
+    if clip.nextSoundTimer then
+        Addon:CancelTimer(clip.nextSoundTimer)
+        clip.nextSoundTimer = nil
+    end
+    if clip.cueTimer then
+        Addon:CancelTimer(clip.cueTimer)
+        clip.cueTimer = nil
     end
 end
 
@@ -200,8 +196,7 @@ end
 -- clip off without ending it -- a human pressing Play, and a gate closing on it.
 local function StopKeeping(head)
     SoundUtils:StopSound(head)
-    Addon:CancelTimer(head.nextSoundTimer)
-    head.nextSoundTimer = nil
+    CancelTimers(head)
     if head.stopCallback then
         head.stopCallback(head, false)
     end
@@ -282,19 +277,12 @@ function SoundQueue:RemoveSoundFromQueue(clip, finishedPlaying)
 
     local wasSpeaking = clip.nextSoundTimer ~= nil
     if removedIndex == 1 then
-        -- Before the callbacks: a stopCallback may enqueue, and the Advance that runs
-        -- inside it is the one that decides on the cue.
-        lastFinished = finishedPlaying and clip or nil
-        CancelCue()
         if not finishedPlaying then
             SoundUtils:StopSound(clip, not self.sounds[1] and REMOVE_FADE_MS or nil)
         else
             clip.handle = nil
         end
-        if clip.nextSoundTimer then
-            Addon:CancelTimer(clip.nextSoundTimer)
-            clip.nextSoundTimer = nil
-        end
+        CancelTimers(clip)
     end
 
     if clip.stopCallback then
@@ -451,42 +439,59 @@ function SoundQueue:PlaySound(clip)
 
     -- The client fires no event when a sound finishes, so the recorded duration is the
     -- only signal that the clip is over.
-    -- When the voice itself ends; the timer runs on through the pause after it (GapAfter).
     clip.spokenAt = GetTime() + (clip.delay or 0) + clip.length
     clip.nextSoundTimer = Addon:ScheduleTimer(function()
-        self:RemoveSoundFromQueue(clip, true)
-    end, (clip.delay or 0) + clip.length + self:GapAfter(clip))
+        self:AfterSpoken(clip)
+    end, (clip.delay or 0) + clip.length)
 end
 
---- Whether to mark the change from one item to the next. Pages of one book are one item:
+--- The first waiting line that may play once the head is done. One a gate holds will wait
+--- anyway, and that wait separates it from `clip` without our help.
+local function NextPlayable()
+    for index = 2, #SoundQueue.sounds do
+        if not SoundQueue:GetHeldReason(SoundQueue.sounds[index]) then
+            return SoundQueue.sounds[index]
+        end
+    end
+end
+
+--- Whether to mark the change from one line to the next. Pages of one book are one item:
 --- a sound between each would be noise, and the page label already says where it is.
 local function WantsCue(previous, nextClip)
-    if not previous or not Addon.db.profile.Audio.CueBetweenItems then
+    if not Addon.db.profile.Audio.CueBetweenLines then
         return false
     end
     return not (previous.group and previous.group == nextClip.group)
 end
 
---- Play the cue on the channel the next clip will speak on, so it follows the voice's
---- volume rather than the effects', then start that clip once it has had its moment.
-local function PlayCue(nextClip)
-    SoundUtils:PlayCue(SpeakingChannel(nextClip))
-    cueTimer = Addon:ScheduleTimer(function()
-        cueTimer = nil
-        SoundQueue:Advance()
-    end, CUE_SECONDS)
+--- `clip`'s voice has ended. The pause after it, and the cue halfway through that pause,
+--- only separate it from a line already waiting: the last line ends with its voice, and
+--- one that arrives after it follows silence, which separates it well enough.
+function SoundQueue:AfterSpoken(clip)
+    local gap = NextPlayable() and self:GapAfter(clip) or 0
+    if gap <= 0 then
+        self:RemoveSoundFromQueue(clip, true)
+        return
+    end
+    -- Decided when it plays: the line waiting may have gone, or changed, since the voice ended.
+    clip.cueTimer = Addon:ScheduleTimer(function()
+        clip.cueTimer = nil
+        local nextClip = NextPlayable()
+        if nextClip and WantsCue(clip, nextClip) then
+            -- On the next line's channel, so it follows the voice's volume, not the effects'.
+            SoundUtils:PlayCue(SpeakingChannel(nextClip))
+        end
+    end, gap / 2)
+    clip.nextSoundTimer = Addon:ScheduleTimer(function()
+        self:RemoveSoundFromQueue(clip, true)
+    end, gap)
 end
 
 --- Start something if nothing is speaking and something may. Safe to call at any time;
 --- the ticker and every queue mutation route through here.
 function SoundQueue:Advance()
-    -- Consumed by this call whatever it decides. A drained queue, or a clip held back by a
-    -- gate, means a wait that already separates the next line from the last.
-    local previous = lastFinished
-    lastFinished = nil
-
     local head = self.sounds[1]
-    if not head or head.nextSoundTimer or cueTimer or self:IsPaused() then
+    if not head or head.nextSoundTimer or self:IsPaused() then
         StopRetryTicker()
         return
     end
@@ -509,12 +514,7 @@ function SoundQueue:Advance()
     end
 
     StopRetryTicker()
-    local nextClip = self.sounds[1]
-    if WantsCue(previous, nextClip) then
-        PlayCue(nextClip)
-        return
-    end
-    self:PlaySound(nextClip)
+    self:PlaySound(self.sounds[1])
     Callbacks:Fire("AUDIO_CHANGED")
 end
 
@@ -722,8 +722,6 @@ function SoundQueue:PauseQueue()
         return false
     end
     self:SetPaused(true)
-    -- Resuming starts the next line straight away; its cue has already been heard.
-    CancelCue()
 
     local head = self:GetCurrentSound()
     -- Stopped in the pause after a line has spoken to its end: that line is over, and it is the
@@ -741,10 +739,7 @@ function SoundQueue:PauseQueue()
     if head and self:CanBePaused() then
         -- Faded out, not cut: a pause is the player stepping away, not an interruption.
         SoundUtils:StopSound(head, PAUSE_FADE_MS)
-        if head.nextSoundTimer then
-            Addon:CancelTimer(head.nextSoundTimer)
-            head.nextSoundTimer = nil
-        end
+        CancelTimers(head)
     end
     -- Nothing of ours is speaking, so the game may. Resuming plays the line, which mutes again.
     self:MuteGameDialogue(nil)
