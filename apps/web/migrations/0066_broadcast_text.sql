@@ -1,7 +1,7 @@
 -- What the game's BroadcastText table says in each language: the language-neutral id behind an
 -- NPC's gossip text. No client API exposes the id, and Classic clients ship almost none of the
 -- table, so it is collected from the server's answers players' clients cache (DBCache.bin) and
--- from Efficient Games' published copy of the same caches (scripts/import-eg-link.mts).
+-- from Efficient Games' published copy of the same caches.
 --
 -- One row per id per language: the newest client build's text wins, because a hotfix edits a
 -- row's text in place and keeps its id.

@@ -1031,8 +1031,8 @@ client ships almost none of the table, so every greeting a player sees passes th
 - **EG Link**, Efficient Games' published copy of its players' caches
   ([JIVESCORP/eg-link-output-wowf](https://github.com/JIVESCORP/eg-link-output-wowf),
   CC BY 4.0, data from [Efficient Games](https://efficient.games)).
-  `apps/web/scripts/import-eg-link.mts` imports its `broadcast_text.<locale>` rows, and from
-  `texts.<locale>` which NPC's gossip or greeting showed which ids, into
+  A one-off import, kept outside this repository, loads its `broadcast_text.<locale>` rows,
+  and from `texts.<locale>` which NPC's gossip or greeting showed which ids, into
   `broadcast_text_speaker`.
 
 A row's text is replaced only by one from the same or a newer client build, because a hotfix
