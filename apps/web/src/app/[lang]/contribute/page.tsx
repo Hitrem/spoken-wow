@@ -72,7 +72,8 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
             </p>
             <Step n={1}>Log out of the game.</Step>
             <Step n={2}>
-              Drop every <code>DBCache.bin*</code> file from this folder, and pick its language:
+              Drop <FileName>DBCache.bin</FileName> and every other file starting with{" "}
+              <FileName>DBCache.</FileName> from this folder, and pick its language:
             </Step>
             <Path>
               World of Warcraft/&lt;game folder&gt;/Cache/ADB/
@@ -111,4 +112,9 @@ function Path({ children }: { children: React.ReactNode }) {
       {children}
     </code>
   );
+}
+
+/** A file the player has to find, standing out from the sentence around it. */
+function FileName({ children }: { children: React.ReactNode }) {
+  return <code className="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-xs font-semibold">{children}</code>;
 }
