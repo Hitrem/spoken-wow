@@ -127,7 +127,15 @@ async function replacePost(api, channelId, content) {
     allowed_mentions: { parse: [] },
     flags: 4, // SUPPRESS_EMBEDS: three release previews would bury the list
   });
-  await api("PUT", `/channels/${channelId}/messages/pins/${posted.id}`);
+  // An unpinned post is invisible to the next run, which only looks at pins, so a failed pin
+  // would leave a stray post behind on every attempt. A failed delete below needs no such care:
+  // both posts stay pinned, and the next run removes the old one.
+  try {
+    await api("PUT", `/channels/${channelId}/messages/pins/${posted.id}`);
+  } catch (error) {
+    await api("DELETE", `/channels/${channelId}/messages/${posted.id}`);
+    throw error;
+  }
   for (const m of old) await api("DELETE", `/channels/${channelId}/messages/${m.id}`);
 
   // Pinning leaves a "pinned a message" notice in the channel, every release; the pin list
@@ -168,7 +176,7 @@ async function main() {
   const api = discord(token);
   const channel = await findChannel(api, name);
   if (!channel) {
-    console.log(`skipped: no #${name} channel the bot can see`);
+    console.log(`skipped: no #${name} channel`);
     return;
   }
   const { posted, deleted } = await replacePost(api, channel.id, content);

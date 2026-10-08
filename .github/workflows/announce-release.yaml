@@ -71,7 +71,8 @@ jobs:
     if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     # A language's three packs are usually released minutes apart. Run side by side, each
-    # would find no post yet and pin its own.
+    # would find no post yet and pin its own. GitHub keeps only one pending run per group, so
+    # the middle of three shows as cancelled; nothing is lost, as the last run reads every release.
     concurrency:
       group: language-channel
       cancel-in-progress: false
@@ -94,7 +95,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
-          # Optional until the bot exists: #announcements does not depend on it.
+          # Optional until DISCORD_BOT_TOKEN is set: #announcements does not depend on it.
           if [ -z "$DISCORD_BOT_TOKEN" ]; then
             echo "::warning::DISCORD_BOT_TOKEN is not set; no language channel post"
             exit 0
