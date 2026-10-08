@@ -354,6 +354,15 @@ export default function LineRow({
             <PlayIcon className="size-3.5" />
           </button>
           <SourceMark source={line.source} />
+          {/* A $g line is split per player gender, and the two rows differ by a word. */}
+          {line.playerGender && (
+            <span
+              className="text-muted-foreground mt-px w-3 shrink-0 text-center text-xs"
+              title={`To ${line.playerGender === "m" ? "male" : "female"} player`}
+            >
+              {line.playerGender === "m" ? "M" : "F"}
+            </span>
+          )}
           {/* The override, when there is one: this cell shows what the line says out loud,
               and after a rewrite that is no longer what the corpus holds. */}
           <span className={cn("min-w-0 flex-1 whitespace-pre-wrap", !expanded && "line-clamp-2")}>
@@ -363,15 +372,6 @@ export default function LineRow({
               moved to the Audio column, where it lines up down the page. */}
           <span className="mt-0.5 flex shrink-0 gap-2 text-xs">
             {line.missing?.text ? <UntranslatedMark /> : null}
-            {/* A $g line is split per player gender, and the two rows differ by a word. */}
-            {line.playerGender && (
-              <span
-                className="text-muted-foreground"
-                title={`What the NPC says to a ${line.playerGender === "m" ? "male" : "female"} player; the other row is the other wording`}
-              >
-                to {line.playerGender === "m" ? "male" : "female"} player
-              </span>
-            )}
             {/* Nothing else about a contributed row differs from a native one -- this is the
                 whole marker, plus a way back to where it came from. */}
             {line.contributionId ? (
