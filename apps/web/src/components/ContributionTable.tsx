@@ -4,9 +4,8 @@
  * The triage list for pasted envelopes.
  *
  * A table for the same reason ReportTable is one: triage is a scan down a column, and the
- * submitted text -- which can run to a full quest's worth of dialogue -- sits behind a
- * `<details>` so a long paste does not push every row after it off the screen (the reasoning
- * CATEGORY_COLUMN gives in lib/reports/reports.ts for the same shape of problem).
+ * submitted text -- which can run to a full quest's worth of dialogue -- is clamped to two
+ * lines until opened, so a long paste does not push every row after it off the screen.
  *
  * Never renders `ip`, `name` or `email`: reports/ReportTable shows a reporter's own name
  * because they gave it to have their report followed up on, but a contribution's identifying
@@ -22,7 +21,7 @@
  */
 import { useLang } from "@/components/LangProvider";
 import { localeHref, type Lang } from "@/lib/lang";
-import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useState } from "react";
 
@@ -810,6 +809,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
 }) {
   // A written page is one-way (accept.ts), so its match is no longer the moderator's to move.
   const pageWritten = current === "accepted" && (row.hasLine || lineCreated);
+  const [expanded, setExpanded] = useState(false);
   return (
     // Top-aligned, not middle: the NPC/Speaker cell below can grow to a whole form's
       // height (race/gender/flavor selects), and centring every other
@@ -819,6 +819,13 @@ const ContributionTableRow = memo(function ContributionTableRow({
         // Anchor, not just a key: an accepted quests row's line carries a link back
         // here (LineRow.tsx's "contributed" badge), and this is what it jumps to.
         id={`contribution-${row.id}`}
+        onClick={(event) => {
+          // A click on one of the row's controls is that control's, and one ending a drag over
+          // the text is somebody copying it: neither should fold the row out from under them.
+          if ((event.target as HTMLElement).closest("button, a, input, select, textarea, label, form")) return;
+          if (!window.getSelection()?.isCollapsed) return;
+          setExpanded((open) => !open);
+        }}
         className="align-top [&>td]:border-b [&>td]:py-2 [&>td]:leading-5"
       >
         <td className="pr-2">
@@ -950,40 +957,45 @@ const ContributionTableRow = memo(function ContributionTableRow({
         <td className="pr-3 text-xs whitespace-nowrap">{row.count}</td>
 
         <td className="max-w-md pr-3">
-          {/* Collapsed by default: a full quest's dialogue in an open cell is the
-              "table stops being a scan" failure this markup exists to avoid. */}
-          <details>
-            <summary className="text-muted-foreground cursor-pointer text-xs">
-              {row.text ? `${row.text.length} chars` : "no text"}
-              {found !== undefined ? " · corpus already has this key" : ""}
-              {row.body ? " · note attached" : ""}
-            </summary>
-            <p className="mt-1 whitespace-pre-wrap">{row.text ?? "(no text sent)"}</p>
-            {row.body ? (
-              // The optional complaint: collected on the form, stored as `body`, and
-              // until now rendered nowhere -- a player who explained what was wrong
-              // had that reach no one. Shown here rather than its own column because
-              // most rows won't have one and a column that's usually empty is a scan
-              // slower than the details cell it would sit next to.
-              <div className="mt-2 rounded border p-2">
-                <p className="text-muted-foreground text-xs font-medium">
-                  What they said was wrong:
-                </p>
-                <p className="mt-1 whitespace-pre-wrap">{row.body}</p>
-              </div>
-            ) : null}
-            {found !== undefined ? (
-              // A "missing" key the corpus already answers to is a corpus bug, not
-              // an absent line -- shown beside the submitted text so that reading is
-              // a glance, not a second lookup.
-              <div className="bg-muted/40 mt-2 rounded p-2">
-                <p className="text-muted-foreground text-xs font-medium">
-                  Already on file:
-                </p>
-                <p className="mt-1 whitespace-pre-wrap">{found}</p>
-              </div>
-            ) : null}
-          </details>
+          {/* Two lines until opened, as the explorer's rows are: enough to recognise the text
+              without a full quest's dialogue pushing every row after it off the screen. */}
+          <div className="flex items-start gap-1">
+            <p className={cn("min-w-0 flex-1 whitespace-pre-wrap", !expanded && "line-clamp-2")}>
+              {row.text ?? <span className="text-muted-foreground">(no text sent)</span>}
+            </p>
+            <button
+              type="button"
+              aria-expanded={expanded}
+              aria-label={expanded ? "Collapse this text" : "Show the whole text"}
+              title={expanded ? "Collapse" : "Show the whole text"}
+              onClick={() => setExpanded((open) => !open)}
+              className="text-muted-foreground hover:text-foreground mt-px shrink-0 cursor-pointer rounded-sm p-0.5"
+            >
+              <ChevronDownIcon className={cn("size-3.5 transition-transform", expanded && "rotate-180")} />
+            </button>
+          </div>
+          {!expanded && (found !== undefined || row.body) ? (
+            <p className="text-muted-foreground text-xs">
+              {[found !== undefined && "corpus already has this key", row.body && "note attached"]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          ) : null}
+          {expanded && row.body ? (
+            // The optional complaint: the one field a player filled in to be read.
+            <div className="mt-2 rounded border p-2">
+              <p className="text-muted-foreground text-xs font-medium">What they said was wrong:</p>
+              <p className="mt-1 whitespace-pre-wrap">{row.body}</p>
+            </div>
+          ) : null}
+          {expanded && found !== undefined ? (
+            // A "missing" key the corpus already answers to is a corpus bug, not an absent
+            // line -- shown beside the submitted text so that reading is a glance.
+            <div className="bg-muted/40 mt-2 rounded p-2">
+              <p className="text-muted-foreground text-xs font-medium">Already on file:</p>
+              <p className="mt-1 whitespace-pre-wrap">{found}</p>
+            </div>
+          ) : null}
         </td>
 
         <td className="pr-3 text-xs whitespace-nowrap">{STATUS_LABELS[current]}</td>
