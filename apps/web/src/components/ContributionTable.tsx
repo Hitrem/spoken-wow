@@ -23,8 +23,9 @@ import { useLang } from "@/components/LangProvider";
 import { localeHref, type Lang } from "@/lib/lang";
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useState } from "react";
 
+import { CLIENT_CHIP_OPTIONS, SEARCH_IN_OPTIONS } from "@/components/contribution-chips";
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import SpeakerCell, { ProvenanceBadge, type SpeakerAnswer } from "@/components/SpeakerCell";
 import { ACCEPT_TONE, LiteButton, LiteCheckbox, REJECT_TONE } from "@/components/LiteControls";
@@ -32,6 +33,7 @@ import { Refreshing } from "@/components/Loading";
 import SendersButton from "@/components/SendersButton";
 import StatusTabs from "@/components/StatusTabs";
 import { usePendingPush } from "@/components/usePendingPush";
+import { useSearchBox } from "@/components/useSearchBox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,7 +43,7 @@ import {
   type ContributionStatus,
   type ResolveManyResult,
 } from "@/lib/contributions/contributions";
-import { CLIENT_FAMILIES, CLIENT_FAMILY_LABELS, type ClientSummary } from "@/lib/contributions/client";
+import type { ClientSummary } from "@/lib/contributions/client";
 import { flavorOptionsFor, summaryFromResolution, type FlavorScope } from "@/lib/contributions/speaker";
 import {
   contributionsHref,
@@ -153,20 +155,6 @@ const SPEAKER_CHIP_OPTIONS: ChipOption[] = [
   ...PROVENANCES.map((option) => ({ value: option, label: PROVENANCE_LABELS[option] })),
   { value: MISSING, label: "Missing" },
 ];
-
-/** Where the search box is matched, as the explorer's own "search in"; "any" is the idle state. */
-const SEARCH_IN_OPTIONS: ChipOption[] = [
-  { value: "npc", label: "NPC only" },
-  { value: "quest", label: "Quest only" },
-  { value: "text", label: "Text only" },
-];
-
-const SEARCH_DEBOUNCE_MS = 300;
-
-const CLIENT_CHIP_OPTIONS: ChipOption[] = CLIENT_FAMILIES.map((option) => ({
-  value: option,
-  label: CLIENT_FAMILY_LABELS[option],
-}));
 
 /**
  * A column header that orders the queue: a click sorts on it, a second click flips it. The
@@ -556,30 +544,7 @@ export default function ContributionTable({
     push(localeHref(lang, contributionsHref(filters, next, toPage)));
   }
 
-  /**
-   * The search box as typed, sent once typing pauses -- each send is a whole server render.
-   * `sent` is what this box last asked for: a `q` that differs from it came from elsewhere (the
-   * back button), and is shown rather than overwritten by the box's older text.
-   */
-  const [query, setQuery] = useState(q);
-  const sent = useRef(q);
-  const goRef = useRef(go);
-  useEffect(() => {
-    goRef.current = go;
-  });
-  useEffect(() => {
-    if (q === sent.current) return;
-    sent.current = q;
-    setQuery(q);
-  }, [q]);
-  useEffect(() => {
-    if (query.trim() === sent.current) return;
-    const timer = setTimeout(() => {
-      sent.current = query.trim();
-      goRef.current({ q: query });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [query]);
+  const [query, setQuery] = useSearchBox(q, (next) => go({ q: next }));
 
   return (
     <>

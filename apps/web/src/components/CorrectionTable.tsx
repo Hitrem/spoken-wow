@@ -15,17 +15,22 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 
 import { useLang } from "@/components/LangProvider";
+import { CLIENT_CHIP_OPTIONS, SEARCH_IN_OPTIONS } from "@/components/contribution-chips";
+import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import { LiteButton } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
 import SendersButton from "@/components/SendersButton";
 import StatusTabs from "@/components/StatusTabs";
+import { Input } from "@/components/ui/input";
 import { usePendingPush } from "@/components/usePendingPush";
+import { useSearchBox } from "@/components/useSearchBox";
 import type { ClientSummary } from "@/lib/contributions/client";
 import { wordDiff, type DiffPart } from "@/lib/contributions/compare";
 import type { ContributionStatus } from "@/lib/contributions/contributions";
-import type { QuestStage } from "@/lib/contributions/query";
+import { QUEST_STAGES, type ClientFilter, type QuestStage, type StageFilter } from "@/lib/contributions/query";
 import { localeHref } from "@/lib/lang";
 import { explorerHref } from "@/lib/links";
+import type { Filter } from "@/lib/search";
 import { cn } from "@/lib/utils";
 import { wowheadQuestUrl } from "@/lib/wowhead";
 
@@ -35,6 +40,8 @@ export type CorrectionRow = {
   lineId: string;
   /** Null only for stored meta naming no quest, which a correction always does. */
   quest: { title: string; questId: number; stage: QuestStage | null } | null;
+  /** Who the player's client said speaks the line; null when the envelope named nobody. */
+  npc: { npcId: number; npcName: string | null } | null;
   client: ClientSummary;
   locale: string;
   count: number;
@@ -53,6 +60,20 @@ const STAGE_LABELS: Record<QuestStage, string> = {
   complete: "Complete",
 };
 
+const STAGE_CHIP_OPTIONS: ChipOption[] = QUEST_STAGES.map((option) => ({ value: option, label: STAGE_LABELS[option] }));
+
+type Filters = { status: ContributionStatus; client: ClientFilter; stage: StageFilter; q: string; searchIn: Filter };
+
+/** The corrections tab's own URL for `filters`, with whatever is unset left out. */
+function correctionsHref(filters: Filters): string {
+  const params = new URLSearchParams({ status: filters.status });
+  if (filters.client !== "all") params.set("client", filters.client);
+  if (filters.stage !== "all") params.set("stage", filters.stage);
+  if (filters.q.trim()) params.set("q", filters.q.trim());
+  if (filters.searchIn !== "any") params.set("filter", filters.searchIn);
+  return `/contributions/corrections?${params}`;
+}
+
 function when(at: string): string {
   return new Date(at).toLocaleString(undefined, {
     month: "short",
@@ -65,12 +86,23 @@ function when(at: string): string {
 export default function CorrectionTable({
   initial,
   status,
+  client,
+  stage,
+  q,
+  searchIn,
 }: {
   initial: CorrectionRow[];
   status: ContributionStatus;
+  client: ClientFilter;
+  stage: StageFilter;
+  q: string;
+  searchIn: Filter;
 }) {
   const lang = useLang();
   const { pending, push } = usePendingPush();
+  const filters: Filters = { status, client, stage, q, searchIn };
+  const go = (next: Partial<Filters>) => push(localeHref(lang, correctionsHref({ ...filters, ...next })));
+  const [query, setQuery] = useSearchBox(q, (next) => go({ q: next }));
   /** Statuses changed here since the page loaded, shown without waiting for a reload. */
   const [resolved, setResolved] = useState<Record<number, ContributionStatus>>({});
   const [busy, setBusy] = useState<number | null>(null);
@@ -104,9 +136,35 @@ export default function CorrectionTable({
       <StatusTabs
         active={status}
         onGo={push}
-        hrefFor={(next) => localeHref(lang, `/contributions/corrections?${new URLSearchParams({ status: next })}`)}
+        hrefFor={(next) => localeHref(lang, correctionsHref({ ...filters, status: next }))}
       />
       <nav className="mb-4 flex flex-wrap items-center gap-2">
+        <Input
+          type="search"
+          value={query}
+          placeholder="NPC, quest, or either text…"
+          aria-label="Search"
+          className="h-8 min-w-0 basis-64"
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <FilterChip
+          label="search in"
+          value={searchIn === "any" ? undefined : searchIn}
+          options={SEARCH_IN_OPTIONS}
+          onChange={(next) => go({ searchIn: (next ?? "any") as Filter })}
+        />
+        <FilterChip
+          label="client"
+          value={client === "all" ? undefined : client}
+          options={CLIENT_CHIP_OPTIONS}
+          onChange={(next) => go({ client: (next ?? "all") as ClientFilter })}
+        />
+        <FilterChip
+          label="stage"
+          value={stage === "all" ? undefined : stage}
+          options={STAGE_CHIP_OPTIONS}
+          onChange={(next) => go({ stage: (next ?? "all") as StageFilter })}
+        />
         <span className="text-muted-foreground text-xs">
           {initial.length} {initial.length === 1 ? "correction" : "corrections"}
         </span>
@@ -162,6 +220,11 @@ export default function CorrectionTable({
                     ) : (
                       row.lineId
                     )}
+                    {row.npc ? (
+                      <div className="text-muted-foreground">
+                        {row.npc.npcName ?? "unnamed"} #{row.npc.npcId}
+                      </div>
+                    ) : null}
                     <div className="text-muted-foreground mt-1">{when(row.createdAt)}</div>
                   </td>
 
