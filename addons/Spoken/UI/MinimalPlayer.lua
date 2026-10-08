@@ -495,10 +495,7 @@ function MinimalPlayer:UpdateProgress()
     if not clip then return end
     local duration = tonumber(clip.length) or 0
     if clip.nextSoundTimer and duration > 0 then
-        -- The queue's timer includes the source's trailing gap and any initial
-        -- silence. TimeLeft therefore also handles hidden UI and replay accurately.
-        local remaining = Addon:TimeLeft(clip.nextSoundTimer)
-        self.seconds = Clamp(duration + SoundQueue:GapAfter(clip) - remaining, 0, duration)
+        self.seconds = SoundQueue:VoiceElapsed(clip)
     elseif not SoundQueue:IsPaused() then self.seconds = 0 end
     self.bar:SetValue(duration > 0 and (self.seconds or 0) / duration or 0)
 end
