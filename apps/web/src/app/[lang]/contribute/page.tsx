@@ -40,42 +40,71 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
         <article className="max-w-xl">
           <h1 className="text-xl font-semibold">Contribute</h1>
           <p className="text-muted-foreground mt-1 mb-6 text-sm">
-            Send the game&apos;s own text for what Spoken has not narrated yet: one line from a link
-            the addon gives you, or everything the addon gathered while you played. A person reads
-            the queue, not a script, so it can take a while before it is answered.
+            Send the game&apos;s text for what Spoken hasn&apos;t narrated yet. A person reviews
+            every line, so answers take a while.
           </p>
 
           <ContributeForm signedInAs={signedInAs} />
 
           {/* Below the single-line form, not instead of it: most arrivals come from a link, and
               the file is for players who turned gathering on in the game. */}
-          <h2 className="mt-10 mb-1 text-base font-semibold">Everything you gathered</h2>
-          <p className="text-muted-foreground mb-4 text-sm">
-            If you chose <strong>Gather as I play</strong> in the game, log out (or type{" "}
-            <code>/reload</code>) so the game writes its files, then drop in{" "}
-            <code className="break-all">
-              World of Warcraft/&lt;game folder&gt;/WTF/Account/&lt;your account&gt;/SavedVariables/SpokenContributions.lua
-            </code>
-            . Only the gathered lines are sent, never your settings.
-          </p>
-          <UploadGathered signedInAs={signedInAs} />
+          <Section title="Everything you gathered">
+            <Step n={1}>
+              Turn on <strong>Gather as I play</strong> in the game, then log out or{" "}
+              <code>/reload</code>.
+            </Step>
+            <Step n={2}>Drop this file below:</Step>
+            <Path>
+              World of Warcraft/&lt;game folder&gt;/WTF/Account/&lt;account&gt;/SavedVariables/
+              <strong className="text-foreground whitespace-nowrap">SpokenContributions.lua</strong>
+            </Path>
+            <UploadGathered signedInAs={signedInAs} />
+          </Section>
 
-          {/* Last: it is for players who already send lines and are willing to dig in the game's
-              folder, and it needs an account. */}
-          <h2 className="mt-10 mb-1 text-base font-semibold">The game&apos;s text cache</h2>
-          <p className="text-muted-foreground mb-4 text-sm">
-            The game remembers every NPC greeting it was sent, with the id that ties it to the same
-            greeting in every other language. Those ids are how a line in your language finds its
-            recording. Log out of the game, then drop in every <code>DBCache.bin</code> file from{" "}
-            <code className="break-all">
-              World of Warcraft/&lt;game folder&gt;/Cache/ADB/&lt;language&gt;/
-            </code>
-            , including the <code>DBCache.bin…tmp</code> ones, and pick the language of that
-            folder. Only the NPC texts are sent.
-          </p>
-          <UploadBroadcastCache signedIn={session !== null} lang={lang} />
+          {/* Last: it needs an account and a dig through the game's folder. */}
+          <Section title="Game text cache">
+            <p className="text-muted-foreground text-sm">
+              Helps match NPC greetings across languages. Only NPC text is sent.
+            </p>
+            <Step n={1}>Log out of the game.</Step>
+            <Step n={2}>
+              Drop every <code>DBCache.bin*</code> file from this folder, and pick its language:
+            </Step>
+            <Path>
+              World of Warcraft/&lt;game folder&gt;/Cache/ADB/
+              <strong className="text-foreground whitespace-nowrap">&lt;language&gt;</strong>/
+            </Path>
+            <UploadBroadcastCache signedIn={session !== null} lang={lang} />
+          </Section>
         </article>
       </Contained>
     </main>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-10 flex flex-col gap-3">
+      <h2 className="text-base font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <p className="flex gap-2 text-sm">
+      <span className="text-muted-foreground tabular-nums">{n}.</span>
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/** A path to copy out of the game's folder: set apart, so it is found at a glance. */
+function Path({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="bg-muted text-muted-foreground block rounded px-3 py-2 font-mono text-xs break-all">
+      {children}
+    </code>
   );
 }
