@@ -17,6 +17,7 @@ import { useCallback, useState } from "react";
 import { useLang } from "@/components/LangProvider";
 import { LiteButton } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
+import SendersButton from "@/components/SendersButton";
 import StatusTabs from "@/components/StatusTabs";
 import { usePendingPush } from "@/components/usePendingPush";
 import type { ClientSummary } from "@/lib/contributions/client";
@@ -172,7 +173,7 @@ export default function CorrectionTable({
                     </div>
                   </td>
 
-                  <td className="pr-3 text-xs whitespace-nowrap">{row.count}</td>
+                  <td className="pr-3 text-xs whitespace-nowrap"><SendersButton id={row.id} count={row.count} /></td>
 
                   <td className="pr-3">
                     <Marked parts={diff.before} tone="removed" />

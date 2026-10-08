@@ -7,9 +7,9 @@
  * submitted text -- which can run to a full quest's worth of dialogue -- is clamped to two
  * lines until opened, so a long paste does not push every row after it off the screen.
  *
- * Never renders `ip`, `name` or `email`: reports/ReportTable shows a reporter's own name
- * because they gave it to have their report followed up on, but a contribution's identifying
- * fields exist only for abuse response, not for triage to read. `body` -- the optional
+ * Never renders `ip` or `email`, which exist only for abuse response. Who sent a row -- the
+ * names senders chose to show -- is read only when its count is pressed (SendersButton), not
+ * carried on every row. `body` -- the optional
  * complaint -- is different: it's the one field a player filled in specifically to be read,
  * so it is rendered below, deliberately included in the Row this component accepts.
  *
@@ -29,6 +29,7 @@ import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import SpeakerCell, { ProvenanceBadge, type SpeakerAnswer } from "@/components/SpeakerCell";
 import { ACCEPT_TONE, LiteButton, LiteCheckbox, REJECT_TONE } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
+import SendersButton from "@/components/SendersButton";
 import StatusTabs from "@/components/StatusTabs";
 import { usePendingPush } from "@/components/usePendingPush";
 import { Badge } from "@/components/ui/badge";
@@ -998,7 +999,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
           </div>
         </td>
 
-        <td className="pr-3 text-xs whitespace-nowrap">{row.count}</td>
+        <td className="pr-3 text-xs whitespace-nowrap"><SendersButton id={row.id} count={row.count} /></td>
 
         <td className="max-w-md pr-3">
           {/* Two lines until opened, as the explorer's rows are: enough to recognise the text
