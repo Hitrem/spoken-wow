@@ -54,8 +54,7 @@ export default async function Page({
 
   const { status: rawStatus, client: rawClient, stage: rawStage, q: rawQ, filter: rawFilter } = await searchParams;
   const status: ContributionStatus = isStatus(rawStatus) ? rawStatus : "new";
-  // The Forever beta by default, as on the triage queue: nearly every envelope comes from it,
-  // and "all" has to be asked for.
+  // Forever by default: nearly every envelope comes from it.
   const client: ClientFilter = isClientFamily(rawClient) ? rawClient : rawClient === "all" ? "all" : "forever";
   // Gossip has no quest moment to correct, so only the three panels are offered.
   const stage: StageFilter = isQuestStage(rawStage) ? rawStage : "all";

@@ -8,8 +8,8 @@
  * lines until opened, so a long paste does not push every row after it off the screen.
  *
  * Never renders `ip` or `email`, which exist only for abuse response. Who sent a row -- the
- * names senders chose to show -- is read only when its count is pressed (SendersButton), not
- * carried on every row. `body` -- the optional
+ * names senders chose to show -- is fetched only when its count is pressed, never carried on
+ * every row. `body` -- the optional
  * complaint -- is different: it's the one field a player filled in specifically to be read,
  * so it is rendered below, deliberately included in the Row this component accepts.
  *
@@ -555,7 +555,6 @@ export default function ContributionTable({
           localeHref(lang, contributionsHref(filters, { status: next }))
         }
       />
-      {/* Dropdowns, the same control the explorers filter with -- matching ReportTable. */}
       <nav className="mb-4 flex flex-wrap items-center gap-2">
         <Input
           type="search"
@@ -967,8 +966,6 @@ const ContributionTableRow = memo(function ContributionTableRow({
         <td className="pr-3 text-xs whitespace-nowrap"><SendersButton id={row.id} count={row.count} /></td>
 
         <td className="max-w-md pr-3">
-          {/* Two lines until opened, as the explorer's rows are: enough to recognise the text
-              without a full quest's dialogue pushing every row after it off the screen. */}
           <div className="flex items-start gap-1">
             <p className={cn("min-w-0 flex-1 whitespace-pre-wrap", !expanded && "line-clamp-2")}>
               {row.text ?? <span className="text-muted-foreground">(no text sent)</span>}

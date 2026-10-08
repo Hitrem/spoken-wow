@@ -64,7 +64,6 @@ const STAGE_CHIP_OPTIONS: ChipOption[] = QUEST_STAGES.map((option) => ({ value: 
 
 type Filters = { status: ContributionStatus; client: ClientFilter; stage: StageFilter; q: string; searchIn: Filter };
 
-/** The corrections tab's own URL for `filters`, with whatever is unset left out. */
 function correctionsHref(filters: Filters): string {
   // Client always written, "all" included: left out, it means the Forever default.
   const params = new URLSearchParams({ status: filters.status, client: filters.client });

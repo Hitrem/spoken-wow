@@ -6,11 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 type Senders = { senders: { name: string; count: number }[]; anonymous: number };
 
-/**
- * A contribution's count, which opens who sent it: each named sender with how many copies, and
- * how many came from nobody named. Read on open (api/contributions/senders), not sent with the
- * rows: most counts are never pressed.
- */
+/** A contribution's count, opening who sent it. Fetched on open: most counts are never pressed. */
 export default function SendersButton({ id, count }: { id: number; count: number }) {
   const [senders, setSenders] = useState<Senders | null>(null);
   const [error, setError] = useState(false);

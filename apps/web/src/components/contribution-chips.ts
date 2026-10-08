@@ -1,8 +1,7 @@
-/** The filter chips both contributions tables offer. */
 import type { ChipOption } from "@/components/FilterChip";
 import { CLIENT_FAMILIES, CLIENT_FAMILY_LABELS } from "@/lib/contributions/client";
 
-/** Where the search box is matched, as the explorer's own "search in"; "any" is the idle state. */
+/** "any" is the idle state, so it is not an option. */
 export const SEARCH_IN_OPTIONS: ChipOption[] = [
   { value: "npc", label: "NPC only" },
   { value: "quest", label: "Quest only" },

@@ -1,10 +1,7 @@
 /**
- * Who sent a contribution, for the count on its row.
- *
- * Asked for when the count is pressed rather than sent with every row: most rows are never
- * opened, and a sender's name has no business in the page payload of rows nobody looked at.
- * Gated as resolve is, by the language the contribution was sent in, and checked for existence
- * only after the permission, so a member learns nothing about which ids exist.
+ * Who sent a contribution. Fetched on demand so senders' names stay out of the page payload.
+ * Existence is checked only after the permission, so a member learns nothing about which ids
+ * exist.
  */
 import { requireCapability } from "@/lib/generation/authz";
 import { contributionLocale, contributionSenders } from "@/lib/contributions/store";

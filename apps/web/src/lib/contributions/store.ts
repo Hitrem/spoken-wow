@@ -256,11 +256,7 @@ export async function createContribution(
   );
 }
 
-/**
- * Who sent a contribution: each named sender with how many copies they sent, signed-in players
- * under their account's name, and how many copies came from nobody named. Never an email --
- * the name is what a sender chose to show.
- */
+/** Signed-in senders appear under their account's name. Never an email. */
 export async function contributionSenders(
   id: number,
 ): Promise<{ senders: { name: string; count: number }[]; anonymous: number } | null> {

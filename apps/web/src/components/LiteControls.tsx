@@ -15,10 +15,8 @@ const BASE =
   "hover:bg-muted focus-visible:ring-ring/50 outline-none focus-visible:ring-3 disabled:pointer-events-none disabled:opacity-50";
 
 /**
- * Accept and reject tinted, so the two can be told apart down a column without reading them:
- * a reject pressed for an accept is a row that has to be found again and reopened. Every hover
- * and dark state is spelled out because ui/button's outline variant sets its own, which would
- * otherwise win over these.
+ * Tinted so accept and reject can be told apart down a column without reading them. Hover and
+ * dark states are spelled out because ui/button's outline variant would otherwise win.
  */
 export const ACCEPT_TONE =
   "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:text-emerald-700 " +

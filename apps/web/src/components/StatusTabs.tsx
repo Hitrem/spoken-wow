@@ -11,11 +11,7 @@ const TABS: { status: ContributionStatus; label: string }[] = [
   { status: "rejected", label: "Rejected" },
 ];
 
-/**
- * Which rows of a contributions table are shown: the ones still to triage, or those already
- * accepted or rejected. Tabs rather than a filter, since every row is in exactly one and the
- * new ones are the only queue anybody works down; links, so the tab survives a reload.
- */
+/** Tabs rather than a filter: every row is in exactly one, and only the new ones are worked. */
 export default function StatusTabs({
   active,
   hrefFor,
@@ -25,8 +21,8 @@ export default function StatusTabs({
   /** The href of each tab, already localised, keeping whatever else the page is filtered to. */
   hrefFor: (status: ContributionStatus) => string;
   /**
-   * The table's own pending push, so its rows dim while the tab loads: a plain link to the
-   * route already open gets no loading.tsx and looked like it had done nothing.
+   * The table's pending push, so its rows dim while the tab loads: a link to the route already
+   * open gets no loading.tsx and shows nothing happening.
    */
   onGo: (href: string) => void;
 }) {

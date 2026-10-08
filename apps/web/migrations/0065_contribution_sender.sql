@@ -1,13 +1,8 @@
--- Who sent each copy of a contribution, where they said.
+-- One row per copy of a contribution sent by a signed-in or named player. The "dedup" upsert
+-- keeps only the first sender's identity, so without this later senders are lost. Copies with
+-- no row are the anonymous ones: "count" minus these rows.
 --
--- "contribution" keeps the first sender's identity and only counts the rest: the upsert on
--- "dedup" bumps "count" and drops the second player's name on the floor. Triage wants to see
--- who stands behind a line, so each copy sent by a signed-in player or one who typed a name is
--- a row here. A copy sent by neither has no row, which is what makes "count" minus these rows
--- the anonymous senders.
---
--- Backfilled with each row's first sender, the one identity the table kept. Later copies of
--- rows filed before this stay anonymous: there is nothing left to say who sent them.
+-- Backfilled with each row's first sender; later copies of older rows stay anonymous.
 --
 -- Additive: a new table the previous release never reads.
 

@@ -142,9 +142,9 @@ export type ContributionFilters = {
   source: SourceFilter;
   stage: StageFilter;
   sort: ContributionSort;
-  /** The search box, as the explorer's: absent or blank searches nothing. */
+  /** Absent or blank searches nothing. */
   q?: string;
-  /** Which field `q` is matched in, the explorer's "search in"; absent is "any". */
+  /** Which field `q` is matched in; absent is "any". */
   searchIn?: Filter;
 };
 
@@ -239,9 +239,8 @@ export function isSearchIn(value: unknown): value is Filter {
 }
 
 /**
- * Whether one row answers the search box, read as the explorer reads it (search.ts's matches):
- * a bare number is an NPC or quest id, never a substring, so "240" finds that NPC rather than
- * every line mentioning 240 gold; words match the NPC's name, the quest's title or the text.
+ * A bare number is an NPC or quest id, never a substring, so "240" finds that NPC rather than
+ * every line mentioning 240 gold. Words match the NPC's name, the quest's title or the text.
  */
 export function matchesSearch(
   row: { text: string | null; npc: { npcId: number; npcName: string | null } | undefined; quest: QuestSummary | null },
