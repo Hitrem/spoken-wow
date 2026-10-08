@@ -24,7 +24,6 @@ function Timer:ScheduleRepeatingTimer(fn, delay)
     local id=self:ScheduleTimer(fn,delay); timers[id].interval=delay; return id
 end
 function Timer:CancelTimer(id) timers[id]=nil end
-function Timer:TimeLeft(id) return timers[id] and timers[id].at-clock or 0 end
 LibStub=function(name)
     if name=='AceTimer-3.0' then
         return { Embed=function(_,obj) for k,v in pairs(Timer) do obj[k]=v end; return obj end }

@@ -963,9 +963,6 @@ local function EmbedTimers(addon)
     function addon:CancelTimer(timer)
         if timer then timer.at = nil end
     end
-    function addon:TimeLeft(timer)
-        return timer and timer.at and math.max(0, timer.at - world.time) or 0
-    end
     return addon
 end
 libs["AceTimer-3.0"] = { Embed = function(_, target) return EmbedTimers(target) end }

@@ -76,8 +76,8 @@ if not print or Version.IsLegacyVanilla or Version.IsLegacyBurningCrusade then
 end
 
 -- Patch 7.3.0 added SOUNDKIT, ids under names like the old strings; before it PlaySound
--- takes the string, and no channel, so these play on effects. The quests addon writes its
--- own copy into _G without the player's keys, which is why this one is ours.
+-- takes the string, and no channel, so these play on effects. The quests addon keeps its
+-- own copy in its own environment, without the keys used here.
 if not SOUNDKIT or Version:IsBelowLegacyVersion(70300) then
     SOUNDKIT = {
         U_CHAT_SCROLL_BUTTON = "uChatScrollButton",
