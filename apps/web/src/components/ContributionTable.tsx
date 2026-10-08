@@ -28,7 +28,7 @@ import { memo, useCallback, useState } from "react";
 
 import FilterChip, { type ChipOption } from "@/components/FilterChip";
 import SpeakerCell, { ProvenanceBadge, type SpeakerAnswer } from "@/components/SpeakerCell";
-import { LiteButton, LiteCheckbox } from "@/components/LiteControls";
+import { ACCEPT_TONE, LiteButton, LiteCheckbox, REJECT_TONE } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
 import { usePendingPush } from "@/components/usePendingPush";
 import { Badge } from "@/components/ui/badge";
@@ -602,6 +602,8 @@ export default function ContributionTable({
                   </span>
                   <Button
                     size="sm"
+                    variant="outline"
+                    className={ACCEPT_TONE}
                     onClick={() => {
                       setConfirmAll(false);
                       void resolveMany(shownToAccept, "accepted");
@@ -617,6 +619,7 @@ export default function ContributionTable({
                 <Button
                   size="sm"
                   variant="outline"
+                  className={ACCEPT_TONE}
                   disabled={shownToAccept.length === 0}
                   onClick={() => setConfirmAll(true)}
                 >
@@ -629,6 +632,7 @@ export default function ContributionTable({
                   <Button
                     size="sm"
                     variant="outline"
+                    className={ACCEPT_TONE}
                     disabled={selectedToAccept.length === 0}
                     onClick={() => void resolveMany(selectedToAccept, "accepted")}
                   >
@@ -637,6 +641,7 @@ export default function ContributionTable({
                   <Button
                     size="sm"
                     variant="outline"
+                    className={REJECT_TONE}
                     disabled={selectedToReject.length === 0}
                     onClick={() => void resolveMany(selectedToReject, "rejected")}
                   >
@@ -987,7 +992,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
           <div className="flex items-center justify-end gap-1">
             {current !== "accepted" ? (
               <LiteButton
-                variant="outline"
+                variant="accept"
                 disabled={busy || locked}
                 onClick={() => void onResolve(row.id, "accepted")}
               >
@@ -1000,7 +1005,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
               // back to the same POST, still gated by resolveContribution's own rules
               // (needs-speaker, collision, one-way).
               <LiteButton
-                variant="outline"
+                variant="accept"
                 disabled={busy || locked}
                 onClick={() => void onResolve(row.id, "accepted")}
               >
@@ -1009,7 +1014,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
             ) : null}
             {current !== "rejected" ? (
               <LiteButton
-                variant="outline"
+                variant="reject"
                 disabled={busy || locked}
                 onClick={() => void onResolve(row.id, "rejected")}
               >

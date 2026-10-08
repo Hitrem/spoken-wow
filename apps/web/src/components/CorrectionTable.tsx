@@ -207,6 +207,7 @@ export default function CorrectionTable({
                       {current === "new" ? (
                         <>
                           <LiteButton
+                            variant="accept"
                             disabled={busy === row.id}
                             title="Take the player's text as what this line speaks"
                             onClick={() => void resolve(row.id, "accepted")}
@@ -214,7 +215,7 @@ export default function CorrectionTable({
                             Accept
                           </LiteButton>
                           <LiteButton
-                            variant="outline"
+                            variant="reject"
                             disabled={busy === row.id}
                             onClick={() => void resolve(row.id, "rejected")}
                           >
