@@ -45,10 +45,15 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
           </p>
 
           <ContributeForm signedInAs={signedInAs} />
+        </article>
 
-          {/* Below the single-line form, not instead of it: most arrivals come from a link, and
-              the file is for players who turned gathering on in the game. */}
+        {/* Below the single-line form, not instead of it: most arrivals come from a link, and
+            the files are for players willing to dig in the game's folder. */}
+        <div className="mt-10 grid gap-10 md:grid-cols-2">
           <Section title="Everything you gathered">
+            <p className="text-muted-foreground text-sm">
+              Every line the addon collected while you played.
+            </p>
             <Step n={1}>
               Turn on <strong>Gather as I play</strong> in the game, then log out or{" "}
               <code>/reload</code>.
@@ -61,7 +66,6 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
             <UploadGathered signedInAs={signedInAs} />
           </Section>
 
-          {/* Last: it needs an account and a dig through the game's folder. */}
           <Section title="Game text cache">
             <p className="text-muted-foreground text-sm">
               Helps match NPC greetings across languages. Only NPC text is sent.
@@ -76,7 +80,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
             </Path>
             <UploadBroadcastCache signedIn={session !== null} lang={lang} />
           </Section>
-        </article>
+        </div>
       </Contained>
     </main>
   );
@@ -84,7 +88,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-10 flex flex-col gap-3">
+    <section className="flex min-w-0 flex-col gap-3">
       <h2 className="text-base font-semibold">{title}</h2>
       {children}
     </section>
