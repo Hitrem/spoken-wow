@@ -13,19 +13,13 @@ create table if not exists "broadcast_text" (
   -- Text for a male speaker, Text1 for a female one; either may be empty.
   "text"            text        not null,
   "text1"           text        not null,
-  -- The client build number that sent this text, e.g. 70245; null when the source has none.
+  -- The client build number that sent this text, e.g. 70245; null when the upload had none.
   "build"           integer,
-  -- Where the row came from; 'cache' is a player's upload.
-  "source"          text        not null,
   -- How many uploads have carried this row, whatever text they had.
   "observations"    integer     not null default 1,
   "updatedAt"       timestamptz not null default now(),
   primary key ("lang", "broadcastTextId")
 );
-
--- Matching a contribution's text to its id looks the text up within one language.
-create index if not exists "broadcast_text_lang_text_idx" on "broadcast_text" ("lang", md5("text"));
-create index if not exists "broadcast_text_lang_text1_idx" on "broadcast_text" ("lang", md5("text1"));
 
 -- One row per cache upload, for knowing who sent what if a language's rows turn out wrong.
 create table if not exists "broadcast_text_upload" (

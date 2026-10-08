@@ -5,8 +5,8 @@
  * Signed-in only, unlike a contribution: these rows decide which line a text in another
  * language belongs to, so whoever sent them has to be someone we can ask.
  */
-import { recordTexts, recordUpload, sameAsEnglish, type BroadcastRow } from "@/lib/broadcast/store";
-import { BASE_LANG, isLang } from "@/lib/lang";
+import { recordUpload, sameAsEnglish, uniqueById, type BroadcastRow } from "@/lib/broadcast/store";
+import { BASE_LANG, isClientLang, isLang } from "@/lib/lang";
 import { currentSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -28,19 +28,21 @@ export async function POST(request: Request) {
     | { lang?: unknown; build?: unknown; texts?: unknown }
     | null;
   const lang = body?.lang;
-  if (!isLang(lang)) return Response.json({ error: "unknown language" }, { status: 400 });
-  const build = Number.isInteger(body?.build) && (body!.build as number) > 0 ? (body!.build as number) : null;
+  // A cache is written by a game client, and no client runs in Italian.
+  if (!isLang(lang) || !isClientLang(lang)) return Response.json({ error: "unknown language" }, { status: 400 });
+  const raw = body?.build;
+  const build = typeof raw === "number" && Number.isInteger(raw) && raw > 0 ? raw : null;
   if (!Array.isArray(body?.texts) || body.texts.length > MAX_TEXTS) {
     return Response.json({ error: "expected { lang, build, texts: [...] }" }, { status: 400 });
   }
 
-  const texts: BroadcastRow[] = (body.texts as Partial<BroadcastRow>[]).filter(
+  const texts = uniqueById((body.texts as Partial<BroadcastRow>[]).filter(
     (row): row is BroadcastRow =>
       Number.isInteger(row?.id) && row.id! > 0 && row.id! <= MAX_ID &&
       typeof row.text === "string" && typeof row.text1 === "string" &&
       row.text.length <= MAX_TEXT && row.text1.length <= MAX_TEXT &&
       (row.text.length > 0 || row.text1.length > 0),
-  );
+  ));
 
   if (lang !== BASE_LANG) {
     const { compared, same } = await sameAsEnglish(texts);
@@ -52,7 +54,5 @@ export async function POST(request: Request) {
     }
   }
 
-  const counts = await recordTexts(lang, build, "cache", texts);
-  await recordUpload(session.user.id, lang, build, counts);
-  return Response.json(counts);
+  return Response.json(await recordUpload(session.user.id, lang, build, texts));
 }

@@ -2,91 +2,68 @@
  * The broadcast_text tables (migration 0066): BroadcastText rows per language, and who
  * uploaded them.
  */
-import { db, query } from "@/lib/db";
+import { query } from "@/lib/db";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 
-export type BroadcastSource = "cache";
 export type BroadcastRow = { id: number; text: string; text1: string };
 
 export type RecordedTexts = { texts: number; added: number; changed: number };
 
+/** One row per id, the last copy winning: Postgres refuses an upsert that touches a row twice. */
+export function uniqueById(rows: BroadcastRow[]): BroadcastRow[] {
+  return [...new Map(rows.map((row) => [row.id, row])).values()];
+}
+
 /**
- * Write uploaded rows for a language.
+ * Write one upload's rows for a language, and log the upload.
  *
  * A row's text is replaced only by one from the same or a newer build: a hotfix rewrites a
  * row in place, and an upload of an old cache must not undo it. Every copy counts as an
  * observation, whichever text it carried.
+ *
+ * One statement: `prior` reads the rows as they were before the upsert, which is what the
+ * counts are taken against. `rows` must already be unique by id.
  */
-export async function recordTexts(
-  lang: Lang,
-  build: number | null,
-  source: BroadcastSource,
-  rows: BroadcastRow[],
-): Promise<RecordedTexts> {
-  // One row per id, the last copy winning: Postgres refuses an upsert that touches a row twice.
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  const unique = [...byId.values()];
-  if (unique.length === 0) return { texts: 0, added: 0, changed: 0 };
-
-  const client = await db().connect();
-  try {
-    await client.query("begin");
-    const prior = await client.query<{ id: number; text: string; text1: string; build: number | null }>(
-      `select "broadcastTextId" as "id", "text", "text1", "build" from "broadcast_text"
-        where "lang" = $1 and "broadcastTextId" = any($2::int[])
-        for update`,
-      [lang, unique.map((row) => row.id)],
-    );
-    const before = new Map(prior.rows.map((row) => [row.id, row]));
-
-    await client.query(
-      `insert into "broadcast_text" ("lang", "broadcastTextId", "text", "text1", "build", "source")
-       select $1, t."id", t."text", t."text1", $2, $3
-         from unnest($4::int[], $5::text[], $6::text[]) as t("id", "text", "text1")
-       on conflict ("lang", "broadcastTextId") do update set
-         "observations" = "broadcast_text"."observations" + 1,
-         "text"   = case when ${NEWER} then excluded."text"   else "broadcast_text"."text"   end,
-         "text1"  = case when ${NEWER} then excluded."text1"  else "broadcast_text"."text1"  end,
-         "source" = case when ${NEWER} then excluded."source" else "broadcast_text"."source" end,
-         "build"  = case when ${NEWER} then excluded."build"  else "broadcast_text"."build"  end,
-         "updatedAt" = now()`,
-      [lang, build, source, unique.map((r) => r.id), unique.map((r) => r.text), unique.map((r) => r.text1)],
-    );
-    await client.query("commit");
-
-    let added = 0;
-    let changed = 0;
-    for (const row of unique) {
-      const old = before.get(row.id);
-      if (!old) added += 1;
-      else if (isNewer(build, old.build) && (old.text !== row.text || old.text1 !== row.text1)) changed += 1;
-    }
-    return { texts: unique.length, added, changed };
-  } catch (error) {
-    await client.query("rollback");
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
-const NEWER = `(excluded."build" is not null and ("broadcast_text"."build" is null or excluded."build" >= "broadcast_text"."build"))`;
-
-function isNewer(build: number | null, old: number | null): boolean {
-  return build !== null && (old === null || build >= old);
-}
-
 export async function recordUpload(
   userId: string,
   lang: Lang,
   build: number | null,
-  counts: RecordedTexts,
-): Promise<void> {
-  await query(
-    `insert into "broadcast_text_upload" ("userId", "lang", "build", "texts", "added", "changed")
-     values ($1, $2, $3, $4, $5, $6)`,
-    [userId, lang, build, counts.texts, counts.added, counts.changed],
+  rows: BroadcastRow[],
+): Promise<RecordedTexts> {
+  const newer = (existing: string) => `($2::int is not null and (${existing} is null or $2 >= ${existing}))`;
+  const [counts] = await query<RecordedTexts>(
+    `with incoming as (
+       select * from unnest($3::int[], $4::text[], $5::text[]) as t("id", "text", "text1")
+     ),
+     prior as (
+       select b.* from "broadcast_text" b join incoming i on b."broadcastTextId" = i."id" where b."lang" = $1
+     ),
+     upserted as (
+       insert into "broadcast_text" ("lang", "broadcastTextId", "text", "text1", "build")
+       select $1, i."id", i."text", i."text1", $2 from incoming i
+       on conflict ("lang", "broadcastTextId") do update set
+         "observations" = "broadcast_text"."observations" + 1,
+         "text"   = case when ${newer(`"broadcast_text"."build"`)} then excluded."text"  else "broadcast_text"."text"  end,
+         "text1"  = case when ${newer(`"broadcast_text"."build"`)} then excluded."text1" else "broadcast_text"."text1" end,
+         "build"  = case when ${newer(`"broadcast_text"."build"`)} then excluded."build" else "broadcast_text"."build" end,
+         "updatedAt" = now()
+       returning 1
+     ),
+     counted as (
+       select (select count(*) from upserted)::int as "texts",
+              (select count(*) from incoming i
+                where not exists (select 1 from prior p where p."broadcastTextId" = i."id"))::int as "added",
+              (select count(*) from incoming i join prior p on p."broadcastTextId" = i."id"
+                where ${newer(`p."build"`)} and (p."text", p."text1") is distinct from (i."text", i."text1"))::int as "changed"
+     ),
+     logged as (
+       insert into "broadcast_text_upload" ("userId", "lang", "build", "texts", "added", "changed")
+       select $6, $1, $2, "texts", "added", "changed" from counted
+     )
+     select * from counted`,
+    [lang, build, rows.map((r) => r.id), rows.map((r) => r.text), rows.map((r) => r.text1), userId],
   );
+  return counts;
 }
 
 /**

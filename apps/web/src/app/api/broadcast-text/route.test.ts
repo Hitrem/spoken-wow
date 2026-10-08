@@ -51,7 +51,7 @@ function post(body: unknown): Promise<Response> {
 
 async function row(lang: string, id: number) {
   const { rows } = await db().query(
-    `select "text", "text1", "build", "source", "observations" from "broadcast_text"
+    `select "text", "text1", "build", "observations" from "broadcast_text"
       where "lang" = $1 and "broadcastTextId" = $2`,
     [lang, id],
   );
@@ -77,7 +77,7 @@ describe("POST /api/broadcast-text", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ texts: 2, added: 2, changed: 0 });
     expect(await row("deDE", base)).toEqual({
-      text: "Willkommen, $n.", text1: "", build: 70291, source: "cache", observations: 1,
+      text: "Willkommen, $n.", text1: "", build: 70291, observations: 1,
     });
   });
 
@@ -111,8 +111,8 @@ describe("POST /api/broadcast-text", () => {
     expect(await response.json()).toEqual({ texts: 1, added: 1, changed: 0 });
   });
 
-  it("refuses a language the site does not know", async () => {
-    const response = await post({ lang: "xxXX", build: 1, texts: [] });
-    expect(response.status).toBe(400);
+  it("refuses a language no game client runs in", async () => {
+    expect((await post({ lang: "xxXX", build: 1, texts: [] })).status).toBe(400);
+    expect((await post({ lang: "itIT", build: 1, texts: [] })).status).toBe(400);
   });
 });
