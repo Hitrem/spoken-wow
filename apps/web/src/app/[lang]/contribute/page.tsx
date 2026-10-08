@@ -72,8 +72,8 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
             </p>
             <Step n={1}>Log out of the game.</Step>
             <Step n={2}>
-              Drop <FileName>DBCache.bin</FileName> and every other file starting with{" "}
-              <FileName>DBCache.</FileName> from this folder, and pick its language:
+              Drop <FileName>DBCache.bin</FileName> and every <FileName>DBCache.*.tmp</FileName>{" "}
+              file from this folder, and pick its language:
             </Step>
             <Path>
               World of Warcraft/&lt;game folder&gt;/Cache/ADB/
