@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_SORT, MISSING, NEEDS_DECISION, contributionsHref, nextSort, sortOf, matchesSearch, matchesSpeaker, matchesStage, nextContributionFilters, pageOf } from "./query";
+import { DEFAULT_SORT, MISSING, NEEDS_DECISION, contributionsHref, nextSort, sortOf, matchesSearch, matchesSource, matchesSpeaker, matchesStage, nextContributionFilters, pageOf, sectionOf } from "./query";
 
 describe("nextContributionFilters", () => {
   const current = { status: "new", provenance: "all", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
@@ -146,13 +146,10 @@ describe("matchesStage", () => {
     expect(matchesStage(quest("progress"), "progress")).toBe(true);
     expect(matchesStage(quest("progress"), "complete")).toBe(false);
     expect(matchesStage(quest(null), "accept")).toBe(false);
-    expect(matchesStage(quest("accept"), "gossip")).toBe(false);
   });
 
-  it("matches gossip only to gossip, and a row with no quest concept to nothing narrowed", () => {
-    expect(matchesStage("gossip", "gossip")).toBe(true);
+  it("drops gossip and rows with no quest concept from any narrowed view", () => {
     expect(matchesStage("gossip", "accept")).toBe(false);
-    expect(matchesStage(null, "gossip")).toBe(false);
     expect(matchesStage(null, "complete")).toBe(false);
   });
 });
@@ -201,5 +198,22 @@ describe("contributionsHref search", () => {
     expect(contributionsHref({ ...filters, q: "dughan", searchIn: "any" }, { status: "accepted" })).toBe(
       "/contributions?status=accepted&provenance=all&client=all&source=all&stage=all&q=dughan",
     );
+  });
+});
+
+describe("sectionOf / matchesSource", () => {
+  const quest = { title: "Stalk With The Earthmother", questId: 76156, stage: "accept" as const };
+
+  it("lists a quests row with no quest under gossip, and every other row under its source", () => {
+    expect(sectionOf({ source: "quests" }, "gossip")).toBe("gossip");
+    expect(sectionOf({ source: "quests" }, quest)).toBe("quests");
+    expect(sectionOf({ source: "zones" }, null)).toBe("zones");
+  });
+
+  it("keeps gossip out of quests and quests out of gossip", () => {
+    expect(matchesSource("gossip", "quests")).toBe(false);
+    expect(matchesSource("quests", "gossip")).toBe(false);
+    expect(matchesSource("gossip", "gossip")).toBe(true);
+    expect(matchesSource("gossip", "all")).toBe(true);
   });
 });

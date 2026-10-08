@@ -51,6 +51,7 @@ import {
   NEEDS_DECISION,
   QUEST_STAGES,
   nextSort,
+  sectionOf,
   type ClientFilter,
   type ContributionSort,
   type FilterChange,
@@ -60,7 +61,6 @@ import {
   type SpeakerFilter,
   type StageFilter,
 } from "@/lib/contributions/query";
-import { SOURCES } from "@/lib/contributions/envelope";
 import type { Contribution } from "@/lib/contributions/store";
 // Both are computed server-side (npcSummaryFrom pulls in corpus.ts's flavorsFor) -- `import
 // type` erases the whole thing at compile time, so none of that follows the type in here. The
@@ -107,13 +107,14 @@ function bookOption(book: BookChoice): string {
   return `${book.title} #${book.bookId}`;
 }
 
-const SOURCE_LABELS: Record<Contribution["source"], string> = {
+const SOURCE_LABELS: Record<Contribution["source"] | "gossip", string> = {
   quests: "Quests",
+  gossip: "Gossip",
   zones: "Zones",
   books: "Books",
 };
 
-const SOURCE_CHIP_OPTIONS: ChipOption[] = SOURCES.map((option) => ({
+const SOURCE_CHIP_OPTIONS: ChipOption[] = (["quests", "gossip", "zones", "books"] as const).map((option) => ({
   value: option,
   label: SOURCE_LABELS[option],
 }));
@@ -124,10 +125,10 @@ const STAGE_LABELS: Record<QuestStage, string> = {
   complete: "Complete",
 };
 
-const STAGE_CHIP_OPTIONS: ChipOption[] = [
-  ...QUEST_STAGES.map((option) => ({ value: option, label: STAGE_LABELS[option] })),
-  { value: "gossip", label: "Gossip" },
-];
+const STAGE_CHIP_OPTIONS: ChipOption[] = QUEST_STAGES.map((option) => ({
+  value: option,
+  label: STAGE_LABELS[option],
+}));
 
 const STATUS_LABELS: Record<ContributionStatus, string> = {
   new: "New",
@@ -855,7 +856,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
               columns are what a moderator scans now (finding 1), but the key is still
               worth having for a zones/books row, where neither column applies. */}
           <Badge variant="outline" className="py-0 leading-5" title={row.key}>
-            {SOURCE_LABELS[row.source]}
+            {SOURCE_LABELS[sectionOf(row, row.quest)]}
           </Badge>
         </td>
 
