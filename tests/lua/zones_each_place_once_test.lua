@@ -1,6 +1,5 @@
 -- Lore of Azeroth lists each place once: a zone (a city among them) is never also an area of
--- the zone around it or of itself, in any language. The areas left out, and the evidence for
--- each, are in pipelines/zones/tools/seed/misplaced-areas.json.
+-- the zone around it or of itself, in any language.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local H = require("queue_helpers")
