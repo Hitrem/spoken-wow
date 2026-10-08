@@ -13,6 +13,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   [DEBUG-LOG.md](DEBUG-LOG.md).
 - For feature addons: `Spoken:Log`, `AddDiagnostics`, `AddDeveloperSettings`, `AddLogSource`
   and the rest, all doing nothing without the module.
+- **A sound between queued lines, if you want one** (Sound > Sound Between Items). At a quest hub
+  a hand-in and the next pickup, often in the same NPC's voice, no longer run together: when a
+  line finishes and another is waiting, the game's quest-log-close sound plays and the next
+  starts a second later. Off by default, and never between the pages of one book.
 
 ## 3.1.0 — 2026-10-06
 
