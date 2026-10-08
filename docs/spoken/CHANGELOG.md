@@ -40,6 +40,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - Zone Lore beside the map fades with it as you walk again, and the button that reopens it is a
   side tab, like the game's own panels, where the client has one.
   *([Nucabe](https://github.com/Nucabe))*
+- Zone Lore has pictures for 16 more places in Kalimdor, and Darrowmere Lake and Three Corners
+  show the places as they were in Classic. *([Nucabe](https://github.com/Nucabe))*
 - On Forever, Bronze Border also colours the round buttons, such as Play and Report, and shows
   with every narrator style. *([Nucabe](https://github.com/Nucabe))*
 - Turning the Spoken button off in the addon compartment stays off after a reload.
