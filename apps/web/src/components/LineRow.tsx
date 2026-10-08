@@ -148,6 +148,11 @@ type Props = {
   showQuest: boolean;
   /** True in the gossip explorer: the BroadcastText ids each line speaks. */
   showBroadcast: boolean;
+  /**
+   * Rows of one line and speaker (its player-gender wordings) share the speaker cells: the
+   * first row spans this many rows, and the rest pass 0 and leave those cells out.
+   */
+  groupSpan: number;
   /** Narrow the search to this line's NPC, or to its quest. */
   onNarrowToNpc: (line: ResultLine) => void;
   onNarrowToQuest: (line: ResultLine) => void;
@@ -201,10 +206,12 @@ export default function LineRow({
   onNarrowToNpc,
   showQuest,
   showBroadcast,
+  groupSpan,
   onNarrowToQuest,
   onClearDirty,
 }: Props) {
   const missing = absence(line);
+  const spanned = groupSpan > 0;
   const [expanded, setExpanded] = useState(false);
   const lang = useLang();
 
@@ -235,24 +242,26 @@ export default function LineRow({
         current && "bg-muted",
       )}
     >
-      <td className="px-2 py-2">
-        <button
-          className="hover:text-foreground block max-w-full truncate text-left underline-offset-2 hover:underline"
-          title={`Show only ${line.npcName}`}
-          onClick={() => onNarrowToNpc(line)}
-        >
-          <Untranslated missing={line.missing?.npcName}>{line.npcName}</Untranslated>
-        </button>
-        {onRename && (
-          <RenameButton label={`Name ${line.npcName}`} onClick={() => onRename(line, "npc")} />
-        )}
-        <span className="text-muted-foreground block truncate text-xs">
-          {line.npcType} {line.npcId} <WowheadLink href={wowheadEntityUrl(line.npcType, line.npcId)} />
-        </span>
-      </td>
+      {spanned && (
+        <td rowSpan={groupSpan} className="px-2 py-2">
+          <button
+            className="hover:text-foreground block max-w-full truncate text-left underline-offset-2 hover:underline"
+            title={`Show only ${line.npcName}`}
+            onClick={() => onNarrowToNpc(line)}
+          >
+            <Untranslated missing={line.missing?.npcName}>{line.npcName}</Untranslated>
+          </button>
+          {onRename && (
+            <RenameButton label={`Name ${line.npcName}`} onClick={() => onRename(line, "npc")} />
+          )}
+          <span className="text-muted-foreground block truncate text-xs">
+            {line.npcType} {line.npcId} <WowheadLink href={wowheadEntityUrl(line.npcType, line.npcId)} />
+          </span>
+        </td>
+      )}
 
-      {showQuest && (
-        <td className="px-2 py-2">
+      {spanned && showQuest && (
+        <td rowSpan={groupSpan} className="px-2 py-2">
           {line.questId === null ? (
             <span className="text-muted-foreground">—</span>
           ) : (
@@ -288,8 +297,8 @@ export default function LineRow({
         </td>
       )}
 
-      {showBroadcast && (
-        <td className="px-2 py-2 text-xs tabular-nums">
+      {spanned && showBroadcast && (
+        <td rowSpan={groupSpan} className="px-2 py-2 text-xs tabular-nums">
           {line.broadcast?.length ? (
             line.broadcast.map(({ id, matchedBy }) => (
               <span
@@ -313,12 +322,14 @@ export default function LineRow({
       {/* The voice slot is spelled race-gender-flavor, so this column is all three at once.
           The flavor is what distinguishes the two or three voices a race-gender has, so it
           belongs beside them rather than in a column of its own. */}
-      <td className="text-muted-foreground px-2 py-2">
-        <span className="block truncate">{line.race}</span>
-        <span className="block truncate text-xs">
-          {line.flavor ? `${line.gender} · ${line.flavor}` : line.gender}
-        </span>
-      </td>
+      {spanned && (
+        <td rowSpan={groupSpan} className="text-muted-foreground px-2 py-2">
+          <span className="block truncate">{line.race}</span>
+          <span className="block truncate text-xs">
+            {line.flavor ? `${line.gender} · ${line.flavor}` : line.gender}
+          </span>
+        </td>
+      )}
 
       {/* The text is plain markup rather than the label of a button, which is what makes it
           selectable: text inside a <button> cannot reliably be dragged over and copied. That

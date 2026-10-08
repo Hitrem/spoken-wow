@@ -1037,8 +1037,8 @@ every language. `matchedBy` says how it was found: `extract` when the world data
 id for the line's NPC, `text` when the line's English text equals the id's English text, which
 is how Forever's greetings get one. A one-off filled both tables in October 2026: `broadcast_text`
 with vmangos's rows in English and its eight locales (no ptBR) as build 5875, and with
-[EG Link](https://github.com/JIVESCORP/eg-link-output-wowf)'s English Forever rows; then 3,380
-gossip lines by extract and 370 by text. The 508 left are quest greetings, which have no
+[EG Link](https://github.com/JIVESCORP/eg-link-output-wowf)'s English Forever rows; then 3,572
+gossip lines by extract and 178 by text. The 508 left are quest greetings, which have no
 BroadcastText row, and Forever lines no source had yet. Nothing reads these tables yet: matching
 gossip by id is the next step.
 

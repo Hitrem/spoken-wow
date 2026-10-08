@@ -87,6 +87,24 @@ function filterParams(filters: LineFilters): URLSearchParams {
   return params;
 }
 
+/**
+ * How many rows each row's speaker cells span: adjacent rows of one line and speaker are its
+ * player-gender wordings, and say the same thing in every column but the text.
+ */
+function speakerSpans(lines: ResultLine[]): number[] {
+  // A $g line's two rows are <id>:m and <id>:f.
+  const key = (line: ResultLine) =>
+    `${line.playerGender ? line.lineId.replace(/:[mf]$/, "") : line.lineId}|${line.npcType}|${line.npcId}|${line.voice}`;
+  const spans = lines.map(() => 1);
+  for (let start = 0; start < lines.length; ) {
+    let end = start + 1;
+    while (end < lines.length && key(lines[end]) === key(lines[start])) spans[end++] = 0;
+    spans[start] = end - start;
+    start = end;
+  }
+  return spans;
+}
+
 export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind }) {
   const router = useRouter();
   const lang = useLang();
@@ -756,6 +774,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
   }, [current]);
 
   const pageCount = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
+  const groupSpans = speakerSpans(result?.lines ?? []);
   // This page's marks, minus what has been cleared without a refetch since.
   const marked = new Set(
     (result?.lines ?? [])
@@ -878,7 +897,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
               </tr>
             </thead>
             <tbody>
-              {result.lines.map((line) => (
+              {result.lines.map((line, index) => (
                 <LineRow
                   key={line.key}
                   line={line}
@@ -906,6 +925,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
                   onNarrowToNpc={narrowToNpc}
                   showQuest={kind !== "gossip"}
                   showBroadcast={kind === "gossip"}
+                  groupSpan={groupSpans[index]}
                   onNarrowToQuest={narrowToQuest}
                 />
               ))}
