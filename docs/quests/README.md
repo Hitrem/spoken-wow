@@ -1011,6 +1011,35 @@ the browser for each NPC's appearance ids. The server turns those into voices wi
 `apps/web/src/lib/npc/display-voices.json`, and **Apply** writes them as moderator answers.
 The voice set decides over the model, because it is what the player hears.
 
+#### Which greeting a text is: BroadcastText ids
+
+A gossip line's id hashes its English text, so a greeting seen in another language cannot be
+matched to its line by its words. The game has a language-neutral id for it, the BroadcastText
+row the server sent. No client API returns that id (a probe on Forever 1.60.1.70291 found
+nothing in `C_GossipInfo`, `GOSSIP_SHOW` or any event while the window was open), but the
+client writes every row it is sent to `Cache/ADB/<locale>/DBCache.bin`, with the id. Forever's
+client ships almost none of the table, so every greeting a player sees passes through there.
+
+`broadcast_text` (migration 0066) keeps those rows per language, from two sources:
+
+- **Players' caches.** `/contribute` takes `DBCache.bin` and its per-session
+  `DBCache.bin<n>.tmp` files from signed-in players, reads them in the browser
+  (`apps/web/src/lib/broadcast/cache.ts`) and posts only the BroadcastText rows to
+  `/api/broadcast-text`. A cache says nothing about its language except the folder it sat in, so
+  the player picks it, and a non-English upload that mostly matches English under the same ids
+  is refused.
+- **EG Link**, Efficient Games' published copy of its players' caches
+  ([JIVESCORP/eg-link-output-wowf](https://github.com/JIVESCORP/eg-link-output-wowf),
+  CC BY 4.0, data from [Efficient Games](https://efficient.games)).
+  `apps/web/scripts/import-eg-link.mts` imports its `broadcast_text.<locale>` rows, and from
+  `texts.<locale>` which NPC's gossip or greeting showed which ids, into
+  `broadcast_text_speaker`.
+
+A row's text is replaced only by one from the same or a newer client build, because a hotfix
+edits a row in place and keeps its id. One text can sit under several ids ("What are you
+looking for?" is 4857, 5907 and 6788); they read alike, so whichever matches is as good as the
+others. Nothing reads these tables yet: matching gossip by id is the next step.
+
 ## Addon Install
 
 ```bash

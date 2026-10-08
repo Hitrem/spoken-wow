@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 
 import ContributeForm from "@/components/ContributeForm";
+import UploadBroadcastCache from "@/components/UploadBroadcastCache";
 import UploadGathered from "@/components/UploadGathered";
 import { auth } from "@/lib/auth";
+import { pageLang } from "@/lib/lang-server";
 import { Contained } from "@/components/Width";
 
 /**
@@ -25,7 +27,8 @@ export const metadata: Metadata = {
   description: "Send the game's own text for something Spoken has no narration for yet.",
 };
 
-export default async function Page() {
+export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
+  const lang = await pageLang(params);
   const session = await auth.api.getSession({ headers: await headers() });
   // The name if they have one, the email otherwise: better to say "Filed as you@example.com"
   // than "Filed as ." for an account that never set a display name.
@@ -56,6 +59,21 @@ export default async function Page() {
             . Only the gathered lines are sent, never your settings.
           </p>
           <UploadGathered signedInAs={signedInAs} />
+
+          {/* Last: it is for players who already send lines and are willing to dig in the game's
+              folder, and it needs an account. */}
+          <h2 className="mt-10 mb-1 text-base font-semibold">The game&apos;s text cache</h2>
+          <p className="text-muted-foreground mb-4 text-sm">
+            The game remembers every NPC greeting it was sent, with the id that ties it to the same
+            greeting in every other language. Those ids are how a line in your language finds its
+            recording. Log out of the game, then drop in every <code>DBCache.bin</code> file from{" "}
+            <code className="break-all">
+              World of Warcraft/&lt;game folder&gt;/Cache/ADB/&lt;language&gt;/
+            </code>
+            , including the <code>DBCache.bin…tmp</code> ones, and pick the language of that
+            folder. Only the NPC texts are sent.
+          </p>
+          <UploadBroadcastCache signedIn={session !== null} lang={lang} />
         </article>
       </Contained>
     </main>
