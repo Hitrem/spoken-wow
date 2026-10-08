@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { broadcastIdsFor, type LineBroadcast } from "@/lib/broadcast/store";
+import { broadcastIdsFor, broadcastStatuses, type LineBroadcast } from "@/lib/broadcast/store";
 import { langParam, worksHere } from "@/lib/lang-server";
 import { corpus, isCorpusEmpty } from "@/lib/quests/catalogue";
 import { searchContext } from "@/lib/quests/context";
@@ -30,13 +30,14 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Math.floor(Number(params.get("page")) || 1));
 
   // Only the context depends on the filters, so the corpus is fetched alongside them.
-  let filters, lines, seesMadeBy, recordings;
+  let filters, lines, seesMadeBy, recordings, broadcastStatus;
   try {
-    [filters, lines, seesMadeBy, recordings] = await Promise.all([
+    [filters, lines, seesMadeBy, recordings, broadcastStatus] = await Promise.all([
       filtersFromParams(params),
       corpus(lang),
       worksHere(lang),
       recordingsFor("quests", lang),
+      params.has("bt") ? broadcastStatuses() : undefined,
     ]);
   } catch (error) {
     // The zones and books searches answer an empty table the same way: a page can say "no
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     lang,
     seesMadeBy,
   );
-  const context = { ...base, recordings };
+  const context = { ...base, recordings, broadcast: broadcastStatus };
 
   // "Clear all" needs every dirty file the filter matches, not a page of rows. The same
   // shape the zones search route answers for its own explorer.

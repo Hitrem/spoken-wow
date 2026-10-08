@@ -23,6 +23,7 @@ import { audioStateFromParams } from "@/lib/audio-state";
 import { useSession } from "@/lib/auth-client";
 import RecordingDropZone from "@/components/RecordingDropZone";
 import { RECORDED, type Recorded } from "@/lib/recordings/live";
+import { BROADCAST_STATUSES } from "@/lib/broadcast/status";
 import type { Facets } from "@/lib/facets";
 import type { Kind } from "@/lib/line-fields";
 import { NARRATOR_VOICE } from "@/lib/generation/narration";
@@ -84,6 +85,7 @@ function filterParams(filters: LineFilters): URLSearchParams {
   if (filters.model) params.set("model", filters.model);
   if (filters.author) params.set("author", filters.author);
   if (filters.recorded) params.set("rec", filters.recorded);
+  if (filters.broadcast) params.set("bt", filters.broadcast);
   return params;
 }
 
@@ -155,6 +157,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
       model: params.get("model") ?? undefined,
       author: params.get("author") ?? undefined,
       recorded: RECORDED.find((value) => value === params.get("rec")),
+      broadcast: BROADCAST_STATUSES.find((value) => value === params.get("bt")),
     }),
     [kind, params, urlQuery],
   );
@@ -318,6 +321,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
         ...("model" in next ? { model: next.model } : {}),
         ...("author" in next ? { author: next.author } : {}),
         ...("recorded" in next ? { rec: next.recorded } : {}),
+        ...("broadcast" in next ? { bt: next.broadcast } : {}),
       });
     },
     [updateUrl],
@@ -800,6 +804,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
           canTriage={showRegenerate}
           madeBy={result?.madeBy}
           recordable={showRecordings}
+          broadcastable={kind === "gossip"}
         />
 
         {showRecordings && <RecordingDropZone source="quests" onUploaded={refetch} />}

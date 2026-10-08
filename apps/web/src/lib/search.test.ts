@@ -601,6 +601,32 @@ describe("reported lines", () => {
   });
 });
 
+describe("broadcast id status", () => {
+  const gossip = corpus.lines.filter((line) => line.source === "gossip");
+  const [exact, guessed] = gossip.map((line) => line.lineId).filter((id, i, ids) => ids.indexOf(id) === i);
+  const context = {
+    overrides: new Map(),
+    broadcast: new Map([[exact, "extract" as const], [guessed, "text" as const]]),
+  };
+  const ids = (found: { lineId: string }[]) => [...new Set(found.map((line) => line.lineId))];
+
+  it("narrows gossip to how its ids were found", () => {
+    expect(ids(matchingLines(corpus, store, { broadcast: "extract" }, context))).toEqual([exact]);
+    expect(ids(matchingLines(corpus, store, { broadcast: "text" }, context))).toEqual([guessed]);
+  });
+
+  it("counts only gossip as having no id", () => {
+    const none = matchingLines(corpus, store, { broadcast: "none", includeProgress: true }, context);
+    expect(none.every((line) => line.source === "gossip")).toBe(true);
+    expect(ids(none)).not.toContain(exact);
+    expect(none.length).toBe(gossip.filter((line) => line.lineId !== exact && line.lineId !== guessed).length);
+  });
+
+  it("matches nothing when the statuses were never fetched", () => {
+    expect(matchingLines(corpus, store, { broadcast: "none" })).toEqual([]);
+  });
+});
+
 describe("made by", () => {
   const lines = all().slice(0, 3);
   const file = (line: (typeof lines)[number]) => line.audioPath;
