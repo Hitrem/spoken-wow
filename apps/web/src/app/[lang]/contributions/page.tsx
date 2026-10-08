@@ -14,7 +14,9 @@ import { lineStates, tabOf } from "@/lib/contributions/known";
 import { isStatus, type ContributionStatus } from "@/lib/contributions/contributions";
 import { linesInExplorer } from "@/lib/contributions/accept";
 import {
+  isSearchIn,
   isSpeakerSentinel,
+  matchesSearch,
   isStageFilter,
   matchesSpeaker,
   matchesStage,
@@ -189,7 +191,18 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ status?: string; provenance?: string; client?: string; source?: string; stage?: string; sort?: string; dir?: string; page?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    provenance?: string;
+    client?: string;
+    source?: string;
+    stage?: string;
+    sort?: string;
+    dir?: string;
+    page?: string;
+    q?: string;
+    filter?: string;
+  }>;
 }) {
   const lang = await pageLang(params);
   const session = await auth.api.getSession({ headers: await headers() });
@@ -226,12 +239,10 @@ export default async function Page({
     sort: rawSort,
     dir: rawDir,
     page: rawPage,
+    q: rawQ,
+    filter: rawFilter,
   } = await searchParams;
-  const status: ContributionStatus | "all" = isStatus(rawStatus)
-    ? rawStatus
-    : rawStatus === "all"
-      ? "all"
-      : "new";
+  const status: ContributionStatus = isStatus(rawStatus) ? rawStatus : "new";
   // Defaults to "all", not a narrowing anyone needs applied before they ask for it. There used
   // to be a second dimension here (a "confirmed" param) alongside this one, spelled as its own
   // Confirmed/Unconfirmed pills: gone, replaced by the NEEDS_DECISION sentinel folded into this
@@ -258,6 +269,9 @@ export default async function Page({
   // Which quest panel the text was read off -- accept, progress or complete -- or gossip.
   const stage: StageFilter = isStageFilter(rawStage) ? rawStage : "all";
 
+  const q = typeof rawQ === "string" ? rawQ.trim() : "";
+  const searchIn = isSearchIn(rawFilter) ? rawFilter : "any";
+
   // Whichever column header was last clicked; most sent first until one is.
   const sort: ContributionSort = sortOf(rawSort, rawDir);
 
@@ -276,7 +290,8 @@ export default async function Page({
     .filter((row) => matchesSpeaker(npcs[row.id]?.provenance, provenance, row.source))
     .filter((row) => client === "all" || clientOf(row.build).family === client)
     .filter((row) => source === "all" || row.source === source)
-    .filter((row) => matchesStage(questFor(row), stage));
+    .filter((row) => matchesStage(questFor(row), stage))
+    .filter((row) => matchesSearch({ text: row.text, npc: npcs[row.id], quest: questFor(row) }, q, searchIn));
 
   // A page of rows, not the whole queue: every row rendered is a row the browser has to build
   // and React has to diff, and a queue of hundreds made both the load and every click slow.
@@ -346,6 +361,8 @@ export default async function Page({
           source={source}
           stage={stage}
           sort={sort}
+          q={q}
+          searchIn={searchIn}
           existing={existing}
           books={books}
           flavorScopes={facetValues.flavorScopes}

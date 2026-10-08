@@ -12,6 +12,7 @@ import type { ClientFamily } from "./client";
 import type { ContributionStatus } from "./contributions";
 import type { EnvelopeSource } from "./envelope";
 import type { Provenance } from "../npc/npc";
+import type { Filter } from "../search";
 import type { QuestSummary } from "./triage";
 
 /**
@@ -90,7 +91,7 @@ export function matchesStage(quest: QuestSummary | null, filter: StageFilter): b
  * out per row after the query, and paging a list sorted on them would mean resolving every row
  * in the queue first.
  */
-export const SORT_COLUMNS = ["filed", "source", "count", "status"] as const;
+export const SORT_COLUMNS = ["filed", "source", "count"] as const;
 
 export type SortColumn = (typeof SORT_COLUMNS)[number];
 
@@ -120,7 +121,6 @@ const FIRST_DIRECTION: Record<SortColumn, SortDirection> = {
   filed: "desc",
   source: "asc",
   count: "desc",
-  status: "asc",
 };
 
 /** A header click: the column already sorted on flips, any other starts in its own direction. */
@@ -136,21 +136,27 @@ export function sortOf(column: unknown, direction: unknown): ContributionSort {
 }
 
 export type ContributionFilters = {
-  status: ContributionStatus | "all";
+  status: ContributionStatus;
   provenance: SpeakerFilter;
   client: ClientFilter;
   source: SourceFilter;
   stage: StageFilter;
   sort: ContributionSort;
+  /** Absent or blank searches nothing. */
+  q?: string;
+  /** Which field `q` is matched in; absent is "any". */
+  searchIn?: Filter;
 };
 
 export type FilterChange = {
-  status?: ContributionStatus | "all";
+  status?: ContributionStatus;
   provenance?: SpeakerFilter;
   client?: ClientFilter;
   source?: SourceFilter;
   stage?: StageFilter;
   sort?: ContributionSort;
+  q?: string;
+  searchIn?: Filter;
 };
 
 /**
@@ -158,20 +164,22 @@ export type FilterChange = {
  *
  * A key present in `next` always wins, even set to `undefined` -- FilterChip's own way of
  * saying "reset to any", which this maps back to "all". A key simply absent from `next` (the
- * dimensions that did not change) is the only case that falls back to `current`. `sort` is not
- * a filter and has no "all": unset, it goes back to DEFAULT_SORT.
+ * dimensions that did not change) is the only case that falls back to `current`. `sort` and
+ * `status` have no "all": unset, they go back to DEFAULT_SORT and the new rows' tab.
  */
 export function nextContributionFilters(
   current: ContributionFilters,
   next: FilterChange,
 ): ContributionFilters {
   return {
-    status: "status" in next ? (next.status ?? "all") : current.status,
+    status: "status" in next ? (next.status ?? "new") : current.status,
     provenance: "provenance" in next ? (next.provenance ?? "all") : current.provenance,
     client: "client" in next ? (next.client ?? "all") : current.client,
     source: "source" in next ? (next.source ?? "all") : current.source,
     stage: "stage" in next ? (next.stage ?? "all") : current.stage,
     sort: "sort" in next ? (next.sort ?? DEFAULT_SORT) : current.sort,
+    q: "q" in next ? next.q : current.q,
+    searchIn: "searchIn" in next ? next.searchIn : current.searchIn,
   };
 }
 
@@ -200,6 +208,8 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
     source: filters.source,
     stage: filters.stage,
   });
+  if (filters.q?.trim()) params.set("q", filters.q.trim());
+  if (filters.searchIn && filters.searchIn !== "any") params.set("filter", filters.searchIn);
   if (filters.sort.column !== DEFAULT_SORT.column || filters.sort.direction !== DEFAULT_SORT.direction) {
     params.set("sort", filters.sort.column);
     params.set("dir", filters.sort.direction);
@@ -222,4 +232,40 @@ export function matchesSpeaker(provenance: Provenance | undefined, filter: Speak
   if (provenance === undefined) return false;
   if (filter === NEEDS_DECISION) return provenance === "client" || provenance === "none";
   return provenance === filter;
+}
+
+export function isSearchIn(value: unknown): value is Filter {
+  return value === "any" || value === "npc" || value === "quest" || value === "text";
+}
+
+/**
+ * A bare number is an NPC or quest id, never a substring, so "240" finds that NPC rather than
+ * every line mentioning 240 gold. Words match the NPC's name, the quest's title or the text.
+ */
+export function matchesSearch(
+  row: { text: string | null; npc: { npcId: number; npcName: string | null } | undefined; quest: QuestSummary | null },
+  q: string,
+  filter: Filter = "any",
+): boolean {
+  const query = q.trim();
+  if (!query) return true;
+  const needle = query.toLowerCase();
+  const textHit = (row.text ?? "").toLowerCase().includes(needle);
+  if (filter === "text") return textHit;
+
+  const quest = row.quest === null || row.quest === "gossip" ? null : row.quest;
+  const asNumber = /^\d+$/.test(query) ? Number(query) : null;
+  if (asNumber !== null) {
+    const npcHit = row.npc?.npcId === asNumber;
+    const questHit = quest?.questId === asNumber;
+    if (filter === "npc") return npcHit;
+    if (filter === "quest") return questHit;
+    return npcHit || questHit;
+  }
+
+  const npcHit = (row.npc?.npcName ?? "").toLowerCase().includes(needle);
+  const questHit = (quest?.title ?? "").toLowerCase().includes(needle);
+  if (filter === "npc") return npcHit;
+  if (filter === "quest") return questHit;
+  return npcHit || questHit || textHit;
 }
