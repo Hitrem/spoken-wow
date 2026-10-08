@@ -12,24 +12,11 @@ import { ROOT, normaliseKey, readJson } from "./wiki.mjs";
 
 const SEED = join(ROOT, "pipelines/zones/tools/seed/era-areas.json");
 const CAMELOT_SEED = join(ROOT, "pipelines/zones/tools/seed/camelot-areas.json");
-const MISPLACED_SEED = join(ROOT, "pipelines/zones/tools/seed/misplaced-areas.json");
 
 /** @returns {Promise<{build: string, keys: Set<string>}>} */
 export async function loadEraAreas() {
   const seed = await readJson(SEED);
   return { build: seed.build, keys: new Set(seed.names.map(normaliseKey)) };
-}
-
-/**
- * Areas listed under a zone the client does not put them in (seed/misplaced-areas.json):
- * a city copied into the zone around it, an area copied into a neighbour. Each place is
- * listed once, where the game has it.
- *
- * @returns {Promise<Set<string>>} "mapID/key" for each row to leave out
- */
-export async function loadMisplacedAreas() {
-  const seed = await readJson(MISPLACED_SEED);
-  return new Set(seed.removed.map((area) => `${area.mapID}/${area.key}`));
 }
 
 /**
