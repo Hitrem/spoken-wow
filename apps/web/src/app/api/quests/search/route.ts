@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { broadcastIdsFor, type LineBroadcast } from "@/lib/broadcast/store";
 import { langParam, worksHere } from "@/lib/lang-server";
 import { corpus, isCorpusEmpty } from "@/lib/quests/catalogue";
 import { searchContext } from "@/lib/quests/context";
@@ -70,13 +71,16 @@ export async function GET(request: NextRequest) {
   // For the page only, when no filter already computed the whole set: the two questions
   // cost a query each over the files asked about, and fifty is what a page holds.
   const files = [...new Set(result.lines.map((line) => line.audioPath))];
-  const [stale, dirty] = await Promise.all([
+  const gossip = [...new Set(result.lines.filter((line) => line.source === "gossip").map((line) => line.lineId))];
+  const [stale, dirty, broadcast] = await Promise.all([
     context.stale ?? staleFiles(files, lang),
     context.dirty ?? dirtyQuestFiles(files, lang),
+    gossip.length > 0 ? broadcastIdsFor(gossip) : new Map<string, LineBroadcast[]>(),
   ]);
   for (const line of result.lines) {
     line.stale = stale.has(line.audioPath);
     line.dirty = dirty.has(line.audioPath);
+    if (line.source === "gossip") line.broadcast = broadcast.get(line.lineId) ?? [];
   }
 
   return NextResponse.json(result);

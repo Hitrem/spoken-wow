@@ -846,6 +846,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
             <colgroup>
               <col className="w-52" />
               {kind !== "gossip" && <col className="w-48" />}
+              {kind === "gossip" && <col className="w-24" />}
               <col className="w-32" />
               {/* The line text takes whatever the named columns leave, which is what anyone
                   here to read came for. */}
@@ -867,6 +868,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
               <tr className="text-muted-foreground border-border border-b text-left text-xs">
                 <th className="px-2 pb-1 font-medium">NPC / object</th>
                 {kind !== "gossip" && <th className="px-2 pb-1 font-medium">Quest</th>}
+                {kind === "gossip" && <th className="px-2 pb-1 font-medium">Broadcast</th>}
                 <th className="px-2 pb-1 font-medium">Race / gender / flavor</th>
                 <th className="px-2 pb-1 font-medium">Line</th>
                 <th className="px-2 pb-1 font-medium">Audio</th>
@@ -903,6 +905,7 @@ export default function Explorer({ facets, kind }: { facets: Facets; kind: Kind 
                   onRestored={handleRestored}
                   onNarrowToNpc={narrowToNpc}
                   showQuest={kind !== "gossip"}
+                  showBroadcast={kind === "gossip"}
                   onNarrowToQuest={narrowToQuest}
                 />
               ))}

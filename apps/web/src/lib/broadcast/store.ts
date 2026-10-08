@@ -66,6 +66,21 @@ export async function recordUpload(
   return counts;
 }
 
+/** A BroadcastText id a gossip line speaks, and how it was found (migration 0067). */
+export type LineBroadcast = { id: number; matchedBy: "extract" | "text" };
+
+/** The ids each of these lines speaks, lowest first. Lines with none are absent. */
+export async function broadcastIdsFor(lineIds: string[]): Promise<Map<string, LineBroadcast[]>> {
+  const rows = await query<{ lineId: string; id: number; matchedBy: LineBroadcast["matchedBy"] }>(
+    `select "lineId", "broadcastTextId" as "id", "matchedBy" from "gossip_broadcast"
+      where "lineId" = any($1) order by "lineId", "broadcastTextId"`,
+    [lineIds],
+  );
+  const byLine = new Map<string, LineBroadcast[]>();
+  for (const { lineId, id, matchedBy } of rows) byLine.set(lineId, [...(byLine.get(lineId) ?? []), { id, matchedBy }]);
+  return byLine;
+}
+
 /**
  * How many of these rows say exactly what English says under the same id.
  *

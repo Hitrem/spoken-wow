@@ -146,6 +146,8 @@ type Props = {
   onRestored: (file: string, version: number) => void;
   /** False in the gossip explorer, where no line has a quest. */
   showQuest: boolean;
+  /** True in the gossip explorer: the BroadcastText ids each line speaks. */
+  showBroadcast: boolean;
   /** Narrow the search to this line's NPC, or to its quest. */
   onNarrowToNpc: (line: ResultLine) => void;
   onNarrowToQuest: (line: ResultLine) => void;
@@ -198,6 +200,7 @@ export default function LineRow({
   onRestored,
   onNarrowToNpc,
   showQuest,
+  showBroadcast,
   onNarrowToQuest,
   onClearDirty,
 }: Props) {
@@ -281,6 +284,28 @@ export default function LineRow({
                 {line.questId} <WowheadLink href={wowheadQuestUrl(line.questId)} />
               </span>
             </>
+          )}
+        </td>
+      )}
+
+      {showBroadcast && (
+        <td className="px-2 py-2 text-xs tabular-nums">
+          {line.broadcast?.length ? (
+            line.broadcast.map(({ id, matchedBy }) => (
+              <span
+                key={id}
+                className={"block " + (matchedBy === "text" ? "text-muted-foreground" : "")}
+                title={
+                  matchedBy === "text"
+                    ? "Matched by English text: one of the ids that read this way"
+                    : "The world database names this id for the line's NPC"
+                }
+              >
+                {id}
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground">—</span>
           )}
         </td>
       )}

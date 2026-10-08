@@ -18,6 +18,7 @@ import { hasNarration, restoresOnlyNarration } from "./generation/narration";
 import { kindOf, type Kind, type NpcType, type Source } from "./line-fields";
 import type { LineIgnore } from "./quests/ignores";
 import type { LineOverride } from "./quests/override";
+import type { LineBroadcast } from "./broadcast/store";
 import type { AudioState } from "./audio-state";
 import { isVoiceable } from "./text-gate";
 import { madeByFacets, madeByMatches, type MadeBy, type MadeByFacets } from "./takes/made-by";
@@ -218,6 +219,8 @@ export type ResultLine = CorpusLine & {
    * column out.
    */
   recording?: LiveRecording | null;
+  /** The BroadcastText ids a gossip line speaks. Absent on every other source. */
+  broadcast?: LineBroadcast[];
 };
 
 export type SearchResult = {
