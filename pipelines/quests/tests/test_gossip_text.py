@@ -1,6 +1,7 @@
 """The addon's gossip text per client locale, and its aliases, which export-gossip-text writes."""
 from tts_cli.gossip_text import (CLIENT_LOCALES, broadcast_form, gossip_aliases,
-                                 gossip_text_tables, render, render_aliases, write_gossip_text)
+                                 gossip_text_tables, load_aliases, render, render_aliases,
+                                 write_aliases_json, write_gossip_text)
 
 HASH = "a" * 32
 OTHER = "b" * 32
@@ -76,6 +77,20 @@ def test_aliases_tie_one_moment_s_stems():
     assert aliases[BROADCAST] == [HASH, LOCALIZED]
     assert aliases["b6029-orc-female-gruff"] == [HASH, LOCALIZED]
     assert "d" * 32 not in aliases
+
+
+def test_a_merged_line_s_file_comes_after_the_moment_s_own():
+    aliases = gossip_aliases(SPEAKERS, {f"g:{HASH}": [1], f"g:{BROADCAST}": [1]},
+                             merges=[(f"g:{OTHER}", f"g:{HASH}"), (f"g:{LOCALIZED}", f"g:{'e' * 32}")])
+    assert aliases[HASH] == [BROADCAST, OTHER]
+    assert aliases["e" * 32] == [LOCALIZED]
+
+
+def test_aliases_json_round_trip(tmp_path):
+    path = str(tmp_path / "aliases.json")
+    write_aliases_json(path, {HASH: [BROADCAST]})
+    assert load_aliases(path) == {HASH: [BROADCAST]}
+    assert load_aliases(str(tmp_path / "missing.json")) == {}
 
 
 def test_a_line_alone_in_its_moment_has_no_aliases():

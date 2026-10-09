@@ -20,6 +20,7 @@ from tts_cli.build import (DEFAULT_ADDONS_DIR, DEFAULT_DIST_DIR,
 from tts_cli.corpus import DEFAULT_CORPUS_PATH, load_corpus
 from tts_cli.factions import (DEFAULT_FACTIONS_PATH, PACKS, load_sides, pack_stems,
                               pack_title)
+from tts_cli.gossip_text import DEFAULT_ALIASES_PATH, load_aliases
 from tts_cli.ignores import DEFAULT_IGNORED_PATH, load_ignored
 from tts_cli.locale_text import load_locale_text
 from tts_cli.store import DEFAULT_STORE_DIR
@@ -75,6 +76,8 @@ gst = subparsers.add_parser(
     "export-gossip-text",
     help="Every client locale's gossip text and the moments' aliases -> the addon's Gossip/.")
 gst.add_argument("--out-dir", required=True, help="e.g. ../../addons/Spoken_Quests/Gossip")
+gst.add_argument("--aliases", default=DEFAULT_ALIASES_PATH,
+                 help="Where the pack build reads the aliases from")
 
 bld = subparsers.add_parser(
     "build",
@@ -88,6 +91,7 @@ bld.add_argument("--ignored", default=DEFAULT_IGNORED_PATH)
 bld.add_argument("--pack", default="all", choices=PACKS,
                  help="which slice of the audio to ship (default: all)")
 bld.add_argument("--factions", default=DEFAULT_FACTIONS_PATH)
+bld.add_argument("--aliases", default=DEFAULT_ALIASES_PATH)
 bld.add_argument("--module-title", default=None,
                  help="TOC title; defaults to one naming the pack")
 bld.add_argument("--language", default=None,
@@ -158,7 +162,7 @@ elif args.mode == "export-giver-names":
 
 elif args.mode == "export-gossip-text":
     from tts_cli.corpus_db import export_gossip_text
-    export_gossip_text(args.out_dir)
+    export_gossip_text(args.out_dir, args.aliases)
 
 elif args.mode == "build":
     locale_text = None
@@ -179,7 +183,7 @@ elif args.mode == "build":
     # None for the whole store rather than the 'all' stem set, so a store file the corpus
     # cannot address still ships in the complete pack the way it always has.
     include = None if args.pack == "all" else \
-        pack_stems(corpus, load_sides(args.factions), args.pack)
+        pack_stems(corpus, load_sides(args.factions), args.pack, load_aliases(args.aliases))
     report = build_module(corpus, args.store, args.dist,
                           args.module, args.version, progress=True,
                           ignored=load_ignored(args.ignored), include=include,

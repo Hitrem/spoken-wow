@@ -1083,6 +1083,18 @@ linked this way and never renamed.
 The packs' own `generated/<lang>/` copies keep loading, for players on an older addon, and the
 addon's text outranks them.
 
+**Relinking** (`apps/web/src/lib/broadcast/relink.ts`) upgrades lines as ids arrive. Every cache
+upload runs it for its language. It gives a line with no id the lowest id that reads the same in
+one of its languages, then merges duplicates: two lines of one id with the same speakers that
+read the same in every language both have, which is what a moment minted twice before its id
+was known looks like. The line kept is the one named by id, then English, then a language's own,
+then the older. It takes the other's languages it lacks. The other's rows stop being current, and
+`gossip_merge` (migration 0068) records where it went. Its file is never renamed: it becomes an
+alias of the line kept, so its takes still play, `corpus/gossip_aliases.json` tells the pack build
+to ship them, and a link to it shows the line kept. Lines of one moment that read differently
+stay apart, and the explorer's Broadcast column links each to the others as "same moment". To run
+it over every line, use `apps/web/scripts/relink-gossip.mts`; `--dry-run` lists what it would merge.
+
 ## Addon Install
 
 ```bash

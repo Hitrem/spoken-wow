@@ -600,14 +600,14 @@ def export_giver_names(corpus_path, out_dir, verbose=True):
     write_names_xml(out_dir, sorted(by_lang))
 
 
-def export_gossip_text(out_dir, verbose=True):
+def export_gossip_text(out_dir, aliases_path, verbose=True):
     """Every client locale's gossip text, and the moments' aliases -> the addon's Gossip/.
 
     See tts_cli/gossip_text.py. A translation is the newest one with localeText, for
     export_locale_text's reason, and is kept only while it translates the current English.
     """
     from tts_cli.gossip_text import (CLIENT_LOCALES, gossip_aliases, gossip_text_tables,
-                                     write_gossip_text)
+                                     write_aliases_json, write_gossip_text)
     from tts_cli.ignores import ignored_line_ids
 
     conn = connect()
@@ -663,14 +663,18 @@ def export_gossip_text(out_dir, verbose=True):
             broadcast_texts = {}
             for lang, broadcast_id, text, text1 in cur.fetchall():
                 broadcast_texts.setdefault(lang, {})[broadcast_id] = (text, text1)
+
+            cur.execute("""select "lineId", "mergedInto" from "gossip_merge" order by 1""")
+            merges = cur.fetchall()
     finally:
         conn.close()
 
     ignored = ignored_line_ids()
     tables = gossip_text_tables(speakers, english, translations, natives, broadcast_ids,
                                 broadcast_texts, ignored)
-    aliases = gossip_aliases(speakers, broadcast_ids, ignored)
+    aliases = gossip_aliases(speakers, broadcast_ids, ignored, merges)
     write_gossip_text(out_dir, tables, aliases)
+    write_aliases_json(aliases_path, aliases)
     if verbose:
         for lang in CLIENT_LOCALES:
             count = sum(len(texts) for kind in tables[lang].values() for texts in kind.values())

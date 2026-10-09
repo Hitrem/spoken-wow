@@ -14,13 +14,15 @@ A line's text in a language comes from three places, all pointing at the line's 
   * BroadcastText in that language, for each id the line has (gossip_broadcast). The game
     stores a male and a female form, and the speaker's sex picks the one shown.
 
-GossipAliases ties the stems of one moment together: lines that share an id and a voice.
-The addon tries a line's own stem first and its aliases after, so audio recorded under a
-sibling still plays. A stem carrying a flavor (the broadcast form) is only tied to stems with
-the same flavor or none.
+GossipAliases ties the stems of one moment together: lines that share an id and a voice, and
+a line merged into another (gossip_merge), whose file only plays this way. The addon tries a
+line's own stem first and its aliases after, so audio recorded under a sibling still plays. A
+stem carrying a flavor (the broadcast form) is only tied to stems with the same flavor or none.
+The pack build reads the same aliases (corpus/gossip_aliases.json) to ship those files.
 
 Nothing here needs a database: corpus_db.export_gossip_text does the queries.
 """
+import json
 import os
 
 from tts_cli.build import escape_lua_string
@@ -115,11 +117,16 @@ def gossip_text_tables(speakers: dict, english: dict, translations: dict, native
     return tables
 
 
-def gossip_aliases(speakers: dict, broadcast_ids: dict, ignored=()) -> dict:
+#: What the pack build reads to ship each gossip file's aliases beside it.
+DEFAULT_ALIASES_PATH = "corpus/gossip_aliases.json"
+
+
+def gossip_aliases(speakers: dict, broadcast_ids: dict, ignored=(), merges=()) -> dict:
     """{stem: [the other stems of its moment, preferred first]}, only for stems that have any.
 
     Preferred: broadcast, English, localized, and within those the one voiced in the line's
-    own flavor first.
+    own flavor first. `merges` is [(merged lineId, lineId it went into)], whose files come
+    after the moment's own.
     """
     moments = {}
     for line_id, ids in broadcast_ids.items():
@@ -141,8 +148,28 @@ def gossip_aliases(speakers: dict, broadcast_ids: dict, ignored=()) -> dict:
                     key = (gossip_stem_rank(other), other_flavor != flavor, other)
                     aliases.setdefault(stem, {})[other] = min(
                         key, aliases.get(stem, {}).get(other, key))
-    return {stem: [other for other, _ in sorted(others.items(), key=lambda kv: kv[1])]
-            for stem, others in sorted(aliases.items())}
+    ordered = {stem: [other for other, _ in sorted(others.items(), key=lambda kv: kv[1])]
+               for stem, others in aliases.items()}
+    for merged, into in sorted(merges):
+        stem, other = gossip_hash_from_line_id(into), gossip_hash_from_line_id(merged)
+        if other not in ordered.setdefault(stem, []):
+            ordered[stem].append(other)
+    return dict(sorted(ordered.items()))
+
+
+def write_aliases_json(path: str, aliases: dict) -> str:
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(aliases, f, indent=1, sort_keys=True, ensure_ascii=False)
+        f.write("\n")
+    return path
+
+
+def load_aliases(path: str = DEFAULT_ALIASES_PATH) -> dict:
+    """The aliases export-gossip-text wrote, or none before it ever ran."""
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def render(lang: str, table: dict) -> str:

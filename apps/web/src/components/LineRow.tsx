@@ -316,6 +316,16 @@ export default function LineRow({
           ) : (
             <span className="text-muted-foreground">—</span>
           )}
+          {line.moment?.map((sibling) => (
+            <a
+              key={sibling}
+              href={localeHref(lang, `/gossip?line=${encodeURIComponent(sibling)}`)}
+              className="text-muted-foreground block truncate underline-offset-2 hover:underline"
+              title={`Same moment: ${sibling}, the same id in the same voice, kept as a line of its own`}
+            >
+              same moment
+            </a>
+          ))}
         </td>
       )}
 
