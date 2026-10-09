@@ -5,6 +5,8 @@
 import { query } from "@/lib/db";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 
+import type { BroadcastStatus } from "./status";
+
 export type BroadcastRow = { id: number; text: string; text1: string };
 
 export type RecordedTexts = { texts: number; added: number; changed: number };
@@ -64,6 +66,32 @@ export async function recordUpload(
     [lang, build, rows.map((r) => r.id), rows.map((r) => r.text), rows.map((r) => r.text1), userId],
   );
   return counts;
+}
+
+/** A BroadcastText id a gossip line speaks, and how it was found (migration 0067). */
+export type LineBroadcast = { id: number; matchedBy: "extract" | "text" };
+
+/** The ids each of these lines speaks, lowest first. Lines with none are absent. */
+export async function broadcastIdsFor(lineIds: string[]): Promise<Map<string, LineBroadcast[]>> {
+  const rows = await query<{ lineId: string; id: number; matchedBy: LineBroadcast["matchedBy"] }>(
+    `select "lineId", "broadcastTextId" as "id", "matchedBy" from "gossip_broadcast"
+      where "lineId" = any($1) order by "lineId", "broadcastTextId"`,
+    [lineIds],
+  );
+  const byLine = new Map<string, LineBroadcast[]>();
+  for (const { lineId, id, matchedBy } of rows) byLine.set(lineId, [...(byLine.get(lineId) ?? []), { id, matchedBy }]);
+  return byLine;
+}
+
+/**
+ * Each gossip line with an id, and whether the world database named one (extract) or only its
+ * English text matched (text). A line absent from the map has none.
+ */
+export async function broadcastStatuses(): Promise<Map<string, Exclude<BroadcastStatus, "none">>> {
+  const rows = await query<{ lineId: string; extract: boolean }>(
+    `select "lineId", bool_or("matchedBy" = 'extract') as "extract" from "gossip_broadcast" group by "lineId"`,
+  );
+  return new Map(rows.map(({ lineId, extract }) => [lineId, extract ? "extract" : "text"]));
 }
 
 /**

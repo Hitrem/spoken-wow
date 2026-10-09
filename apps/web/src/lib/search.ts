@@ -18,6 +18,8 @@ import { hasNarration, restoresOnlyNarration } from "./generation/narration";
 import { kindOf, type Kind, type NpcType, type Source } from "./line-fields";
 import type { LineIgnore } from "./quests/ignores";
 import type { LineOverride } from "./quests/override";
+import type { LineBroadcast } from "./broadcast/store";
+import type { BroadcastStatus } from "./broadcast/status";
 import type { AudioState } from "./audio-state";
 import { isVoiceable } from "./text-gate";
 import { madeByFacets, madeByMatches, type MadeBy, type MadeByFacets } from "./takes/made-by";
@@ -114,6 +116,11 @@ export type LineFilters = {
    * which only somebody who records in the language gets; the route drops it otherwise.
    */
   recorded?: Recorded;
+  /**
+   * Gossip lines by how their BroadcastText ids were found. Needs `broadcast` in the context;
+   * without it nothing matches. Every other source has no ids, so it never matches.
+   */
+  broadcast?: BroadcastStatus;
 };
 
 /** Midnight local at the start of a "YYYY-MM-DD", or null when it is not one. */
@@ -164,6 +171,8 @@ export type SearchContext = {
   madeBy?: Map<string, MadeBy>;
   /** file -> its live voice-actor recording. Absent for anybody who does not record here. */
   recordings?: Map<string, LiveRecording>;
+  /** lineId -> how its BroadcastText ids were found. Absent means nobody asked. */
+  broadcast?: Map<string, Exclude<BroadcastStatus, "none">>;
 };
 
 export const NO_CONTEXT: SearchContext = { overrides: new Map() };
@@ -218,6 +227,8 @@ export type ResultLine = CorpusLine & {
    * column out.
    */
   recording?: LiveRecording | null;
+  /** The BroadcastText ids a gossip line speaks. Absent on every other source. */
+  broadcast?: LineBroadcast[];
 };
 
 export type SearchResult = {
@@ -403,6 +414,7 @@ export function matchingLines(
     model,
     author,
     recorded,
+    broadcast,
   }: LineFilters = {},
   {
     overrides,
@@ -413,6 +425,7 @@ export function matchingLines(
     reports: reportsOf,
     madeBy,
     recordings,
+    broadcast: broadcastOf,
   }: SearchContext = NO_CONTEXT,
 ): CorpusLine[] {
   const query = q.trim();
@@ -501,6 +514,11 @@ export function matchingLines(
     lines = lines.filter((line) => madeByMatches(madeBy?.get(audioRelPath(line)), { model, author }));
   }
   if (recorded) lines = lines.filter((line) => recordedMatches(recordings?.get(audioRelPath(line)), recorded));
+  if (broadcast) {
+    lines = broadcastOf
+      ? lines.filter((line) => line.source === "gossip" && (broadcastOf.get(line.lineId) ?? "none") === broadcast)
+      : [];
+  }
 
   return [...lines].sort(order);
 }

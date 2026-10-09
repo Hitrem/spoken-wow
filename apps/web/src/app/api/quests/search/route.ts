@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { BROADCAST_STATUSES } from "@/lib/broadcast/status";
+import { broadcastIdsFor, broadcastStatuses, type LineBroadcast } from "@/lib/broadcast/store";
 import { langParam, worksHere } from "@/lib/lang-server";
 import { corpus, isCorpusEmpty } from "@/lib/quests/catalogue";
 import { searchContext } from "@/lib/quests/context";
@@ -29,13 +31,17 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Math.floor(Number(params.get("page")) || 1));
 
   // Only the context depends on the filters, so the corpus is fetched alongside them.
-  let filters, lines, seesMadeBy, recordings;
+  let filters, lines, seesMadeBy, recordings, broadcastStatus;
   try {
-    [filters, lines, seesMadeBy, recordings] = await Promise.all([
+    [filters, lines, seesMadeBy, recordings, broadcastStatus] = await Promise.all([
       filtersFromParams(params),
       corpus(lang),
       worksHere(lang),
       recordingsFor("quests", lang),
+      // The value filtersFromParams keeps, not just any `bt`: an invalid one filters nothing.
+      (BROADCAST_STATUSES as readonly string[]).includes(params.get("bt") ?? "")
+        ? broadcastStatuses()
+        : undefined,
     ]);
   } catch (error) {
     // The zones and books searches answer an empty table the same way: a page can say "no
@@ -51,7 +57,7 @@ export async function GET(request: NextRequest) {
     lang,
     seesMadeBy,
   );
-  const context = { ...base, recordings };
+  const context = { ...base, recordings, broadcast: broadcastStatus };
 
   // "Clear all" needs every dirty file the filter matches, not a page of rows. The same
   // shape the zones search route answers for its own explorer.
@@ -70,13 +76,16 @@ export async function GET(request: NextRequest) {
   // For the page only, when no filter already computed the whole set: the two questions
   // cost a query each over the files asked about, and fifty is what a page holds.
   const files = [...new Set(result.lines.map((line) => line.audioPath))];
-  const [stale, dirty] = await Promise.all([
+  const gossip = [...new Set(result.lines.filter((line) => line.source === "gossip").map((line) => line.lineId))];
+  const [stale, dirty, broadcast] = await Promise.all([
     context.stale ?? staleFiles(files, lang),
     context.dirty ?? dirtyQuestFiles(files, lang),
+    gossip.length > 0 ? broadcastIdsFor(gossip) : new Map<string, LineBroadcast[]>(),
   ]);
   for (const line of result.lines) {
     line.stale = stale.has(line.audioPath);
     line.dirty = dirty.has(line.audioPath);
+    if (line.source === "gossip") line.broadcast = broadcast.get(line.lineId) ?? [];
   }
 
   return NextResponse.json(result);

@@ -1030,7 +1030,17 @@ refused.
 A row's text is replaced only by one from the same or a newer client build, because a hotfix
 edits a row in place and keeps its id. One text can sit under several ids ("What are you
 looking for?" is 4857, 5907 and 6788); they read alike, so whichever matches is as good as the
-others. Nothing reads these tables yet: matching gossip by id is the next step.
+others.
+
+`gossip_broadcast` (migration 0067) names the ids each gossip line speaks, one set per line for
+every language. `matchedBy` says how it was found: `extract` when the world database names the
+id for the line's NPC, `text` when the line's English text equals the id's English text, which
+is how Forever's greetings get one. A one-off filled both tables in October 2026: `broadcast_text`
+with vmangos's rows in English and its eight locales (no ptBR) as build 5875, and with
+[EG Link](https://github.com/JIVESCORP/eg-link-output-wowf)'s English Forever rows; then 3,572
+gossip lines by extract and 178 by text. The 508 left are quest greetings, which have no
+BroadcastText row, and Forever lines no source had yet. Nothing outside the gossip explorer reads these
+tables yet: matching gossip by id is the next step.
 
 ## Addon Install
 
