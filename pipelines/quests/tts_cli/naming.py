@@ -6,6 +6,8 @@ nothing. Every filename in this project is derived here and nowhere else.
 
     quest lines     {questID}-{accept|complete}      optional m-/f- prefix
     gossip lines    md5(original_text+race+gender)   optional m-/f- prefix
+                    b{broadcastTextID}-{voice}
+                    {lang}-md5(locale_text+race+gender)
     follow-up lines {broadcastTextID}-{voice}        optional m-/f- prefix
 
 lineId is a stable handle used by the corpus, the audio store and the web app. It is
@@ -13,7 +15,17 @@ deliberately not the filename, so references survive a naming change.
 
     q:{questID}:{source}[:{m|f}]
     g:{hash}[:{m|f}]
+    g:b{broadcastTextID}-{voice}[:{m|f}]
+    g:{lang}-{hash}[:{m|f}]
     f:{broadcastTextID}:{voice}[:{m|f}]
+
+A gossip line's stem is whatever follows `g:`, in all three forms. The hash form is every
+line that exists today. The other two are only minted for lines that have no English text to
+hash: one whose BroadcastText id is known when it is created, named after the id and the
+whole voice like a follow-up, and failing that one named after its own language's text. A
+line keeps the form it was minted with; when it later turns out to be the same moment as
+another, the two are linked (GossipAliases), never renamed. The dashes keep both new forms
+from ever equalling a 32-hex hash.
 
 A follow-up line - what an NPC says in chat after a quest is accepted or turned in, see
 tts_cli/followup.py - is named after its words and the voice saying them, not after the quest
@@ -34,6 +46,32 @@ def followup_stem(broadcast_text_id, voice: str) -> str:
     non-follow-up row, which makes pandas carry it as a float.
     """
     return f"{int(broadcast_text_id)}-{voice}"
+
+
+def broadcast_gossip_stem(broadcast_text_id, voice: str) -> str:
+    """A gossip line minted from its BroadcastText id, e.g. 'b6029-orc-female-standard'."""
+    return f"b{int(broadcast_text_id)}-{voice}"
+
+
+def localized_gossip_stem(lang: str, text_hash: str) -> str:
+    """A gossip line minted in a language with neither English nor an id, e.g. 'deDE-<md5>'.
+
+    `text_hash` is md5(locale text + race + gender), get_hash's shape for English.
+    """
+    return f"{lang}-{text_hash}"
+
+
+def gossip_stem_rank(stem: str) -> int:
+    """0 for a broadcast stem, 1 for an English hash, 2 for a localized one.
+
+    The order in which one moment's stems are preferred: the id is the most stable name, and
+    English is the corpus every pack has always been built from.
+    """
+    if stem.startswith("b") and "-" in stem:
+        return 0
+    if "-" in stem:
+        return 2
+    return 1
 
 
 def filename_for_row(row) -> str:

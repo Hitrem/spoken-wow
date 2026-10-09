@@ -59,6 +59,22 @@ export function gossipFileName(hash: string): string {
   return hash;
 }
 
+/** broadcast_gossip_stem: a gossip line minted from its BroadcastText id and whole voice. */
+export function broadcastGossipStem(broadcastTextId: number, voice: string): string {
+  return `b${broadcastTextId}-${voice}`;
+}
+
+/** localized_gossip_stem: a gossip line minted in a language with neither English nor an id. */
+export function localizedGossipStem(lang: string, textHash: string): string {
+  return `${lang}-${textHash}`;
+}
+
+/** gossip_stem_rank: 0 broadcast, 1 English hash, 2 localized; the order one moment's stems are preferred in. */
+export function gossipStemRank(stem: string): 0 | 1 | 2 {
+  if (stem.startsWith("b") && stem.includes("-")) return 0;
+  return stem.includes("-") ? 2 : 1;
+}
+
 /**
  * The ElevenLabs voice name for a race, gender and flavor -- mirrors flavors.py's voice_name,
  * not naming.py, but kept beside it: the same "this side must agree with the Python" rule

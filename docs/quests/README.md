@@ -1039,8 +1039,32 @@ is how Forever's greetings get one. A one-off filled both tables in October 2026
 with vmangos's rows in English and its eight locales (no ptBR) as build 5875, and with
 [EG Link](https://github.com/JIVESCORP/eg-link-output-wowf)'s English Forever rows; then 3,572
 gossip lines by extract and 178 by text. The 508 left are quest greetings, which have no
-BroadcastText row, and Forever lines no source had yet. Nothing outside the gossip explorer reads these
-tables yet: matching gossip by id is the next step.
+BroadcastText row, and Forever lines no source had yet.
+
+#### Gossip text for every client, and one moment under several names
+
+The addon carries every line's gossip text for each client locale but English,
+`addons/Spoken_Quests/Gossip/<lang>.lua`, each returning before it builds anything on a client
+in another locale, and asks it before any pack's tables. It lives in the addon, not the packs,
+for the giver names' reason: the text follows the client and the voice is any language, so a
+German client with English or Portuguese packs finds its line the same way. All nine files load
+on every client (about 14 MiB of Lua, 2 MiB of it ever built); loading only the client's
+locale (a TOC text-locale directive on Forever) is left for later.
+`make quests-export-gossip-text` writes them (`tts_cli/gossip_text.py`) from three sources: a
+translation row while it translates the line's current English, the line's own text when it has
+no English, and `broadcast_text` in that language for each id the line has, in the form the
+speaker's sex shows. Rerun it after an `import-locale`, a cache upload or a relink.
+
+New gossip lines get two more id forms (`tts_cli/naming.py`), for lines with no English to hash:
+`g:b{broadcastTextId}-{voice}` when the id is known as the line is made, else
+`g:{lang}-{md5(text + race + gender)}`. A moment is the lines sharing an id and a race and
+gender, and when it has several, `Gossip/Aliases.lua` lists each one's siblings. The addon
+tries a line's own file and then its aliases, within each language, so a take in the chosen
+language under a sibling's name beats the fallback language under the line's own. Lines are
+linked this way and never renamed.
+
+The packs' own `generated/<lang>/` copies keep loading, for players on an older addon, and the
+addon's text outranks them.
 
 ## Addon Install
 
