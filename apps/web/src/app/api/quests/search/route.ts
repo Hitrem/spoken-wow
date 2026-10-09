@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { BROADCAST_STATUSES } from "@/lib/broadcast/status";
 import { broadcastIdsFor, broadcastStatuses, type LineBroadcast } from "@/lib/broadcast/store";
 import { langParam, worksHere } from "@/lib/lang-server";
 import { corpus, isCorpusEmpty } from "@/lib/quests/catalogue";
@@ -37,7 +38,10 @@ export async function GET(request: NextRequest) {
       corpus(lang),
       worksHere(lang),
       recordingsFor("quests", lang),
-      params.has("bt") ? broadcastStatuses() : undefined,
+      // The value filtersFromParams keeps, not just any `bt`: an invalid one filters nothing.
+      (BROADCAST_STATUSES as readonly string[]).includes(params.get("bt") ?? "")
+        ? broadcastStatuses()
+        : undefined,
     ]);
   } catch (error) {
     // The zones and books searches answer an empty table the same way: a page can say "no

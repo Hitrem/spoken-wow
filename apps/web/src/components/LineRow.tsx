@@ -307,7 +307,7 @@ export default function LineRow({
                 title={
                   matchedBy === "text"
                     ? "Matched by English text: one of the ids that read this way"
-                    : "The world database names this id for the line's NPC"
+                    : "The world database names this id for an NPC saying this text"
                 }
               >
                 {id}

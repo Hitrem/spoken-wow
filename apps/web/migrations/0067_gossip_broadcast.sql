@@ -9,7 +9,7 @@
 create table if not exists "gossip_broadcast" (
   "lineId"          text        not null,
   "broadcastTextId" integer     not null,
-  -- 'extract': the world database names this id for the line's NPC.
+  -- 'extract': the world database names this id for an NPC saying the line.
   -- 'text': the line's English text equals this id's English text.
   "matchedBy"       text        not null check ("matchedBy" in ('extract', 'text')),
   "createdAt"       timestamptz not null default now(),

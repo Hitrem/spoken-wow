@@ -1039,8 +1039,8 @@ is how Forever's greetings get one. A one-off filled both tables in October 2026
 with vmangos's rows in English and its eight locales (no ptBR) as build 5875, and with
 [EG Link](https://github.com/JIVESCORP/eg-link-output-wowf)'s English Forever rows; then 3,572
 gossip lines by extract and 178 by text. The 508 left are quest greetings, which have no
-BroadcastText row, and Forever lines no source had yet. Nothing reads these tables yet: matching
-gossip by id is the next step.
+BroadcastText row, and Forever lines no source had yet. Nothing outside the gossip explorer reads these
+tables yet: matching gossip by id is the next step.
 
 ## Addon Install
 
