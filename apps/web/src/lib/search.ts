@@ -229,6 +229,8 @@ export type ResultLine = CorpusLine & {
   recording?: LiveRecording | null;
   /** The BroadcastText ids a gossip line speaks. Absent on every other source. */
   broadcast?: LineBroadcast[];
+  /** Gossip: the other lines of its moment (broadcast/store.ts momentSiblingsFor). */
+  moment?: string[];
 };
 
 export type SearchResult = {

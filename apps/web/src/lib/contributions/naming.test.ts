@@ -2,7 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import { corpus } from "@/lib/quests/catalogue";
 
-import { answersQuestMoment, gossipFileName, gossipHash, gossipLineId, questFileName, questLineId, voiceNameFor } from "./naming";
+import {
+  answersQuestMoment,
+  broadcastGossipStem,
+  gossipFileName,
+  gossipHash,
+  gossipLineId,
+  gossipStemRank,
+  localizedGossipStem,
+  questFileName,
+  questLineId,
+  voiceNameFor,
+} from "./naming";
 
 describe("questLineId / questFileName", () => {
   it("matches a real corpus id and file -- q:33:accept -> 33-accept", async () => {
@@ -52,5 +63,19 @@ describe("answersQuestMoment", () => {
     expect(answersQuestMoment("q:166:complete:f", "q:166:complete")).toBe(true);
     expect(answersQuestMoment("q:1666:complete", "q:166:complete")).toBe(false);
     expect(answersQuestMoment("q:166:accept", "q:166:complete")).toBe(false);
+  });
+});
+
+describe("upgradeable gossip stems", () => {
+  // Pinned to tests/test_naming.py's test_broadcast_and_localized_gossip_stems.
+  it("names a broadcast line after its id and voice, and a localized one after its language", () => {
+    expect(broadcastGossipStem(6029, "orc-female-standard")).toBe("b6029-orc-female-standard");
+    expect(localizedGossipStem("deDE", "0".repeat(32))).toBe(`deDE-${"0".repeat(32)}`);
+  });
+
+  it("ranks broadcast, then English, then localized", () => {
+    expect(gossipStemRank("b6029-orc-female-standard")).toBe(0);
+    expect(gossipStemRank(`bad0c0ffee${"0".repeat(22)}`)).toBe(1);
+    expect(gossipStemRank(`deDE-${"0".repeat(32)}`)).toBe(2);
   });
 });

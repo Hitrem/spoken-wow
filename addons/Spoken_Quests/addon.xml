@@ -15,6 +15,7 @@
     <Include file="Locale\zhCN.lua"/>
     <Include file="Locale\zhTW.lua"/>
     <Include file="Locale\Names\Names.xml"/>
+    <Include file="Gossip\Gossip.xml"/>
     <Include file="UI\Layout.lua"/>
     <Include file="Options.lua"/>
     <Include file="UI\SettingsPanel.lua"/>

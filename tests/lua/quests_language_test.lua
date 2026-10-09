@@ -301,6 +301,60 @@ Expect("K. ...so Auto stays English", Resolve(VO, 1), "EnglishPack")
 Expect("K. Italian is not a client language", VO.Language:IsClientLanguage("itIT"), false)
 Expect("K. Portuguese is", VO.Language:IsClientLanguage("ptBR"), true)
 
+---------------------------------------------------------------- L. the addon's own gossip text, and aliases
+-- Gossip/<locale>.lua gives every line's text in the client's locale, whatever the packs
+-- speak: the client's language and the voice's are any pair.
+local DE_TEXT = "Willkommen im Gasthaus, Reisender."
+local DE_OWN = { GossipLookupByNPCID = { [INNKEEPER] = { [DE_TEXT] = SECOND_HASH } } }
+
+-- A German client with only English packs, whose tables would guess the first line.
+VO = Install({ { folder = "EnglishPack", lines = { [GOSSIP_HASH] = 4.0, [SECOND_HASH] = 4.0 },
+                 gossip = TWO_LINES } }, "deDE")
+VO.GossipText = DE_OWN
+local _, own = ResolveGossip(VO, DE_TEXT)
+Expect("L. a German client matches on the addon's German text", own.fileName, SECOND_HASH)
+Expect("L. ...and hears the English pack", own.module.METADATA.AddonName, "EnglishPack")
+Expect("L. ...and the NPC counts as having gossip", VO.DataModules:HasGossipFor(
+    { unitGUID = "Creature-0-0-0-0-6929-0" }), true)
+
+-- The same German client choosing Portuguese.
+VO = Install({
+    { folder = "EnglishPack", lines = { [SECOND_HASH] = 4.0 }, gossip = TWO_LINES },
+    { folder = "PortuguesePack", language = "ptBR", lines = { [SECOND_HASH] = 4.5 }, gossip = PT_GOSSIP },
+}, "deDE")
+VO.GossipText = DE_OWN
+VO.Addon.db.profile.Audio.VoiceLanguage = "ptBR"
+_, own = ResolveGossip(VO, DE_TEXT)
+Expect("L. German text, Portuguese voice", own.module.METADATA.AddonName, "PortuguesePack")
+
+-- The addon's text outranks a pack's own client-locale copy.
+VO = Install({
+    { folder = "GermanPack", language = "deDE", lookupLocale = "enUS", priority = 200,
+      lines = { [GOSSIP_HASH] = 4.0, [SECOND_HASH] = 4.0 },
+      clientGossip = { [INNKEEPER] = { [DE_TEXT] = GOSSIP_HASH } } },
+}, "deDE")
+VO.GossipText = DE_OWN
+_, own = ResolveGossip(VO, DE_TEXT)
+Expect("L. the addon's text outranks a pack's copy", own.fileName, SECOND_HASH)
+
+-- One moment recorded under two names: the alias plays where the line's own name has nothing.
+VO = Install({
+    { folder = "EnglishPack", lines = { [GOSSIP_HASH] = 4.0 }, gossip = EN_GOSSIP },
+    { folder = "PortuguesePack", language = "ptBR", lines = { ["b6029-human-male"] = 4.5 } },
+}, "enUS")
+VO.GossipAliases = { [GOSSIP_HASH] = { "b6029-human-male" } }
+VO.Addon.db.profile.Audio.VoiceLanguage = "ptBR"
+_, own = ResolveGossip(VO, GOSSIP_TEXT)
+Expect("L. an alias in the voice language beats the line's own name in the fallback",
+    own.module.METADATA.AddonName, "PortuguesePack")
+Expect("L. ...under the alias's name", own.fileName, "b6029-human-male")
+VO.Addon.db.profile.Audio.VoiceLanguage = "enUS"
+_, own = ResolveGossip(VO, GOSSIP_TEXT)
+Expect("L. the line's own name comes before its alias", own.fileName, GOSSIP_HASH)
+VO.GossipAliases = nil
+VO.Addon.db.profile.Audio.VoiceLanguage = "ptBR"
+Expect("L. without the alias the fallback answers", ResolveGossip(VO, GOSSIP_TEXT), "EnglishPack")
+
 ---------------------------------------------------------------- the metadata itself
 VO = Install({ { folder = "Pack", language = "ptBR", lines = EN_LINES } })
 Expect("a declared language is read off the TOC", VO.DataModules:GetPresentModule("Pack").Language, "ptBR")

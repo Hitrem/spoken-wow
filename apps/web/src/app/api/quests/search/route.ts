@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { BROADCAST_STATUSES } from "@/lib/broadcast/status";
-import { broadcastIdsFor, broadcastStatuses, type LineBroadcast } from "@/lib/broadcast/store";
+import {
+  broadcastIdsFor,
+  broadcastStatuses,
+  mergedInto,
+  momentSiblingsFor,
+  type LineBroadcast,
+} from "@/lib/broadcast/store";
 import { langParam, worksHere } from "@/lib/lang-server";
 import { corpus, isCorpusEmpty } from "@/lib/quests/catalogue";
 import { searchContext } from "@/lib/quests/context";
@@ -50,6 +56,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: (error as Error).message, code: "corpus_empty" }, { status: 503 });
   }
   if (!seesMadeBy) filters = withoutMadeBy(filters);
+  // A link to a gossip line merged into another (lib/broadcast/relink.ts) shows the line it went into.
+  if (filters.line?.startsWith("g:")) filters = { ...filters, line: (await mergedInto(filters.line)) ?? filters.line };
   if (!recordings) filters = { ...filters, recorded: undefined };
   const { voiced, context: base } = await searchContext(
     needsStale(filters),
@@ -77,15 +85,19 @@ export async function GET(request: NextRequest) {
   // cost a query each over the files asked about, and fifty is what a page holds.
   const files = [...new Set(result.lines.map((line) => line.audioPath))];
   const gossip = [...new Set(result.lines.filter((line) => line.source === "gossip").map((line) => line.lineId))];
-  const [stale, dirty, broadcast] = await Promise.all([
+  const [stale, dirty, broadcast, siblings] = await Promise.all([
     context.stale ?? staleFiles(files, lang),
     context.dirty ?? dirtyQuestFiles(files, lang),
     gossip.length > 0 ? broadcastIdsFor(gossip) : new Map<string, LineBroadcast[]>(),
+    gossip.length > 0 ? momentSiblingsFor(gossip) : new Map<string, string[]>(),
   ]);
   for (const line of result.lines) {
     line.stale = stale.has(line.audioPath);
     line.dirty = dirty.has(line.audioPath);
-    if (line.source === "gossip") line.broadcast = broadcast.get(line.lineId) ?? [];
+    if (line.source === "gossip") {
+      line.broadcast = broadcast.get(line.lineId) ?? [];
+      line.moment = siblings.get(line.lineId) ?? [];
+    }
   }
 
   return NextResponse.json(result);

@@ -911,8 +911,25 @@ and speakers become the skeleton, and the language's row becomes its translation
 same id, file and takes. The translated explorer shows the English template from the
 English row itself, so the native row's own `originalText` never stands in for it. Who speaks it is answered by a moderator with `regenerate` in the
 contribution's language. The answer is about the NPC (`npc_resolution`), so it holds for
-every language. A gossip row in another language is still refused: its id is a hash of
-English text the client never shows.
+every language.
+
+A gossip row, in any language, is matched in three steps (`apps/web/src/lib/contributions/gossip.ts`):
+
+1. **By its words:** a line the language already has with the same text, case and spacing
+   aside, spoken by the same race and gender. English asks the catalogue, as it always has; another
+   language asks its own rows' `localeText`.
+2. **By BroadcastText:** the lowest id whose text in the language reads the same, in the form the
+   NPC's sex shows (`text` for male, `text1` for female, either side of a `$g` branch), then a
+   line of that id (`gossip_broadcast`) in the same race and gender. A line named after its id
+   must also have the same flavor.
+3. **Otherwise a new line:** `g:b{id}-{voice}` when the id is known, else `g:{md5}` in English
+   and `g:{lang}-{md5}` in another language.
+
+What a match writes depends on what the line has. If it already has a row in the language,
+the NPC becomes one more speaker, unless it already is one. If it only has English, the
+language gets a translation of it. If it has no English, an English row makes it an English
+line under the same id, and another language's row is written as that language's own. The id
+a line was found or made by is recorded in `gossip_broadcast` as `text`.
 
 #### Who is speaking
 
@@ -1039,8 +1056,44 @@ is how Forever's greetings get one. A one-off filled both tables in October 2026
 with vmangos's rows in English and its eight locales (no ptBR) as build 5875, and with
 [EG Link](https://github.com/JIVESCORP/eg-link-output-wowf)'s English Forever rows; then 3,572
 gossip lines by extract and 178 by text. The 508 left are quest greetings, which have no
-BroadcastText row, and Forever lines no source had yet. Nothing outside the gossip explorer reads these
-tables yet: matching gossip by id is the next step.
+BroadcastText row, and Forever lines no source had yet.
+
+#### Gossip text for every client, and one moment under several names
+
+The addon carries every line's gossip text for each client locale but English,
+`addons/Spoken_Quests/Gossip/<lang>.lua`, each returning before it builds anything on a client
+in another locale, and asks it before any pack's tables. It lives in the addon, not the packs,
+for the giver names' reason: the text follows the client and the voice is any language, so a
+German client with English or Portuguese packs finds its line the same way. All nine files load
+on every client (about 14 MiB of Lua, 2 MiB of it ever built); loading only the client's
+locale (a TOC text-locale directive on Forever) is left for later.
+`make quests-export-gossip-text` writes them (`tts_cli/gossip_text.py`) from three sources: a
+translation row while it translates the line's current English, the line's own text when it has
+no English, and `broadcast_text` in that language for each id the line has, in the form the
+speaker's sex shows. Rerun it after an `import-locale`, a cache upload or a relink.
+
+New gossip lines get two more id forms (`tts_cli/naming.py`), for lines with no English to hash:
+`g:b{broadcastTextId}-{voice}` when the id is known as the line is made, else
+`g:{lang}-{md5(text + race + gender)}`. A moment is the lines sharing an id and a race and
+gender, and when it has several, `Gossip/Aliases.lua` lists each one's siblings. The addon
+tries a line's own file and then its aliases, within each language, so a take in the chosen
+language under a sibling's name beats the fallback language under the line's own. Lines are
+linked this way and never renamed.
+
+The packs' own `generated/<lang>/` copies keep loading, for players on an older addon, and the
+addon's text outranks them.
+
+**Relinking** (`apps/web/src/lib/broadcast/relink.ts`) upgrades lines as ids arrive. Every cache
+upload runs it for its language. It gives a line with no id the lowest id that reads the same in
+one of its languages, then merges duplicates: two lines of one id with the same speakers that
+read the same in every language both have, which is what a moment minted twice before its id
+was known looks like. The line kept is the one named by id, then English, then a language's own,
+then the older. It takes the other's languages it lacks. The other's rows stop being current, and
+`gossip_merge` (migration 0068) records where it went. Its file is never renamed: it becomes an
+alias of the line kept, so its takes still play, `corpus/gossip_aliases.json` tells the pack build
+to ship them, and a link to it shows the line kept. Lines of one moment that read differently
+stay apart, and the explorer's Broadcast column links each to the others as "same moment". To run
+it over every line, use `apps/web/scripts/relink-gossip.mts`; `--dry-run` lists what it would merge.
 
 ## Addon Install
 

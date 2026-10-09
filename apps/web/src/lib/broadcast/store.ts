@@ -84,6 +84,38 @@ export async function broadcastIdsFor(lineIds: string[]): Promise<Map<string, Li
 }
 
 /**
+ * The other current lines of each line's moment: lines sharing one of its ids, spoken by the
+ * same race and gender, and not its own player-gender rows. Lines merged into it are not
+ * listed: they are no longer lines anyone browses.
+ */
+export async function momentSiblingsFor(lineIds: string[]): Promise<Map<string, string[]>> {
+  const rows = await query<{ lineId: string; siblings: string[] }>(
+    `select a."lineId", array_agg(distinct b."lineId" order by b."lineId") as "siblings"
+       from "gossip_broadcast" a
+       join "gossip_broadcast" b
+         on b."broadcastTextId" = a."broadcastTextId"
+        and regexp_replace(b."lineId", ':[mf]$', '') <> regexp_replace(a."lineId", ':[mf]$', '')
+      where a."lineId" = any($1)
+        and exists (select 1 from "quest_line" l where l."lineId" = b."lineId" and l."isCurrent")
+        and exists (select 1 from "quest_line_speaker" sa join "quest_line_speaker" sb
+                       on sb."race" = sa."race" and sb."gender" = sa."gender"
+                     where sa."lineId" = a."lineId" and sb."lineId" = b."lineId")
+      group by a."lineId"`,
+    [lineIds],
+  );
+  return new Map(rows.map(({ lineId, siblings }) => [lineId, siblings]));
+}
+
+/** The line a merged gossip line went into (migration 0068), or null. */
+export async function mergedInto(lineId: string): Promise<string | null> {
+  const [row] = await query<{ mergedInto: string }>(
+    `select "mergedInto" from "gossip_merge" where "lineId" = $1`,
+    [lineId],
+  );
+  return row?.mergedInto ?? null;
+}
+
+/**
  * Each gossip line with an id, and whether the world database named one (extract) or only its
  * English text matched (text). A line absent from the map has none.
  */

@@ -53,6 +53,7 @@ import {
   voiceNameFor,
   type LineIdentity,
 } from "./naming";
+import { recordBroadcast, resolveGossip, type GossipPlan } from "./gossip";
 import { CONTRIBUTION_COLUMNS, observationMeta, type Contribution } from "./store";
 import { spokenFromTemplate } from "./tokens";
 import { idOnlyResolution } from "./triage";
@@ -84,11 +85,14 @@ type Speaker = {
   flavor: string | null;
 };
 
-/** What accept writes: a new line and its speaker, or only a speaker on a line already there. */
+/**
+ * What accept writes: a new line and its speaker, or only a speaker on a line already there.
+ * `broadcastTextId` is the id a gossip line was found or minted by, recorded on the line.
+ */
 type Prepared =
   | { kind: "exists" }
-  | { kind: "speaker"; lineId: string; variant: number; speaker: Speaker }
-  | { kind: "line"; identity: LineIdentity; text: string; speaker: Speaker };
+  | { kind: "speaker"; lineId: string; variant: number; speaker: Speaker; broadcastTextId?: number | null }
+  | { kind: "line"; identity: LineIdentity; text: string; speaker: Speaker; broadcastTextId?: number | null };
 
 /**
  * The npc_resolution rows for many contributions' NPCs, read up front in two queries -- what
@@ -287,13 +291,29 @@ async function prepareLine(
   const byText = index.gossipByText.get(gossipTextKey(speaker.race, speaker.gender, text))?.[0];
   const match =
     byId && byText ? (index.position.get(byId)! <= index.position.get(byText)! ? byId : byText) : (byId ?? byText);
-  if (!match) return { ok: true, prepared: { kind: "line", identity, text, speaker } };
+  if (!match) {
+    const plan = await resolveGossip(BASE_LANG, text, speaker, { skipText: true });
+    return { ok: true, prepared: preparedFrom(plan, text, speaker) };
+  }
 
   const speaks = (index.byPrefix.get(match.lineId) ?? []).some(
     (l) => l.lineId === match.lineId && l.npcType === speaker.npcType && l.npcId === speaker.npcId,
   );
   if (speaks) return { ok: true, prepared: { kind: "exists" } };
   return { ok: true, prepared: { kind: "speaker", lineId: match.lineId, variant: 0, speaker } };
+}
+
+/** An English gossip plan as prepareLine's answer: English has no translation to write. */
+function preparedFrom(plan: GossipPlan, text: string, speaker: Speaker): Prepared {
+  switch (plan.kind) {
+    case "exists":
+      return { kind: "exists" };
+    case "speaker":
+    case "translation":
+      return { kind: "speaker", lineId: plan.lineId, variant: 0, speaker, broadcastTextId: plan.broadcastTextId };
+    case "line":
+      return { kind: "line", identity: plan.identity, text, speaker, broadcastTextId: plan.broadcastTextId };
+  }
 }
 
 /** Whether a contribution already has a speaker row in the quest tables -- i.e. has been written. */
@@ -360,11 +380,18 @@ async function questsInExplorer(candidates: readonly Contribution[]): Promise<Se
   const unwritten = candidates.filter((c) => !found.has(c.id));
   const rest = unwritten.filter((c) => c.locale === BASE_LANG);
   const [translated, resolutions, lines] = await Promise.all([
-    translationsInExplorer(unwritten.filter((c) => c.locale !== BASE_LANG)),
+    translationsInExplorer(unwritten.filter((c) => c.locale !== BASE_LANG && c.meta.quest && c.meta.event)),
     rest.length ? resolutionsFor(rest) : undefined,
     rest.length ? corpus().then((c) => c.lines) : [],
   ]);
   for (const id of translated) found.add(id);
+  for (const contribution of unwritten) {
+    if (contribution.locale === BASE_LANG || (contribution.meta.quest && contribution.meta.event)) continue;
+    const speaker = await speakerFor(contribution);
+    if (!speaker.ok || !contribution.text || !isLang(contribution.locale)) continue;
+    const plan = await resolveGossip(contribution.locale, contribution.text, speaker.speaker);
+    if (plan.kind === "exists") found.add(contribution.id);
+  }
   for (const contribution of rest) {
     const result = await prepareLine(contribution, lines, resolutions);
     if (result.ok && result.prepared.kind === "exists") found.add(contribution.id);
@@ -435,13 +462,14 @@ async function addSpeakerOnce(
   lineId: string,
   variant: number,
   speaker: Speaker,
+  lang: Lang = BASE_LANG,
 ): Promise<void> {
   const { rowCount } = await client.query(
     `select 1 from "quest_line_speaker"
       where "lang" = $1 and "lineId" = $2 and "npcType" = $3 and "npcId" = $4`,
-    [BASE_LANG, lineId, speaker.npcType, speaker.npcId],
+    [lang, lineId, speaker.npcType, speaker.npcId],
   );
-  if (!rowCount) await insertSpeaker(client, contributionId, lineId, variant, speaker);
+  if (!rowCount) await insertSpeaker(client, contributionId, lineId, variant, speaker, lang);
 }
 
 /**
@@ -504,9 +532,8 @@ async function writeLine(
  * A contribution sent from a pack in another language: that language's version of a quest line,
  * or, when English does not have the moment, a line of that language's own.
  *
- * Only a quest line can be matched. Its id is the quest and the moment, the same in every
- * language; a gossip line's id is a hash of its English text, which a Portuguese client never
- * shows, so there is nothing to match it to.
+ * A quest line's id is the quest and the moment, the same in every language. A gossip line is
+ * found by its words or its BroadcastText id instead (acceptGossip, gossip.ts).
  *
  * The text keeps its $N, $C and $R. The English accept writes "adventurer" in their place,
  * which in another language is an English word, so here they stay in, as the dump's own
@@ -522,13 +549,7 @@ async function acceptTranslation(
   corpusLines?: readonly CorpusLine[],
 ): Promise<ResolveRefusal | null> {
   const { quest, event } = contribution.meta;
-  if (!(quest && event)) {
-    return {
-      ok: false,
-      reason: "malformed",
-      message: "A greeting in another language cannot be matched to the English line it translates.",
-    };
-  }
+  if (!(quest && event)) return acceptGossip(client, contribution, userId);
   const identity = lineIdentityFor(contribution.meta, contribution.text ?? "", "", "");
   if (!identity || !contribution.text) {
     return { ok: false, reason: "malformed", message: `unknown quest event "${event}"` };
@@ -544,6 +565,26 @@ async function acceptTranslation(
     if (refused) return refused;
   }
 
+  await translateLines(client, contribution, userId, english, identity.source);
+  for (const name of namesSeenIn(contribution)) {
+    await nameIfUnnamed(client, { ...name, lang, userId, note: noteFor(contribution.id) });
+  }
+  return null;
+}
+
+/**
+ * The language's row for each English line given, where it has none: the contribution's text
+ * over the English line's id and file.
+ */
+async function translateLines(
+  client: PoolClient,
+  contribution: Contribution,
+  userId: string,
+  english: readonly Pick<CorpusLine, "lineId" | "variant" | "playerGender">[],
+  source: string,
+): Promise<void> {
+  const text = contribution.text ?? "";
+  const lang = contribution.locale as Lang;
   const seen = new Set<string>();
   for (const line of english) {
     // Variant 0 only: a language keeps one text per line id, whichever content patch the
@@ -553,7 +594,7 @@ async function acceptTranslation(
     seen.add(line.lineId);
     // Per line id: its $N is spoken in the form the line's player gender takes.
     const skipReason = skipReasonFor(
-      identity.source, text, lang, line.playerGender,
+      source, text, lang, line.playerGender,
     );
     await client.query(
       `insert into "quest_line"
@@ -572,6 +613,38 @@ async function acceptTranslation(
       ],
     );
   }
+}
+
+/**
+ * A greeting sent from a pack in another language (gossip.ts says how it is matched): nothing
+ * when the language has the line, one more speaker when this NPC was not among its speakers,
+ * the language's row over a line English has, or a line of the language's own.
+ */
+async function acceptGossip(
+  client: PoolClient,
+  contribution: Contribution,
+  userId: string,
+): Promise<ResolveRefusal | null> {
+  const text = contribution.text;
+  if (!text) return { ok: false, reason: "malformed", message: "contribution has no text to voice" };
+  const found = await speakerFor(contribution);
+  if (!found.ok) return found;
+  const { speaker } = found;
+  const lang = contribution.locale as Lang;
+
+  const plan = await resolveGossip(lang, text, speaker, { client });
+  const lineId = plan.kind === "line" ? plan.identity.lineId : plan.lineId;
+  await lockLine(client, lineId);
+  if (plan.kind === "speaker") {
+    await addSpeakerOnce(client, contribution.id, lineId, 0, speaker, plan.lang);
+  } else if (plan.kind === "translation") {
+    const english = await englishMoment(client, lineId.replace(/:[mf]$/, ""));
+    await translateLines(client, contribution, userId, english, "gossip");
+    if (plan.addSpeaker) await addSpeakerOnce(client, contribution.id, lineId, 0, speaker);
+  } else if (plan.kind === "line" && !(await momentTaken(client, lang, lineId))) {
+    await writeLine(client, contribution.id, userId, plan.identity, text, speaker, lang);
+  }
+  await recordBroadcast(client, lineId, plan.broadcastTextId);
   for (const name of namesSeenIn(contribution)) {
     await nameIfUnnamed(client, { ...name, lang, userId, note: noteFor(contribution.id) });
   }
@@ -866,6 +939,13 @@ export async function resolveContribution(
       } else if (prepared.kind === "speaker") {
         await lockLine(client, prepared.lineId);
         await addSpeakerOnce(client, id, prepared.lineId, prepared.variant, prepared.speaker);
+      }
+      if (prepared.kind !== "exists") {
+        await recordBroadcast(
+          client,
+          prepared.kind === "line" ? prepared.identity.lineId : prepared.lineId,
+          prepared.broadcastTextId ?? null,
+        );
       }
     }
 
