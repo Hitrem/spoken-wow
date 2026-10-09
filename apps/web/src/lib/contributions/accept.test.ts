@@ -17,7 +17,15 @@ import { corpus, lineIndex } from "@/lib/quests/catalogue";
 import { isGap, matchingLines, NO_CONTEXT } from "@/lib/search";
 
 import { lineIsInExplorer, resolveContribution, resolveContributions } from "./accept";
-import { gossipFileName, gossipHash, gossipLineId, questFileName, questLineId } from "./naming";
+import {
+  broadcastGossipStem,
+  gossipFileName,
+  gossipHash,
+  gossipLineId,
+  localizedGossipStem,
+  questFileName,
+  questLineId,
+} from "./naming";
 import {
   createContribution,
   CONTRIBUTION_COLUMNS,
@@ -641,6 +649,168 @@ describe("resolveContribution: a translation", () => {
       expect(await speakersOf(id)).toEqual([]);
       expect((await rowsIn(LOCALE)).map((row) => row.originalText)).toEqual(["Bring me six wolf pelts, druid."]);
     });
+  });
+});
+
+describe("resolveContribution: a greeting in any language", { timeout: 20_000 }, () => {
+  // A language no import on this machine writes, so the rows here are this test's own.
+  const LOCALE = "ptBR";
+  // BroadcastText ids of this run's own, far above the game's.
+  const bt = base;
+  const VOICE = "tauren-male-warrior";
+  const ENGLISH = "Welcome to the test lodge, $n.";
+  const PORTUGUESE = "Bem-vindo ao alojamento de teste, $n.";
+
+  afterEach(async () => {
+    await db().query(`delete from "gossip_broadcast" where "broadcastTextId" between $1 and $2`, [bt, bt + 10]);
+    await db().query(`delete from "broadcast_text" where "broadcastTextId" between $1 and $2`, [bt, bt + 10]);
+    await db().query(
+      `delete from "entity_name" where "kind" = 'creature' and "entityId" = any($1::text[])`,
+      [[String(npcId), String(npcId + 1)]],
+    );
+  });
+
+  async function broadcast(lang: string, id: number, text: string, text1 = ""): Promise<void> {
+    await db().query(
+      `insert into "broadcast_text" ("lang", "broadcastTextId", "text", "text1", "build") values ($1, $2, $3, $4, 1)`,
+      [lang, id, text, text1],
+    );
+  }
+
+  async function greeting(lang: string, text: string, speakerId = npcId): Promise<number> {
+    const dedup = `accept-test-${Math.random().toString(36).slice(2)}`;
+    await createContribution({
+      source: "quests",
+      key: `npc:${speakerId}`,
+      locale: lang,
+      build: "1.12.1/5875",
+      text,
+      meta: { kind: "creature", npc: `${speakerId} Test Speaker` },
+      raw: `raw:${dedup}`,
+      dedup,
+      body: null,
+      name: null,
+      email: null,
+      userId: null,
+      ip: null,
+    });
+    const { rows } = await db().query<{ id: number }>(`select "id" from "contribution" where "dedup" = $1`, [dedup]);
+    contributionIds.push(rows[0].id);
+    return rows[0].id;
+  }
+
+  async function accepted(id: number): Promise<Contribution> {
+    const outcome = await resolveContribution(id, "accepted", RESOLVER);
+    if (!outcome.ok) throw new Error(JSON.stringify(outcome));
+    return outcome.contribution;
+  }
+
+  async function rows(lineId: string) {
+    const { rows } = await db().query<{ lang: string; text: string; fileName: string }>(
+      `select "lang", "text", "fileName" from "quest_line" where "lineId" = $1 and "isCurrent" order by "lang"`,
+      [lineId],
+    );
+    return rows;
+  }
+
+  async function idsOf(lineId: string): Promise<number[]> {
+    const { rows } = await db().query<{ id: number }>(
+      `select "broadcastTextId" as "id" from "gossip_broadcast" where "lineId" = $1 order by 1`,
+      [lineId],
+    );
+    return rows.map((row) => row.id);
+  }
+
+  async function linesSpeaking(id: number): Promise<string[]> {
+    const { rows } = await db().query<{ lineId: string }>(
+      `select "lineId" from "gossip_broadcast" where "broadcastTextId" = $1 order by 1`,
+      [id],
+    );
+    return rows.map((row) => row.lineId);
+  }
+
+  it("mints a line by its BroadcastText id in the language, then English lands on the same line", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    await broadcast(LOCALE, bt, PORTUGUESE);
+    await broadcast(BASE_LANG, bt, ENGLISH);
+    const lineId = gossipLineId(broadcastGossipStem(bt, VOICE));
+
+    await accepted(await greeting(LOCALE, PORTUGUESE));
+    expect(await rows(lineId)).toEqual([{ lang: LOCALE, text: PORTUGUESE, fileName: broadcastGossipStem(bt, VOICE) }]);
+    expect(await idsOf(lineId)).toEqual([bt]);
+
+    await accepted(await greeting(BASE_LANG, "Welcome to the test lodge, $N."));
+    expect((await rows(lineId)).map((row) => row.lang)).toEqual([BASE_LANG, LOCALE]);
+    expect(await linesSpeaking(bt)).toEqual([lineId]);
+  });
+
+  it("translates an English line found by its id, rather than minting another", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    await broadcast(BASE_LANG, bt, ENGLISH);
+    await broadcast(LOCALE, bt, PORTUGUESE);
+    const english = await accepted(await greeting(BASE_LANG, ENGLISH));
+    const [{ lineId }] = await speakersOf(english.id);
+    expect(lineId).toBe(gossipLineId(broadcastGossipStem(bt, VOICE)));
+
+    const portuguese = await accepted(await greeting(LOCALE, PORTUGUESE));
+    expect((await rows(lineId)).map((row) => [row.lang, row.text])).toEqual([
+      [BASE_LANG, "Welcome to the test lodge, adventurer."],
+      [LOCALE, PORTUGUESE],
+    ]);
+    expect(await speakersOf(portuguese.id)).toEqual([]);
+    expect(await linesSpeaking(bt)).toEqual([lineId]);
+    expect(await lineIsInExplorer(portuguese)).toBe(true);
+  });
+
+  it("adds an NPC of the same voice as one more speaker of the moment", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    await speaker(npcId + 1, "tauren", "male", "warrior");
+    await broadcast(LOCALE, bt, PORTUGUESE);
+    await accepted(await greeting(LOCALE, PORTUGUESE));
+    const second = await accepted(await greeting(LOCALE, PORTUGUESE, npcId + 1));
+    expect(await speakersOf(second.id)).toEqual([
+      expect.objectContaining({ lineId: gossipLineId(broadcastGossipStem(bt, VOICE)) }),
+    ]);
+  });
+
+  it("names a line with no English and no id after its own language", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    const stem = localizedGossipStem(LOCALE, gossipHash(PORTUGUESE, "tauren", "male"));
+    const contribution = await accepted(await greeting(LOCALE, PORTUGUESE));
+    expect(await rows(gossipLineId(stem))).toEqual([{ lang: LOCALE, text: PORTUGUESE, fileName: stem }]);
+    expect(await idsOf(gossipLineId(stem))).toEqual([]);
+
+    // Found again by its words: the same line, nothing written twice.
+    const again = await accepted(await greeting(LOCALE, `  ${PORTUGUESE.toUpperCase()} `));
+    expect(await speakersOf(again.id)).toEqual([]);
+    expect(await lineIsInExplorer(contribution)).toBe(true);
+    expect(await lineIsInExplorer(again)).toBe(true);
+  });
+
+  it("re-accepting changes nothing", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    await broadcast(LOCALE, bt, PORTUGUESE);
+    const id = await greeting(LOCALE, PORTUGUESE);
+    await accepted(id);
+    await accepted(id);
+    expect(await rows(gossipLineId(broadcastGossipStem(bt, VOICE)))).toHaveLength(1);
+    expect(await speakersOf(id)).toHaveLength(1);
+  });
+
+  it("takes the lowest of several ids with the same words, in the speaker's form", async () => {
+    await speaker(npcId, "tauren", "female", "shaman");
+    await broadcast(LOCALE, bt + 2, "Olá, $gamigo:amiga;.", "Olá, $gamigo:amiga;.");
+    await broadcast(LOCALE, bt + 1, "Bom dia, senhor.", "Olá, amiga.");
+    await accepted(await greeting(LOCALE, "Olá, amiga."));
+    expect(await linesSpeaking(bt + 1)).toEqual([gossipLineId(broadcastGossipStem(bt + 1, "tauren-female-shaman"))]);
+    expect(await linesSpeaking(bt + 2)).toEqual([]);
+  });
+
+  it("matches a $g branch as either side", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    await broadcast(LOCALE, bt, "Bem-vindo, $gamigo:amiga;.");
+    await accepted(await greeting(LOCALE, "Bem-vindo, amiga."));
+    expect(await linesSpeaking(bt)).toEqual([gossipLineId(broadcastGossipStem(bt, VOICE))]);
   });
 });
 

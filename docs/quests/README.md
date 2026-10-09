@@ -911,8 +911,25 @@ and speakers become the skeleton, and the language's row becomes its translation
 same id, file and takes. The translated explorer shows the English template from the
 English row itself, so the native row's own `originalText` never stands in for it. Who speaks it is answered by a moderator with `regenerate` in the
 contribution's language. The answer is about the NPC (`npc_resolution`), so it holds for
-every language. A gossip row in another language is still refused: its id is a hash of
-English text the client never shows.
+every language.
+
+A gossip row, in any language, is matched in three steps (`apps/web/src/lib/contributions/gossip.ts`):
+
+1. **By its words:** a line the language already has with the same text, case and spacing
+   aside, spoken by the same race and gender. English asks the catalogue, as it always has; another
+   language asks its own rows' `localeText`.
+2. **By BroadcastText:** the lowest id whose text in the language reads the same, in the form the
+   NPC's sex shows (`text` for male, `text1` for female, either side of a `$g` branch), then a
+   line of that id (`gossip_broadcast`) in the same race and gender. A line named after its id
+   must also have the same flavor.
+3. **Otherwise a new line:** `g:b{id}-{voice}` when the id is known, else `g:{md5}` in English
+   and `g:{lang}-{md5}` in another language.
+
+What a match writes depends on what the line has. If it already has a row in the language,
+the NPC becomes one more speaker, unless it already is one. If it only has English, the
+language gets a translation of it. If it has no English, an English row makes it an English
+line under the same id, and another language's row is written as that language's own. The id
+a line was found or made by is recorded in `gossip_broadcast` as `text`.
 
 #### Who is speaking
 
