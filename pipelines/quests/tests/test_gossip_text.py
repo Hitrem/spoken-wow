@@ -1,4 +1,7 @@
 """The addon's gossip text per client locale, and its aliases, which export-gossip-text writes."""
+import glob
+import os
+
 from tts_cli.gossip_text import (CLIENT_LOCALES, broadcast_form, gossip_aliases,
                                  gossip_text_tables, load_aliases, render, render_aliases,
                                  write_aliases_json, write_gossip_text)
@@ -112,3 +115,29 @@ def test_gossip_xml_loads_every_file(tmp_path):
     for lang in CLIENT_LOCALES:
         assert f'<Script file="{lang}.lua"/>' in xml
     assert '<Script file="Aliases.lua"/>' in xml
+
+
+ADDON = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../addons/Spoken_Quests"))
+FOREVER = ("Spoken_Quests.toc", "Spoken_Quests_Mainline.toc")
+
+
+def toc(name):
+    with open(os.path.join(ADDON, name), encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+
+def test_forever_loads_only_its_own_locale_and_the_rest_load_every_one():
+    # Forever's .toc files name each locale's file with a per-file directive; every other
+    # client loads Gossip.xml, which lists them all. A locale missing from either is a client
+    # that never finds its gossip text.
+    for path in glob.glob(os.path.join(ADDON, "*.toc")):
+        name = os.path.basename(path)
+        lines = toc(name)
+        if name in FOREVER:
+            assert "Gossip\\Aliases.lua" in lines and "Gossip\\Gossip.xml" not in lines
+            for lang in CLIENT_LOCALES:
+                assert f"Gossip\\{lang}.lua [AllowLoadTextLocale {lang}]" in lines
+        else:
+            assert "Gossip\\Gossip.xml" in lines, name
+    with open(os.path.join(ADDON, "addon.xml"), encoding="utf-8") as f:
+        assert "Gossip" not in f.read()

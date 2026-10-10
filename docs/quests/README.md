@@ -1064,9 +1064,11 @@ The addon carries every line's gossip text for each client locale but English,
 `addons/Spoken_Quests/Gossip/<lang>.lua`, each returning before it builds anything on a client
 in another locale, and asks it before any pack's tables. It lives in the addon, not the packs,
 for the giver names' reason: the text follows the client and the voice is any language, so a
-German client with English or Portuguese packs finds its line the same way. All nine files load
-on every client (about 14 MiB of Lua, 2 MiB of it ever built); loading only the client's
-locale (a TOC text-locale directive on Forever) is left for later.
+German client with English or Portuguese packs finds its line the same way. Each file is about
+2 MiB of Lua, and a guard returns only after the client has parsed the file, so Forever's `.toc`
+files list each one with `[AllowLoadTextLocale <lang>]` (a per-file directive from 11.1.5) and
+the client loads only its own. The classic and legacy `.toc` files load `Gossip/Gossip.xml`,
+which lists all nine (about 14 MiB, 2 MiB of it ever built).
 `make quests-export-gossip-text` writes them (`tts_cli/gossip_text.py`) from three sources: a
 translation row while it translates the line's current English, the line's own text when it has
 no English, and `broadcast_text` in that language for each id the line has, in the form the

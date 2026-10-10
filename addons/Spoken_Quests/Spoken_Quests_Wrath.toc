@@ -25,3 +25,4 @@
 embeds.xml
 addon.xml
 Contribute.xml
+Gossip\Gossip.xml
